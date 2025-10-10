@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -8,25 +12,24 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Loader2, FileX } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-
-const permits = [
-    { id: 'PT-0123', workType: 'Trabajo en Caliente', date: '2023-10-26', status: 'pendiente_revision' },
-    { id: 'PT-0122', workType: 'Espacios Confinados', date: '2023-10-25', status: 'aprobado' },
-    { id: 'PT-0121', workType: 'Trabajo Eléctrico', date: '2023-10-25', status: 'aprobado' },
-    { id: 'PT-0120', workType: 'Trabajo en Altura', date: '2023-10-24', status: 'rechazado' },
-    { id: 'PT-0119', workType: 'Excavación', date: '2023-10-23', status: 'aprobado' },
-    { id: 'PT-0118', workType: 'Trabajo en Caliente', date: '2023-10-22', status: 'cerrado' },
-];
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Permit } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
+import { format } from 'date-fns';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     pendiente_revision: 'secondary',
     aprobado: 'default',
     rechazado: 'destructive',
-    cerrado: 'outline'
+    cerrado: 'outline',
+    en_ejecucion: 'default'
 };
 
 const getStatusText = (status: string) => {
@@ -42,8 +45,60 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-
 export default function PermitsPage() {
+  const [permits, setPermits] = useState<Permit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+  
+  const workTypes: {[key: string]: string} = {
+    'altura': 'Trabajo en Alturas',
+    'confinado': 'Espacios Confinados',
+    'energia': 'Control de Energías',
+    'izaje': 'Izaje de Cargas',
+    'caliente': 'Trabajo en Caliente',
+    'excavacion': 'Excavaciones'
+  }
+
+  useEffect(() => {
+    const permitsCollection = collection(db, 'permits');
+    const q = query(permitsCollection, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const permitsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate(), 
+        } as Permit;
+      });
+      setPermits(permitsData);
+      setLoading(false);
+    }, (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: permitsCollection.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        
+        errorEmitter.emit('permission-error', permissionError);
+
+        toast({
+            variant: 'destructive',
+            title: 'Error al cargar permisos',
+            description: 'No se pudieron obtener los datos de los permisos.',
+        });
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+  const filteredPermits = permits.filter(permit => 
+    permit.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (workTypes[permit.workType] || permit.workType).toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center justify-between">
@@ -69,6 +124,8 @@ export default function PermitsPage() {
                 type="search"
                 placeholder="Buscar por ID o tipo de trabajo..."
                 className="w-full rounded-lg bg-background pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="rounded-md border">
@@ -76,8 +133,8 @@ export default function PermitsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID del Permiso</TableHead>
-                    <TableHead className="hidden sm:table-cell">Tipo de Trabajo</TableHead>
-                    <TableHead className="hidden sm:table-cell">Estado</TableHead>
+                    <TableHead>Tipo de Trabajo</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead className="hidden md:table-cell">Creado</TableHead>
                     <TableHead>
                       <span className="sr-only">Acciones</span>
@@ -85,30 +142,50 @@ export default function PermitsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {permits.map((permit) => (
-                    <TableRow key={permit.id}>
-                      <TableCell className="font-medium">
-                        <Link href={`/permits/${permit.id}`} className="hover:underline">
-                          {permit.id}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{permit.workType}</TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant={statusVariant[permit.status] || 'default'}>
-                          {getStatusText(permit.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">{permit.date}</TableCell>
-                      <TableCell>
-                        <Button asChild variant="ghost" size="icon">
-                           <Link href={`/permits/${permit.id}`}>
-                            ...
-                            <span className="sr-only">Ver menú</span>
-                          </Link>
-                        </Button>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-60 text-center">
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                        <p className="mt-2 text-sm">Cargando permisos...</p>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : filteredPermits.length > 0 ? (
+                    filteredPermits.map((permit) => (
+                      <TableRow key={permit.id}>
+                        <TableCell className="font-medium">
+                          <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
+                            {permit.id.substring(0, 8)}...
+                          </Link>
+                        </TableCell>
+                        <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant[permit.status] || 'default'}>
+                            {getStatusText(permit.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {permit.createdAt ? format(new Date(permit.createdAt), "dd/MM/yyyy") : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Button asChild variant="outline" size="sm">
+                             <Link href={`/permits/${permit.id}`}>
+                              Ver Detalles
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                     <TableRow>
+                      <TableCell colSpan={5} className="h-60 text-center">
+                        <FileX className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-4 font-semibold">No se encontraron permisos</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {searchTerm ? `No hay resultados para "${searchTerm}".` : 'No hay permisos registrados.'}
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
