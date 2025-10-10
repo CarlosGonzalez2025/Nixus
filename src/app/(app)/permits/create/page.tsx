@@ -63,6 +63,11 @@ const workTypes: {[key: string]: string} = {
   'general': 'Trabajo General'
 }
 
+const epsList = ["SURA", "Sanitas", "Compensar", "Nueva EPS", "Salud Total", "Coomeva", "Famisanar", "Aliansalud", "Mutual SER", "Cajacopi", "Otra"];
+const arlList = ["SURA", "Positiva", "Colmena", "AXA Colpatria", "Equidad Seguros", "Bolívar", "Alfa", "Otra"];
+const pensionFundsList = ["Colpensiones", "Porvenir", "Protección", "Colfondos", "Skandia", "Otro"];
+
+
 export default function CreatePermitPage() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -898,14 +903,30 @@ export default function CreatePermitPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                  <div>
                   <Label htmlFor="eps">EPS</Label>
-                  <Input id="eps" value={currentWorker?.eps || ''} onChange={(e) => handleWorkerInputChange('eps', e.target.value)} />
+                    <Select value={currentWorker?.eps || ''} onValueChange={(value) => handleWorkerInputChange('eps', value)}>
+                        <SelectTrigger><SelectValue placeholder="Seleccione EPS..." /></SelectTrigger>
+                        <SelectContent>
+                            {epsList.map(eps => <SelectItem key={eps} value={eps}>{eps}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div>
                   <Label htmlFor="arl">ARL</Label>
-                  <Input id="arl" value={currentWorker?.arl || ''} onChange={(e) => handleWorkerInputChange('arl', e.target.value)} />
+                   <Select value={currentWorker?.arl || ''} onValueChange={(value) => handleWorkerInputChange('arl', value)}>
+                        <SelectTrigger><SelectValue placeholder="Seleccione ARL..." /></SelectTrigger>
+                        <SelectContent>
+                            {arlList.map(arl => <SelectItem key={arl} value={arl}>{arl}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div>
-                  <Label htmlFor="pensiones">Fondo de Pensiones</Label>                  <Input id="pensiones" value={currentWorker?.pensiones || ''} onChange={(e) => handleWorkerInputChange('pensiones', e.target.value)} />
+                  <Label htmlFor="pensiones">Fondo de Pensiones</Label>
+                  <Select value={currentWorker?.pensiones || ''} onValueChange={(value) => handleWorkerInputChange('pensiones', value)}>
+                        <SelectTrigger><SelectValue placeholder="Seleccione Fondo..." /></SelectTrigger>
+                        <SelectContent>
+                            {pensionFundsList.map(fund => <SelectItem key={fund} value={fund}>{fund}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
               </div>
               
@@ -947,5 +968,3 @@ export default function CreatePermitPage() {
     </div>
   );
 }
-
-    
