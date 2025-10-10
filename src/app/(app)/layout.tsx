@@ -24,6 +24,7 @@ import {
   LogOut,
   Loader2,
   Settings,
+  FlaskConical,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -121,6 +122,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
+             <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => router.push('/test')}
+                  isActive={pathname === '/test'}
+                  tooltip="Test Firebase"
+                >
+                  <FlaskConical />
+                  <span>Test Conexión</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
