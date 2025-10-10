@@ -11,18 +11,27 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  type User,
+  type User as FirebaseUser,
   getAuth,
   type Auth,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { app, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import type { User } from '@/types';
+
+// Demo users as provided in the UI mock
+const demoUsers = {
+  'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante' },
+  'maria@italcol.com': { name: 'María García', role: 'autorizante' },
+  'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea' },
+  'ana@italcol.com': { name: 'Ana Martínez', role: 'ejecutante' },
+  'roberto@italcol.com': { name: 'Roberto Sánchez', role: 'lider_sst' }
+};
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
@@ -32,7 +41,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const auth = getAuth(app);
@@ -52,15 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
         const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = newUserCredential.user;
-        if(user) {
-           await setDoc(doc(db, 'users', user.uid), {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.email,
-            photoURL: '',
-            role: 'Líder de Tarea'
-          });
+        const firebaseUser = newUserCredential.user;
+        if(firebaseUser) {
+           const demoUser = (demoUsers as any)[email.toLowerCase()];
+           const userProfile: User = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: demoUser?.name || firebaseUser.email,
+            photoURL: firebaseUser.photoURL || '',
+            role: demoUser?.role || 'ejecutante' // Default role
+          };
+           await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
         }
         return newUserCredential;
       }

@@ -1,9 +1,20 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export type PermitStatus = 'Pending' | 'Approved' | 'Rejected';
+export type PermitStatus = 'Pending' | 'Approved' | 'Rejected' | 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
+
+export type UserRole = 'solicitante' | 'autorizante' | 'lider_tarea' | 'ejecutante' | 'lider_sst';
+
+export interface User {
+  uid: string;
+  email?: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+  role?: UserRole;
+}
 
 export type Permit = {
   id: string;
+  number?: string;
   workType: string;
   environmentalFactors: string;
   permitDetails: string;
@@ -16,4 +27,10 @@ export type Permit = {
     email?: string | null;
     photoURL?: string | null;
   };
+  generalInfo?: any;
+  hazards?: any;
+  annexes?: any;
+  ppe?: any;
+  workers?: any[];
+  approvals?: any;
 };
