@@ -176,7 +176,11 @@ export default function CreatePermitPage() {
         userId: user.uid,
       };
 
-      await createPermit(fullPermitData);
+      const result = await createPermit(fullPermitData);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
       
       toast({
         title: 'Permiso Creado Exitosamente',
@@ -184,11 +188,11 @@ export default function CreatePermitPage() {
         className: 'bg-green-100 dark:bg-green-900',
       });
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Falló el Envío',
-        description: 'Hubo un error creando el permiso. Por favor, intente de nuevo.',
+        description: error.message || 'Hubo un error creando el permiso. Por favor, intente de nuevo.',
       });
     } finally {
       setIsSubmitting(false);
