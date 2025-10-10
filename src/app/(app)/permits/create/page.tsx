@@ -120,6 +120,7 @@ export default function CreatePermitPage() {
       eps: '',
       arl: '',
       pensiones: '',
+      tsaTec: 'na'
     });
     setIsWorkerDialogOpen(true);
   };
@@ -936,13 +937,17 @@ export default function CreatePermitPage() {
                     <span className="text-sm font-medium">Certificado Aptitud Médica</span>
                     <Button variant="outline" size="sm" onClick={() => handleFileUpload('certificadoAptitudMedica')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.certificadoAptitudMedica ? 'Cargado' : 'Cargar'}</Button>
                  </div>
-                 <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <span className="text-sm font-medium">TSA - TEC</span>
-                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('tsaTec')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.tsaTec ? 'Cargado' : 'Cargar'}</Button>
-                 </div>
-                 <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <span className="text-sm font-medium">Entrenamiento / Capacitación</span>
-                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('entrenamiento')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.entrenamiento ? 'Cargado' : 'Cargar'}</Button>
+                 <div className="p-3 border rounded-lg space-y-2">
+                    <Label htmlFor="tsa-tec-select">Certificación TSA / TEC</Label>
+                    <Select value={currentWorker?.tsaTec || 'na'} onValueChange={(value) => handleWorkerInputChange('tsaTec', value)}>
+                      <SelectTrigger id="tsa-tec-select"><SelectValue placeholder="Seleccione certificación..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tsa">TSA</SelectItem>
+                        <SelectItem value="tec">TEC</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                        <SelectItem value="na">No Aplica</SelectItem>
+                      </SelectContent>
+                    </Select>
                  </div>
               </div>
 

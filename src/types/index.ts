@@ -35,8 +35,7 @@ export interface ExternalWorker {
   cedula: string;
   rol: string;
   certificadoAptitudMedica?: string;
-  tsaTec?: string;
-  entrenamiento?: string;
+  tsaTec: 'tsa' | 'tec' | 'otro' | 'na';
   eps: string;
   arl: string;
   pensiones: string;
@@ -101,4 +100,3 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
 };
-

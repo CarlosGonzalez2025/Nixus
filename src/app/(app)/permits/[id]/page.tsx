@@ -219,10 +219,24 @@ export default function PermitDetailPage() {
             pdf.addImage(headerImgData, 'PNG', margin, margin, pdfWidth - 2 * margin, headerHeight);
 
             // Add content slice for the current page
-            const y = margin + headerHeight;
-            pdf.addImage(contentImgData, 'PNG', margin, y, pdfWidth - 2 * margin, contentImgHeight, '', 'NONE', 0, 0, contentCanvas.width, contentPrintableHeight / ((pdfWidth - 2 * margin) / contentCanvas.width), 0, contentPosition / ((pdfWidth - 2 * margin) / contentCanvas.width) );
+            const pageContentHeight = Math.min(contentPrintableHeight, contentImgHeight - contentPosition);
+            pdf.addImage(
+                contentImgData,
+                'PNG',
+                margin, // x
+                margin + headerHeight, // y
+                pdfWidth - 2 * margin, // width
+                contentImgHeight, // height
+                undefined,
+                'FAST',
+                0, // rotation
+                0, // x on canvas
+                contentPosition * (contentCanvas.width / (pdfWidth - 2 * margin)), // y on canvas
+                contentCanvas.width, // width on canvas
+                pageContentHeight * (contentCanvas.width / (pdfWidth - 2 * margin)) // height on canvas
+            );
             
-            contentPosition += contentPrintableHeight;
+            contentPosition += pageContentHeight;
 
             // Add footer to each page
             pdf.addImage(footerImgData, 'PNG', margin, pdfHeight - footerHeight - margin, pdfWidth - 2 * margin, footerHeight);
@@ -266,7 +280,8 @@ export default function PermitDetailPage() {
       try {
         await updateDoc(docRef, {
             [signaturePath]: signatureDataUrl,
-            [statusPath]: 'aprobado',
+            // Keep status logic simple for now, might need more complex logic later
+            [statusPath]: 'aprobado', 
             [userIdPath]: currentUser.uid,
             [userNamePath]: currentUser.displayName,
             [signedAtPath]: new Date().toISOString(),
@@ -297,7 +312,7 @@ export default function PermitDetailPage() {
       }
        if (type === 'firmaCierre') {
           // Add logic for closing signature if needed
-          return false;
+          return currentUser.role === role && !approval?.firmaCierre;
       }
       return false;
   }
@@ -377,8 +392,8 @@ export default function PermitDetailPage() {
                 </div>
             </header>
             
-            <main ref={contentRef}>
-                <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800">
+            <main ref={contentRef} className="print:p-0">
+                <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800 print:hidden">
                     <p><strong>Marque dentro de los cuadros SI/NO/NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
                 </div>
                 
@@ -504,15 +519,29 @@ export default function PermitDetailPage() {
                                                       </div>
                                                   ) : 'Pendiente'
                                                 } />
-                                                <Field label="Firma Cierre" value={approval?.firmaCierre ? 'Firmado' : 'Pendiente'} />
+                                                <Field label="Firma Cierre" value={
+                                                  approval?.firmaCierre ? (
+                                                      <div className="bg-gray-100 p-2 rounded-md">
+                                                        <Image src={approval.firmaCierre} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
+                                                      </div>
+                                                  ) : 'Pendiente'
+                                                } />
                                             </div>
 
-                                            {canSign(role, 'firmaApertura') && (
-                                                <Button size="sm" className="w-full mt-4" onClick={() => openSignatureDialog(role, 'firmaApertura')}>
-                                                    <SignatureIcon className="mr-2 h-4 w-4"/>
-                                                    Firmar Apertura
-                                                </Button>
-                                            )}
+                                            <div className="flex flex-col gap-2 mt-4">
+                                                {canSign(role, 'firmaApertura') && (
+                                                    <Button size="sm" className="w-full" onClick={() => openSignatureDialog(role, 'firmaApertura')}>
+                                                        <SignatureIcon className="mr-2 h-4 w-4"/>
+                                                        Firmar Apertura
+                                                    </Button>
+                                                )}
+                                                 {canSign(role, 'firmaCierre') && (
+                                                    <Button size="sm" className="w-full" variant="secondary" onClick={() => openSignatureDialog(role, 'firmaCierre')}>
+                                                        <SignatureIcon className="mr-2 h-4 w-4"/>
+                                                        Firmar Cierre
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </CardContent>
                                     </Card>
                                 )
@@ -548,7 +577,7 @@ export default function PermitDetailPage() {
                 </div>
             </main>
             
-            <footer ref={footerRef} className="mt-12 pt-4 border-t text-right text-xs text-gray-500">
+            <footer ref={footerRef} className="mt-12 pt-4 border-t text-right text-xs text-gray-500 print:text-xs">
                 <p>Código: DN-FR-SST-016</p>
                 <p>Versión: 05</p>
             </footer>
@@ -556,7 +585,7 @@ export default function PermitDetailPage() {
         
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
              <DialogContent>
-                <DialogHeader>
+                 <DialogHeader>
                     <DialogTitle>Firmar Permiso de Trabajo</DialogTitle>
                     <DialogDescription>
                         {signingRole && `Está firmando como ${signatureRoles[signingRole.role]}. Su firma quedará registrada.`}
@@ -568,5 +597,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
