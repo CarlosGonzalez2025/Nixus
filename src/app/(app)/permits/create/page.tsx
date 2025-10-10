@@ -61,7 +61,6 @@ export default function CreatePermitPage() {
   const [formData, setFormData] = useState({
     workType: '', // This will be the main title like "Trabajo en Alturas"
     workDescription: '', // Corresponds to "El trabajo se LIMITA a lo siguiente"
-    workArea: '', // Also part of the above
     procedure: '', // "Descripción o procedimiento de la teras a realizar"
     suspensionCauses: '',
     isEmergencyExtension: false,
@@ -297,7 +296,7 @@ export default function CreatePermitPage() {
 
   const canProceed = () => {
     if (step === 1) {
-      return formData.workDescription && formData.workArea && formData.validFrom && formData.validUntil;
+      return formData.workDescription && formData.validFrom && formData.validUntil;
     }
     return true;
   };
@@ -497,7 +496,7 @@ export default function CreatePermitPage() {
               </div>
 
                 <div>
-                    <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):</label>
+                    <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo): *</label>
                     <Textarea
                       value={formData.workDescription}
                       onChange={(e) => setFormData({...formData, workDescription: e.target.value})}
@@ -955,3 +954,5 @@ export default function CreatePermitPage() {
     </div>
   );
 }
+
+    
