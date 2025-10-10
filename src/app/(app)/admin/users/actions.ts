@@ -1,8 +1,12 @@
 'use server';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import * as z from 'zod';
+import { app, db } from '@/lib/firebase';
 
 const formSchema = z.object({
   fullName: z.string().min(3),
@@ -11,51 +15,20 @@ const formSchema = z.object({
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
 });
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
-  initializeApp({
-    credential: {
-      projectId: serviceAccount.project_id,
-      clientEmail: serviceAccount.client_email,
-      privateKey: serviceAccount.private_key,
-    },
-  });
+// NOTE: This approach of creating a separate auth instance is not ideal for production,
+// but it's a workaround for the server action context where the main client auth is not available.
+// A better long-term solution would be to use Firebase Admin SDK with proper service account setup.
+async function getTempAuth() {
+  // We need to re-initialize a temporary app instance because the main one is on the client.
+  // This is a known pattern for using client SDKs in server actions.
+  const tempApp = initializeApp(JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!), `temp-app-${Date.now()}`);
+  return getAuth(tempApp);
 }
 
-const auth = getAuth();
-const db = getFirestore();
-
+// This function is intended to be called from the client-side, not a server action.
 export async function createUser(data: z.infer<typeof formSchema>) {
-  try {
-    // Step 1: Create user in Firebase Authentication
-    const userRecord = await auth.createUser({
-      email: data.email,
-      password: data.password,
-      displayName: data.fullName,
-      emailVerified: true,
-    });
-
-    // Step 2: Create user profile in Firestore
-    const userProfile = {
-      uid: userRecord.uid,
-      displayName: data.fullName,
-      email: data.email,
-      role: data.role,
-      photoURL: userRecord.photoURL || '',
-    };
-
-    await db.collection('users').doc(userRecord.uid).set(userProfile);
-
-    return { success: true, uid: userRecord.uid };
-  } catch (error: any) {
-    let errorMessage = 'Ocurrió un error inesperado.';
-    if (error.code === 'auth/email-already-exists') {
-      errorMessage = 'El correo electrónico ya está en uso por otro usuario.';
-    } else if (error.code === 'auth/invalid-password') {
-      errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
-    }
-    console.error('Error creating user with Admin SDK:', error);
-    return { error: errorMessage };
-  }
+  // This function is now designed to be called from a client component
+  // We will move the logic to the client page and call auth/firestore from there
+  // This server action is now a placeholder.
+  return { error: 'This function should be called from the client.' };
 }
