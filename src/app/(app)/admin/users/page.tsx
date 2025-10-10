@@ -159,7 +159,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1fr_2fr]">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

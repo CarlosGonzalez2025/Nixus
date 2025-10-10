@@ -11,6 +11,8 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
@@ -24,10 +26,9 @@ import {
   LogOut,
   Loader2,
   Settings,
-  FlaskConical,
   Users,
+  Shield,
 } from 'lucide-react';
-import { Logo } from '@/components/logo';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import {
@@ -88,67 +89,71 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <FirebaseErrorListener />
       <Sidebar>
         <SidebarHeader>
-          <div className="flex h-10 items-center justify-between px-2">
-            <Logo className="text-sidebar-foreground" />
-            <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent" />
+          <div className="flex h-12 items-center gap-2 px-2">
+            <div className="flex items-center gap-2">
+              <div className="bg-sidebar-primary rounded-lg p-1.5">
+                <Shield className="text-sidebar-primary-foreground" size={20} />
+              </div>
+              <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+                SGPT Móvil
+              </span>
+            </div>
+            <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent ml-auto" />
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push('/dashboard')}
-                isActive={pathname === '/dashboard'}
-                tooltip="Dashboard"
-              >
-                <LayoutDashboard />
-                <span>Dashboard</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push('/permits')}
-                isActive={pathname.startsWith('/permits')}
-                tooltip="Permisos de Trabajo"
-              >
-                <FileText />
-                <span>Permisos de Trabajo</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             {user.role === 'lider_tarea' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => router.push('/permits/create')}
-                  isActive={pathname === '/permits/create'}
-                  tooltip="Nuevo Permiso"
-                >
-                  <PlusCircle />
-                  <span>Nuevo Permiso</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+             <SidebarGroup>
+                <SidebarGroupLabel>Principal</SidebarGroupLabel>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.push('/dashboard')}
+                    isActive={pathname === '/dashboard'}
+                    tooltip="Dashboard"
+                  >
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.push('/permits')}
+                    isActive={pathname.startsWith('/permits') && pathname !== '/permits/create'}
+                    tooltip="Permisos de Trabajo"
+                  >
+                    <FileText />
+                    <span>Permisos de Trabajo</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 {(user.role === 'lider_tarea' || user.role === 'solicitante' || user.role === 'admin') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => router.push('/permits/create')}
+                      isActive={pathname === '/permits/create'}
+                      tooltip="Nuevo Permiso"
+                    >
+                      <PlusCircle />
+                      <span>Nuevo Permiso</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+             </SidebarGroup>
+             <SidebarSeparator />
+            {user.role === 'admin' && (
+             <SidebarGroup>
+                <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.push('/admin/users')}
+                    isActive={pathname === '/admin/users'}
+                    tooltip="Gestión de Usuarios"
+                  >
+                    <Users />
+                    <span>Gestión de Usuarios</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+             </SidebarGroup>
             )}
-             {user.role === 'admin' && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => router.push('/admin/users')}
-                  isActive={pathname === '/admin/users'}
-                  tooltip="Gestión de Usuarios"
-                >
-                  <Users />
-                  <span>Gestión de Usuarios</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => router.push('/test')}
-                  isActive={pathname === '/test'}
-                  tooltip="Test Firebase"
-                >
-                  <FlaskConical />
-                  <span>Test Conexión</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -176,7 +181,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         {user.displayName || 'Usuario'}
                       </span>
                       <span className="text-xs text-sidebar-foreground/70">
-                        {user.email}
+                        {getRoleName(user.role)}
                       </span>
                     </div>
                   </div>
@@ -187,7 +192,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 align="start"
                 className="w-56"
               >
-                <DropdownMenuLabel>{getRoleName(user.role)}</DropdownMenuLabel>
+                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
