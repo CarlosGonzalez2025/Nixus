@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit } from '@/types';
+import type { Permit, Tool } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -22,22 +22,21 @@ import {
   XCircle,
   Clock,
   UserCheck,
-  ListChecks,
   Siren,
   FileDown,
+  Wrench,
+  Check,
+  Building,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
 import { useUser } from '@/hooks/use-user';
 import { format } from 'date-fns';
 import { Logo } from '@/components/logo';
@@ -57,19 +56,36 @@ const getStatusInfo = (status: string): { text: string; icon: React.ElementType;
   return statusInfo[status] || { text: status, icon: FileText, color: 'text-gray-500' };
 };
 
-const workTypes: { [key: string]: {name: string, icon: string} } = {
-  altura: { name: 'Trabajo en Alturas', icon: '⬆️' },
-  confinado: { name: 'Espacios Confinados', icon: '📦' },
-  energia: { name: 'Control de Energías', icon: '⚡' },
-  izaje: { name: 'Izaje de Cargas', icon: '🏗️' },
-  caliente: { name: 'Trabajo en Caliente', icon: '🔥' },
-  excavacion: { name: 'Excavaciones', icon: '⛏️' }
-};
+const Section: React.FC<{ title: string, children: React.ReactNode, className?: string }> = ({ title, children, className }) => (
+    <div className={className}>
+      <h3 className="text-sm font-bold uppercase text-gray-500 border-b-2 border-gray-300 pb-1 mb-3">{title}</h3>
+      <div className="text-sm">
+        {children}
+      </div>
+    </div>
+);
+
+const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: boolean }> = ({label, value, fullWidth}) => (
+    <div className={fullWidth ? 'col-span-2' : ''}>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="font-semibold text-gray-800 break-words">{value || 'No especificado'}</p>
+    </div>
+);
+
+const RadioCheck: React.FC<{ label: string, value?: string }> = ({ label, value }) => (
+    <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+        <span className="text-xs flex-1">{label}</span>
+        <div className="flex gap-2 items-center text-xs font-mono">
+            <span className={value === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
+            <span className={value === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
+            <span className={value === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
+        </div>
+    </div>
+);
 
 export default function PermitDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { toast } = useToast();
   const { user: currentUser, loading: userLoading } = useUser();
   const permitId = Array.isArray(params.id) ? params.id[0] : params.id;
   
@@ -119,31 +135,18 @@ export default function PermitDetailPage() {
     const input = permitContentRef.current;
     if (!input) return;
 
-    html2canvas(input, { scale: 2 }).then((canvas) => {
+    // Aumentar la escala para mejor calidad de imagen
+    html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = canvasWidth / canvasHeight;
-      const width = pdfWidth;
-      const height = width / ratio;
-
-      let position = 0;
-      let heightLeft = height;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = imgWidth / imgHeight;
+      const pdfHeight = pdfWidth / ratio;
       
-      pdf.addImage(imgData, 'PNG', 0, position, width, height);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - height;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, width, height);
-        heightLeft -= pdfHeight;
-      }
-      
-      pdf.save(`permiso_${permitId}.pdf`);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`permiso_${permitId.substring(0,8)}.pdf`);
     });
   };
 
@@ -176,27 +179,25 @@ export default function PermitDetailPage() {
   }
 
   if (!permit) {
-    return null; // Should be covered by error state
+    return null;
   }
 
-  const statusInfo = getStatusInfo(permit.status);
-
-  const Section: React.FC<{title: string, icon: React.ElementType, children: React.ReactNode}> = ({ title, icon: Icon, children }) => (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <h3 className="flex items-center gap-3 px-4 py-2 bg-gray-100 text-base font-semibold text-gray-700 border-b border-gray-200">
-        <Icon className="h-5 w-5 text-primary" />
-        {title}
-      </h3>
-      <div className="p-4 bg-white text-sm">
-        {children}
-      </div>
-    </div>
-  );
+  const ppeSections = [
+    { title: "Ropa", ids: ['overol_trabajo', 'overol_ignifugo', 'peto', 'manguillas', 'polainas', 'otro_ropa'] },
+    { title: "Protección de pies y piernas", ids: ['botas_seguridad', 'botas_dielectricas', 'otro_pies'] },
+    { title: "Protección auditiva", ids: ['tipo_insercion', 'tipo_copa'] },
+    { title: "Protección respiratoria", ids: ['respirador_cartuchos', 'mascarilla_desechable', 'otro_respiratoria'] },
+    { title: "Protección cabeza", ids: ['casco', 'chavo'] },
+    { title: "Protección facial y ocular", ids: ['careta_lente_neutro', 'monogafas', 'gafas_oxicorte', 'careta_soldador', 'careta_dielectrica', 'otro_facial'] },
+    { title: "Barrera/Señales de advertencia", ids: ['senalizacion', 'barandas', 'delimitacion', 'control_acceso'] },
+    { title: "Guantes", ids: ['proteccion_mecanica', 'proteccion_dielectrica_guantes', 'proteccion_quimica', 'otro_guantes'] },
+    { title: "Otros", ids: ['tapete_dielectrico', 'pertiga_dielectrica', 'otro_otros'] }
+  ];
 
   return (
-    <div className="flex flex-1 flex-col bg-gray-50 p-4 md:p-8">
+    <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
         {/* Action Bar */}
-        <div className="max-w-5xl mx-auto w-full mb-4">
+        <div className="max-w-4xl mx-auto w-full mb-4">
             <div className="flex justify-between items-center">
                  <Button variant="ghost" onClick={() => router.push('/permits')} className="mb-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -212,111 +213,98 @@ export default function PermitDetailPage() {
         </div>
 
         {/* Permit Document */}
-        <main ref={permitContentRef} className="max-w-5xl mx-auto w-full bg-white p-8 md:p-12 shadow-lg rounded-lg border">
-            <header className="grid grid-cols-2 gap-8 pb-8 border-b">
+        <main ref={permitContentRef} className="max-w-4xl mx-auto w-full bg-white p-8 shadow-lg rounded-lg border font-sans">
+            <header className="flex justify-between items-start pb-4 border-b-4 border-primary">
                 <div>
                      <Logo textOnly />
                 </div>
                 <div className="text-right">
-                    <h1 className="text-3xl font-bold text-primary">Permiso de Trabajo</h1>
-                    <p className="text-gray-500">Número de Permiso: <span className="font-mono text-black">{permit.id.substring(0,8)}</span></p>
-                    <p className="mt-2">
-                        <Badge className={`px-4 py-2 text-base ${statusInfo.color} bg-opacity-10`}>
-                            <statusInfo.icon className="mr-2 h-5 w-5" />
-                            {statusInfo.text}
-                        </Badge>
-                    </p>
+                    <h1 className="text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
+                    <p className="font-mono text-gray-600 mt-2">ID: {permit.id}</p>
                 </div>
             </header>
 
-            <div className="space-y-6 mt-8">
-                <Section title="Información General" icon={FileText}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p className="text-muted-foreground font-semibold">Tipo de Trabajo</p>
-                        <p className="font-bold text-lg">{workTypes[permit.workType]?.name || permit.workType}</p>
-                    </div>
-                     <div>
-                        <p className="text-muted-foreground font-semibold">Área de Trabajo</p>
-                        <p>{permit.generalInfo?.workArea || 'No especificado'}</p>
-                    </div>
-                    <div>
-                        <p className="text-muted-foreground font-semibold">Vigencia Desde</p>
-                        <p>{permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : 'No especificado'}</p>
-                    </div>
-                    <div>
-                        <p className="text-muted-foreground font-semibold">Vigencia Hasta</p>
-                        <p>{permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : 'No especificado'}</p>
-                    </div>
-                     <div className="col-span-2">
-                        <p className="text-muted-foreground font-semibold">Descripción del Trabajo</p>
-                        <p className="whitespace-pre-wrap">{permit.generalInfo?.workDescription || 'No especificado'}</p>
-                    </div>
-                     <div className="col-span-2">
-                        <p className="text-muted-foreground font-semibold">Procedimiento Paso a Paso</p>
-                        <p className="whitespace-pre-wrap">{permit.generalInfo?.procedure || 'No especificado'}</p>
-                    </div>
-                  </div>
-                </Section>
-                
-                <Section title="Peligros y Controles" icon={AlertTriangle}>
-                    {permit.hazards && Object.keys(permit.hazards).length > 0 ? (
-                        <ul className="space-y-3">
-                        {Object.entries(permit.hazards).map(([name, data]: [string, any]) => (
-                            <li key={name} className="p-3 border rounded-md bg-gray-50/50">
-                            <p className="font-semibold">{name}</p>
-                            <p className="text-xs mt-1"><strong>Estado:</strong> <Badge variant={data.status === 'si' ? 'default' : data.status === 'no' ? 'destructive' : 'secondary'}>{data.status || 'N/A'}</Badge></p>
-                            <p className="text-sm text-muted-foreground mt-2"><strong>Control:</strong> {data.controls || 'No especificado'}</p>
-                            </li>
-                        ))}
-                        </ul>
-                    ) : <p className="text-muted-foreground">No se especificaron peligros.</p>}
-                </Section>
-                
-                <Section title="Anexos y Listas de Verificación" icon={ListChecks}>
-                     {permit.annexes && permit.annexes.length > 0 ? (
-                        <div className="flex flex-wrap gap-3">
-                            {permit.annexes.map((annexId: string) => {
-                                const type = workTypes[annexId];
-                                if (!type) return null;
-                                return (
-                                <Badge key={annexId} className="px-4 py-2 text-sm">
-                                    <span className="mr-2">{type.icon}</span>
-                                    {type.name}
-                                </Badge>
-                                );
-                            })}
+            <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800">
+                <p><strong>Marque dentro de los cuadros SI/NO/NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
+            </div>
+            
+            <div className="space-y-6 mt-6">
+                <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
+                    <div className="space-y-4">
+                        <Field label="El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
+                        <Field label="Causales para la suspensión del Permiso:" value={permit.generalInfo?.suspensionCauses} fullWidth/>
+                        <Field label="Descripción o procedimiento de la teras a realizar:" value={permit.generalInfo?.procedure} fullWidth/>
+                        <div className="flex items-center space-x-2">
+                            <CheckCircle className={`h-4 w-4 ${permit.generalInfo?.isEmergencyExtension ? 'text-green-500' : 'text-gray-300'}`} />
+                            <span className="text-sm font-medium">Extensión Emergencia</span>
                         </div>
-                    ) : <p className="text-muted-foreground">No se seleccionaron anexos.</p>}
+                        <div className="grid grid-cols-2 gap-4">
+                           <Field label="Válido Desde:" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : undefined}/>
+                           <Field label="Válido Hasta:" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : undefined}/>
+                        </div>
+                    </div>
                 </Section>
 
-                <Section title="Equipos de Protección Personal (EPP)" icon={Shield}>
-                    {permit.ppe && Object.keys(permit.ppe).length > 0 && Object.values(permit.ppe).some((p:any) => p.required) ? (
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {Object.entries(permit.ppe).filter(([, data]: [string, any]) => data.required).map(([name, data]: [string, any]) => (
-                            <li key={name} className="p-3 border rounded-md bg-gray-50/50 flex justify-between items-center">
-                            <p className="font-semibold">{name}</p>
-                            {data.verified ? <CheckCircle className="text-green-500" /> : <XCircle className="text-red-500" />}
-                            </li>
+                <Section title="HERRAMIENTAS Y EQUIPOS">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {permit.generalInfo?.tools?.map((tool: Tool, index: number) => (
+                             <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                                <span className="text-xs flex-1">{tool.name}</span>
+                                <div className="flex gap-2 items-center text-xs font-mono">
+                                    <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
+                                    <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
+                                </div>
+                            </div>
                         ))}
-                        </ul>
-                    ) : <p className="text-muted-foreground">No se requirieron EPP específicos.</p>}
-                </Section>
-
-                <Section title="Plan de Emergencias" icon={Siren}>
-                     {permit.emergency && Object.keys(permit.emergency).length > 0 ? (
-                        <ul className="space-y-2">
-                        {Object.entries(permit.emergency).map(([question, answer]: [string, any]) => (
-                            <li key={question} className="p-3 border rounded-md bg-gray-50/50 flex justify-between items-center">
-                            <p className="font-semibold text-sm flex-1">{question}</p>
-                            <Badge variant={answer === 'si' ? 'default' : 'destructive'} className="uppercase">{answer}</Badge>
-                            </li>
-                        ))}
-                        </ul>
-                    ) : <p className="text-muted-foreground">No se completó el plan de emergencias.</p>}
+                    </div>
                 </Section>
                 
-                <Section title="Trabajadores Ejecutantes" icon={Users}>
+                <Section title="Verificaciones Previas">
+                    <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
+                    <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} />
+                </Section>
+
+                <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                      {Object.entries(permit.hazards || {}).map(([key, value]) => (
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                      ))}
+                    </div>
+                </Section>
+                
+                <Section title="EPP - SEÑALIZACION (Verificar)">
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {ppeSections.map(section => (
+                            <div key={section.title}>
+                               <h4 className="font-bold mb-2 text-gray-600 text-sm">{section.title}</h4>
+                               <div className="space-y-1">
+                                {section.ids.map(id => permit.ppe && permit.ppe[id] && (
+                                     <RadioCheck key={id} label={id.replace(/_/g, ' ')} value={permit.ppe[id]} />
+                                ))}
+                               </div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+                
+                <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                      {Object.entries(permit.ppeSystems || {}).map(([key, value]) => (
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                      ))}
+                    </div>
+                </Section>
+
+                <Section title="Notificación y Emergencias">
+                    <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
+                     <div className="mt-4 space-y-1">
+                      {Object.entries(permit.emergency || {}).filter(([key]) => key !== 'notification').map(([key, value]) => (
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                      ))}
+                    </div>
+                </Section>
+                
+                <Section title="Trabajadores Ejecutantes">
                      {permit.workers && permit.workers.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {permit.workers.map((worker, index) => (
@@ -338,12 +326,12 @@ export default function PermitDetailPage() {
                     ) : <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>}
                 </Section>
 
-                 <Section title="Firmas y Aprobaciones" icon={Signature}>
+                 <Section title="Firmas y Aprobaciones">
                     <div className="space-y-4">
                     {Object.entries(permit.approvals || {}).map(([role, approval]: [string, any]) => (
                         <div key={role} className="flex items-center justify-between p-4 rounded-lg border bg-gray-50">
                             <div>
-                                <p className="font-bold capitalize text-gray-700">{role.replace('_', ' ')}</p>
+                                <p className="font-bold capitalize text-gray-700">{role.replace(/_/g, ' ')}</p>
                                 <p className="text-sm text-muted-foreground">{approval.userName || 'N/A'}</p>
                             </div>
                             <div className="text-right">
@@ -356,8 +344,6 @@ export default function PermitDetailPage() {
                             </div>
                         </div>
                     ))}
-                    {!permit.approvals?.lider_tarea && <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 opacity-60"><div><p className="font-bold capitalize text-gray-700">Líder de la Tarea</p></div><p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente</p></div>}
-                    {!permit.approvals?.autorizante && <div className="flex items-center justify-between p-4 rounded-lg border bg-gray-50 opacity-60"><div><p className="font-bold capitalize text-gray-700">Autorizante</p></div><p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente</p></div>}
                     </div>
                 </Section>
 
@@ -377,9 +363,9 @@ export default function PermitDetailPage() {
                 )}
             </div>
             
-            <footer className="mt-12 pt-8 border-t text-center text-xs text-gray-500">
-                <p>© {new Date().getFullYear()} ITALCOL - Todos los derechos reservados.</p>
-                <p className="mt-1">Documento generado el: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+            <footer className="mt-12 pt-4 border-t text-right text-xs text-gray-500">
+                <p>Código: DN-FR-SST-016</p>
+                <p>Versión: 05</p>
             </footer>
         </main>
     </div>

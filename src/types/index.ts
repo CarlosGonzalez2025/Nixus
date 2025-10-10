@@ -36,12 +36,14 @@ export interface ExternalWorker {
   firmaCierre?: string; // URL o path a la firma
 }
 
+export type Tool = {
+  name: string;
+  status: 'B' | 'M'; // Bueno o Malo
+}
+
 export type Permit = {
   id: string;
   number?: string;
-  workType: string;
-  environmentalFactors: string;
-  recommendedControls: string;
   status: PermitStatus;
   createdBy: string;
   createdAt: Timestamp;
@@ -50,11 +52,22 @@ export type Permit = {
     email?: string | null;
     photoURL?: string | null;
   };
-  generalInfo?: any;
-  hazards?: any;
-  annexes?: any;
-  ppe?: any;
-  workers?: ExternalWorker[]; // Array of external workers
+  generalInfo?: {
+    workDescription: string;
+    suspensionCauses: string;
+    procedure: string;
+    isEmergencyExtension: boolean;
+    validFrom: string;
+    validUntil: string;
+    tools: Tool[];
+    reunionInicio: string; // 'si', 'no', 'na'
+    atsVerificado: string; // 'si', 'no', 'na'
+  };
+  hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
+  ppe?: { [key: string]: string };
+  ppeSystems?: { [key: string]: string };
+  emergency?: { [key: string]: string } & { notification: boolean };
+  workers?: ExternalWorker[];
   approvals?: {
     solicitante?: Approval;
     lider_tarea?: Approval;

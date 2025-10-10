@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from './actions';
@@ -11,18 +11,17 @@ import {
   FileText,
   Users,
   Shield,
-  ClipboardCheck,
   Upload,
   Camera,
   Wand2,
   Loader2,
   X,
-  Search,
   UserPlus,
   Signature,
   FileUp,
   Edit,
-  Eraser,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,12 +38,14 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { ExternalWorker, User } from '@/types';
+import type { ExternalWorker, Tool } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -56,22 +57,34 @@ export default function CreatePermitPage() {
   const [isAssessing, setIsAssessing] = useState(false);
   const [recommendations, setRecommendations] = useState('');
 
+  // Step 1
   const [formData, setFormData] = useState({
-    workType: '',
-    workDescription: '',
-    workArea: '',
+    workType: '', // This will be the main title like "Trabajo en Alturas"
+    workDescription: '', // Corresponds to "El trabajo se LIMITA a lo siguiente"
+    workArea: '', // Also part of the above
+    procedure: '', // "Descripción o procedimiento de la teras a realizar"
+    suspensionCauses: '',
+    isEmergencyExtension: false,
     validFrom: '',
     validUntil: '',
-    procedure: '',
-    emergencyExtension: false,
+    reunionInicio: 'na', // 'si', 'no', 'na'
+    atsVerificado: 'na', // 'si', 'no', 'na'
   });
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [newToolName, setNewToolName] = useState('');
 
-  const [hazardsData, setHazardsData] = useState<{ [key: string]: { status?: string, controls?: string } }>({});
-  const [selectedAnnexes, setSelectedAnnexes] = useState<string[]>([]);
-  const [ppeData, setPpeData] = useState<{ [key: string]: { required?: boolean, verified?: boolean } }>({});
+  // Step 2
+  const [hazardsData, setHazardsData] = useState<{ [key: string]: string }>({});
+
+  // Step 3
+  const [ppeData, setPpeData] = useState<{ [key: string]: string }>({});
+  const [ppeSystemsData, setPpeSystemsData] = useState<{ [key: string]: string }>({});
+
+  // Step 4
   const [emergencyData, setEmergencyData] = useState<{ [key: string]: string }>({});
+  const [notification, setNotification] = useState(false);
   
-  // State for external workers
+  // Step 5
   const [workers, setWorkers] = useState<ExternalWorker[]>([]);
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
@@ -135,7 +148,6 @@ export default function CreatePermitPage() {
   };
 
   const handleFileUpload = (field: keyof ExternalWorker) => {
-     // This is a placeholder for actual file upload logic
     handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
@@ -152,109 +164,163 @@ export default function CreatePermitPage() {
     setIsSignatureDialogOpen(false);
     setSignatureField(null);
   };
+  
+  const addTool = () => {
+    if (newToolName.trim()) {
+      setTools([...tools, { name: newToolName.trim(), status: 'B' }]);
+      setNewToolName('');
+    }
+  };
+
+  const updateToolStatus = (index: number, status: 'B' | 'M') => {
+    const updatedTools = [...tools];
+    updatedTools[index].status = status;
+    setTools(updatedTools);
+  };
+
+  const removeTool = (index: number) => {
+    setTools(tools.filter((_, i) => i !== index));
+  };
 
 
   const colors = {
     primary: 'hsl(var(--primary))',
-    secondary: 'hsl(var(--secondary))',
     dark: 'hsl(var(--primary))', 
     success: 'hsl(var(--accent))',
-    danger: 'hsl(var(--destructive))',
-    warning: '#FF9800',
-    info: '#2196F3',
   };
-
-  const workTypes = [
-    { id: 'altura', name: 'Trabajo en Alturas', icon: '⬆️', color: colors.info },
-    { id: 'confinado', name: 'Espacios Confinados', icon: '📦', color: colors.warning },
-    { id: 'energia', name: 'Control de Energías', icon: '⚡', color: colors.danger },
-    { id: 'izaje', name: 'Izaje de Cargas', icon: '🏗️', color: colors.secondary },
-    { id: 'caliente', name: 'Trabajo en Caliente', icon: '🔥', color: colors.primary },
-    { id: 'excavacion', name: 'Excavaciones', icon: '⛏️', color: colors.dark }
-  ];
-
+  
   const hazards = [
-      { name: 'Caída de Personas a Diferente Nivel', critical: true },
-      { name: 'Caída de Objetos', critical: true },
-      { name: 'Contacto con Energía Eléctrica', critical: true },
-      { name: 'Contacto con Sustancias Químicas', critical: false },
-      { name: 'Atrapamiento por o entre Objetos', critical: false },
-      { name: 'Exposición a Ruido', critical: false },
-      { name: 'Temperatura Extrema', critical: false },
-      { name: 'Radiación No Ionizante', critical: false },
-      { name: 'Espacios Confinados', critical: false },
-      { name: 'Atmósfera Peligrosa', critical: true }
+    { id: 'ruido', label: 'Ruido' },
+    { id: 'vibracion', label: 'Vibración' },
+    { id: 'temperatura', label: 'Temperatura' },
+    { id: 'radiacion', label: 'Radiación' },
+    { id: 'iluminacion', label: 'Deficiencia / Exceso de iluminación' },
+    { id: 'desnivel', label: 'Diferencias de nivel (Huecos y desnivel)' },
+    { id: 'quimicos', label: 'Contacto con sustancias químicas' },
+    { id: 'biologicos', label: 'Contacto con animales, virus, bacteria' },
+    { id: 'carga_fisica', label: 'Carga física (manipulación manual)' },
+    { id: 'electrica', label: 'Contacto con energía eléctrica A/M/B' },
+    { id: 'hidraulica', label: 'Contacto con energía hidráulica' },
+    { id: 'neumatica', label: 'Contacto con energía neumática' },
+    { id: 'mecanica', label: 'Contacto con energía mecánica (atrap)' },
+    { id: 'termica', label: 'Contacto con energía térmica' },
+    { id: 'confinados', label: 'Espacios confinados' },
+    { id: 'altura', label: 'Caídas de altura' },
+    { id: 'caliente', label: 'Trabajo en caliente' },
+    { id: 'izaje', label: 'Izaje de cargas' },
+    { id: 'transito', label: 'Tránsito' },
+    { id: 'fenomenos_naturales', label: 'Fenómenos naturales' },
+    { id: 'incendio', label: 'Incendio / Explosión' },
+    { id: 'emisiones', label: 'Emisiones / Vertimientos' },
+    { id: 'residuos', label: 'Residuos Peligrosos' },
+    { id: 'otros_riesgos', label: 'Otros riesgos (Cuales):' },
   ];
+  
+  const ppe = {
+    "Ropa": [
+      { id: 'overol_trabajo', label: 'Overol de trabajo' },
+      { id: 'overol_ignifugo', label: 'Overol Ignifugo, Categoria:' },
+      { id: 'peto', label: 'Peto' },
+      { id: 'manguillas', label: 'Manguillas' },
+      { id: 'polainas', label: 'Polainas' },
+      { id: 'otro_ropa', label: 'Otro (Cual):' },
+    ],
+    "Protección de pies y piernas": [
+      { id: 'botas_seguridad', label: 'Botas de seguridad con puntera' },
+      { id: 'botas_dielectricas', label: 'Botas dieléctricas' },
+      { id: 'otro_pies', label: 'Otro (Cual):' },
+    ],
+     "Protección auditiva": [
+      { id: 'tipo_insercion', label: 'Tipo Inserción' },
+      { id: 'tipo_copa', label: 'Tipo copa' },
+    ],
+    "Protección respiratoria": [
+      { id: 'respirador_cartuchos', label: 'Respirador con cartuchos para:' },
+      { id: 'mascarilla_desechable', label: 'Mascarilla desechable para:' },
+      { id: 'otro_respiratoria', label: 'Otro (Cual):' },
+    ],
+    "Protección cabeza": [
+        { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuque' },
+        { id: 'chavo', label: 'Chavo en tela o carnaza' },
+    ],
+    "Protección facial y ocular": [
+        { id: 'careta_lente_neutro', label: 'Careta lente neutro' },
+        { id: 'monogafas', label: 'Monogafas / Gafas' },
+        { id: 'gafas_oxicorte', label: 'Gafas de oxicorte' },
+        { id: 'careta_soldador', label: 'Careta de soldador' },
+        { id: 'careta_dielectrica', label: 'Careta de dieléctrica, clase:' },
+        { id: 'otro_facial', label: 'Otro (Cual):' },
+    ],
+    "Barrera/Señales de advertencia": [
+        { id: 'senalizacion', label: 'Señalización' },
+        { id: 'barandas', label: 'Barandas' },
+        { id: 'delimitacion', label: 'Delimitación Perimetral' },
+        { id: 'control_acceso', label: 'Control de acceso' },
+    ],
+    "Guantes": [
+        { id: 'proteccion_mecanica', label: 'Protección mecánica:' },
+        { id: 'proteccion_dielectrica_guantes', label: 'Protección dieléctrica:' },
+        { id: 'proteccion_quimica', label: 'Protección química' },
+        { id: 'otro_guantes', label: 'Otro (Cual):' },
+    ],
+    "Otros": [
+        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico' },
+        { id: 'pertiga_dielectrica', label: 'Pértiga dieléctrica' },
+        { id: 'otro_otros', label: 'Otro (Cual):' },
+    ]
+  }
 
-  const ppeItems = [
-      'Casco de Seguridad',
-      'Botas de Seguridad con Puntera',
-      'Guantes de Seguridad',
-      'Gafas de Seguridad',
-      'Protección Auditiva',
-      'Arnés de Seguridad Completo',
-      'Línea de Vida',
-      'Respirador o Mascarilla',
-      'Overol o Traje de Trabajo',
-      'Chaleco Reflectivo'
+  const ppeSystems = [
+      { id: 'arnes', label: 'Arnés, Tipo:' },
+      { id: 'mosqueton', label: 'Mosquetón' },
+      { id: 'eslinga', label: 'Eslinga, Tipo:' },
+      { id: 'linea_vida', label: 'Línea de vida, Tipo:' },
+      { id: 'freno_arrestador', label: 'Freno/Arrestador' },
+      { id: 'punto_anclaje', label: 'Punto de anclaje (Cual):' },
+      { id: 'autoretractil', label: 'Autoretráctil' },
+      { id: 'tie_off', label: 'Tie-off' },
+      { id: 'baranda_rodapies', label: 'Baranda con rodapiés' },
+      { id: 'sistema_acceso', label: 'Sistema de acceso (Cual):' },
+      { id: 'tripode', label: 'Tripode / pescante' },
+      { id: 'otro_sistemas', label: 'Otro (Cual):' },
   ];
 
   const emergencyQuestions = [
-      '¿Se ha comunicado el plan de emergencia a todos los trabajadores?',
-      '¿Están disponibles y accesibles los equipos de emergencia (extintores, botiquín)?',
-      '¿Se han identificado las rutas de evacuación y puntos de encuentro?',
-      '¿Hay un vigía de seguridad asignado para esta tarea (si aplica)?',
-      '¿Se ha verificado la comunicación con el área de SST?',
-      '¿Todos los trabajadores conocen el número de emergencia de la empresa?'
+    {id: 'potenciales', label: 'A.- Las emergencias potenciales que pueden ocurrir'},
+    {id: 'procedimientos', label: 'B.- Los procedimientos establecidos para tales situaciones.'},
+    {id: 'rutas_evacuacion', label: 'C.- Rutas de Evacuación'},
+    {id: 'puntos_encuentro', label: 'D.- Puntos de encuentro'},
+    {id: 'equipos_emergencia', label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo'},
+    {id: 'brigadistas', label: 'F.- Ubicación de Brigadistas cercanos'},
   ];
+
 
   const canProceed = () => {
     if (step === 1) {
-      return formData.workType && formData.workDescription && formData.workArea && 
-             formData.validFrom && formData.validUntil && formData.procedure;
-    }
-    if (step === 2) {
-      const criticalHazards = hazards.filter(h => h.critical);
-      return criticalHazards.every(h => hazardsData[h.name] && hazardsData[h.name]?.status !== 'no');
-    }
-    if (step === 5) {
-      return emergencyQuestions.every(q => emergencyData[q] === 'si');
-    }
-     if (step === 6) {
-      return workers.length > 0;
+      return formData.workDescription && formData.workArea && formData.validFrom && formData.validUntil;
     }
     return true;
   };
   
   const handleAssessRisk = async () => {
-    if (!formData.workType || !formData.workDescription) {
-      toast({
-        variant: 'destructive',
-        title: 'Formulario Incompleto',
-        description: 'Por favor, llene al menos el tipo y descripción de trabajo antes de evaluar el riesgo.',
-      });
-      return;
-    }
-
     setIsAssessing(true);
     setRecommendations('');
     try {
-      const values = {
+      const result = await getRiskAssessmentRecommendations({
         workType: formData.workType,
-        environmentalFactors: "No especificado",
-        permitDetails: formData.workDescription
-      };
-      const result = await getRiskAssessmentRecommendations(values);
+        environmentalFactors: "Factores diversos según peligros seleccionados",
+        permitDetails: formData.procedure,
+      });
       setRecommendations(result.recommendedControls);
       toast({
         title: 'Evaluación de Riesgo Completa',
-        description: 'Los controles recomendados por IA ya están disponibles.',
+        description: 'Se han sugerido controles adicionales.',
       });
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Falló la Evaluación',
-        description: 'La evaluación de riesgo por IA no pudo completarse. Por favor, intente de nuevo.',
+        description: 'La evaluación de riesgo por IA no pudo completarse.',
       });
     } finally {
       setIsAssessing(false);
@@ -263,23 +329,20 @@ export default function CreatePermitPage() {
 
   const handleSavePermit = async () => {
     if (!user) {
-      toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'Debe iniciar sesión para crear un permiso.' });
+      toast({ variant: 'destructive', title: 'Error de Autenticación' });
       return;
     }
 
     setIsSubmitting(true);
     try {
       const fullPermitData = {
-        workType: formData.workType,
-        environmentalFactors: 'No especificado',
-        recommendedControls: recommendations,
         userId: user.uid,
-        generalInfo: formData,
+        generalInfo: { ...formData, tools },
         hazards: hazardsData,
-        annexes: selectedAnnexes,
         ppe: ppeData,
-        emergency: emergencyData,
-        workers: workers, // Save external workers
+        ppeSystems: ppeSystemsData,
+        emergency: { ...emergencyData, notification },
+        workers: workers,
         approvals: {
           solicitante: {
             userId: user.uid,
@@ -302,7 +365,7 @@ export default function CreatePermitPage() {
       toast({
         variant: 'destructive',
         title: 'Falló el Envío',
-        description: error.message || 'Hubo un error creando el permiso. Por favor, intente de nuevo.',
+        description: error.message || 'Hubo un error creando el permiso.',
       });
     } finally {
       setIsSubmitting(false);
@@ -310,13 +373,54 @@ export default function CreatePermitPage() {
   };
 
   const steps = [
-    "Info General", "Peligros", "Anexos", "EPP", "Emergencias", "Trabajadores", "Revisión"
+    "Info General", "Peligros", "EPP", "Sistemas y Emergencia", "Trabajadores", "Revisión"
   ];
   
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
+
+  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency', id: string, value: string) => {
+      switch(group) {
+          case 'hazards': setHazardsData(prev => ({...prev, [id]: value})); break;
+          case 'ppe': setPpeData(prev => ({...prev, [id]: value})); break;
+          case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); break;
+          case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); break;
+      }
+  }
+
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency') => {
+    let state: any;
+     switch(group) {
+        case 'hazards': state = hazardsData; break;
+        case 'ppe': state = ppeData; break;
+        case 'ppeSystems': state = ppeSystemsData; break;
+        case 'emergency': state = emergencyData; break;
+    }
+
+    return (
+        <RadioGroup value={state[id] || 'na'} onValueChange={(value) => handleRadioChange(group, id, value)} className="flex">
+            <RadioGroupItem value="si" id={`${id}-si`} /> <Label htmlFor={`${id}-si`} className="mr-2">SI</Label>
+            <RadioGroupItem value="no" id={`${id}-no`} /> <Label htmlFor={`${id}-no`} className="mr-2">NO</Label>
+            <RadioGroupItem value="na" id={`${id}-na`} /> <Label htmlFor={`${id}-na`}>NA</Label>
+        </RadioGroup>
+    )
+  }
+
+  const renderSection = (title: string, items: {id: string, label: string}[], group: 'ppe' | 'ppeSystems') => (
+      <div className="p-4 border rounded-lg">
+          <h4 className="font-bold mb-4 text-primary">{title}</h4>
+          <div className="space-y-3">
+          {items.map(item => (
+              <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                  <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                  {renderRadioGroup(item.id, group)}
+              </div>
+          ))}
+          </div>
+      </div>
+  )
 
   return (
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
@@ -329,7 +433,7 @@ export default function CreatePermitPage() {
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de 7
+                    Paso {step} de {steps.length}
                   </p>
                 </div>
               </div>
@@ -365,7 +469,7 @@ export default function CreatePermitPage() {
                 style={s <= step ? { backgroundColor: s === step ? colors.primary : colors.success } : {}}>
                   {s < step ? <CheckCircle size={20}/> : s}
                 </div>
-                {s < 7 && (
+                {s < steps.length && (
                   <div className="flex-1 h-1 mx-2 rounded" style={{ 
                     backgroundColor: s < step ? colors.success : '#E5E7EB' 
                   }} />
@@ -373,7 +477,7 @@ export default function CreatePermitPage() {
               </div>
             )})}
           </div>
-          <div className="grid grid-cols-7 gap-2 text-xs text-center font-medium">
+          <div className="grid grid-cols-6 gap-2 text-xs text-center font-medium">
             {steps.map((label, s_idx) => (
               <span key={s_idx} style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{label}</span>
             ))}
@@ -391,115 +495,101 @@ export default function CreatePermitPage() {
                 </h2>
                 <p className="text-muted-foreground">Complete todos los campos obligatorios (*)</p>
               </div>
+
+                <div>
+                    <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):</label>
+                    <Textarea
+                      value={formData.workDescription}
+                      onChange={(e) => setFormData({...formData, workDescription: e.target.value})}
+                      rows={3}
+                      className="w-full mt-1"
+                      placeholder="Describa el tipo, alcance, descripción y área/equipo..."
+                    />
+                </div>
               
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                  Tipo de Trabajo de Alto Riesgo *
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {workTypes.map(type => (
-                    <button
-                      key={type.id}
-                      onClick={() => setFormData({...formData, workType: type.id})}
-                      className={`p-4 rounded-xl border-2 transition-all text-center ${
-                        formData.workType === type.id
-                          ? 'shadow-lg scale-105'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      style={formData.workType === type.id ? { 
-                        borderColor: type.color, 
-                        backgroundColor: `${type.color}15` 
-                      } : {}}
-                    >
-                      <div className="text-3xl mb-2">{type.icon}</div>
-                      <div className="text-sm font-semibold">{type.name}</div>
-                    </button>
-                  ))}
-                </div>
+                  <label className="font-bold text-gray-700">Causales para la suspensión del Permiso:</label>
+                  <Input
+                      value={formData.suspensionCauses}
+                      onChange={(e) => setFormData({...formData, suspensionCauses: e.target.value})}
+                      className="w-full mt-1"
+                      placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO..."
+                  />
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                  Descripción del Trabajo *
-                </label>
+                <label className="font-bold text-gray-700">Descripción o procedimiento de la teras a realizar:</label>
                 <Textarea
-                  value={formData.workDescription}
-                  onChange={(e) => setFormData({...formData, workDescription: e.target.value})}
+                  value={formData.procedure}
+                  onChange={(e) => setFormData({...formData, procedure: e.target.value})}
                   rows={4}
-                  className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
-                  placeholder="Describa detalladamente la actividad a realizar, incluyendo equipos, herramientas y procedimientos específicos..."
+                  className="w-full mt-1"
+                  placeholder="Describa el procedimiento detallado paso a paso..."
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                  Área de Trabajo *
-                </label>
-                <Input
-                  type="text"
-                  value={formData.workArea}
-                  onChange={(e) => setFormData({...formData, workArea: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
-                  placeholder="Ej: Planta de Producción - Área 2, Bodega Principal, Zona de Mantenimiento..."
-                />
+              <div className="flex items-center space-x-2">
+                <Switch id="emergency-extension" checked={formData.isEmergencyExtension} onCheckedChange={(checked) => setFormData({...formData, isEmergencyExtension: checked})} />
+                <Label htmlFor="emergency-extension">Extensión Emergencia</Label>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                    Fecha y Hora de Inicio *
-                  </label>
+                  <label className="font-bold text-gray-700">Válido Desde (DD/MM/AA HH:MM) *</label>
                   <Input
                     type="datetime-local"
                     value={formData.validFrom}
                     onChange={(e) => setFormData({...formData, validFrom: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                    Fecha y Hora de Fin *
-                  </label>
+                  <label className="font-bold text-gray-700">Válido Hasta (DD/MM/AA HH:MM) *</label>
                   <Input
                     type="datetime-local"
                     value={formData.validUntil}
                     onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
-                    className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: colors.dark }}>
-                  Procedimiento de Trabajo Paso a Paso *
-                </label>
-                <Textarea
-                  value={formData.procedure}
-                  onChange={(e) => setFormData({...formData, procedure: e.target.value})}
-                  rows={8}
-                  className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
-                  placeholder="Describa el procedimiento detallado paso a paso:
-1. Preparación del área y equipos
-2. Instalación de señalización
-3. Verificación de EPP
-4. ..."
-                />
+                <label className="font-bold text-gray-700">Herramientas y Equipos</label>
+                <div className="p-4 border rounded-lg mt-2 space-y-2">
+                  {tools.map((tool, index) => (
+                    <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
+                      <span className="flex-1">{tool.name}</span>
+                       <RadioGroup value={tool.status} onValueChange={(value: 'B' | 'M') => updateToolStatus(index, value)} className="flex">
+                          <RadioGroupItem value="B" id={`tool-${index}-b`} /> <Label htmlFor={`tool-${index}-b`} className="mr-2">B</Label>
+                          <RadioGroupItem value="M" id={`tool-${index}-m`} /> <Label htmlFor={`tool-${index}-m`}>M</Label>
+                      </RadioGroup>
+                      <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
+                    <Button onClick={addTool}><Plus/></Button>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-xl p-4" style={{ backgroundColor: `#FF980020`, borderLeft: `4px solid #FF9800` }}>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.emergencyExtension}
-                    onChange={(e) => setFormData({...formData, emergencyExtension: e.target.checked})}
-                    className="w-5 h-5 rounded accent-warning"
-                  />
-                  <span className="font-semibold">
-                    ⚠️ Este es un permiso de extensión por emergencia
-                  </span>
-                </label>
+              <div className="space-y-2">
+                <label className="font-bold text-gray-700">Reunión de Inicio</label>
+                <RadioGroup value={formData.reunionInicio} onValueChange={(value) => setFormData({...formData, reunionInicio: value})} className="flex">
+                    <RadioGroupItem value="si" id="reunion-si" /> <Label htmlFor="reunion-si" className="mr-2">SI</Label>
+                    <RadioGroupItem value="no" id="reunion-no" /> <Label htmlFor="reunion-no" className="mr-2">NO</Label>
+                    <RadioGroupItem value="na" id="reunion-na" /> <Label htmlFor="reunion-na">NA</Label>
+                </RadioGroup>
               </div>
+              <div className="space-y-2">
+                <label className="font-bold text-gray-700">ATS Verificado</label>
+                 <RadioGroup value={formData.atsVerificado} onValueChange={(value) => setFormData({...formData, atsVerificado: value})} className="flex">
+                    <RadioGroupItem value="si" id="ats-si" /> <Label htmlFor="ats-si" className="mr-2">SI</Label>
+                    <RadioGroupItem value="no" id="ats-no" /> <Label htmlFor="ats-no" className="mr-2">NO</Label>
+                    <RadioGroupItem value="na" id="ats-na" /> <Label htmlFor="ats-na">NA</Label>
+                </RadioGroup>
+              </div>
+
             </div>
           )}
 
@@ -507,396 +597,97 @@ export default function CreatePermitPage() {
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Verificación de Peligros Asociados
+                  Verificación de Peligros
                 </h2>
-                <p className="text-muted-foreground">Identifique y controle todos los peligros presentes</p>
+                <p className="text-muted-foreground">Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control</p>
               </div>
               
-              <div className="rounded-xl p-6 bg-destructive/10 border-2 border-destructive">
-                <div className="flex items-start gap-4">
-                  <AlertTriangle className="text-destructive" style={{minWidth: 32 }} size={32} />
-                  <div>
-                    <p className="font-bold text-lg mb-2 text-destructive">
-                      ⚠️ CAMPOS CRÍTICOS EXCLUYENTES
-                    </p>
-                    <p className="text-sm text-destructive/80">
-                      Los peligros marcados con ⚠️ son <strong>INNEGOCIABLES</strong>. Si alguna respuesta es "NO", 
-                      el permiso <strong>NO PODRÁ CONTINUAR</strong> sin implementar los controles correspondientes.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {hazards.map((hazard, index) => (
-                  <div 
-                    key={index} 
-                    className={`border-2 rounded-xl p-5 transition-all ${
-                      hazard.critical 
-                        ? 'border-red-200 bg-red-50' 
-                        : 'border-gray-200 bg-white'
-                    }`}
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                          {hazard.critical && (
-                            <span className="text-red-500 text-2xl">⚠️</span>
-                          )}
-                          {hazard.name}
-                          {hazard.critical && (
-                            <span className="text-xs px-2 py-1 bg-red-500 text-white rounded-full">
-                              CRÍTICO
-                            </span>
-                          )}
-                        </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  {hazards.map(hazard => (
+                      <div key={hazard.id} className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                          <Label htmlFor={`${hazard.id}-si`} className="flex-1 text-sm">{hazard.label}</Label>
+                          {renderRadioGroup(hazard.id, 'hazards')}
                       </div>
-                      <div className="flex gap-3">
-                        <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 transition-all ${
-                          hazardsData[hazard.name]?.status === 'si' 
-                            ? 'bg-green-100 border-green-500 text-green-700 font-bold' 
-                            : 'border-gray-300 hover:border-green-500'
-                        }`}>
-                          <input 
-                            type="radio" 
-                            name={`hazard-${index}`}
-                            value="si"
-                            checked={hazardsData[hazard.name]?.status === 'si'}
-                            onChange={() => setHazardsData({
-                              ...hazardsData,
-                              [hazard.name]: { ...hazardsData[hazard.name], status: 'si' }
-                            })}
-                            className="w-5 h-5" 
-                          />
-                          <span className="font-semibold">SÍ</span>
-                        </label>
-                        <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 transition-all ${
-                          hazardsData[hazard.name]?.status === 'no' 
-                            ? 'bg-red-100 border-red-500 text-red-700 font-bold' 
-                            : 'border-gray-300 hover:border-red-500'
-                        }`}>
-                          <input 
-                            type="radio" 
-                            name={`hazard-${index}`}
-                            value="no"
-                            checked={hazardsData[hazard.name]?.status === 'no'}
-                            onChange={() => setHazardsData({
-                              ...hazardsData,
-                              [hazard.name]: { ...hazardsData[hazard.name], status: 'no' }
-                            })}
-                            className="w-5 h-5" 
-                          />
-                          <span className="font-semibold">NO</span>
-                        </label>
-                        <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border-2 transition-all ${
-                          hazardsData[hazard.name]?.status === 'na' 
-                            ? 'bg-gray-100 border-gray-500 text-gray-700 font-bold' 
-                            : 'border-gray-300 hover:border-gray-500'
-                        }`}>
-                          <input 
-                            type="radio" 
-                            name={`hazard-${index}`}
-                            value="na"
-                            checked={hazardsData[hazard.name]?.status === 'na'}
-                            onChange={() => setHazardsData({
-                              ...hazardsData,
-                              [hazard.name]: { ...hazardsData[hazard.name], status: 'na' }
-                            })}
-                            className="w-5 h-5" 
-                          />
-                          <span className="font-semibold">N/A</span>
-                        </label>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <Textarea
-                        rows={2}
-                        value={hazardsData[hazard.name]?.controls || ''}
-                        onChange={(e) => setHazardsData({
-                          ...hazardsData,
-                          [hazard.name]: { ...hazardsData[hazard.name], controls: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 text-sm border-2 border-gray-300 rounded-lg focus:border-current transition-all"
-                        placeholder="Describa las medidas de control implementadas para este peligro..."
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
-
-              {!canProceed() && (
-                <div className="rounded-xl p-4 bg-red-100 border-2 border-red-500">
-                  <p className="font-bold text-red-800 flex items-center gap-2">
-                    <XCircle size={20} />
-                    No puede continuar: Debe corregir los peligros críticos marcados como "NO"
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Listas de Verificación Complementarias
-                </h2>
-                <p className="text-muted-foreground">Seleccione los anexos específicos según el tipo de trabajo</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {workTypes.map(type => (
-                  <label
-                    key={type.id}
-                    className={`border-2 rounded-xl p-6 cursor-pointer transition-all hover:shadow-lg ${
-                      selectedAnnexes.includes(type.id)
-                        ? 'shadow-xl scale-105'
-                        : 'hover:border-gray-400'
-                    }`}
-                    style={selectedAnnexes.includes(type.id) ? {
-                      borderColor: type.color,
-                      backgroundColor: `${type.color}15`
-                    } : {}}
-                  >
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedAnnexes.includes(type.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedAnnexes([...selectedAnnexes, type.id]);
-                          } else {
-                            setSelectedAnnexes(selectedAnnexes.filter(id => id !== type.id));
-                          }
-                        }}
-                        className="w-6 h-6 rounded"
-                        style={{ accentColor: type.color }}
-                      />
-                      <div className="flex-1">
-                        <div className="text-3xl mb-2">{type.icon}</div>
-                        <p className="font-bold text-lg">{type.name}</p>
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              {selectedAnnexes.length > 0 && (
-                <div className="mt-8 space-y-6">
-                  <h3 className="text-xl font-bold flex items-center gap-2" style={{ color: colors.dark }}>
-                    <CheckCircle style={{ color: colors.success }} size={24} />
-                    Anexos Seleccionados ({selectedAnnexes.length})
-                  </h3>
-                  {selectedAnnexes.map(annexId => {
-                    const type = workTypes.find(t => t.id === annexId);
-                    if (!type) return null;
-                    return (
-                      <div 
-                        key={annexId} 
-                        className="rounded-xl p-6 border-2"
-                        style={{ borderColor: type.color, backgroundColor: `${type.color}10` }}
-                      >
-                        <h4 className="font-bold text-xl mb-4 flex items-center gap-2">
-                          <span className="text-2xl">{type.icon}</span>
-                          {type.name}
-                        </h4>
-                        <div className="space-y-3">
-                          {[
-                            'Verificación de equipos y herramientas certificadas',
-                            'Inspección preoperacional completada',
-                            'Personal capacitado y certificado'
-                          ].map((item, idx) => (
-                            <div key={idx} className="bg-white rounded-lg p-4 flex items-center justify-between border">
-                              <span className="text-sm font-medium text-gray-700">{item}</span>
-                              <div className="flex gap-2">
-                                <label className="flex items-center gap-1">
-                                  <input type="radio" name={`${annexId}-${idx}`} className="w-4 h-4" />
-                                  <span className="text-xs font-semibold text-green-600">SÍ</span>
-                                </label>
-                                <label className="flex items-center gap-1">
-                                  <input type="radio" name={`${annexId}-${idx}`} className="w-4 h-4" />
-                                  <span className="text-xs font-semibold text-red-600">NO</span>
-                                </label>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
           
-          {step === 4 && (
+          {step === 3 && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Equipos de Protección Personal Requeridos
-                </h2>
-                <p className="text-muted-foreground">Marque todos los EPP necesarios y verifique su estado</p>
-              </div>
+                 <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        EPP - Señalización
+                    </h2>
+                    <p className="text-muted-foreground">Verifique el estado de los equipos de protección y señalización.</p>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {ppeItems.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`border-2 rounded-xl p-5 transition-all ${
-                      ppeData[item]?.required 
-                        ? 'bg-orange-50 border-primary shadow-md' 
-                        : 'border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="flex items-center gap-3 cursor-pointer flex-1">
-                        <input
-                          type="checkbox"
-                          checked={ppeData[item]?.required || false}
-                          onChange={(e) => setPpeData({
-                            ...ppeData,
-                            [item]: { ...ppeData[item], required: e.target.checked }
-                          })}
-                          className="w-6 h-6 rounded accent-primary"
-                        />
-                        <span className="font-semibold text-gray-800">{item}</span>
-                      </label>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {renderSection("Ropa", ppe.Ropa, 'ppe')}
+                    {renderSection("Protección de pies y piernas", ppe["Protección de pies y piernas"], 'ppe')}
+                    {renderSection("Protección auditiva", ppe["Protección auditiva"], 'ppe')}
+                    {renderSection("Protección respiratoria", ppe["Protección respiratoria"], 'ppe')}
+                    {renderSection("Protección cabeza", ppe["Protección cabeza"], 'ppe')}
+                </div>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {renderSection("Protección facial y ocular", ppe["Protección facial y ocular"], 'ppe')}
+                    {renderSection("Barrera/Señales de advertencia", ppe["Barrera/Señales de advertencia"], 'ppe')}
+                    {renderSection("Guantes", ppe.Guantes, 'ppe')}
+                    {renderSection("Otros", ppe.Otros, 'ppe')}
+                </div>
+            </div>
+          )}
+
+          {step === 4 && (
+             <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                    Sistemas de Prevención y Emergencias
+                  </h2>
+                  <p className="text-muted-foreground">Verifique los sistemas de prevención y el plan de emergencias.</p>
+                </div>
+                
+                 <div className="p-4 border rounded-lg">
+                    <h4 className="font-bold mb-4 text-primary">Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    {ppeSystems.map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                            <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                            {renderRadioGroup(item.id, 'ppeSystems')}
+                        </div>
+                    ))}
                     </div>
-                    {ppeData[item]?.required && (
-                      <div className="ml-9 mt-3 flex gap-3">
-                        <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm ${
-                          ppeData[item]?.verified 
-                            ? 'bg-green-100 border-green-500 text-green-700 font-semibold' 
-                            : 'border-gray-300'
-                        }`}>
-                          <input 
-                            type="checkbox"
-                            checked={ppeData[item]?.verified || false}
-                            onChange={(e) => setPpeData({
-                              ...ppeData,
-                              [item]: { ...ppeData[item], verified: e.target.checked }
-                            })}
-                            className="w-4 h-4 rounded accent-green-500"
-                          />
-                          <CheckCircle size={16} />
-                          <span>Verificado</span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                </div>
 
-              <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500">
-                <p className="text-sm text-blue-800">
-                  <strong>Nota:</strong> Los EPP marcados como requeridos deben ser inspeccionados 
-                  antes del inicio de la tarea y deben estar en buen estado.
-                </p>
-              </div>
+                <div className="p-4 border rounded-lg">
+                    <h4 className="font-bold mb-4 text-primary">NOTIFICACIÓN</h4>
+                     <div className="flex items-center space-x-2">
+                        <Switch id="notification-switch" checked={notification} onCheckedChange={setNotification} />
+                        <Label htmlFor="notification-switch">El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados del trabajo a realizar</Label>
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                    <h4 className="font-bold mb-4 text-primary">EMERGENCIAS: Recordar y verificar</h4>
+                    <div className="space-y-3">
+                     {emergencyQuestions.map(item => (
+                        <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                            <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                            {renderRadioGroup(item.id, 'emergency')}
+                        </div>
+                    ))}
+                    </div>
+                </div>
             </div>
           )}
 
           {step === 5 && (
-             <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                    Notificaciones y Manejo de Emergencias
-                  </h2>
-                  <p className="text-muted-foreground">Todos estos campos son obligatorios y críticos</p>
-                </div>
-
-                <div className="rounded-xl p-6 bg-destructive/10 border-2 border-destructive">
-                  <div className="flex items-start gap-4">
-                    <AlertTriangle className="text-destructive" style={{minWidth:32}} size={32} />
-                    <div>
-                      <p className="font-bold text-lg mb-2 text-destructive">
-                        ⚠️ CAMPOS CRÍTICOS DE SEGURIDAD
-                      </p>
-                      <p className="text-sm text-destructive/80">
-                        <strong>TODAS</strong> estas preguntas deben responderse "SÍ". 
-                        Cualquier respuesta "NO" <strong>BLOQUEARÁ LA APROBACIÓN</strong> del permiso.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {emergencyQuestions.map((question, index) => (
-                    <div 
-                      key={index} 
-                      className={`border-2 rounded-xl p-5 transition-all ${emergencyData[question] === 'si' ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-                            <span className="text-red-500 text-2xl">⚠️</span>
-                            {question}
-                          </p>
-                        </div>
-                        <div className="flex gap-3">
-                          <label className={`flex items-center gap-2 cursor-pointer px-6 py-3 rounded-lg border-2 transition-all ${
-                            emergencyData[question] === 'si'
-                              ? 'bg-green-100 border-green-500 text-green-700 font-bold shadow-md' 
-                              : 'border-gray-300 hover:border-green-500'
-                          }`}>
-                            <input 
-                              type="radio" 
-                              name={`emergency-${index}`}
-                              value="si"
-                              checked={emergencyData[question] === 'si'}
-                              onChange={() => setEmergencyData({...emergencyData, [question]: 'si'})}
-                              className="w-5 h-5" 
-                            />
-                            <span className="font-bold text-lg">SÍ</span>
-                          </label>
-                          <label className={`flex items-center gap-2 cursor-pointer px-6 py-3 rounded-lg border-2 transition-all ${
-                            emergencyData[question] === 'no'
-                              ? 'bg-red-100 border-red-500 text-red-700 font-bold shadow-md' 
-                              : 'border-gray-300 hover:border-red-500'
-                          }`}>
-                            <input 
-                              type="radio" 
-                              name={`emergency-${index}`}
-                              value="no"
-                              checked={emergencyData[question] === 'no'}
-                              onChange={() => setEmergencyData({...emergencyData, [question]: 'no'})}
-                              className="w-5 h-5" 
-                            />
-                            <span className="font-bold text-lg">NO</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {!canProceed() && (
-                  <div className="rounded-xl p-6 bg-red-100 border-2 border-red-500">
-                    <p className="font-bold text-red-800 flex items-center gap-3 text-lg">
-                      <XCircle size={24} />
-                      No puede continuar: Debe responder "SÍ" a TODAS las preguntas de emergencia
-                    </p>
-                  </div>
-                )}
-            </div>
-          )}
-
-          {step === 6 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                   Trabajadores Ejecutantes Externos
                 </h2>
                 <p className="text-muted-foreground">Registre todos los trabajadores externos que participarán en esta tarea</p>
-              </div>
-
-              <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500">
-                <p className="text-sm flex items-center gap-2 text-blue-800">
-                  <Users size={20} />
-                  <span>
-                    Debe agregar al menos un trabajador para continuar.
-                  </span>
-                </p>
               </div>
 
               <div className="space-y-4">
@@ -939,66 +730,15 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {step === 7 && (
+          {step === 6 && (
             <div className="space-y-8">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Revisión Final y Firmas
+                  Revisión Final y Envío
                 </h2>
                 <p className="text-muted-foreground">Verifique toda la información antes de enviar</p>
               </div>
-
-              <div className="space-y-4">
                 <div className="border-2 border-gray-200 rounded-xl p-6">
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
-                    <FileText size={24} />
-                    Información General
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600 font-semibold">Tipo de Trabajo:</span>
-                      <p className="font-bold text-lg mt-1">
-                        {workTypes.find(t => t.id === formData.workType)?.icon}{' '}
-                        {workTypes.find(t => t.id === formData.workType)?.name || 'No especificado'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 font-semibold">Área:</span>
-                      <p className="font-bold text-lg mt-1">{formData.workArea || 'No especificado'}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-gray-600 font-semibold">Descripción:</span>
-                      <p className="mt-1 text-gray-800">{formData.workDescription || 'No especificada'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-2 border-gray-200 rounded-xl p-6">
-                  <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
-                    <ClipboardCheck size={24} />
-                    Anexos y Verificaciones
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedAnnexes.length > 0 ? (
-                      selectedAnnexes.map(id => {
-                        const type = workTypes.find(t => t.id === id);
-                        if (!type) return null;
-                        return (
-                          <span 
-                            key={id} 
-                            className="px-4 py-2 rounded-full font-semibold flex items-center gap-2"
-                            style={{ backgroundColor: `${type.color}20`, color: type.color }}
-                          >
-                            {type?.icon} {type?.name}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-gray-500">No se seleccionaron anexos específicos</span>
-                    )}
-                  </div>
-                </div>
-                 <div className="border-2 border-gray-200 rounded-xl p-6">
                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
                     <Wand2 size={24} />
                     Análisis de Riesgo con IA
@@ -1036,23 +776,9 @@ export default function CreatePermitPage() {
                                 <p className="text-sm text-gray-600">{user?.displayName}</p>
                             </div>
                             <div className="text-right">
-                               <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado</p>
+                               <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado (al enviar)</p>
                                <p className="text-xs text-gray-500">{new Date().toLocaleDateString()}</p>
                             </div>
-                        </div>
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                            <div>
-                                <p className="font-bold text-yellow-700">Líder de la Tarea</p>
-                                <p className="text-sm text-gray-600">Pendiente de asignación</p>
-                            </div>
-                             <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Pendiente</p>
-                        </div>
-                         <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-                            <div>
-                                <p className="font-bold text-yellow-700">Autorizante</p>
-                                <p className="text-sm text-gray-600">Pendiente de asignación</p>
-                            </div>
-                             <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Pendiente</p>
                         </div>
                     </div>
                 </div>
@@ -1065,7 +791,6 @@ export default function CreatePermitPage() {
                     </span>
                   </p>
                 </div>
-              </div>
             </div>
           )}
 
@@ -1085,7 +810,7 @@ export default function CreatePermitPage() {
               </Button>
             )}
             
-            {step < 7 ? (
+            {step < steps.length ? (
               <Button
                 onClick={() => {
                   if (canProceed()) {
@@ -1093,10 +818,8 @@ export default function CreatePermitPage() {
                   } else {
                     toast({
                       variant: 'destructive',
-                      title: 'Campos incompletos o críticos',
-                      description: step === 6 
-                        ? 'Debe agregar al menos un trabajador para poder continuar.'
-                        : 'Por favor complete todos los campos obligatorios y corrija los campos críticos antes de continuar.'
+                      title: 'Campos incompletos',
+                      description: 'Por favor complete todos los campos obligatorios para continuar.'
                     })
                   }
                 }}
