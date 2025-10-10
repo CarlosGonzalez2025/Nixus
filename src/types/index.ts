@@ -35,8 +35,6 @@ export interface ExternalWorker {
   arl: string;
   pensiones: string;
   foto?: string; // URL o path a la selfie
-  firmaApertura?: string; // URL o path a la firma
-  firmaCierre?: string; // URL o path a la firma
 }
 
 export type Tool = {
@@ -96,3 +94,6 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
 };
+
+
+    

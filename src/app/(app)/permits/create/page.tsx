@@ -100,10 +100,6 @@ export default function CreatePermitPage() {
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
 
-  // State for signature pad
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [signatureField, setSignatureField] = useState<'firmaApertura' | 'firmaCierre' | null>(null);
-
 
   const openNewWorkerDialog = () => {
     setEditingWorkerIndex(null);
@@ -161,19 +157,6 @@ export default function CreatePermitPage() {
     handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
-
-  const openSignatureDialog = (field: 'firmaApertura' | 'firmaCierre') => {
-    setSignatureField(field);
-    setIsSignatureDialogOpen(true);
-  };
-
-  const handleSaveSignature = (signatureDataUrl: string) => {
-    if (signatureField) {
-      handleWorkerInputChange(signatureField, signatureDataUrl);
-    }
-    setIsSignatureDialogOpen(false);
-    setSignatureField(null);
-  };
   
   const addTool = () => {
     if (newToolName.trim()) {
@@ -926,29 +909,11 @@ export default function CreatePermitPage() {
               </div>
 
                <div className="space-y-3">
-                 <Label>Identificación y Firmas</Label>
+                 <Label>Identificación</Label>
                  <div className="flex items-center justify-between p-3 border rounded-lg">
                     <span className="text-sm font-medium">Foto (Selfie)</span>
                     <Button variant="outline" size="sm" onClick={() => handleFileUpload('foto')}> <Camera className="mr-2 h-4 w-4" />{currentWorker?.foto ? 'Cargada' : 'Cargar'}</Button>
                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">Firma Apertura</span>
-                      {currentWorker?.firmaApertura && (
-                          <Image src={currentWorker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="rounded-md bg-gray-100 mt-2" />
-                      )}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog('firmaApertura')}> <Signature className="mr-2 h-4 w-4" />{currentWorker?.firmaApertura ? 'Firmar de nuevo' : 'Firmar'}</Button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">Firma Cierre</span>
-                      {currentWorker?.firmaCierre && (
-                          <Image src={currentWorker.firmaCierre} alt="Firma Cierre" width={80} height={40} className="rounded-md bg-gray-100 mt-2" />
-                      )}
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog('firmaCierre')}> <Signature className="mr-2 h-4 w-4" />{currentWorker?.firmaCierre ? 'Firmar de nuevo' : 'Firmar'}</Button>
-                  </div>
               </div>
             </div>
           </ScrollArea>
@@ -962,21 +927,10 @@ export default function CreatePermitPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* Signature Dialog */}
-      <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Realizar Firma</DialogTitle>
-            <DialogDescription>
-              Dibuje su firma en el recuadro de abajo.
-            </DialogDescription>
-          </DialogHeader>
-          <SignaturePad onSave={handleSaveSignature} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
+
+    
 
     
