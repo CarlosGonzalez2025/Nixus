@@ -27,6 +27,7 @@ import {
   Wrench,
   Check,
   Building,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // ✅ Helper function to handle different date formats
 const parseFirestoreDate = (dateValue: any): Date | null => {
@@ -600,30 +602,39 @@ export default function PermitDetailPage() {
                     
                     <Section title="Trabajadores Ejecutantes">
                       {permit.workers && permit.workers.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="border rounded-md">
                           {(permit.workers as ExternalWorker[]).map((worker, index) => (
-                            <div key={index} className="border rounded-lg p-4">
-                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                  <Field label="Nombre" value={worker.nombre} />
-                                  <Field label="Cédula" value={worker.cedula} />
-                                  <Field label="Rol" value={worker.rol} />
-                                  <Field label="EPS" value={worker.eps} />
-                                  <Field label="ARL" value={worker.arl} />
-                                  <Field label="Fondo de Pensiones" value={worker.pensiones} />
-                               </div>
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                  <Field label="Certificado Aptitud Médica" value={worker.tsaTec?.toUpperCase() || 'N/A'} />
-                                  <Field label="Entrenamiento / Capacitación" value={worker.entrenamiento?.toUpperCase() || 'N/A'} />
-                               </div>
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <Field label="Firma Apertura" value={
-                                     worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={120} height={60} className="bg-gray-100 rounded" /> : 'Pendiente'
-                                  }/>
-                                  <Field label="Firma Cierre" value={
-                                      worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma Cierre" width={120} height={60} className="bg-gray-100 rounded" /> : 'Pendiente'
-                                  }/>
-                               </div>
-                            </div>
+                            <Collapsible key={index} className="border-b last:border-b-0">
+                                <CollapsibleTrigger className="w-full p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer group">
+                                    <div className="grid grid-cols-3 gap-4 text-left flex-1">
+                                        <Field label="Nombre" value={worker.nombre} />
+                                        <Field label="Cédula" value={worker.cedula} />
+                                        <Field label="Rol" value={worker.rol} />
+                                    </div>
+                                    <ChevronDown className="h-5 w-5 text-gray-400 group-data-[state=open]:rotate-180 transition-transform ml-4"/>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="p-4 bg-gray-50/50 border-t">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                            <Field label="EPS" value={worker.eps} />
+                                            <Field label="ARL" value={worker.arl} />
+                                            <Field label="Fondo de Pensiones" value={worker.pensiones} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <Field label="Certificado Aptitud Médica" value={worker.tsaTec?.toUpperCase() || 'N/A'} />
+                                            <Field label="Entrenamiento / Capacitación" value={worker.entrenamiento?.toUpperCase() || 'N/A'} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <Field label="Firma Apertura" value={
+                                                worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
+                                            }/>
+                                            <Field label="Firma Cierre" value={
+                                                worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma Cierre" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
+                                            }/>
+                                        </div>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                           ))}
                         </div>
                       ) : (
@@ -731,6 +742,8 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
 
     
 
