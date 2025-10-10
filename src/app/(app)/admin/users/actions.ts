@@ -1,16 +1,8 @@
 'use server';
-import { 
-  initializeApp,
-  getApps,
-  type FirebaseOptions,
-} from 'firebase/app';
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword,
-} from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import * as z from 'zod';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import type { User } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -23,37 +15,10 @@ const formSchema = z.object({
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
 });
 
-async function getTempAuth() {
-  const tempAppName = `temp-app-${Date.now()}`;
-  
-  const existingApp = getApps().find(app => app.name === tempAppName);
-  if (existingApp) {
-    return getAuth(existingApp);
-  }
-
-  const firebaseConfig: FirebaseOptions = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  };
-  
-  if (!firebaseConfig.apiKey) {
-    throw new Error('Firebase config not found in environment variables.');
-  }
-
-  const tempApp = initializeApp(firebaseConfig, tempAppName);
-  return getAuth(tempApp);
-}
-
 export async function createUser(data: z.infer<typeof formSchema>) {
   try {
-    const tempAuth = await getTempAuth();
-    
-    // 1. Create user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+    // 1. Create user in Firebase Authentication using the main auth instance
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const user = userCredential.user;
 
     // 2. Create user profile in Firestore
