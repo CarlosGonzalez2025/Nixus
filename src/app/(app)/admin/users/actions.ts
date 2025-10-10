@@ -1,12 +1,18 @@
 'use server';
 import { 
+  initializeApp,
+  getApps,
+  getApp,
+} from 'firebase/app';
+import { 
   getAuth, 
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import * as z from 'zod';
-import { app, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
+import type { User } from '@/types';
+
 
 const formSchema = z.object({
   fullName: z.string().min(3),
@@ -19,16 +25,45 @@ const formSchema = z.object({
 // but it's a workaround for the server action context where the main client auth is not available.
 // A better long-term solution would be to use Firebase Admin SDK with proper service account setup.
 async function getTempAuth() {
-  // We need to re-initialize a temporary app instance because the main one is on the client.
-  // This is a known pattern for using client SDKs in server actions.
-  const tempApp = initializeApp(JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!), `temp-app-${Date.now()}`);
+  const tempAppName = `temp-app-${Date.now()}`;
+  
+  // Check if the temporary app already exists
+  const existingApp = getApps().find(app => app.name === tempAppName);
+  if (existingApp) {
+    return getAuth(existingApp);
+  }
+
+  // If not, initialize a new temporary app
+  const tempApp = initializeApp(JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!), tempAppName);
   return getAuth(tempApp);
 }
 
-// This function is intended to be called from the client-side, not a server action.
 export async function createUser(data: z.infer<typeof formSchema>) {
-  // This function is now designed to be called from a client component
-  // We will move the logic to the client page and call auth/firestore from there
-  // This server action is now a placeholder.
-  return { error: 'This function should be called from the client.' };
+  try {
+    const tempAuth = await getTempAuth();
+    
+    // 1. Create user in Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+    const user = userCredential.user;
+
+    // 2. Create user profile in Firestore
+    const userProfile: User = {
+      uid: user.uid,
+      email: user.email,
+      displayName: data.fullName,
+      role: data.role,
+      photoURL: user.photoURL || '',
+    };
+    await setDoc(doc(db, 'users', user.uid), userProfile);
+    
+    // The temporary user is created. The admin user's session remains intact.
+    // The new user can now log in with their credentials.
+    // No need to sign out, as the main auth instance was not affected.
+    return { success: true, userId: user.uid };
+
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    // Return a serializable error object
+    return { error: error.message || 'Ocurrió un error inesperado.' };
+  }
 }
