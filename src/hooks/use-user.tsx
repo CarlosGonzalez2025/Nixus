@@ -4,18 +4,11 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from './use-auth';
 import { db } from '@/lib/firebase';
-
-export interface UserProfile {
-  uid: string;
-  email?: string | null;
-  displayName?: string | null;
-  photoURL?: string | null;
-  role?: string;
-}
+import type { User } from '@/types';
 
 export function useUser() {
   const { user: authUser, loading: authLoading } = useAuth();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +29,7 @@ export function useUser() {
         setUser({
           uid: authUser.uid,
           ...docSnap.data(),
-        } as UserProfile);
+        } as User);
       } else {
         // Handle case where user exists in Auth but not in Firestore
         setUser({
@@ -44,12 +37,12 @@ export function useUser() {
           email: authUser.email,
           displayName: authUser.displayName,
           photoURL: authUser.photoURL,
-          role: 'Líder de Tarea', // Default role
+          role: 'lider_tarea', // Default role
         });
       }
       setLoading(false);
     }, (error) => {
-      console.error("Error fetching user profile:", error);
+      console.error("Error al obtener el perfil de usuario:", error);
       setLoading(false);
     });
 

@@ -22,7 +22,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/types';
 
 // Demo users as provided in the UI mock
-const demoUsers = {
+const demoUsers: { [email: string]: { name: string, role: User['role'] } } = {
   'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante' },
   'maria@italcol.com': { name: 'María García', role: 'autorizante' },
   'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea' },
@@ -59,11 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       return await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/user-not-found' && demoUsers[email.toLowerCase()]) {
         const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = newUserCredential.user;
         if(firebaseUser) {
-           const demoUser = (demoUsers as any)[email.toLowerCase()];
+           const demoUser = demoUsers[email.toLowerCase()];
            const userProfile: User = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,

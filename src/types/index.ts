@@ -1,6 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export type PermitStatus = 'Pending' | 'Approved' | 'Rejected' | 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
+export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
 
 export type UserRole = 'solicitante' | 'autorizante' | 'lider_tarea' | 'ejecutante' | 'lider_sst';
 

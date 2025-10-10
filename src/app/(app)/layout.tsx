@@ -37,6 +37,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+const getRoleName = (role?: string) => {
+  const roles: { [key: string]: string } = {
+    solicitante: 'Solicitante de la Tarea',
+    autorizante: 'Quien Autoriza',
+    lider_tarea: 'Líder de la Tarea',
+    ejecutante: 'Ejecutante del Trabajo',
+    lider_sst: 'Líder SST',
+  };
+  return role ? roles[role] || role : 'Usuario';
+};
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useUser();
   const { logout } = useAuth();
@@ -92,21 +103,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuButton
                 onClick={() => router.push('/permits')}
                 isActive={pathname.startsWith('/permits')}
-                tooltip="Work Permits"
+                tooltip="Permisos de Trabajo"
               >
                 <FileText />
-                <span>Work Permits</span>
+                <span>Permisos de Trabajo</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             {user.role === 'Líder de Tarea' && (
+             {user.role === 'lider_tarea' && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => router.push('/permits/create')}
                   isActive={pathname === '/permits/create'}
-                  tooltip="New Permit"
+                  tooltip="Nuevo Permiso"
                 >
                   <PlusCircle />
-                  <span>New Permit</span>
+                  <span>Nuevo Permiso</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
@@ -125,7 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Avatar className="h-8 w-8">
                       <AvatarImage
                         src={user.photoURL || userAvatar?.imageUrl}
-                        alt={user.displayName || 'User'}
+                        alt={user.displayName || 'Usuario'}
                         data-ai-hint={userAvatar?.imageHint}
                       />
                       <AvatarFallback>
@@ -134,7 +145,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Avatar>
                     <div className="hidden flex-col items-start truncate text-left group-data-[collapsible=offcanvas]:flex group-data-[collapsible=icon]:hidden">
                       <span className="font-medium text-sidebar-foreground">
-                        {user.displayName || 'User'}
+                        {user.displayName || 'Usuario'}
                       </span>
                       <span className="text-xs text-sidebar-foreground/70">
                         {user.email}
@@ -148,16 +159,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 align="start"
                 className="w-56"
               >
-                <DropdownMenuLabel>{user.role || 'User'}</DropdownMenuLabel>
+                <DropdownMenuLabel>{getRoleName(user.role)}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>Configuración</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Cerrar Sesión</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -23,9 +23,9 @@ import { createPermit } from './actions';
 import { useUser } from '@/hooks/use-user';
 
 const formSchema = z.object({
-  workType: z.string().min(5, 'Please provide a descriptive work type.'),
-  environmentalFactors: z.string().min(10, 'Describe the environmental factors.'),
-  permitDetails: z.string().min(20, 'Please provide detailed permit information.'),
+  workType: z.string().min(5, 'Por favor, provea un tipo de trabajo descriptivo.'),
+  environmentalFactors: z.string().min(10, 'Describa los factores ambientales.'),
+  permitDetails: z.string().min(20, 'Por favor, provea información detallada del permiso.'),
 });
 
 export default function CreatePermitPage() {
@@ -49,8 +49,8 @@ export default function CreatePermitPage() {
     if (!isFormValid) {
       toast({
         variant: 'destructive',
-        title: 'Incomplete Form',
-        description: 'Please fill out all fields before assessing risk.',
+        title: 'Formulario Incompleto',
+        description: 'Por favor, llene todos los campos antes de evaluar el riesgo.',
       });
       return;
     }
@@ -62,14 +62,14 @@ export default function CreatePermitPage() {
       const result = await getRiskAssessmentRecommendations(values);
       setRecommendations(result.recommendedControls);
       toast({
-        title: 'Risk Assessment Complete',
-        description: 'Recommended controls are now available.',
+        title: 'Evaluación de Riesgo Completa',
+        description: 'Los controles recomendados ya están disponibles.',
       });
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Assessment Failed',
-        description: 'The AI risk assessment could not be completed. Please try again.',
+        title: 'Falló la Evaluación',
+        description: 'La evaluación de riesgo por IA no pudo completarse. Por favor, intente de nuevo.',
       });
     } finally {
       setIsAssessing(false);
@@ -80,16 +80,16 @@ export default function CreatePermitPage() {
     if (!recommendations) {
       toast({
         variant: 'destructive',
-        title: 'Risk Assessment Required',
-        description: 'Please run the risk assessment before creating the permit.',
+        title: 'Se Requiere Evaluación de Riesgo',
+        description: 'Por favor, ejecute la evaluación de riesgo antes de crear el permiso.',
       });
       return;
     }
     if (!user) {
         toast({
             variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'You must be logged in to create a permit.',
+            title: 'Error de Autenticación',
+            description: 'Debe iniciar sesión para crear un permiso.',
         });
         return;
     }
@@ -102,8 +102,8 @@ export default function CreatePermitPage() {
         userId: user.uid,
       });
       toast({
-        title: 'Permit Created Successfully',
-        description: 'Your work permit has been submitted for approval.',
+        title: 'Permiso Creado Exitosamente',
+        description: 'Su permiso de trabajo ha sido enviado para aprobación.',
         className: 'bg-green-100 dark:bg-green-900',
       });
       form.reset();
@@ -111,8 +111,8 @@ export default function CreatePermitPage() {
     } catch (error) {
        toast({
         variant: 'destructive',
-        title: 'Submission Failed',
-        description: 'There was an error creating the permit. Please try again.',
+        title: 'Falló el Envío',
+        description: 'Hubo un error creando el permiso. Por favor, intente de nuevo.',
       });
     } finally {
       setIsSubmitting(false);
@@ -123,9 +123,9 @@ export default function CreatePermitPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">New Work Permit</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Nuevo Permiso de Trabajo</h1>
           <p className="text-muted-foreground">
-            Complete the form to request a new permit.
+            Complete el formulario para solicitar un nuevo permiso.
           </p>
         </div>
       </div>
@@ -138,12 +138,12 @@ export default function CreatePermitPage() {
                 name="workType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type of Work</FormLabel>
+                    <FormLabel>Tipo de Trabajo</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Welding, Confined Space Entry" {...field} />
+                      <Input placeholder="Ej: Soldadura, Espacios Confinados" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Specify the nature of the work to be performed.
+                      Especifique la naturaleza del trabajo a realizar.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -154,16 +154,16 @@ export default function CreatePermitPage() {
                 name="environmentalFactors"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Environmental Factors</FormLabel>
+                    <FormLabel>Factores Ambientales</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., High temperature, poor ventilation, flammable materials nearby"
+                        placeholder="Ej: Alta temperatura, poca ventilación, materiales inflamables cercanos"
                         className="min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Describe the conditions at the work site.
+                      Describa las condiciones en el sitio de trabajo.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -174,16 +174,16 @@ export default function CreatePermitPage() {
                 name="permitDetails"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Permit Details</FormLabel>
+                    <FormLabel>Detalles del Permiso</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., Specific location, tools to be used, duration of work"
+                        placeholder="Ej: Ubicación específica, herramientas a utilizar, duración del trabajo"
                         className="min-h-[150px]"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Provide all necessary details for the permit request.
+                      Proporcione todos los detalles necesarios para la solicitud del permiso.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -202,7 +202,7 @@ export default function CreatePermitPage() {
                     ) : (
                       <Wand2 className="mr-2 h-4 w-4" />
                     )}
-                    Assess Risk (AI)
+                    Evaluar Riesgo (IA)
                   </Button>
                   <Button type="submit" disabled={isSubmitting || !recommendations} className="w-full sm:w-auto">
                      {isSubmitting ? (
@@ -210,7 +210,7 @@ export default function CreatePermitPage() {
                     ) : (
                       <ShieldCheck className="mr-2 h-4 w-4" />
                     )}
-                    Create Permit
+                    Crear Permiso
                   </Button>
               </div>
             </form>
@@ -222,14 +222,14 @@ export default function CreatePermitPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Wand2 className="text-primary" />
-                    AI Recommended Controls
+                    Controles Recomendados por IA
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isAssessing ? (
                      <div className="flex items-center space-x-2 text-muted-foreground">
                         <Loader2 className="h-4 w-4 animate-spin"/>
-                        <span>Analyzing risks and generating recommendations...</span>
+                        <span>Analizando riesgos y generando recomendaciones...</span>
                      </div>
                   ) : (
                     <p className="whitespace-pre-wrap rounded-md bg-muted p-4 text-sm">
