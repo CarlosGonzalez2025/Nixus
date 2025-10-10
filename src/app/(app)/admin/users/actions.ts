@@ -12,6 +12,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import * as z from 'zod';
 import { db } from '@/lib/firebase';
 import type { User } from '@/types';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 
 
 const formSchema = z.object({
@@ -21,13 +23,9 @@ const formSchema = z.object({
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
 });
 
-// NOTE: This approach of creating a separate auth instance is not ideal for production,
-// but it's a workaround for the server action context where the main client auth is not available.
-// A better long-term solution would be to use Firebase Admin SDK with proper service account setup.
 async function getTempAuth() {
   const tempAppName = `temp-app-${Date.now()}`;
   
-  // Check if the temporary app already exists
   const existingApp = getApps().find(app => app.name === tempAppName);
   if (existingApp) {
     return getAuth(existingApp);
@@ -41,12 +39,11 @@ async function getTempAuth() {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   };
-
+  
   if (!firebaseConfig.apiKey) {
     throw new Error('Firebase config not found in environment variables.');
   }
 
-  // If not, initialize a new temporary app
   const tempApp = initializeApp(firebaseConfig, tempAppName);
   return getAuth(tempApp);
 }
@@ -67,19 +64,27 @@ export async function createUser(data: z.infer<typeof formSchema>) {
       role: data.role,
       photoURL: user.photoURL || '',
     };
-    await setDoc(doc(db, 'users', user.uid), userProfile);
     
-    // The temporary user is created. The admin user's session remains intact.
-    // The new user can now log in with their credentials.
-    // No need to sign out, as the main auth instance was not affected.
+    const userDocRef = doc(db, 'users', user.uid);
+
+    // Use .catch() for Firestore operation to emit a detailed error
+    setDoc(userDocRef, userProfile).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: userProfile,
+        } satisfies SecurityRuleContext);
+        
+        errorEmitter.emit('permission-error', permissionError);
+    });
+    
     return { success: true, userId: user.uid };
 
   } catch (error: any) {
-    console.error('Error creating user:', error.code, error.message);
+    console.error('Error creating auth user:', error.code, error.message);
     if (error.code === 'auth/email-already-in-use') {
       return { error: 'Este correo electrónico ya está registrado. Por favor, use otro.' };
     }
-    // Return a serializable error object
     return { error: 'Ocurrió un error inesperado al crear el usuario.' };
   }
 }
