@@ -86,23 +86,27 @@ export default function PermitsPage() {
                 </TableHeader>
                 <TableBody>
                   {permits.map((permit) => (
-                    <TableRow key={permit.id} className="cursor-pointer" asChild>
-                      <Link href={`/permits/${permit.id}`}>
-                        <TableCell className="font-medium">{permit.id}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{permit.workType}</TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant={statusVariant[permit.status] || 'default'}>
-                            {getStatusText(permit.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{permit.date}</TableCell>
-                        <TableCell>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                              ...
-                              <span className="sr-only">Ver menú</span>
-                          </Button>
-                        </TableCell>
-                      </Link>
+                    <TableRow key={permit.id}>
+                      <TableCell className="font-medium">
+                        <Link href={`/permits/${permit.id}`} className="hover:underline">
+                          {permit.id}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{permit.workType}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={statusVariant[permit.status] || 'default'}>
+                          {getStatusText(permit.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{permit.date}</TableCell>
+                      <TableCell>
+                        <Button asChild variant="ghost" size="icon">
+                           <Link href={`/permits/${permit.id}`}>
+                            ...
+                            <span className="sr-only">Ver menú</span>
+                          </Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
