@@ -40,7 +40,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { ExternalWorker, Permit, Tool } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -93,6 +93,9 @@ export default function CreatePermitPage() {
     tools: [] as Tool[],
   });
   const [newToolName, setNewToolName] = useState('');
+  
+  // Anexo Altura
+  const [anexoAltura, setAnexoAltura] = useState<Partial<AnexoAltura>>({});
 
   // Step 2
   const [hazardsData, setHazardsData] = useState<{ [key: string]: string }>({});
@@ -374,6 +377,7 @@ export default function CreatePermitPage() {
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
+        anexoAltura: selectedWorkTypes.includes('altura') ? anexoAltura : undefined,
       };
 
       const result = await createPermit({
@@ -406,9 +410,18 @@ export default function CreatePermitPage() {
     }
   };
 
-  const steps = [
-    "Info General", "Peligros", "EPP", "Sistemas y Emergencia", "Trabajadores", "Revisión"
+  const baseSteps = [
+    { label: "Info General", condition: true },
+    { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
+    { label: "Peligros", condition: true },
+    { label: "EPP", condition: true },
+    { label: "Sistemas y Emergencia", condition: true },
+    { label: "Trabajadores", condition: true },
+    { label: "Revisión", condition: true }
   ];
+
+  const steps = baseSteps.filter(s => s.condition);
+  const currentStepInfo = steps[step - 1];
   
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -424,20 +437,62 @@ export default function CreatePermitPage() {
       }
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura', anexoSection?: keyof AnexoAltura) => {
     let state: any;
-     switch(group) {
-        case 'hazards': state = hazardsData; break;
-        case 'ppe': state = ppeData; break;
-        case 'ppeSystems': state = ppeSystemsData; break;
-        case 'emergency': state = emergencyData; break;
+    let setState: (value: any) => void;
+
+    switch(group) {
+        case 'hazards': state = hazardsData; setState = setHazardsData; break;
+        case 'ppe': state = ppeData; setState = setPpeData; break;
+        case 'ppeSystems': state = ppeSystemsData; setState = setPpeSystemsData; break;
+        case 'emergency': state = emergencyData; setState = setEmergencyData; break;
+        case 'anexoAltura': 
+            state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
+            setState = (value: any) => setAnexoAltura(prev => ({...prev, [anexoSection!]: value}));
+            break;
+        default: state = {}; setState = () => {};
     }
 
+    const handleChange = (value: string) => {
+        if (group === 'anexoAltura' && anexoSection) {
+            setState({
+                ...state,
+                [id]: value
+            });
+        } else {
+            setState((prev: any) => ({ ...prev, [id]: value }));
+        }
+    };
+    
     return (
-        <RadioGroup value={state[id] || 'na'} onValueChange={(value) => handleRadioChange(group, id, value)} className="flex">
-            <RadioGroupItem value="si" id={`${id}-si`} /> <Label htmlFor={`${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${id}-no`} /> <Label htmlFor={`${id}-no`} className="mr-2">NO</Label>
-            <RadioGroupItem value="na" id={`${id}-na`} /> <Label htmlFor={`${id}-na`}>NA</Label>
+        <RadioGroup value={state[id] || 'na'} onValueChange={handleChange} className="flex">
+            <RadioGroupItem value="si" id={`${group}-${id}-si`} /> <Label htmlFor={`${group}-${id}-si`} className="mr-2">SI</Label>
+            <RadioGroupItem value="no" id={`${group}-${id}-no`} /> <Label htmlFor={`${group}-${id}-no`} className="mr-2">NO</Label>
+            { (group === 'anexoAltura' || group === 'hazards') && <>
+                <RadioGroupItem value="na" id={`${group}-${id}-na`} /> <Label htmlFor={`${group}-${id}-na`}>NA</Label>
+            </>
+            }
+        </RadioGroup>
+    )
+  }
+
+  const renderAnexoRadioGroup = (id: string, section: keyof AnexoAltura) => {
+     const state = (anexoAltura as any)[section] || {};
+
+     const handleChange = (value: string) => {
+        setAnexoAltura(prev => ({
+            ...prev,
+            [section]: {
+                ...(prev as any)[section],
+                [id]: value
+            }
+        }))
+     }
+    
+    return (
+        <RadioGroup value={state[id] || 'no'} onValueChange={handleChange} className="flex">
+            <RadioGroupItem value="si" id={`anexo-${section}-${id}-si`} /> <Label htmlFor={`anexo-${section}-${id}-si`} className="mr-2">SI</Label>
+            <RadioGroupItem value="no" id={`anexo-${section}-${id}-no`} /> <Label htmlFor={`anexo-${section}-${id}-no`}>NO</Label>
         </RadioGroup>
     )
   }
@@ -448,13 +503,47 @@ export default function CreatePermitPage() {
           <div className="space-y-3">
           {items.map(item => (
               <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                  <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                  <Label htmlFor={`${group}-${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
                   {renderRadioGroup(item.id, group)}
               </div>
           ))}
           </div>
       </div>
   )
+
+  const anexoAlturaSections = {
+      trabajoConEscaleras: {
+          title: "TRABAJO CON ESCALERAS",
+          items: [
+              { id: 'escaleraAdecuada', label: 'A.- La escalera es adecuada para el trabajo a realizar (dieléctrica)' },
+              { id: 'inclinacionAdecuada', label: 'B.- La inclinación de la escalera es adecuada' },
+              { id: 'apoyoFirme', label: 'C.- Las superficies de apoyo de la escalera son firmes y regulares' },
+              { id: 'fijoParteSuperior', label: 'D.- Se fijó la escalera en la parte superior' },
+              { id: 'buenEstado', label: 'E.- La escalera se encuentra en buen estado y limpia' },
+              { id: 'conocenInstructivo', label: 'F.- Conocen los trabajadores el Instructivo trabajo seguro con escaleras' },
+              { id: 'requiereProteccion', label: 'G.- Se requiere uso de sistema de protección contra caídas' },
+              { id: 'otros', label: 'H.- Otros (Cual):' },
+          ]
+      },
+      trabajoConAndamios: {
+          title: "TRABAJO CON ANDAMIOS",
+          items: [
+              { id: 'terrenoFirme', label: 'A.- El terreno donde se apoya el andamio es firme' },
+              { id: 'bienNivelado', label: 'B.- El andamio se encuentra bien nivelado' },
+              { id: 'plataformasFijas', label: 'C.- Las plataformas de trabajo se encuentran fijas y en buen estado' },
+              { id: 'instalaronRodapies', label: 'D.- Se instalaron los rodadapiés' },
+              { id: 'barandasPerimetrales', label: 'E.- Se instalaron las barandas perimetrales en la plataforma de trabajo' },
+              { id: 'certificadoAndamio', label: 'F.- Se cuenta con certificado del andamio' },
+              { id: 'equiposAjustan', label: 'G.- Los equipos de protección se ajustan a los puntos de anclaje' },
+              { id: 'aseguraronPuntos', label: 'H.- Se aseguraron todos los puntos de conexión' },
+              { id: 'aseguroAndamio', label: 'I.- Se aseguró el andamio si es necesario a estructura fija' },
+              { id: 'utilizaronVientos', label: 'J. Se utilizaron vientos e u otro mecanismo para asegurar el andamio' },
+              { id: 'conocenInstructivoAndamios', label: 'K- Conocen los trabajadores el instructivo de trabajo seguro con andamios' },
+              { id: 'otros', label: 'L.- Otros (Cual):' },
+          ]
+      }
+  };
+
 
   return (
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
@@ -467,7 +556,7 @@ export default function CreatePermitPage() {
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de {steps.length}
+                    Paso {step} de {steps.length}: {currentStepInfo.label}
                   </p>
                 </div>
               </div>
@@ -491,7 +580,7 @@ export default function CreatePermitPage() {
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
-            {steps.map((_label, s_idx) => {
+            {steps.map((s_info, s_idx) => {
               const s = s_idx + 1;
               return(
               <div key={s} className="flex items-center flex-1">
@@ -501,7 +590,7 @@ export default function CreatePermitPage() {
                   'bg-gray-200 text-gray-600'
                 }`}
                 style={s <= step ? { backgroundColor: s === step ? colors.primary : colors.success } : {}}>
-                  {s < step ? <CheckCircle size={20}/> : s}
+                  {s < step ? <CheckCircle size={20}/> : s_idx + 1}
                 </div>
                 {s < steps.length && (
                   <div className="flex-1 h-1 mx-2 rounded" style={{ 
@@ -511,9 +600,9 @@ export default function CreatePermitPage() {
               </div>
             )})}
           </div>
-          <div className="grid grid-cols-6 gap-2 text-xs text-center font-medium">
-            {steps.map((label, s_idx) => (
-              <span key={s_idx} style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{label}</span>
+          <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
+            {steps.map((s_info, s_idx) => (
+              <span key={s_idx} className="text-xs text-center font-medium" style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{s_info.label}</span>
             ))}
           </div>
         </div>
@@ -521,7 +610,7 @@ export default function CreatePermitPage() {
       
       <div className="max-w-5xl mx-auto p-4 pb-24 w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {step === 1 && (
+          {currentStepInfo.label === "Info General" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -644,8 +733,75 @@ export default function CreatePermitPage() {
 
             </div>
           )}
+          
+          {currentStepInfo.label === "Anexo Altura" && (
+              <div className="space-y-6">
+                   <div className="text-center mb-6">
+                      <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                          ANEXO 1 - TRABAJOS EN ALTURA
+                      </h2>
+                      <p className="text-muted-foreground">Complete toda la información requerida para trabajos en altura.</p>
+                  </div>
 
-          {step === 2 && (
+                   <div className="p-4 border rounded-lg space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <Label>A.- Altura de trabajo:</Label>
+                              <Input value={anexoAltura.alturaTrabajo || ''} onChange={e => setAnexoAltura(prev => ({...prev, alturaTrabajo: e.target.value}))}/>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                            <Label>B.- Coordinador TSA</Label>
+                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'}))} className="flex">
+                              <RadioGroupItem value="si" id="anexo-coord-si" /><Label htmlFor="anexo-coord-si" className="mr-2">SI</Label>
+                              <RadioGroupItem value="no" id="anexo-coord-no" /><Label htmlFor="anexo-coord-no" >NO</Label>
+                            </RadioGroup>
+                          </div>
+                      </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                            <Label>C.- Auxiliar TSA</Label>
+                             <RadioGroup value={anexoAltura.auxiliarTSA || 'na'} onValueChange={v => setAnexoAltura(p => ({...p, auxiliarTSA: v as 'si'|'no'|'na'}))} className="flex">
+                              <RadioGroupItem value="si" id="anexo-aux-si" /><Label htmlFor="anexo-aux-si" className="mr-2">SI</Label>
+                              <RadioGroupItem value="no" id="anexo-aux-no" /><Label htmlFor="anexo-aux-no" className="mr-2">NO</Label>
+                              <RadioGroupItem value="na" id="anexo-aux-na" /><Label htmlFor="anexo-aux-na" >NA</Label>
+                            </RadioGroup>
+                          </div>
+                           <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                            <Label>D.- Elaboración ATS y procedimientos</Label>
+                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'}))} className="flex">
+                              <RadioGroupItem value="si" id="anexo-ats-si" /><Label htmlFor="anexo-ats-si" className="mr-2">SI</Label>
+                              <RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no" >NO</Label>
+                            </RadioGroup>
+                          </div>
+                      </div>
+                      <div>
+                          <Label>Especifique el requerimiento de claridad o espacio libre de caída:</Label>
+                          <Textarea value={anexoAltura.claridadEspacioLibre || ''} onChange={e => setAnexoAltura(prev => ({...prev, claridadEspacioLibre: e.target.value}))}/>
+                      </div>
+                  </div>
+                  
+                  {Object.entries(anexoAlturaSections).map(([sectionKey, sectionData]) => (
+                     <div key={sectionKey} className="p-4 border rounded-lg">
+                        <h4 className="font-bold mb-4 text-primary">{sectionData.title}</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            {sectionData.items.map(item => (
+                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                    <Label className="flex-1 text-sm">{item.label}</Label>
+                                    {renderAnexoRadioGroup(item.id, sectionKey as keyof AnexoAltura)}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  ))}
+
+                  <div className="p-4 border rounded-lg">
+                      <h4 className="font-bold mb-4 text-primary">OBSERVACIONES / SUPERVISIÓN DEL TRABAJO EN ALTURAS</h4>
+                      <Textarea value={anexoAltura.observaciones || ''} onChange={e => setAnexoAltura(p => ({...p, observaciones: e.target.value}))} rows={4}/>
+                  </div>
+              </div>
+          )}
+
+          {currentStepInfo.label === "Peligros" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -657,7 +813,7 @@ export default function CreatePermitPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   {hazards.map(hazard => (
                       <div key={hazard.id} className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
-                          <Label htmlFor={`${hazard.id}-si`} className="flex-1 text-sm">{hazard.label}</Label>
+                          <Label htmlFor={`hazards-${hazard.id}-si`} className="flex-1 text-sm">{hazard.label}</Label>
                           {renderRadioGroup(hazard.id, 'hazards')}
                       </div>
                   ))}
@@ -665,7 +821,7 @@ export default function CreatePermitPage() {
             </div>
           )}
           
-          {step === 3 && (
+          {currentStepInfo.label === "EPP" && (
             <div className="space-y-6">
                  <div className="text-center mb-6">
                     <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -690,7 +846,7 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {step === 4 && (
+          {currentStepInfo.label === "Sistemas y Emergencia" && (
              <div className="space-y-6">
                 <div className="text-center mb-6">
                   <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -704,7 +860,7 @@ export default function CreatePermitPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                     {ppeSystems.map(item => (
                         <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                            <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                            <Label htmlFor={`ppeSystems-${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
                             {renderRadioGroup(item.id, 'ppeSystems')}
                         </div>
                     ))}
@@ -724,7 +880,7 @@ export default function CreatePermitPage() {
                     <div className="space-y-3">
                      {emergencyQuestions.map(item => (
                         <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                            <Label htmlFor={`${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
+                            <Label htmlFor={`emergency-${item.id}-si`} className="flex-1 text-sm">{item.label}</Label>
                             {renderRadioGroup(item.id, 'emergency')}
                         </div>
                     ))}
@@ -733,7 +889,7 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {step === 5 && (
+          {currentStepInfo.label === "Trabajadores" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -782,7 +938,7 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {step === 6 && (
+          {currentStepInfo.label === "Revisión" && (
             <div className="space-y-8">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -884,7 +1040,7 @@ export default function CreatePermitPage() {
                     })
                   }
                 }}
-                disabled={!canProceed() || isSubmitting}
+                disabled={isSubmitting}
                 className="flex-1 py-3 h-auto"
               >
                 Siguiente →

@@ -28,9 +28,8 @@ export async function createPermit(data: PermitCreateData) {
     sst: { status: 'pendiente' as const }
   };
 
-  const permitPayload = {
+  const permitPayload: Partial<Permit> = {
     ...permitData,
-    number: '', // Will be generated after creation
     workType: permitData.workType && permitData.workType.length > 0 ? permitData.workType : ['general'],
     status: 'pendiente_revision' as const,
     createdBy: userId,
@@ -43,10 +42,15 @@ export async function createPermit(data: PermitCreateData) {
     approvals: initialApprovals,
     closure: {},
   };
+  
+  if (permitData.anexoAltura) {
+    permitPayload.anexoAltura = permitData.anexoAltura;
+  }
+
 
   try {
     // Add document to Firestore using Admin SDK
-    const docRef = await adminDb.collection('permits').add(permitPayload);
+    const docRef = await adminDb.collection('permits').add(permitPayload as any);
     
     // Generate and update permit number
     const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;

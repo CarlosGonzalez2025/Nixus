@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -65,6 +64,29 @@ export type PermitClosure = {
   horaCierre: string;
 }
 
+export type AnexoAltura = {
+  alturaTrabajo: string;
+  coordinadorTSA: 'si' | 'no';
+  auxiliarTSA: 'si' | 'no' | 'na';
+  elaboracionATS: 'si' | 'no';
+  claridadEspacioLibre: string;
+  trabajoConEscaleras: { [key: string]: 'si' | 'no' };
+  trabajoConAndamios: { [key: string]: 'si' | 'no' };
+  trabajoConCanastilla: { [key: string]: 'si' | 'no' };
+  lineaDeVida: { [key: string]: 'si' | 'no' };
+  arnesCuerpoEntero: { [key: string]: 'si' | 'no' };
+  eslingas: { [key: string]: 'si' | 'no' };
+  anclajesMoviles: { [key: string]: 'si' | 'no' };
+  mosquetones: { [key: string]: 'si' | 'no' };
+  otros: { cual1: string, cual2: string };
+  observaciones: string;
+  coordinadorTrabajosAltura: {
+    nombres: string;
+    cedula: string;
+    firmaApertura: string;
+  };
+};
+
 export type Permit = {
   id: string;
   number?: string;
@@ -100,4 +122,5 @@ export type Permit = {
     sst: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
+  anexoAltura?: Partial<AnexoAltura>;
 };

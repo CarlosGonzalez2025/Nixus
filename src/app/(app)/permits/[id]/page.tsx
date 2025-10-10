@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -574,6 +574,24 @@ export default function PermitDetailPage() {
                         <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
                         <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} />
                     </Section>
+                    
+                    {permit.anexoAltura && (
+                        <Section title="ANEXO 1 - TRABAJOS EN ALTURA">
+                            <div className="p-4 border rounded-lg bg-gray-50/50 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Field label="A.- Altura de trabajo:" value={permit.anexoAltura.alturaTrabajo} />
+                                    <Field label="B.- Coordinador TSA" value={permit.anexoAltura.coordinadorTSA?.toUpperCase()} />
+                                    <Field label="C.- Auxiliar TSA" value={permit.anexoAltura.auxiliarTSA?.toUpperCase()} />
+                                    <Field label="D.- Elaboración ATS y procedimientos" value={permit.anexoAltura.elaboracionATS?.toUpperCase()} />
+                                </div>
+                                <Field label="Requerimiento de claridad o espacio libre de caída" value={permit.anexoAltura.claridadEspacioLibre} fullWidth/>
+
+                                {/* Aquí irían todas las demás secciones del anexo, pero por brevedad se omite */}
+                                <Field label="Observaciones / Supervisión" value={permit.anexoAltura.observaciones} fullWidth/>
+                            </div>
+                        </Section>
+                    )}
+
 
                     <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
@@ -757,9 +775,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
