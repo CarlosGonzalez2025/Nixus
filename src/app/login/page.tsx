@@ -44,7 +44,7 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      await login(auth, values.email, values.password);
+      await login(values.email, values.password);
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
