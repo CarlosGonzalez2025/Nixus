@@ -87,6 +87,34 @@ export type AnexoAltura = {
   };
 };
 
+export type MedicionAtmosferica = {
+    id: string;
+    hora: string;
+    o2: string;
+    co: string;
+    h2s: string;
+    lel: string;
+    cl2: string;
+    co2: string;
+    firma: string;
+};
+
+export type SupervisorConfinado = {
+    nombres: string;
+    cedula: string;
+    firmaApertura: string;
+}
+
+export type AnexoConfinado = {
+    tipo: '1' | '2';
+    gradoPeligro: 'A' | 'B' | 'C';
+    checklist: { [key: string]: 'si' | 'no' };
+    mediciones: MedicionAtmosferica[];
+    observaciones: string;
+    supervisor: SupervisorConfinado;
+};
+
+
 export type Permit = {
   id: string;
   number?: string;
@@ -111,7 +139,7 @@ export type Permit = {
     atsVerificado: string; // 'si', 'no', 'na'
   };
   hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
-  ppe?: { [key: string]: string };
+  ppe?: { [key:string]: string };
   ppeSystems?: { [key: string]: string };
   emergency?: { [key: string]: string } & { notification: boolean };
   workers?: ExternalWorker[];
@@ -123,4 +151,5 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
   anexoAltura?: Partial<AnexoAltura>;
+  anexoConfinado?: Partial<AnexoConfinado>;
 };

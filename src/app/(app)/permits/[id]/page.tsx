@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, MedicionAtmosferica } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -576,6 +576,36 @@ export default function PermitDetailPage() {
           ]
       }
     };
+    
+    const anexoConfinadoChecklist = {
+      left: [
+          { id: 'A', label: 'A.- Existen los medios seguros de acceso al sitio de trabajo' },
+          { id: 'B', label: 'B.- Se cuenta con vigía en la entrada al espacio' },
+          { id: 'C', label: 'C.- Se cuenta con los EPP acordes a la actividad' },
+          { id: 'D', label: 'D.- Se cuenta con un medio de comunicación entre los trabajadores y vigia' },
+          { id: 'E', label: 'E.- Se realizó el aislamiento necesario para el control de energías peligrosas y fluidos (Anexo 3)' },
+          { id: 'F', label: 'F.- Están calibrados los equipos de prueba atmosférica y se realizaron pruebas funcionales' },
+          { id: 'G', label: 'G.- El área se ha delimitado para prevenir el acceso de personal no autorizado' },
+          { id: 'H', label: 'H.- Se realizó la medición de la atmósfera (IPVS, combustible, explosiva, tóxica y inerte)' },
+          { id: 'I', label: 'I.- Están claras las condiciones para cancelar el permiso' },
+          { id: 'J', label: 'J.- Drenado y purgado' },
+          { id: 'K', label: 'K.- Los equipos de iluminación y comunicación son a prueba de explosión.' },
+          { id: 'L', label: 'L.- Esta disponible la ventilación forzada o mecánica' },
+          { id: 'M', label: 'M.- Se cuenta con señalización de peligro acorde al trabajo a realizar.' },
+          { id: 'N', label: 'N.- Los operarios del área conocen el uso del equipo autónomo' },
+          { id: 'Ñ', label: 'Ñ.- Certificado de aptitud médica y validación certificado de entrenamiento.' },
+          { id: 'O', label: 'O.- Están disponibles los aparatos de respiración autónoma' },
+          { id: 'P', label: 'P.- Monitoreo atmosférico permanente' },
+          { id: 'Q', label: 'Q.- Se recordó o acordó el código de señales para emergencia' },
+          { id: 'R', label: 'R.- Se aplicó bloqueo, etiquetó y candadeo (completar Anexo 3)' }
+      ],
+      right: [
+          { id: 'S', label: 'S.- Elaboración ATS y/o procedimientos de trabajo escritos' },
+          { id: 'T', label: 'T.- Procedimiento de rescate y equipos para atender la emergencia' },
+          { id: 'V', label: 'V.- Estan dsisponibles y se comunicaron las fichas de seguridad de los productos químicos' },
+          { id: 'W', label: 'W.- existe olor perceptible' }
+      ]
+    }
 
   return (
     <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
@@ -700,6 +730,74 @@ export default function PermitDetailPage() {
                             <Field label="Observaciones / Supervisión" value={permit.anexoAltura.observaciones} fullWidth/>
                         </CollapsibleContent>
                       </Collapsible>
+                    )}
+
+                    {permit.anexoConfinado && (
+                        <Collapsible className="space-y-6 mt-6 border rounded-lg" defaultOpen>
+                            <CollapsibleTrigger className="w-full bg-gray-100 hover:bg-gray-200 p-4 flex justify-between items-center cursor-pointer group rounded-t-lg">
+                                <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 2 - TRABAJOS EN ESPACIOS CONFINADOS</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Field label="Tipo" value={`Tipo ${permit.anexoConfinado.tipo}`} />
+                                    <Field label="Grado de Peligro" value={`Grado ${permit.anexoConfinado.gradoPeligro}`} />
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Lista de Verificación</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                                        {[...anexoConfinadoChecklist.left, ...anexoConfinadoChecklist.right].map(item => (
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoConfinado?.checklist?.[item.id]} />
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Mediciones Atmosféricas</h4>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Hora</TableHead>
+                                                <TableHead>O2</TableHead>
+                                                <TableHead>CO</TableHead>
+                                                <TableHead>H2S</TableHead>
+                                                <TableHead>LEL</TableHead>
+                                                <TableHead>Firma</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {permit.anexoConfinado.mediciones?.map(med => (
+                                                <TableRow key={med.id}>
+                                                    <TableCell>{med.hora}</TableCell>
+                                                    <TableCell>{med.o2}</TableCell>
+                                                    <TableCell>{med.co}</TableCell>
+                                                    <TableCell>{med.h2s}</TableCell>
+                                                    <TableCell>{med.lel}</TableCell>
+                                                    <TableCell>
+                                                        {med.firma ? <Image src={med.firma} alt="Firma" width={80} height={40} className="bg-white rounded" /> : 'Pendiente'}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Supervisor de Espacios Confinados</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Field label="Nombres y Apellidos" value={permit.anexoConfinado.supervisor?.nombres} />
+                                        <Field label="Cédula" value={permit.anexoConfinado.supervisor?.cedula} />
+                                        <Field label="Firma Apertura" value={
+                                            permit.anexoConfinado.supervisor?.firmaApertura ? <Image src={permit.anexoConfinado.supervisor.firmaApertura} alt="Firma Supervisor" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
+                                        }/>
+                                    </div>
+                                </div>
+
+                                <Field label="Observaciones / Supervisión" value={permit.anexoConfinado.observaciones} fullWidth />
+
+                            </CollapsibleContent>
+                        </Collapsible>
                     )}
 
 

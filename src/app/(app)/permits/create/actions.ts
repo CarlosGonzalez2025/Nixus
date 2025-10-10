@@ -46,6 +46,10 @@ export async function createPermit(data: PermitCreateData) {
   if (permitData.anexoAltura) {
     permitPayload.anexoAltura = permitData.anexoAltura;
   }
+  
+  if (permitData.anexoConfinado) {
+    permitPayload.anexoConfinado = permitData.anexoConfinado;
+  }
 
 
   try {
