@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, {
@@ -22,13 +23,13 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/types';
 
 // Demo users as provided in the UI mock
-const demoUsers: { [email: string]: { name: string, role: User['role'] } } = {
-  'info@datenova.io': { name: 'Admin', role: 'admin' },
-  'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante' },
-  'maria@italcol.com': { name: 'María García', role: 'autorizante' },
-  'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea' },
-  'ana@italcol.com': { name: 'Ana Martínez', role: 'ejecutante' },
-  'roberto@italcol.com': { name: 'Roberto Sánchez', role: 'lider_sst' }
+const demoUsers: { [email: string]: Partial<User> & { name: string, role: User['role'] } } = {
+  'info@datenova.io': { name: 'Admin', role: 'admin', empresa: 'DATENOVA', ciudad: 'Bogotá', planta: 'Principal' },
+  'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante', empresa: 'ITALCOL', ciudad: 'Cali', planta: 'Yumbo' },
+  'maria@italcol.com': { name: 'María García', role: 'autorizante', empresa: 'ITALCOL', ciudad: 'Barranquilla', planta: 'Malambo' },
+  'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
+  'ana@italcol.com': { name: 'Ana Martínez', role: 'ejecutante', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
+  'roberto@italcol.com': { name: 'Roberto Sánchez', role: 'lider_sst', empresa: 'ITALCOL', ciudad: 'Bogotá', planta: 'Sede Principal' }
 };
 
 interface AuthContextType {
@@ -70,7 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: firebaseUser.email,
             displayName: demoUser?.name || firebaseUser.email,
             photoURL: firebaseUser.photoURL || '',
-            role: demoUser?.role || 'ejecutante' // Default role
+            role: demoUser?.role || 'ejecutante', // Default role
+            empresa: demoUser?.empresa || 'N/A',
+            ciudad: demoUser?.ciudad || 'N/A',
+            planta: demoUser?.planta || 'N/A',
+            area: demoUser?.area || 'N/A',
+            telefono: demoUser?.telefono || '',
           };
            await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
         }

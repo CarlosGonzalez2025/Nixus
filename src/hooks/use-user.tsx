@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -38,6 +39,11 @@ export function useUser() {
           displayName: authUser.displayName,
           photoURL: authUser.photoURL,
           role: 'lider_tarea', // Default role
+          empresa: 'N/A',
+          ciudad: 'N/A',
+          planta: 'N/A',
+          area: 'N/A',
+          telefono: ''
         };
         // Create the user profile in Firestore
         setDoc(docRef, defaultUser).then(() => {

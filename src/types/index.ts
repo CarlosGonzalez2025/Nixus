@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -11,6 +12,11 @@ export interface User {
   displayName?: string | null;
   photoURL?: string | null;
   role?: UserRole;
+  area?: string;
+  telefono?: string;
+  empresa?: string;
+  ciudad?: string;
+  planta?: string;
 }
 
 export type Approval = {
@@ -95,3 +101,4 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
 };
+

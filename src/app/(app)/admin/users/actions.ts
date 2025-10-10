@@ -1,3 +1,4 @@
+
 'use server';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -13,6 +14,11 @@ const formSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
+  area: z.string().optional(),
+  telefono: z.string().optional(),
+  empresa: z.string().min(2),
+  ciudad: z.string().optional(),
+  planta: z.string().optional(),
 });
 
 export async function createUser(data: z.infer<typeof formSchema>) {
@@ -27,6 +33,11 @@ export async function createUser(data: z.infer<typeof formSchema>) {
       email: user.email,
       displayName: data.fullName,
       role: data.role,
+      area: data.area,
+      telefono: data.telefono,
+      empresa: data.empresa,
+      ciudad: data.ciudad,
+      planta: data.planta,
       photoURL: user.photoURL || '',
     };
     

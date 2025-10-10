@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -45,12 +46,18 @@ import { db } from '@/lib/firebase';
 import type { User, UserRole } from '@/types';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
   email: z.string().email({ message: 'Correo electrónico inválido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
+  area: z.string().optional(),
+  telefono: z.string().optional(),
+  empresa: z.string().min(2, { message: 'La empresa es requerida.'}),
+  ciudad: z.string().optional(),
+  planta: z.string().optional(),
 });
 
 const roleNames: { [key in UserRole]: string } = {
@@ -60,6 +67,7 @@ const roleNames: { [key in UserRole]: string } = {
   ejecutante: 'Ejecutante del Trabajo',
   lider_sst: 'Líder SST',
   admin: 'Administrador',
+  mantenimiento: 'Mantenimiento'
 };
 
 export default function UsersPage() {
@@ -77,6 +85,11 @@ export default function UsersPage() {
       email: '',
       password: '',
       role: 'ejecutante',
+      area: '',
+      telefono: '',
+      empresa: 'ITALCOL',
+      ciudad: '',
+      planta: ''
     },
   });
 
@@ -214,6 +227,75 @@ export default function UsersPage() {
                 />
                 <FormField
                   control={form.control}
+                  name="empresa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Empresa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: ITALCOL" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="ciudad"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Ciudad</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: Bogotá" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <FormField
+                    control={form.control}
+                    name="planta"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Planta</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: Faca" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="area"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Área</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: Mantenimiento" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="telefono"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Teléfono</FormLabel>
+                        <FormControl>
+                            <Input type="tel" placeholder="Ej: 3001234567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                <FormField
+                  control={form.control}
                   name="role"
                   render={({ field }) => (
                     <FormItem>
@@ -256,19 +338,21 @@ export default function UsersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+             <ScrollArea className="h-[600px] w-full">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Correo</TableHead>
                     <TableHead>Rol</TableHead>
+                    <TableHead>Planta</TableHead>
+                    <TableHead>Empresa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loadingUsers ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="h-24 text-center">
+                      <TableCell colSpan={5} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                       </TableCell>
                     </TableRow>
@@ -278,12 +362,14 @@ export default function UsersPage() {
                         <TableCell className="font-medium">{user.displayName}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{roleNames[user.role as UserRole] || 'No asignado'}</TableCell>
+                        <TableCell>{user.planta || 'N/A'}</TableCell>
+                        <TableCell>{user.empresa || 'N/A'}</TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
