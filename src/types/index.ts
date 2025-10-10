@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -12,12 +13,19 @@ export interface User {
   role?: UserRole;
 }
 
+export type Approval = {
+  userId: string;
+  userName?: string | null;
+  signedAt: string;
+  status: 'aprobado' | 'rechazado' | 'pendiente';
+  comments?: string;
+}
+
 export type Permit = {
   id: string;
   number?: string;
   workType: string;
   environmentalFactors: string;
-  permitDetails: string;
   recommendedControls: string;
   status: PermitStatus;
   createdBy: string;
@@ -31,6 +39,13 @@ export type Permit = {
   hazards?: any;
   annexes?: any;
   ppe?: any;
-  workers?: any[];
-  approvals?: any;
+  workers?: string[]; // Array of user UIDs
+  approvals?: {
+    solicitante?: Approval;
+    lider_tarea?: Approval;
+    autorizante?: Approval;
+    lider_sst?: Approval;
+  };
 };
+
+    

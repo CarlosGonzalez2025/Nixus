@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from './actions';
@@ -17,6 +17,9 @@ import {
   Wand2,
   Loader2,
   X,
+  Search,
+  UserPlus,
+  Signature,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +27,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { getRiskAssessmentRecommendations } from '@/ai/flows/risk-assessment-recommendation';
 import { Logo } from '@/components/logo';
 import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { User } from '@/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -49,6 +65,49 @@ export default function CreatePermitPage() {
   const [selectedAnnexes, setSelectedAnnexes] = useState<string[]>([]);
   const [ppeData, setPpeData] = useState<{ [key: string]: { required?: boolean, verified?: boolean } }>({});
   const [emergencyData, setEmergencyData] = useState<{ [key: string]: string }>({});
+  const [workers, setWorkers] = useState<User[]>([]);
+  
+  // State for Add Worker Dialog
+  const [isAddWorkerDialogOpen, setIsAddWorkerDialogOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if(isAddWorkerDialogOpen) {
+        setLoadingUsers(true);
+        try {
+          const usersSnapshot = await getDocs(collection(db, 'users'));
+          const usersList = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+          setAllUsers(usersList);
+        } catch (error) {
+          console.error("Error fetching users: ", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los usuarios.' });
+        } finally {
+          setLoadingUsers(false);
+        }
+      }
+    };
+    fetchUsers();
+  }, [isAddWorkerDialogOpen, toast]);
+
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter(u => 
+      u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    ).filter(u => !workers.some(w => w.uid === u.uid)); // Exclude already added workers
+  }, [searchTerm, allUsers, workers]);
+
+  const addWorker = (worker: User) => {
+    setWorkers([...workers, worker]);
+  };
+
+  const removeWorker = (workerUid: string) => {
+    setWorkers(workers.filter(w => w.uid !== workerUid));
+  };
+
 
   const colors = {
     primary: 'hsl(var(--primary))',
@@ -116,6 +175,9 @@ export default function CreatePermitPage() {
     if (step === 5) {
       return emergencyQuestions.every(q => emergencyData[q] === 'si');
     }
+     if (step === 6) {
+      return workers.length > 0;
+    }
     return true;
   };
   
@@ -134,7 +196,7 @@ export default function CreatePermitPage() {
     try {
       const values = {
         workType: formData.workType,
-        environmentalFactors: "No especificado", // Placeholder, you can add this field to the form
+        environmentalFactors: "No especificado",
         permitDetails: formData.workDescription
       };
       const result = await getRiskAssessmentRecommendations(values);
@@ -164,23 +226,26 @@ export default function CreatePermitPage() {
     try {
       const fullPermitData = {
         workType: formData.workType,
-        permitDetails: JSON.stringify({
-          generalInfo: formData,
-          hazards: hazardsData,
-          annexes: selectedAnnexes,
-          ppe: ppeData,
-          emergency: emergencyData,
-        }),
         environmentalFactors: 'No especificado',
         recommendedControls: recommendations,
         userId: user.uid,
+        generalInfo: formData,
+        hazards: hazardsData,
+        annexes: selectedAnnexes,
+        ppe: ppeData,
+        emergency: emergencyData,
+        workers: workers.map(w => w.uid),
+        approvals: {
+          solicitante: {
+            userId: user.uid,
+            userName: user.displayName,
+            signedAt: new Date().toISOString(),
+            status: 'aprobado'
+          }
+        }
       };
 
-      const result = await createPermit(fullPermitData);
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      await createPermit(fullPermitData);
       
       toast({
         title: 'Permiso Creado Exitosamente',
@@ -202,6 +267,11 @@ export default function CreatePermitPage() {
   const steps = [
     "Info General", "Peligros", "Anexos", "EPP", "Emergencias", "Trabajadores", "Revisión"
   ];
+  
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
 
   return (
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
@@ -235,7 +305,6 @@ export default function CreatePermitPage() {
         </div>
       </div>
       
-      {/* Progress Bar */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
@@ -267,10 +336,8 @@ export default function CreatePermitPage() {
         </div>
       </div>
       
-      {/* Form Content */}
       <div className="max-w-5xl mx-auto p-4 pb-24 w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Step 1: Información General */}
           {step === 1 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
@@ -387,7 +454,6 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {/* Step 2: Verificación de Peligros */}
           {step === 2 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
@@ -520,7 +586,6 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {/* Step 3: Anexos Específicos */}
           {step === 3 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
@@ -615,7 +680,6 @@ export default function CreatePermitPage() {
             </div>
           )}
           
-          {/* Step 4: EPP */}
           {step === 4 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
@@ -683,7 +747,6 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {/* Step 5: Emergencias */}
           {step === 5 && (
              <div className="space-y-6">
                 <div className="text-center mb-6">
@@ -769,77 +832,73 @@ export default function CreatePermitPage() {
             </div>
           )}
 
-          {/* Step 6: Trabajadores */}
           {step === 6 && (
-            <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                    Trabajadores Ejecutantes
-                  </h2>
-                  <p className="text-muted-foreground">Registre todos los trabajadores que participarán en esta tarea</p>
-                </div>
-
-                <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500">
-                  <p className="text-sm flex items-center gap-2 text-blue-800">
-                    <Users size={20} />
-                    <span>
-                      Todos los trabajadores deben confirmar su participación y asistencia a la charla preoperativa
-                    </span>
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Mocked user list for now */}
-                   <div className="border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
-                      <div className="flex flex-col md:flex-row items-center gap-4">
-                        <div 
-                          className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg bg-primary"
-                        >
-                          AM
-                        </div>
-                        <div className="flex-1 text-center md:text-left">
-                          <p className="font-bold text-lg text-gray-800">Ana Martínez</p>
-                          <p className="text-sm text-gray-600">ana@italcol.com</p>
-                          <p className="text-xs px-3 py-1 bg-primary/20 text-primary rounded-full inline-block mt-1">
-                            Ejecutante del Trabajo
-                          </p>
-                        </div>
-                        <Button className="bg-green-500 hover:bg-green-600">
-                          <CheckCircle size={16} className="mr-2"/> Confirmado
-                        </Button>
-                      </div>
-                    </div>
-
-                  <Button variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
-                    <Users size={24} className="mr-3" />
-                    <span className="font-bold">+ Agregar Trabajador Adicional</span>
-                  </Button>
-                </div>
-            </div>
-          )}
-
-          {/* Step 7: Revisión */}
-          {step === 7 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Revisión Final y Envío
+                  Trabajadores Ejecutantes
                 </h2>
-                <p className="text-muted-foreground">Verifique toda la información antes de enviar</p>
+                <p className="text-muted-foreground">Registre todos los trabajadores que participarán en esta tarea</p>
               </div>
 
-              <div className="rounded-xl p-6 bg-green-50 border-2 border-green-400">
-                <div className="flex items-center gap-4">
-                  <CheckCircle className="text-green-500" size={32} />
-                  <div>
-                    <p className="font-bold text-lg text-green-600">
-                      ✓ Formulario Completo
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      Revise toda la información cuidadosamente antes de enviar para aprobación
-                    </p>
+              <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500">
+                <p className="text-sm flex items-center gap-2 text-blue-800">
+                  <Users size={20} />
+                  <span>
+                    Debe agregar al menos un trabajador para continuar.
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {workers.length > 0 ? (
+                  workers.map(worker => (
+                    <div key={worker.uid} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={worker.photoURL || undefined} />
+                          <AvatarFallback>{getInitials(worker.displayName)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 text-center sm:text-left">
+                          <p className="font-bold text-lg text-gray-800">{worker.displayName}</p>
+                          <p className="text-sm text-gray-600">{worker.email}</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          // TODO: Implement signature logic
+                          toast({ title: "Próximamente", description: "La funcionalidad de firma estará disponible pronto."})
+                        }}>
+                          <Signature size={16} className="mr-2"/> Pendiente de Firma
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => removeWorker(worker.uid)}>
+                          <X className="h-5 w-5 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 border-2 border-dashed rounded-xl">
+                      <Users size={48} className="mx-auto text-gray-300" />
+                      <p className="mt-4 font-semibold text-gray-600">No hay trabajadores agregados</p>
+                      <p className="text-sm text-gray-500">Haga clic en el botón de abajo para empezar a agregar.</p>
                   </div>
-                </div>
+                )}
+
+                <Button onClick={() => setIsAddWorkerDialogOpen(true)} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
+                  <UserPlus size={24} className="mr-3" />
+                  <span className="font-bold">+ Agregar Trabajador</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+
+          {step === 7 && (
+            <div className="space-y-8">
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                  Revisión Final y Firmas
+                </h2>
+                <p className="text-muted-foreground">Verifique toda la información antes de enviar</p>
               </div>
 
               <div className="space-y-4">
@@ -918,12 +977,44 @@ export default function CreatePermitPage() {
                    </div>
                  </div>
 
+                 <div className="border-2 border-gray-200 rounded-xl p-6">
+                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
+                        <Signature size={24} />
+                        Firmas y Aprobaciones
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-200">
+                            <div>
+                                <p className="font-bold text-green-700">Solicitante del Permiso</p>
+                                <p className="text-sm text-gray-600">{user?.displayName}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado</p>
+                               <p className="text-xs text-gray-500">{new Date().toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                            <div>
+                                <p className="font-bold text-yellow-700">Líder de la Tarea</p>
+                                <p className="text-sm text-gray-600">Pendiente de asignación</p>
+                            </div>
+                             <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Pendiente</p>
+                        </div>
+                         <div className="flex items-center justify-between p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                            <div>
+                                <p className="font-bold text-yellow-700">Autorizante</p>
+                                <p className="text-sm text-gray-600">Pendiente de asignación</p>
+                            </div>
+                             <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Pendiente</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="rounded-xl p-6 bg-yellow-50 border-2 border-yellow-400">
                   <p className="text-sm flex items-start gap-3 text-yellow-800">
                     <AlertTriangle className="text-yellow-500" style={{minWidth: 20}} size={20} />
                     <span>
-                      <strong>Importante:</strong> Una vez enviado, este permiso pasará a revisión. 
-                      No podrá ser modificado hasta que el ciclo de aprobación se complete o sea rechazado.
+                      <strong>Importante:</strong> Al hacer clic en "Enviar para Aprobación", usted firma digitalmente este permiso y confirma que toda la información es correcta y verídica.
                     </span>
                   </p>
                 </div>
@@ -956,7 +1047,9 @@ export default function CreatePermitPage() {
                     toast({
                       variant: 'destructive',
                       title: 'Campos incompletos o críticos',
-                      description: 'Por favor complete todos los campos obligatorios y corrija los campos críticos antes de continuar.'
+                      description: step === 6 
+                        ? 'Debe agregar al menos un trabajador para poder continuar.'
+                        : 'Por favor complete todos los campos obligatorios y corrija los campos críticos antes de continuar.'
                     })
                   }
                 }}
@@ -982,6 +1075,67 @@ export default function CreatePermitPage() {
           </div>
         </div>
       </div>
+      
+       {/* Add Worker Dialog */}
+      <Dialog open={isAddWorkerDialogOpen} onOpenChange={setIsAddWorkerDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] h-[70vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Agregar Trabajador</DialogTitle>
+            <DialogDescription>
+              Busque y seleccione los usuarios para agregar al permiso de trabajo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre o correo electrónico..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            {loadingUsers ? (
+              <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-2 py-4">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map(u => (
+                    <div key={u.uid} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                      <Avatar>
+                        <AvatarImage src={u.photoURL || undefined} />
+                        <AvatarFallback>{getInitials(u.displayName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-semibold">{u.displayName}</p>
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                      </div>
+                      <Button size="sm" onClick={() => {
+                        addWorker(u);
+                        toast({ title: 'Trabajador Agregado', description: `${u.displayName} ha sido agregado.`});
+                      }}>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Agregar
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No se encontraron usuarios o ya han sido agregados.</p>
+                )}
+              </div>
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsAddWorkerDialogOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+    

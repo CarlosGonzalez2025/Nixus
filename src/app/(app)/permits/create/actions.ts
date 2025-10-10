@@ -7,31 +7,33 @@ import { revalidatePath } from 'next/cache';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import type { SecurityRuleContext } from '@/lib/errors';
+import type { Permit } from '@/types';
 
-interface PermitData {
-  workType: string;
-  environmentalFactors: string;
-  permitDetails: string;
-  recommendedControls: string;
+type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number'> & {
   userId: string;
-}
+};
 
-export async function createPermit(data: PermitData) {
+
+export async function createPermit(data: PermitCreateData) {
   if (!data.userId) {
     return { error: 'User not authenticated' };
   }
 
+  const { userId, ...permitData } = data;
+
   const permitPayload = {
-    ...data,
-    createdBy: data.userId,
+    ...permitData,
+    createdBy: userId,
     status: 'pendiente_revision',
     createdAt: serverTimestamp(),
   };
   
   const permitsCollectionRef = collection(db, 'permits');
 
+  // No await here, let it run in the background
   addDoc(permitsCollectionRef, permitPayload)
     .then(() => {
+      // Revalidate paths to show the new permit in the lists
       revalidatePath('/permits');
       revalidatePath('/dashboard');
     })
@@ -41,16 +43,14 @@ export async function createPermit(data: PermitData) {
         operation: 'create',
         requestResourceData: permitPayload,
       } satisfies SecurityRuleContext);
-
-      // Emit the contextual error for debugging in the development overlay
+      
       errorEmitter.emit('permission-error', permissionError);
 
-      // IMPORTANT: We do not return a serializable error here.
-      // The client-side toast will be triggered by the listener.
+      // We don't throw here to avoid unhandled promise rejection on the server.
+      // The client will get the error via the listener.
     });
 
-  // Since the operation is handled in the background, we can return a success-like object
-  // to give the UI immediate feedback, even though the write is still pending on the server.
-  // The UI will handle the error toast via the global listener if the write fails.
-  return { success: true };
+    return { success: true };
 }
+
+    
