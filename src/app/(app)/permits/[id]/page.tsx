@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -47,6 +46,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 
+// ✅ Helper function to handle different date formats
+const parseFirestoreDate = (dateValue: any): Date | null => {
+  if (!dateValue) return null;
+  
+  // If it's a Firestore Timestamp
+  if (typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  }
+  
+  // If it's already a Date object
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+  
+  // If it's a string (ISO format)
+  if (typeof dateValue === 'string') {
+    return new Date(dateValue);
+  }
+  
+  return null;
+};
 
 const getStatusInfo = (status: string): { text: string; icon: React.ElementType; color: string } => {
   const statusInfo: { [key: string]: { text: string; icon: React.ElementType; color: string } } = {
@@ -128,7 +148,7 @@ export default function PermitDetailPage() {
         setPermit({
           id: docSnap.id,
           ...data,
-          createdAt: data.createdAt?.toDate(),
+          createdAt: parseFirestoreDate(data.createdAt), // ✅ Use helper function
         } as Permit);
         setError(null);
       } else {
@@ -154,6 +174,11 @@ export default function PermitDetailPage() {
     const input = permitContentRef.current;
     if (!input) return;
 
+    toast({
+      title: 'Generando PDF...',
+      description: 'Por favor espere mientras se genera el documento.',
+    });
+
     html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -164,7 +189,18 @@ export default function PermitDetailPage() {
       const pdfHeight = pdfWidth / ratio;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`permiso_${permitId.substring(0,8)}.pdf`);
+      pdf.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
+      
+      toast({
+        title: 'PDF Generado',
+        description: 'El documento se ha descargado exitosamente.',
+      });
+    }).catch((error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Error al generar PDF',
+        description: error.message,
+      });
     });
   };
 
@@ -212,7 +248,7 @@ export default function PermitDetailPage() {
   };
   
   const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
-      if(!currentUser || !permit) return false;
+      if(!currentUser || !permit || !permit.approvals) return false;
       const approval = permit.approvals[role];
       if (type === 'firmaApertura') {
           return currentUser.role === role && approval?.status === 'pendiente' && !approval?.firmaApertura;
@@ -290,7 +326,12 @@ export default function PermitDetailPage() {
                 </div>
                 <div className="text-right">
                     <h1 className="text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
-                    <p className="font-mono text-gray-600 mt-2">ID: {permit.id}</p>
+                    <p className="font-mono text-gray-600 mt-2">N°: {permit.number || permit.id.substring(0, 10)}</p>
+                    {permit.createdAt && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Creado: {format(permit.createdAt, "dd/MM/yyyy HH:mm")}
+                      </p>
+                    )}
                 </div>
             </header>
 
@@ -315,19 +356,21 @@ export default function PermitDetailPage() {
                     </div>
                 </Section>
 
-                <Section title="HERRAMIENTAS Y EQUIPOS">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                        {permit.generalInfo?.tools?.map((tool: Tool, index: number) => (
-                             <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                                <span className="text-xs flex-1">{tool.name}</span>
-                                <div className="flex gap-2 items-center text-xs font-mono">
-                                    <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
-                                    <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Section>
+                {permit.generalInfo?.tools && permit.generalInfo.tools.length > 0 && (
+                  <Section title="HERRAMIENTAS Y EQUIPOS">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          {permit.generalInfo.tools.map((tool: Tool, index: number) => (
+                               <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                                  <span className="text-xs flex-1">{tool.name}</span>
+                                  <div className="flex gap-2 items-center text-xs font-mono">
+                                      <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
+                                      <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </Section>
+                )}
                 
                 <Section title="Verificaciones Previas">
                     <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
@@ -337,7 +380,7 @@ export default function PermitDetailPage() {
                 <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                       {Object.entries(permit.hazards || {}).map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
                       ))}
                     </div>
                 </Section>
@@ -349,7 +392,7 @@ export default function PermitDetailPage() {
                                <h4 className="font-bold mb-2 text-gray-600 text-sm">{section.title}</h4>
                                <div className="space-y-1">
                                 {section.ids.map(id => permit.ppe && permit.ppe[id] && (
-                                     <RadioCheck key={id} label={id.replace(/_/g, ' ')} value={permit.ppe[id]} />
+                                     <RadioCheck key={id} label={id.replace(/_/g, ' ').toUpperCase()} value={permit.ppe[id]} />
                                 ))}
                                </div>
                             </div>
@@ -360,7 +403,7 @@ export default function PermitDetailPage() {
                 <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                       {Object.entries(permit.ppeSystems || {}).map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
                       ))}
                     </div>
                 </Section>
@@ -369,7 +412,7 @@ export default function PermitDetailPage() {
                     <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
                      <div className="mt-4 space-y-1">
                       {Object.entries(permit.emergency || {}).filter(([key]) => key !== 'notification').map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ')} value={value as string} />
+                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
                       ))}
                     </div>
                 </Section>
@@ -399,7 +442,7 @@ export default function PermitDetailPage() {
                  <Section title="Autorizaciones">
                      <p className="text-xs text-muted-foreground mb-4">He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
+                        {permit.approvals && (Object.keys(signatureRoles) as SignatureRole[]).map(role => {
                             const approval = permit.approvals[role];
                             return (
                                 <Card key={role} className="flex flex-col">
@@ -414,7 +457,7 @@ export default function PermitDetailPage() {
                                               approval?.firmaApertura ? (
                                                   <div className="bg-gray-100 p-2 rounded-md">
                                                     <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
-                                                    <p className="text-center text-xs mt-1">Firmado el {format(new Date(approval.signedAt!), "dd/MM/yyyy 'a las' HH:mm")}</p>
+                                                    <p className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</p>
                                                   </div>
                                               ) : 'Pendiente'
                                             } />
@@ -444,13 +487,15 @@ export default function PermitDetailPage() {
                              <RadioCheck label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
                         </div>
                         <div className="space-y-2">
-                            <Field label="Seguimiento trabajo en caliente" value={
-                                <div className="flex gap-2">
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora1 || ''} readOnly className="text-xs"/>
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora2 || ''} readOnly className="text-xs"/>
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora3 || ''} readOnly className="text-xs"/>
-                                </div>
-                            }/>
+                            {permit.closure?.seguimientoCaliente && (
+                              <Field label="Seguimiento trabajo en caliente" value={
+                                  <div className="flex gap-2">
+                                      <Input value={permit.closure.seguimientoCaliente.hora1 || ''} readOnly className="text-xs"/>
+                                      <Input value={permit.closure.seguimientoCaliente.hora2 || ''} readOnly className="text-xs"/>
+                                      <Input value={permit.closure.seguimientoCaliente.hora3 || ''} readOnly className="text-xs"/>
+                                  </div>
+                              }/>
+                            )}
                             <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
                              <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/MM/yyyy') : 'Pendiente'}/>
                              <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>

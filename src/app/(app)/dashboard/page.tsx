@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -15,10 +16,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, CheckCircle, Clock, XCircle, PlusCircle, Activity, TrendingUp, Upload, Download } from 'lucide-react';
+import { FileText, CheckCircle, Clock, XCircle, PlusCircle, Activity, TrendingUp, Upload, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
-
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Permit } from '@/types';
+import { format } from 'date-fns';
 
 const getStatusColor = (status: string) => {
     const statusColors: {[key: string]: string} = {
@@ -29,7 +33,6 @@ const getStatusColor = (status: string) => {
       'suspendido': 'bg-orange-100 text-orange-800',
       'cerrado': 'bg-blue-100 text-blue-800',
       'rechazado': 'bg-red-100 text-red-800',
-      'Pending': 'bg-yellow-100 text-yellow-800',
     };
     return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -43,51 +46,116 @@ const getStatusColor = (status: string) => {
       'suspendido': 'Suspendido',
       'cerrado': 'Cerrado',
       'rechazado': 'Rechazado',
-      'Pending': 'Pendiente de Revisión',
     };
     return statusText[status] || status;
   };
 
+// ✅ Helper function to handle different date formats
+const parseFirestoreDate = (dateValue: any): Date | null => {
+  if (!dateValue) return null;
+  
+  if (typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  }
+  
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+  
+  if (typeof dateValue === 'string') {
+    return new Date(dateValue);
+  }
+  
+  return null;
+};
 
-// Mock data
-const permits = [
-    { id: 1, number: 'PT-0001', workType: 'Trabajo en Altura', date: '2025-10-08', status: 'aprobado' },
-    { id: 2, number: 'PT-0002', workType: 'Espacios Confinados', date: '2025-10-09', status: 'en_ejecucion' },
-    { id: 3, number: 'PT-0003', workType: 'Trabajo en Caliente', date: '2025-10-10', status: 'pendiente_revision' },
-];
-
+const workTypes: {[key: string]: string} = {
+  'altura': 'Trabajo en Alturas',
+  'confinado': 'Espacios Confinados',
+  'energia': 'Control de Energías',
+  'izaje': 'Izaje de Cargas',
+  'caliente': 'Trabajo en Caliente',
+  'excavacion': 'Excavaciones',
+  'general': 'Trabajo General'
+}
 
 export default function Dashboard() {
   const { user } = useUser();
+  const [permits, setPermits] = useState<Permit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    pendiente: 0,
+    aprobado: 0,
+    enEjecucion: 0
+  });
   
-  const myPermits = permits; // This will be replaced by user-specific permits
-  const pendingApprovals = permits.filter(p => p.status === 'pendiente_revision');
-  
-  const stats = [
+  useEffect(() => {
+    if (!user) return;
+
+    // Query for user's permits
+    const permitsCollection = collection(db, 'permits');
+    const q = query(
+      permitsCollection, 
+      where('createdBy', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const permitsData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: parseFirestoreDate(data.createdAt),
+        } as Permit;
+      });
+      
+      setPermits(permitsData);
+      
+      // Calculate stats
+      setStats({
+        total: permitsData.length,
+        pendiente: permitsData.filter(p => p.status === 'pendiente_revision').length,
+        aprobado: permitsData.filter(p => p.status === 'aprobado').length,
+        enEjecucion: permitsData.filter(p => p.status === 'en_ejecucion').length
+      });
+      
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading permits:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const statsCards = [
       {
         title: 'Mis Permisos',
-        value: myPermits.length,
+        value: stats.total,
         icon: FileText,
         color: 'hsl(var(--primary))',
         bgColor: 'hsl(var(--primary) / 0.1)'
       },
       {
         title: 'Pendientes',
-        value: pendingApprovals.length,
+        value: stats.pendiente,
         icon: Clock,
         color: 'hsl(var(--secondary))',
         bgColor: 'hsl(var(--secondary) / 0.1)'
       },
       {
         title: 'Aprobados',
-        value: permits.filter(p => p.status === 'aprobado').length,
+        value: stats.aprobado,
         icon: CheckCircle,
         color: 'hsl(var(--accent))',
         bgColor: 'hsl(var(--accent) / 0.1)'
       },
       {
         title: 'En Ejecución',
-        value: permits.filter(p => p.status === 'en_ejecucion').length,
+        value: stats.enEjecucion,
         icon: Activity,
         color: 'hsl(var(--info))',
         bgColor: 'hsl(var(--info) / 0.1)'
@@ -106,7 +174,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
+        {statsCards.map((stat, index) => (
             <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -123,7 +191,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-       { (user?.role === 'lider_tarea' || user?.role === 'solicitante') && (
+       { (user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -134,15 +202,17 @@ export default function Dashboard() {
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button asChild className="h-auto py-4" size="lg">
                     <Link href="/permits/create">
-                        <FileText className="mr-2"/>
+                        <PlusCircle className="mr-2"/>
                         Nuevo Permiso de Trabajo
                     </Link>
                 </Button>
-                <Button variant="outline" className="h-auto py-4" size="lg">
-                    <Upload className="mr-2"/>
-                    Cargar ATS
+                <Button asChild variant="outline" className="h-auto py-4" size="lg">
+                    <Link href="/permits">
+                        <FileText className="mr-2"/>
+                        Ver Todos los Permisos
+                    </Link>
                 </Button>
-                <Button variant="outline" className="h-auto py-4" size="lg">
+                <Button variant="outline" className="h-auto py-4" size="lg" disabled>
                     <Download className="mr-2"/>
                     Exportar Reportes
                 </Button>
@@ -150,21 +220,25 @@ export default function Dashboard() {
             </Card>
           )}
 
-
       <Card>
         <CardHeader>
-          <CardTitle>Permisos de Trabajo Recientes</CardTitle>
+          <CardTitle>Mis Permisos Recientes</CardTitle>
         </CardHeader>
         <CardContent>
-           {permits.length === 0 ? (
+           {loading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="ml-2 text-sm text-muted-foreground">Cargando permisos...</p>
+              </div>
+            ) : permits.length === 0 ? (
                 <div className="p-12 text-center text-gray-500">
                   <FileText size={64} className="mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-semibold">No hay permisos de trabajo registrados</p>
                   <p className="text-sm mt-2 mb-4">Crea tu primer permiso para comenzar</p>
-                  {(user?.role === 'lider_tarea' || user?.role === 'solicitante') && (
+                  {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
                     <Button asChild>
                        <Link href="/permits/create">
-                        <FileText className="mr-2"/>
+                        <PlusCircle className="mr-2"/>
                         Crear Primer Permiso
                       </Link>
                     </Button>
@@ -178,18 +252,32 @@ export default function Dashboard() {
                         <TableHead>Tipo de Trabajo</TableHead>
                         <TableHead>Fecha Creación</TableHead>
                         <TableHead>Estado</TableHead>
+                        <TableHead></TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
                     {permits.map((permit) => (
                         <TableRow key={permit.id}>
-                        <TableCell className="font-medium">{permit.number}</TableCell>
-                        <TableCell>{permit.workType}</TableCell>
-                        <TableCell>{permit.date}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
+                            {permit.number || permit.id.substring(0, 8)}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
+                        <TableCell>
+                          {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}
+                        </TableCell>
                         <TableCell>
                             <Badge className={getStatusColor(permit.status)}>
                                 {getStatusText(permit.status)}
                             </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button asChild variant="ghost" size="sm">
+                            <Link href={`/permits/${permit.id}`}>
+                              Ver Detalles
+                            </Link>
+                          </Button>
                         </TableCell>
                         </TableRow>
                     ))}

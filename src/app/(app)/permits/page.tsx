@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,6 +44,28 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
+// ✅ Helper function to handle different date formats
+const parseFirestoreDate = (dateValue: any): Date | null => {
+  if (!dateValue) return null;
+  
+  // If it's a Firestore Timestamp
+  if (typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  }
+  
+  // If it's already a Date object
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+  
+  // If it's a string (ISO format)
+  if (typeof dateValue === 'string') {
+    return new Date(dateValue);
+  }
+  
+  return null;
+};
+
 export default function PermitsPage() {
   const [permits, setPermits] = useState<Permit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +78,8 @@ export default function PermitsPage() {
     'energia': 'Control de Energías',
     'izaje': 'Izaje de Cargas',
     'caliente': 'Trabajo en Caliente',
-    'excavacion': 'Excavaciones'
+    'excavacion': 'Excavaciones',
+    'general': 'Trabajo General'
   }
 
   useEffect(() => {
@@ -70,7 +92,7 @@ export default function PermitsPage() {
         return {
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate(), 
+          createdAt: parseFirestoreDate(data.createdAt), // ✅ Use helper function
         } as Permit;
       });
       setPermits(permitsData);
@@ -96,6 +118,7 @@ export default function PermitsPage() {
 
   const filteredPermits = permits.filter(permit => 
     permit.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    permit.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (workTypes[permit.workType] || permit.workType).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -122,7 +145,7 @@ export default function PermitsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Buscar por ID o tipo de trabajo..."
+                placeholder="Buscar por ID, número o tipo de trabajo..."
                 className="w-full rounded-lg bg-background pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,7 +155,7 @@ export default function PermitsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID del Permiso</TableHead>
+                    <TableHead>Número</TableHead>
                     <TableHead>Tipo de Trabajo</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="hidden md:table-cell">Creado</TableHead>
@@ -154,7 +177,7 @@ export default function PermitsPage() {
                       <TableRow key={permit.id}>
                         <TableCell className="font-medium">
                           <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
-                            {permit.id.substring(0, 8)}...
+                            {permit.number || permit.id.substring(0, 8)}
                           </Link>
                         </TableCell>
                         <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
@@ -164,7 +187,7 @@ export default function PermitsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {permit.createdAt ? format(new Date(permit.createdAt), "dd/MM/yyyy") : 'N/A'}
+                          {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}
                         </TableCell>
                         <TableCell>
                           <Button asChild variant="outline" size="sm">

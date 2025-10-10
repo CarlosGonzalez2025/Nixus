@@ -1,18 +1,16 @@
-
 'use server';
 
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import type { Permit } from '@/types';
+import { FieldValue } from 'firebase-admin/firestore';
 
-type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' > & {
+type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user'> & {
   userId: string;
   userDisplayName: string | null;
   userEmail: string | null;
   userPhotoURL: string | null;
 };
-
 
 export async function createPermit(data: PermitCreateData) {
   if (!data.userId) {
@@ -23,39 +21,49 @@ export async function createPermit(data: PermitCreateData) {
 
   // Initialize all approval roles as pending
   const initialApprovals = {
-    solicitante: { status: 'pendiente' },
-    autorizante: { status: 'pendiente' },
-    mantenimiento: { status: 'pendiente' },
-    sst: { status: 'pendiente' }
+    solicitante: { status: 'pendiente' as const },
+    autorizante: { status: 'pendiente' as const },
+    mantenimiento: { status: 'pendiente' as const },
+    sst: { status: 'pendiente' as const }
   };
 
-  const permitPayload: Omit<Permit, 'id'> = {
+  const permitPayload = {
     ...permitData,
-    number: '', // Initialize optional field
-    workType: permitData.workType || 'general', // Initialize optional field
-    status: 'pendiente_revision',
+    number: '', // Will be generated after creation
+    workType: permitData.workType || 'general',
+    status: 'pendiente_revision' as const,
     createdBy: userId,
-    createdAt: serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(), // ✅ Usar serverTimestamp del Admin SDK
     user: {
-        displayName: userDisplayName,
-        email: userEmail,
-        photoURL: userPhotoURL,
+      displayName: userDisplayName,
+      email: userEmail,
+      photoURL: userPhotoURL,
     },
     approvals: initialApprovals,
     closure: {},
   };
-  
-  const permitsCollectionRef = collection(db, 'permits');
 
   try {
-    const docRef = await addDoc(permitsCollectionRef, permitPayload);
+    // Add document to Firestore using Admin SDK
+    const docRef = await adminDb.collection('permits').add(permitPayload);
+    
+    // Generate and update permit number
+    const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
+    await docRef.update({ number: permitNumber });
+    
+    console.log('✅ Permit created successfully:', docRef.id);
+    
     // Revalidate paths to show the new permit in the lists
     revalidatePath('/permits');
     revalidatePath('/dashboard');
-    return { success: true, permitId: docRef.id };
+    
+    return { success: true, permitId: docRef.id, permitNumber };
   } catch (error: any) {
-     console.error("Error creating permit: ", error);
+    console.error("❌ Error creating permit:", error);
     // Return a structured error for the client
-    return { success: false, error: error.message || 'Permission denied. Could not create permit.' };
+    return { 
+      success: false, 
+      error: error.message || 'Could not create permit. Please try again.' 
+    };
   }
 }
