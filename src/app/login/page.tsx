@@ -19,6 +19,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Logo } from '@/components/logo';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -26,13 +27,6 @@ const formSchema = z.object({
     message: 'Password must be at least 6 characters.',
   }),
 });
-
-const demoUsers = [
-  { email: 'juan@italcol.com', role: 'Solicitante' },
-  { email: 'maria@italcol.com', role: 'Autorizante' },
-  { email: 'carlos@italcol.com', role: 'Líder Tarea' },
-  { email: 'ana@italcol.com', role: 'Ejecutante' },
-];
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -118,9 +112,14 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Contraseña
-                    </FormLabel>
+                    <div className="flex justify-between items-center">
+                      <FormLabel className="font-medium text-gray-700">
+                        Contraseña
+                      </FormLabel>
+                      <Link href="#" className="text-xs text-primary hover:underline">
+                        ¿Olvidaste tu contraseña?
+                      </Link>
+                    </div>
                     <FormControl>
                       <Input
                         placeholder="••••••••"
@@ -145,22 +144,6 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-          <div className="border-t pt-4">
-            <p className="text-xs text-gray-600 text-center mb-2">
-              <strong>Usuarios de Demostración:</strong>
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-              {demoUsers.map((user) => (
-                <div className="text-center" key={user.email}>
-                  <p className="font-semibold">{user.email}</p>
-                  <p className="text-gray-500">{user.role}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center mt-2 font-semibold text-primary">
-              Contraseña: demo123
-            </p>
-          </div>
         </CardContent>
         <CardFooter className="bg-secondary/30 py-4 text-center text-xs text-gray-500">
           <p className="w-full">
