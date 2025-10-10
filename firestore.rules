@@ -1,28 +1,34 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to get user's role from the 'users' collection
+    function getUserRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
 
-    // Reglas para la colección 'users'
     match /users/{userId} {
-      // Un usuario puede leer y actualizar su propio perfil.
-      allow read, update: if request.auth.uid == userId;
-      // Los administradores pueden leer y escribir en cualquier perfil de usuario.
-      allow read, write: if request.auth.token.role == 'admin';
-      // Un usuario puede crear su propio documento de perfil.
-      allow create: if request.auth.uid == userId;
+      // Admins can read and write any user profile
+      allow read, write: if getUserRole(request.auth.uid) == 'admin';
+
+      // Users can only read and write their own profile
+      allow read, write: if request.auth.uid == userId;
     }
 
-    // Reglas para la colección 'test'
-    match /test/{docId} {
-      // Cualquier usuario autenticado puede crear documentos en la colección 'test'.
-      allow create: if request.auth != null;
+    match /users/{document=**} {
+      // Admins can list all users
+      allow list: if getUserRole(request.auth.uid) == 'admin';
     }
 
-    // Reglas para la colección 'permits'
     match /permits/{permitId} {
-      // Cualquier usuario autenticado puede crear, leer y actualizar permisos.
-      allow read, write, create, update: if request.auth != null;
+      // Any authenticated user can create permits
+      allow create: if request.auth.uid != null;
+      
+      // Any authenticated user can read permits for now (adjust if needed)
+      allow read, update, delete: if request.auth.uid != null;
+    }
+    
+    match /test/{documentId} {
+      allow write: if request.auth != null;
     }
   }
 }
