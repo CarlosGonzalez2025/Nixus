@@ -1,19 +1,16 @@
 
 'use server';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import * as z from 'zod';
-import { db, auth } from '@/lib/firebase';
-import type { User } from '@/types';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 
+import { getAuth } from 'firebase-admin/auth';
+import { adminDb } from '@/lib/firebase-admin';
+import * as z from 'zod';
+import type { User } from '@/types';
 
 const formSchema = z.object({
   fullName: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
+  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2),
@@ -23,14 +20,19 @@ const formSchema = z.object({
 
 export async function createUser(data: z.infer<typeof formSchema>) {
   try {
-    // 1. Create user in Firebase Authentication using the main auth instance
-    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-    const user = userCredential.user;
-
-    // 2. Create user profile in Firestore
+    const auth = getAuth();
+    
+    // 1. Create user in Firebase Authentication using Admin SDK
+    const userRecord = await auth.createUser({
+      email: data.email,
+      password: data.password,
+      displayName: data.fullName,
+    });
+    
+    // 2. Create user profile in Firestore using Admin SDK
     const userProfile: User = {
-      uid: user.uid,
-      email: user.email,
+      uid: userRecord.uid,
+      email: userRecord.email,
       displayName: data.fullName,
       role: data.role,
       area: data.area,
@@ -38,27 +40,17 @@ export async function createUser(data: z.infer<typeof formSchema>) {
       empresa: data.empresa,
       ciudad: data.ciudad,
       planta: data.planta,
-      photoURL: user.photoURL || '',
+      photoURL: userRecord.photoURL || '',
     };
     
-    const userDocRef = doc(db, 'users', user.uid);
-
-    // Use .catch() for Firestore operation to emit a detailed error
-    setDoc(userDocRef, userProfile).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'create',
-          requestResourceData: userProfile,
-        } satisfies SecurityRuleContext);
-        
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    // The Admin SDK bypasses security rules, so no permission error handling is needed here.
+    await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
     
-    return { success: true, userId: user.uid };
+    return { success: true, userId: userRecord.uid };
 
   } catch (error: any) {
-    console.error('Error creating auth user:', error.code, error.message);
-    if (error.code === 'auth/email-already-in-use') {
+    console.error('Error creating user with Admin SDK:', error);
+    if (error.code === 'auth/email-already-exists') {
       return { error: 'Este correo electrónico ya está registrado. Por favor, use otro.' };
     }
     return { error: 'Ocurrió un error inesperado al crear el usuario.' };
