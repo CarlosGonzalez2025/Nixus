@@ -124,7 +124,9 @@ export default function PermitDetailPage() {
   const { user: currentUser, loading: userLoading } = useUser();
   const permitId = Array.isArray(params.id) ? params.id[0] : params.id;
   
-  const permitContentRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
   const [permit, setPermit] = useState<Permit | null>(null);
   const [loading, setLoading] = useState(true);
@@ -171,39 +173,78 @@ export default function PermitDetailPage() {
     return () => unsubscribe();
   }, [permitId]);
   
-  const handleExportToPDF = () => {
-    const input = permitContentRef.current;
-    if (!input) return;
+  const handleExportToPDF = async () => {
+    const header = headerRef.current;
+    const content = contentRef.current;
+    const footer = footerRef.current;
+
+    if (!header || !content || !footer) return;
 
     toast({
-      title: 'Generando PDF...',
-      description: 'Por favor espere mientras se genera el documento.',
+        title: 'Generando PDF...',
+        description: 'Este proceso puede tardar un momento.',
     });
 
-    html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = imgWidth / imgHeight;
-      const pdfHeight = pdfWidth / ratio;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
-      
-      toast({
-        title: 'PDF Generado',
-        description: 'El documento se ha descargado exitosamente.',
-      });
-    }).catch((error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error al generar PDF',
-        description: error.message,
-      });
-    });
-  };
+    try {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 10; // 10mm margin
+
+        // 1. Render Header
+        const headerCanvas = await html2canvas(header, { scale: 2, useCORS: true });
+        const headerImgData = headerCanvas.toDataURL('image/png');
+        const headerHeight = (headerCanvas.height * (pdfWidth - 2 * margin)) / headerCanvas.width;
+
+        // 2. Render Footer
+        const footerCanvas = await html2canvas(footer, { scale: 2, useCORS: true });
+        const footerImgData = footerCanvas.toDataURL('image/png');
+        const footerHeight = (footerCanvas.height * (pdfWidth - 2 * margin)) / footerCanvas.width;
+
+        // 3. Render Content
+        const contentCanvas = await html2canvas(content, { scale: 2, useCORS: true, windowWidth: content.scrollWidth, windowHeight: content.scrollHeight });
+        const contentImgData = contentCanvas.toDataURL('image/png');
+        const contentImgHeight = (contentCanvas.height * (pdfWidth - 2 * margin)) / contentCanvas.width;
+        
+        const contentPrintableHeight = pdfHeight - headerHeight - footerHeight - (2 * margin);
+        let contentPosition = 0;
+        let pageCount = 0;
+
+        while (contentPosition < contentImgHeight) {
+            if (pageCount > 0) {
+                pdf.addPage();
+            }
+            
+            // Add header to each page
+            pdf.addImage(headerImgData, 'PNG', margin, margin, pdfWidth - 2 * margin, headerHeight);
+
+            // Add content slice for the current page
+            const y = margin + headerHeight;
+            pdf.addImage(contentImgData, 'PNG', margin, y, pdfWidth - 2 * margin, contentImgHeight, '', 'NONE', 0, 0, contentCanvas.width, contentPrintableHeight / ((pdfWidth - 2 * margin) / contentCanvas.width), 0, contentPosition / ((pdfWidth - 2 * margin) / contentCanvas.width) );
+            
+            contentPosition += contentPrintableHeight;
+
+            // Add footer to each page
+            pdf.addImage(footerImgData, 'PNG', margin, pdfHeight - footerHeight - margin, pdfWidth - 2 * margin, footerHeight);
+            
+            pageCount++;
+        }
+        
+        pdf.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
+
+        toast({
+            title: 'PDF Generado Exitosamente',
+            description: 'El documento se ha descargado.',
+        });
+
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error al Generar PDF',
+            description: error.message || 'No se pudo generar el documento.',
+        });
+    }
+};
 
   const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
       setSigningRole({role, type: signatureType});
@@ -319,9 +360,9 @@ export default function PermitDetailPage() {
             </div>
         </div>
 
-        {/* Permit Document */}
-        <main ref={permitContentRef} className="max-w-4xl mx-auto w-full bg-white p-8 shadow-lg rounded-lg border font-sans">
-            <header className="flex justify-between items-start pb-4 border-b-4 border-primary">
+        {/* Permit Document Wrapper for PDF generation */}
+        <div className="max-w-4xl mx-auto w-full bg-white p-8 shadow-lg rounded-lg border font-sans">
+             <header ref={headerRef} className="flex justify-between items-start pb-4 border-b-4 border-primary">
                 <div>
                      <Logo textOnly />
                 </div>
@@ -335,185 +376,186 @@ export default function PermitDetailPage() {
                     )}
                 </div>
             </header>
-
-            <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800">
-                <p><strong>Marque dentro de los cuadros SI/NO/NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
-            </div>
             
-            <div className="space-y-6 mt-6">
-                <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
-                    <div className="space-y-4">
-                        <Field label="El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
-                        <Field label="Causales para la suspensión del Permiso:" value={permit.generalInfo?.suspensionCauses} fullWidth/>
-                        <Field label="Descripción o procedimiento de la teras a realizar:" value={permit.generalInfo?.procedure} fullWidth/>
-                        <div className="flex items-center space-x-2">
-                            <CheckCircle className={`h-4 w-4 ${permit.generalInfo?.isEmergencyExtension ? 'text-green-500' : 'text-gray-300'}`} />
-                            <span className="text-sm font-medium">Extensión Emergencia</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                           <Field label="Válido Desde:" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : undefined}/>
-                           <Field label="Válido Hasta:" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : undefined}/>
-                        </div>
-                    </div>
-                </Section>
-
-                {permit.generalInfo?.tools && permit.generalInfo.tools.length > 0 && (
-                  <Section title="HERRAMIENTAS Y EQUIPOS">
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                          {permit.generalInfo.tools.map((tool: Tool, index: number) => (
-                               <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                                  <span className="text-xs flex-1">{tool.name}</span>
-                                  <div className="flex gap-2 items-center text-xs font-mono">
-                                      <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
-                                      <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
-                                  </div>
-                              </div>
-                          ))}
-                      </div>
-                  </Section>
-                )}
+            <main ref={contentRef}>
+                <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800">
+                    <p><strong>Marque dentro de los cuadros SI/NO/NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
+                </div>
                 
-                <Section title="Verificaciones Previas">
-                    <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
-                    <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} />
-                </Section>
-
-                <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                      {Object.entries(permit.hazards || {}).map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
-                      ))}
-                    </div>
-                </Section>
-                
-                <Section title="EPP - SEÑALIZACION (Verificar)">
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {ppeSections.map(section => (
-                            <div key={section.title}>
-                               <h4 className="font-bold mb-2 text-gray-600 text-sm">{section.title}</h4>
-                               <div className="space-y-1">
-                                {section.ids.map(id => permit.ppe && permit.ppe[id] && (
-                                     <RadioCheck key={id} label={id.replace(/_/g, ' ').toUpperCase()} value={permit.ppe[id]} />
-                                ))}
-                               </div>
+                <div className="space-y-6 mt-6">
+                    <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
+                        <div className="space-y-4">
+                            <Field label="El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
+                            <Field label="Causales para la suspensión del Permiso:" value={permit.generalInfo?.suspensionCauses} fullWidth/>
+                            <Field label="Descripción o procedimiento de la teras a realizar:" value={permit.generalInfo?.procedure} fullWidth/>
+                            <div className="flex items-center space-x-2">
+                                <CheckCircle className={`h-4 w-4 ${permit.generalInfo?.isEmergencyExtension ? 'text-green-500' : 'text-gray-300'}`} />
+                                <span className="text-sm font-medium">Extensión Emergencia</span>
                             </div>
-                        ))}
-                    </div>
-                </Section>
-                
-                <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                      {Object.entries(permit.ppeSystems || {}).map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
-                      ))}
-                    </div>
-                </Section>
-
-                <Section title="Notificación y Emergencias">
-                    <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
-                     <div className="mt-4 space-y-1">
-                      {Object.entries(permit.emergency || {}).filter(([key]) => key !== 'notification').map(([key, value]) => (
-                          <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
-                      ))}
-                    </div>
-                </Section>
-                
-                <Section title="Trabajadores Ejecutantes">
-                     {permit.workers && permit.workers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {permit.workers.map((worker, index) => (
-                            <Card key={index} className="p-4">
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="w-12 h-12">
-                                        {worker.foto && <AvatarImage src={worker.foto} />}
-                                        <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-bold">{worker.nombre}</p>
-                                        <p className="text-sm text-muted-foreground">C.C. {worker.cedula}</p>
-                                        <p className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full inline-block mt-1">{worker.rol}</p>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
+                            <div className="grid grid-cols-2 gap-4">
+                               <Field label="Válido Desde:" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : undefined}/>
+                               <Field label="Válido Hasta:" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : undefined}/>
+                            </div>
                         </div>
-                    ) : <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>}
-                </Section>
+                    </Section>
 
-                 <Section title="Autorizaciones">
-                     <p className="text-xs text-muted-foreground mb-4">He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {permit.approvals && (Object.keys(signatureRoles) as SignatureRole[]).map(role => {
-                            const approval = permit.approvals[role];
-                            return (
-                                <Card key={role} className="flex flex-col">
-                                    <CardHeader className="bg-gray-100 p-3">
-                                        <CardTitle className="text-sm">{signatureRoles[role]}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                                        <div>
-                                            <Field label="Área" value={approval?.area || 'N/A'} />
-                                            <Field label="Nombre" value={approval?.userName || 'Pendiente'} />
-                                            <Field label="Firma Apertura" value={
-                                              approval?.firmaApertura ? (
-                                                  <div className="bg-gray-100 p-2 rounded-md">
-                                                    <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
-                                                    <div className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</div>
-                                                  </div>
-                                              ) : 'Pendiente'
-                                            } />
-                                            <Field label="Firma Cierre" value={approval?.firmaCierre ? 'Firmado' : 'Pendiente'} />
-                                        </div>
-
-                                        {canSign(role, 'firmaApertura') && (
-                                            <Button size="sm" className="w-full mt-4" onClick={() => openSignatureDialog(role, 'firmaApertura')}>
-                                                <SignatureIcon className="mr-2 h-4 w-4"/>
-                                                Firmar Apertura
-                                            </Button>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
-                     </div>
-                 </Section>
-                 
-                 <Section title="Emisión, Revalidación y Cierre">
-                    <p className="text-xs text-muted-foreground mb-4">Para trabajo en caliente el cierre del permiso se debe hacer minimo 2 horas posterior a la terminación de la tarea y se deben inspeccionar el lugar 30 min, 60 min y 2 horas posterior a la culminación de la tarea.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                             <RadioCheck label="Se informo al responsable del área sobre la culminación de las actividades." value={permit.closure?.informeCulminacion}/>
-                             <RadioCheck label="Área se encuentra despejada, ordenada, demarcación retirada." value={permit.closure?.areaDespejada}/>
-                             <RadioCheck label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente" value={permit.closure?.evidenciaParticulas}/>
-                             <RadioCheck label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
-                        </div>
-                        <div className="space-y-2">
-                            {permit.closure?.seguimientoCaliente && (
-                              <Field label="Seguimiento trabajo en caliente" value={
-                                  <div className="flex gap-2">
-                                      <Input value={permit.closure.seguimientoCaliente.hora1 || ''} readOnly className="text-xs"/>
-                                      <Input value={permit.closure.seguimientoCaliente.hora2 || ''} readOnly className="text-xs"/>
-                                      <Input value={permit.closure.seguimientoCaliente.hora3 || ''} readOnly className="text-xs"/>
+                    {permit.generalInfo?.tools && permit.generalInfo.tools.length > 0 && (
+                      <Section title="HERRAMIENTAS Y EQUIPOS">
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                              {permit.generalInfo.tools.map((tool: Tool, index: number) => (
+                                   <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                                      <span className="text-xs flex-1">{tool.name}</span>
+                                      <div className="flex gap-2 items-center text-xs font-mono">
+                                          <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
+                                          <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
+                                      </div>
                                   </div>
-                              }/>
-                            )}
-                            <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
-                             <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/MM/yyyy') : 'Pendiente'}/>
-                             <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>
-                        </div>
-                    </div>
-                 </Section>
+                              ))}
+                          </div>
+                      </Section>
+                    )}
+                    
+                    <Section title="Verificaciones Previas">
+                        <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
+                        <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} />
+                    </Section>
 
-            </div>
+                    <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                          {Object.entries(permit.hazards || {}).map(([key, value]) => (
+                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          ))}
+                        </div>
+                    </Section>
+                    
+                    <Section title="EPP - SEÑALIZACION (Verificar)">
+                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {ppeSections.map(section => (
+                                <div key={section.title}>
+                                   <h4 className="font-bold mb-2 text-gray-600 text-sm">{section.title}</h4>
+                                   <div className="space-y-1">
+                                    {section.ids.map(id => permit.ppe && permit.ppe[id] && (
+                                         <RadioCheck key={id} label={id.replace(/_/g, ' ').toUpperCase()} value={permit.ppe[id]} />
+                                    ))}
+                                   </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Section>
+                    
+                    <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                          {Object.entries(permit.ppeSystems || {}).map(([key, value]) => (
+                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          ))}
+                        </div>
+                    </Section>
+
+                    <Section title="Notificación y Emergencias">
+                        <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
+                         <div className="mt-4 space-y-1">
+                          {Object.entries(permit.emergency || {}).filter(([key]) => key !== 'notification').map(([key, value]) => (
+                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          ))}
+                        </div>
+                    </Section>
+                    
+                    <Section title="Trabajadores Ejecutantes">
+                         {permit.workers && permit.workers.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {permit.workers.map((worker, index) => (
+                                <Card key={index} className="p-4">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="w-12 h-12">
+                                            {worker.foto && <AvatarImage src={worker.foto} />}
+                                            <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-bold">{worker.nombre}</p>
+                                            <p className="text-sm text-muted-foreground">C.C. {worker.cedula}</p>
+                                            <p className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full inline-block mt-1">{worker.rol}</p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                            </div>
+                        ) : <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>}
+                    </Section>
+
+                     <Section title="Autorizaciones">
+                         <p className="text-xs text-muted-foreground mb-4">He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {permit.approvals && (Object.keys(signatureRoles) as SignatureRole[]).map(role => {
+                                const approval = permit.approvals[role];
+                                return (
+                                    <Card key={role} className="flex flex-col">
+                                        <CardHeader className="bg-gray-100 p-3">
+                                            <CardTitle className="text-sm">{signatureRoles[role]}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <Field label="Área" value={approval?.area || 'N/A'} />
+                                                <Field label="Nombre" value={approval?.userName || 'Pendiente'} />
+                                                <Field label="Firma Apertura" value={
+                                                  approval?.firmaApertura ? (
+                                                      <div className="bg-gray-100 p-2 rounded-md">
+                                                        <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
+                                                        <div className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</div>
+                                                      </div>
+                                                  ) : 'Pendiente'
+                                                } />
+                                                <Field label="Firma Cierre" value={approval?.firmaCierre ? 'Firmado' : 'Pendiente'} />
+                                            </div>
+
+                                            {canSign(role, 'firmaApertura') && (
+                                                <Button size="sm" className="w-full mt-4" onClick={() => openSignatureDialog(role, 'firmaApertura')}>
+                                                    <SignatureIcon className="mr-2 h-4 w-4"/>
+                                                    Firmar Apertura
+                                                </Button>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                         </div>
+                     </Section>
+                     
+                     <Section title="Emisión, Revalidación y Cierre">
+                        <p className="text-xs text-muted-foreground mb-4">Para trabajo en caliente el cierre del permiso se debe hacer minimo 2 horas posterior a la terminación de la tarea y se deben inspeccionar el lugar 30 min, 60 min y 2 horas posterior a la culminación de la tarea.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                 <RadioCheck label="Se informo al responsable del área sobre la culminación de las actividades." value={permit.closure?.informeCulminacion}/>
+                                 <RadioCheck label="Área se encuentra despejada, ordenada, demarcación retirada." value={permit.closure?.areaDespejada}/>
+                                 <RadioCheck label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente" value={permit.closure?.evidenciaParticulas}/>
+                                 <RadioCheck label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
+                            </div>
+                            <div className="space-y-2">
+                                {permit.closure?.seguimientoCaliente && (
+                                  <Field label="Seguimiento trabajo en caliente" value={
+                                      <div className="flex gap-2">
+                                          <Input value={permit.closure.seguimientoCaliente.hora1 || ''} readOnly className="text-xs"/>
+                                          <Input value={permit.closure.seguimientoCaliente.hora2 || ''} readOnly className="text-xs"/>
+                                          <Input value={permit.closure.seguimientoCaliente.hora3 || ''} readOnly className="text-xs"/>
+                                      </div>
+                                  }/>
+                                )}
+                                <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
+                                 <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/MM/yyyy') : 'Pendiente'}/>
+                                 <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>
+                            </div>
+                        </div>
+                     </Section>
+                </div>
+            </main>
             
-            <footer className="mt-12 pt-4 border-t text-right text-xs text-gray-500">
+            <footer ref={footerRef} className="mt-12 pt-4 border-t text-right text-xs text-gray-500">
                 <p>Código: DN-FR-SST-016</p>
                 <p>Versión: 05</p>
             </footer>
-        </main>
+        </div>
         
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
-            <DialogContent>
+             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Firmar Permiso de Trabajo</DialogTitle>
                     <DialogDescription>
