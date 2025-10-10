@@ -66,21 +66,21 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
   return null;
 };
 
+const workTypes: {[key: string]: string} = {
+  'altura': 'Trabajo en Alturas',
+  'confinado': 'Espacios Confinados',
+  'energia': 'Control de Energías',
+  'izaje': 'Izaje de Cargas',
+  'caliente': 'Trabajo en Caliente',
+  'excavacion': 'Excavaciones',
+  'general': 'Trabajo General'
+}
+
 export default function PermitsPage() {
   const [permits, setPermits] = useState<Permit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
-  
-  const workTypes: {[key: string]: string} = {
-    'altura': 'Trabajo en Alturas',
-    'confinado': 'Espacios Confinados',
-    'energia': 'Control de Energías',
-    'izaje': 'Izaje de Cargas',
-    'caliente': 'Trabajo en Caliente',
-    'excavacion': 'Excavaciones',
-    'general': 'Trabajo General'
-  }
 
   useEffect(() => {
     const permitsCollection = collection(db, 'permits');
@@ -92,7 +92,7 @@ export default function PermitsPage() {
         return {
           id: doc.id,
           ...data,
-          createdAt: parseFirestoreDate(data.createdAt), // ✅ Use helper function
+          createdAt: parseFirestoreDate(data.createdAt),
         } as Permit;
       });
       setPermits(permitsData);

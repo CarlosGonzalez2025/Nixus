@@ -48,10 +48,20 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
 
+const workTypes: {[key: string]: string} = {
+  'altura': 'Trabajo en Alturas',
+  'confinado': 'Espacios Confinados',
+  'energia': 'Control de Energías',
+  'izaje': 'Izaje de Cargas',
+  'caliente': 'Trabajo en Caliente',
+  'excavacion': 'Excavaciones',
+  'general': 'Trabajo General'
+}
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -64,6 +74,7 @@ export default function CreatePermitPage() {
   const [recommendations, setRecommendations] = useState('');
 
   // Step 1
+  const [workType, setWorkType] = useState('');
   const [generalInfo, setGeneralInfo] = useState({
     workDescription: '',
     suspensionCauses: '',
@@ -284,7 +295,7 @@ export default function CreatePermitPage() {
 
   const canProceed = () => {
     if (step === 1) {
-      return generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
+      return workType && generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
     }
     return true;
   };
@@ -294,7 +305,7 @@ export default function CreatePermitPage() {
     setRecommendations('');
     try {
       const result = await getRiskAssessmentRecommendations({
-        workType: "Varios",
+        workType: workTypes[workType] || workType,
         environmentalFactors: "Factores diversos según peligros seleccionados",
         permitDetails: generalInfo.procedure,
       });
@@ -323,13 +334,13 @@ export default function CreatePermitPage() {
     setIsSubmitting(true);
     try {
       const fullPermitData: PermitFormData = {
-        generalInfo: generalInfo,
+        workType,
+        generalInfo,
         hazards: hazardsData,
         ppe: ppeData,
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
-        workType: 'general',
       };
 
       const result = await createPermit({
@@ -485,6 +496,20 @@ export default function CreatePermitPage() {
                 </h2>
                 <p className="text-muted-foreground">Complete todos los campos obligatorios (*)</p>
               </div>
+                
+                 <div>
+                    <label className="font-bold text-gray-700">Tipo de Trabajo *</label>
+                    <Select value={workType} onValueChange={setWorkType}>
+                        <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Seleccione el tipo de trabajo a realizar..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Object.entries(workTypes).map(([key, value]) => (
+                                <SelectItem key={key} value={key}>{value}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                 </div>
 
                 <div>
                     <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo): *</label>
@@ -880,8 +905,7 @@ export default function CreatePermitPage() {
                   <Input id="arl" value={currentWorker?.arl || ''} onChange={(e) => handleWorkerInputChange('arl', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="pensiones">Fondo de Pensiones</Label>
-                  <Input id="pensiones" value={currentWorker?.pensiones || ''} onChange={(e) => handleWorkerInputChange('pensiones', e.target.value)} />
+                  <Label htmlFor="pensiones">Fondo de Pensiones</Label>                  <Input id="pensiones" value={currentWorker?.pensiones || ''} onChange={(e) => handleWorkerInputChange('pensiones', e.target.value)} />
                 </div>
               </div>
               
