@@ -1,3 +1,4 @@
+
 'use client';
 import {
   SidebarProvider,
@@ -177,10 +178,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden flex-col items-start truncate text-left group-data-[collapsible=offcanvas]:flex group-data-[collapsible=icon]:hidden">
-                      <span className="font-medium text-sidebar-foreground">
+                      <span className="font-medium text-white">
                         {user.displayName || 'Usuario'}
                       </span>
-                      <span className="text-xs text-sidebar-foreground/70">
+                      <span className="text-xs text-white/70">
                         {getRoleName(user.role)}
                       </span>
                     </div>
