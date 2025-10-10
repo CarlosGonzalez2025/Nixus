@@ -94,7 +94,7 @@ const Section: React.FC<{ title: string, children: React.ReactNode, className?: 
 const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: boolean }> = ({label, value, fullWidth}) => (
     <div className={fullWidth ? 'col-span-2' : ''}>
         <p className="text-xs text-gray-500">{label}</p>
-        <p className="font-semibold text-gray-800 break-words">{value || 'No especificado'}</p>
+        <div className="font-semibold text-gray-800 break-words">{value || 'No especificado'}</div>
     </div>
 );
 
@@ -526,3 +526,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
