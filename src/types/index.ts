@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
 
-export type UserRole = 'solicitante' | 'autorizante' | 'lider_tarea' | 'ejecutante' | 'lider_sst' | 'admin';
+export type UserRole = 'solicitante' | 'autorizante' | 'lider_tarea' | 'ejecutante' | 'lider_sst' | 'admin' | 'mantenimiento';
 
 export interface User {
   uid: string;
@@ -14,11 +14,14 @@ export interface User {
 }
 
 export type Approval = {
-  userId: string;
+  userId?: string | null;
   userName?: string | null;
-  signedAt: string;
+  signedAt?: string | null;
   status: 'aprobado' | 'rechazado' | 'pendiente';
   comments?: string;
+  area?: string;
+  firmaApertura?: string | null;
+  firmaCierre?: string | null;
 }
 
 export interface ExternalWorker {
@@ -39,6 +42,23 @@ export interface ExternalWorker {
 export type Tool = {
   name: string;
   status: 'B' | 'M'; // Bueno o Malo
+}
+
+export type PermitClosure = {
+  informeCulminacion: 'si' | 'no' | 'na';
+  areaDespejada: 'si' | 'no' | 'na';
+  evidenciaParticulas: 'si' | 'no' | 'na';
+  continuaLabor: 'si' | 'no' | 'na';
+  seguimientoCaliente?: {
+    hora1: string;
+    hora2: string;
+    hora3: string;
+  };
+  dispositivosRetirados: 'si' | 'no' | 'na';
+  validezDesde: string;
+  validezHasta: string;
+  fechaCierre: string;
+  horaCierre: string;
 }
 
 export type Permit = {
@@ -68,10 +88,11 @@ export type Permit = {
   ppeSystems?: { [key: string]: string };
   emergency?: { [key: string]: string } & { notification: boolean };
   workers?: ExternalWorker[];
-  approvals?: {
-    solicitante?: Approval;
-    lider_tarea?: Approval;
-    autorizante?: Approval;
-    lider_sst?: Approval;
+  approvals: {
+    solicitante: Approval;
+    autorizante: Approval;
+    mantenimiento: Approval;
+    sst: Approval;
   };
+  closure?: Partial<PermitClosure>;
 };

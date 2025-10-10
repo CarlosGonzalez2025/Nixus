@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -38,7 +39,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { ExternalWorker, Tool } from '@/types';
+import type { Approval, ExternalWorker, Permit, Tool } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,17 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+
+type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals'> & {
+  approvals: {
+      solicitante: Approval,
+      autorizante: Approval,
+      mantenimiento: Approval,
+      sst: Approval,
+  }
+}
+
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -58,18 +70,17 @@ export default function CreatePermitPage() {
   const [recommendations, setRecommendations] = useState('');
 
   // Step 1
-  const [formData, setFormData] = useState({
-    workType: '', // This will be the main title like "Trabajo en Alturas"
-    workDescription: '', // Corresponds to "El trabajo se LIMITA a lo siguiente"
-    procedure: '', // "Descripción o procedimiento de la teras a realizar"
+  const [generalInfo, setGeneralInfo] = useState({
+    workDescription: '',
     suspensionCauses: '',
+    procedure: '',
     isEmergencyExtension: false,
     validFrom: '',
     validUntil: '',
-    reunionInicio: 'na', // 'si', 'no', 'na'
-    atsVerificado: 'na', // 'si', 'no', 'na'
+    reunionInicio: 'na',
+    atsVerificado: 'na',
+    tools: [] as Tool[],
   });
-  const [tools, setTools] = useState<Tool[]>([]);
   const [newToolName, setNewToolName] = useState('');
 
   // Step 2
@@ -166,19 +177,19 @@ export default function CreatePermitPage() {
   
   const addTool = () => {
     if (newToolName.trim()) {
-      setTools([...tools, { name: newToolName.trim(), status: 'B' }]);
+      setGeneralInfo(prev => ({...prev, tools: [...prev.tools, { name: newToolName.trim(), status: 'B' }]}));
       setNewToolName('');
     }
   };
 
   const updateToolStatus = (index: number, status: 'B' | 'M') => {
-    const updatedTools = [...tools];
+    const updatedTools = [...generalInfo.tools];
     updatedTools[index].status = status;
-    setTools(updatedTools);
+    setGeneralInfo(prev => ({...prev, tools: updatedTools}));
   };
 
   const removeTool = (index: number) => {
-    setTools(tools.filter((_, i) => i !== index));
+    setGeneralInfo(prev => ({...prev, tools: prev.tools.filter((_, i) => i !== index)}));
   };
 
 
@@ -296,7 +307,7 @@ export default function CreatePermitPage() {
 
   const canProceed = () => {
     if (step === 1) {
-      return formData.workDescription && formData.validFrom && formData.validUntil;
+      return generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
     }
     return true;
   };
@@ -306,9 +317,9 @@ export default function CreatePermitPage() {
     setRecommendations('');
     try {
       const result = await getRiskAssessmentRecommendations({
-        workType: formData.workType,
+        workType: "Varios",
         environmentalFactors: "Factores diversos según peligros seleccionados",
-        permitDetails: formData.procedure,
+        permitDetails: generalInfo.procedure,
       });
       setRecommendations(result.recommendedControls);
       toast({
@@ -334,9 +345,8 @@ export default function CreatePermitPage() {
 
     setIsSubmitting(true);
     try {
-      const fullPermitData = {
-        userId: user.uid,
-        generalInfo: { ...formData, tools },
+      const fullPermitData: PermitFormData = {
+        generalInfo: generalInfo,
         hazards: hazardsData,
         ppe: ppeData,
         ppeSystems: ppeSystemsData,
@@ -347,12 +357,16 @@ export default function CreatePermitPage() {
             userId: user.uid,
             userName: user.displayName,
             signedAt: new Date().toISOString(),
-            status: 'aprobado'
-          }
+            status: 'aprobado',
+            firmaApertura: 'url_firma_digital' // Placeholder for digital signature
+          },
+          autorizante: { status: 'pendiente' },
+          mantenimiento: { status: 'pendiente' },
+          sst: { status: 'pendiente' }
         }
       };
 
-      await createPermit(fullPermitData as any);
+      await createPermit({userId: user.uid, ...fullPermitData});
       
       toast({
         title: 'Permiso Creado Exitosamente',
@@ -498,8 +512,8 @@ export default function CreatePermitPage() {
                 <div>
                     <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo): *</label>
                     <Textarea
-                      value={formData.workDescription}
-                      onChange={(e) => setFormData({...formData, workDescription: e.target.value})}
+                      value={generalInfo.workDescription}
+                      onChange={(e) => setGeneralInfo({...generalInfo, workDescription: e.target.value})}
                       rows={3}
                       className="w-full mt-1"
                       placeholder="Describa el tipo, alcance, descripción y área/equipo..."
@@ -509,8 +523,8 @@ export default function CreatePermitPage() {
               <div>
                   <label className="font-bold text-gray-700">Causales para la suspensión del Permiso:</label>
                   <Input
-                      value={formData.suspensionCauses}
-                      onChange={(e) => setFormData({...formData, suspensionCauses: e.target.value})}
+                      value={generalInfo.suspensionCauses}
+                      onChange={(e) => setGeneralInfo({...generalInfo, suspensionCauses: e.target.value})}
                       className="w-full mt-1"
                       placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO..."
                   />
@@ -519,8 +533,8 @@ export default function CreatePermitPage() {
               <div>
                 <label className="font-bold text-gray-700">Descripción o procedimiento de la teras a realizar:</label>
                 <Textarea
-                  value={formData.procedure}
-                  onChange={(e) => setFormData({...formData, procedure: e.target.value})}
+                  value={generalInfo.procedure}
+                  onChange={(e) => setGeneralInfo({...generalInfo, procedure: e.target.value})}
                   rows={4}
                   className="w-full mt-1"
                   placeholder="Describa el procedimiento detallado paso a paso..."
@@ -528,7 +542,7 @@ export default function CreatePermitPage() {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Switch id="emergency-extension" checked={formData.isEmergencyExtension} onCheckedChange={(checked) => setFormData({...formData, isEmergencyExtension: checked})} />
+                <Switch id="emergency-extension" checked={generalInfo.isEmergencyExtension} onCheckedChange={(checked) => setGeneralInfo({...generalInfo, isEmergencyExtension: checked})} />
                 <Label htmlFor="emergency-extension">Extensión Emergencia</Label>
               </div>
 
@@ -537,8 +551,8 @@ export default function CreatePermitPage() {
                   <label className="font-bold text-gray-700">Válido Desde (DD/MM/AA HH:MM) *</label>
                   <Input
                     type="datetime-local"
-                    value={formData.validFrom}
-                    onChange={(e) => setFormData({...formData, validFrom: e.target.value})}
+                    value={generalInfo.validFrom}
+                    onChange={(e) => setGeneralInfo({...generalInfo, validFrom: e.target.value})}
                   />
                 </div>
 
@@ -546,8 +560,8 @@ export default function CreatePermitPage() {
                   <label className="font-bold text-gray-700">Válido Hasta (DD/MM/AA HH:MM) *</label>
                   <Input
                     type="datetime-local"
-                    value={formData.validUntil}
-                    onChange={(e) => setFormData({...formData, validUntil: e.target.value})}
+                    value={generalInfo.validUntil}
+                    onChange={(e) => setGeneralInfo({...generalInfo, validUntil: e.target.value})}
                   />
                 </div>
               </div>
@@ -555,7 +569,7 @@ export default function CreatePermitPage() {
               <div>
                 <label className="font-bold text-gray-700">Herramientas y Equipos</label>
                 <div className="p-4 border rounded-lg mt-2 space-y-2">
-                  {tools.map((tool, index) => (
+                  {generalInfo.tools.map((tool, index) => (
                     <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
                       <span className="flex-1">{tool.name}</span>
                        <RadioGroup value={tool.status} onValueChange={(value: 'B' | 'M') => updateToolStatus(index, value)} className="flex">
@@ -574,7 +588,7 @@ export default function CreatePermitPage() {
 
               <div className="space-y-2">
                 <label className="font-bold text-gray-700">Reunión de Inicio</label>
-                <RadioGroup value={formData.reunionInicio} onValueChange={(value) => setFormData({...formData, reunionInicio: value})} className="flex">
+                <RadioGroup value={generalInfo.reunionInicio} onValueChange={(value) => setGeneralInfo({...generalInfo, reunionInicio: value})} className="flex">
                     <RadioGroupItem value="si" id="reunion-si" /> <Label htmlFor="reunion-si" className="mr-2">SI</Label>
                     <RadioGroupItem value="no" id="reunion-no" /> <Label htmlFor="reunion-no" className="mr-2">NO</Label>
                     <RadioGroupItem value="na" id="reunion-na" /> <Label htmlFor="reunion-na">NA</Label>
@@ -582,7 +596,7 @@ export default function CreatePermitPage() {
               </div>
               <div className="space-y-2">
                 <label className="font-bold text-gray-700">ATS Verificado</label>
-                 <RadioGroup value={formData.atsVerificado} onValueChange={(value) => setFormData({...formData, atsVerificado: value})} className="flex">
+                 <RadioGroup value={generalInfo.atsVerificado} onValueChange={(value) => setGeneralInfo({...generalInfo, atsVerificado: value})} className="flex">
                     <RadioGroupItem value="si" id="ats-si" /> <Label htmlFor="ats-si" className="mr-2">SI</Label>
                     <RadioGroupItem value="no" id="ats-no" /> <Label htmlFor="ats-no" className="mr-2">NO</Label>
                     <RadioGroupItem value="na" id="ats-na" /> <Label htmlFor="ats-na">NA</Label>
@@ -766,17 +780,27 @@ export default function CreatePermitPage() {
                  <div className="border-2 border-gray-200 rounded-xl p-6">
                     <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
                         <Signature size={24} />
-                        Firmas y Aprobaciones
+                        Autorizaciones
                     </h3>
+                    <p className='text-xs text-muted-foreground mb-4'>He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-200">
                             <div>
-                                <p className="font-bold text-green-700">Solicitante del Permiso</p>
+                                <p className="font-bold text-green-700">QUIEN SOLICITA (JEFES Y DUELOS DE AREA)</p>
                                 <p className="text-sm text-gray-600">{user?.displayName}</p>
                             </div>
                             <div className="text-right">
                                <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado (al enviar)</p>
                                <p className="text-xs text-gray-500">{new Date().toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                         <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
+                            <div>
+                                <p className="font-bold text-gray-700">QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)</p>
+                                <p className="text-sm text-muted-foreground">Pendiente</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente</p>
                             </div>
                         </div>
                     </div>

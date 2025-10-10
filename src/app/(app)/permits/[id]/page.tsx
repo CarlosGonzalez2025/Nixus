@@ -3,9 +3,9 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool } from '@/types';
+import type { Permit, Tool, Approval } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -16,7 +16,7 @@ import {
   ClipboardCheck,
   Shield,
   Users,
-  Signature,
+  Signature as SignatureIcon,
   ArrowLeft,
   CheckCircle,
   XCircle,
@@ -83,6 +83,15 @@ const RadioCheck: React.FC<{ label: string, value?: string }> = ({ label, value 
     </div>
 );
 
+type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst';
+const signatureRoles: { [key in SignatureRole]: string } = {
+  solicitante: 'QUIEN SOLICITA (JEFES Y DUELOS DE AREA)',
+  autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+  mantenimiento: 'PERSONAL DE MANTENIMIENTO',
+  sst: 'AREA SST (si aplica)',
+};
+
+
 export default function PermitDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -94,6 +103,7 @@ export default function PermitDetailPage() {
   const [permit, setPermit] = useState<Permit | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!permitId) {
@@ -131,11 +141,10 @@ export default function PermitDetailPage() {
     return () => unsubscribe();
   }, [permitId]);
   
-    const handleExportToPDF = () => {
+  const handleExportToPDF = () => {
     const input = permitContentRef.current;
     if (!input) return;
 
-    // Aumentar la escala para mejor calidad de imagen
     html2canvas(input, { scale: 2, useCORS: true }).then((canvas) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -150,10 +159,50 @@ export default function PermitDetailPage() {
     });
   };
 
+  const handleSign = async (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
+      if (!permit || !currentUser) return;
+      
+      const docRef = doc(db, 'permits', permit.id);
+      const signaturePath = `approvals.${role}.${signatureType}`;
+      const statusPath = `approvals.${role}.status`;
+      const userIdPath = `approvals.${role}.userId`;
+      const userNamePath = `approvals.${role}.userName`;
+      const signedAtPath = `approvals.${role}.signedAt`;
+
+      // For now, using a placeholder. This would be replaced with actual signature capture logic.
+      const signatureDataUrl = 'url_placeholder_firma_digital';
+
+      try {
+        await updateDoc(docRef, {
+            [signaturePath]: signatureDataUrl,
+            [statusPath]: 'aprobado',
+            [userIdPath]: currentUser.uid,
+            [userNamePath]: currentUser.displayName,
+            [signedAtPath]: new Date().toISOString(),
+        });
+        toast({ title: 'Permiso Firmado', description: `Has firmado como ${role}`});
+      } catch (e: any) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Error al firmar', description: e.message });
+      }
+  }
+
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
+  
+  const canSign = (role: SignatureRole) => {
+      if(!currentUser || !permit) return false;
+      const approval = permit.approvals[role];
+      // simplified logic: can sign if role matches and firmaApertura is not set.
+      return currentUser.role === role && approval?.status === 'pendiente';
+  }
+
 
   if (loading || userLoading) {
     return (
@@ -326,41 +375,61 @@ export default function PermitDetailPage() {
                     ) : <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>}
                 </Section>
 
-                 <Section title="Firmas y Aprobaciones">
-                    <div className="space-y-4">
-                    {Object.entries(permit.approvals || {}).map(([role, approval]: [string, any]) => (
-                        <div key={role} className="flex items-center justify-between p-4 rounded-lg border bg-gray-50">
-                            <div>
-                                <p className="font-bold capitalize text-gray-700">{role.replace(/_/g, ' ')}</p>
-                                <p className="text-sm text-muted-foreground">{approval.userName || 'N/A'}</p>
-                            </div>
-                            <div className="text-right">
-                                {approval.status === 'aprobado' ? (
-                                    <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado</p>
-                                ) : (
-                                    <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente</p>
-                                )}
-                                <p className="text-xs text-gray-500">{approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy HH:mm") : ''}</p>
-                            </div>
-                        </div>
-                    ))}
-                    </div>
-                </Section>
+                 <Section title="Autorizaciones">
+                     <p className="text-xs text-muted-foreground mb-4">He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
+                            const approval = permit.approvals[role];
+                            return (
+                                <Card key={role} className="flex flex-col">
+                                    <CardHeader className="bg-gray-100 p-3">
+                                        <CardTitle className="text-sm">{signatureRoles[role]}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <Field label="Área" value={approval?.area || 'N/A'} />
+                                            <Field label="Nombre" value={approval?.userName || 'Pendiente'} />
+                                            <Field label="Firma Apertura" value={approval?.firmaApertura ? `Firmado ${format(new Date(approval.signedAt!), "dd/MM/yy")}` : 'Pendiente'} />
+                                            <Field label="Firma Cierre" value={approval?.firmaCierre ? 'Firmado' : 'Pendiente'} />
+                                        </div>
 
-                {currentUser?.role === 'autorizante' && permit.status === 'pendiente_revision' && (
-                    <Card className="mt-6 bg-yellow-50 border-yellow-200">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2 text-yellow-800"><UserCheck/>Acciones de Aprobación</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                        <p className="text-sm text-yellow-700 mb-4">Como autorizante, puedes aprobar o rechazar este permiso.</p>
-                            <div className="flex gap-4">
-                                <Button className="flex-1" variant="destructive"><XCircle className="mr-2"/> Rechazar</Button>
-                                <Button className="flex-1" style={{backgroundColor: 'hsl(var(--accent))'}}><CheckCircle className="mr-2"/> Aprobar Permiso</Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                                        {canSign(role) && (
+                                            <Button size="sm" className="w-full mt-4" onClick={() => handleSign(role, 'firmaApertura')}>
+                                                <SignatureIcon className="mr-2 h-4 w-4"/>
+                                                Firmar Apertura
+                                            </Button>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                     </div>
+                 </Section>
+                 
+                 <Section title="Emisión, Revalidación y Cierre">
+                    <p className="text-xs text-muted-foreground mb-4">Para trabajo en caliente el cierre del permiso se debe hacer minimo 2 horas posterior a la terminación de la tarea y se deben inspeccionar el lugar 30 min, 60 min y 2 horas posterior a la culminación de la tarea.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <RadioCheck label="Se informo al responsable del área sobre la culminación de las actividades." value={permit.closure?.informeCulminacion}/>
+                             <RadioCheck label="Área se encuentra despejada, ordenada, demarcación retirada." value={permit.closure?.areaDespejada}/>
+                             <RadioCheck label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente" value={permit.closure?.evidenciaParticulas}/>
+                             <RadioCheck label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
+                        </div>
+                        <div className="space-y-2">
+                            <Field label="Seguimiento trabajo en caliente" value={
+                                <div className="flex gap-2">
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora1} readOnly className="text-xs"/>
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora2} readOnly className="text-xs"/>
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora3} readOnly className="text-xs"/>
+                                </div>
+                            }/>
+                            <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
+                             <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre}/>
+                             <Field label="Hora de Cierre" value={permit.closure?.horaCierre}/>
+                        </div>
+                    </div>
+                 </Section>
+
             </div>
             
             <footer className="mt-12 pt-4 border-t text-right text-xs text-gray-500">

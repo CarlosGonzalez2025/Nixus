@@ -7,11 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import type { SecurityRuleContext } from '@/lib/errors';
-import type { Permit, ExternalWorker } from '@/types';
+import type { Permit } from '@/types';
 
-type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number'> & {
+type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' > & {
   userId: string;
-  workers: ExternalWorker[];
 };
 
 
@@ -22,10 +21,10 @@ export async function createPermit(data: PermitCreateData) {
 
   const { userId, ...permitData } = data;
 
-  const permitPayload = {
+  const permitPayload: Omit<Permit, 'id'> = {
     ...permitData,
-    createdBy: userId,
     status: 'pendiente_revision',
+    createdBy: userId,
     createdAt: serverTimestamp(),
   };
   
