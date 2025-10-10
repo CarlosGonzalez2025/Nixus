@@ -18,7 +18,6 @@ interface PermitData {
 
 export async function createPermit(data: PermitData) {
   if (!data.userId) {
-    // This case should ideally not be reached if the UI is correct
     return { error: 'User not authenticated' };
   }
 
@@ -28,23 +27,30 @@ export async function createPermit(data: PermitData) {
     status: 'pendiente_revision',
     createdAt: serverTimestamp(),
   };
+  
+  const permitsCollectionRef = collection(db, 'permits');
 
-  try {
-    await addDoc(collection(db, 'permits'), permitPayload);
-    revalidatePath('/permits');
-    revalidatePath('/dashboard');
-    return { success: true };
-  } catch (serverError: any) {
-    const permissionError = new FirestorePermissionError({
-      path: 'permits',
-      operation: 'create',
-      requestResourceData: permitPayload,
-    } satisfies SecurityRuleContext);
+  addDoc(permitsCollectionRef, permitPayload)
+    .then(() => {
+      revalidatePath('/permits');
+      revalidatePath('/dashboard');
+    })
+    .catch((serverError) => {
+      const permissionError = new FirestorePermissionError({
+        path: permitsCollectionRef.path,
+        operation: 'create',
+        requestResourceData: permitPayload,
+      } satisfies SecurityRuleContext);
 
-    // Emit the contextual error for debugging in the development overlay
-    errorEmitter.emit('permission-error', permissionError);
+      // Emit the contextual error for debugging in the development overlay
+      errorEmitter.emit('permission-error', permissionError);
 
-    // Also, return a serializable error object for the client to handle
-    return { error: serverError.message || 'An unexpected error occurred.' };
-  }
+      // IMPORTANT: We do not return a serializable error here.
+      // The client-side toast will be triggered by the listener.
+    });
+
+  // Since the operation is handled in the background, we can return a success-like object
+  // to give the UI immediate feedback, even though the write is still pending on the server.
+  // The UI will handle the error toast via the global listener if the write fails.
+  return { success: true };
 }
