@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from './actions';
@@ -20,6 +20,8 @@ import {
   Search,
   UserPlus,
   Signature,
+  FileUp,
+  Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,12 +36,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { User } from '@/types';
+import type { ExternalWorker, User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -65,49 +67,70 @@ export default function CreatePermitPage() {
   const [selectedAnnexes, setSelectedAnnexes] = useState<string[]>([]);
   const [ppeData, setPpeData] = useState<{ [key: string]: { required?: boolean, verified?: boolean } }>({});
   const [emergencyData, setEmergencyData] = useState<{ [key: string]: string }>({});
-  const [workers, setWorkers] = useState<User[]>([]);
   
-  // State for Add Worker Dialog
-  const [isAddWorkerDialogOpen, setIsAddWorkerDialogOpen] = useState(false);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  // State for external workers
+  const [workers, setWorkers] = useState<ExternalWorker[]>([]);
+  const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
+  const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
+  const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
 
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if(isAddWorkerDialogOpen) {
-        setLoadingUsers(true);
-        try {
-          const usersSnapshot = await getDocs(collection(db, 'users'));
-          const usersList = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-          setAllUsers(usersList);
-        } catch (error) {
-          console.error("Error fetching users: ", error);
-          toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los usuarios.' });
-        } finally {
-          setLoadingUsers(false);
-        }
-      }
-    };
-    fetchUsers();
-  }, [isAddWorkerDialogOpen, toast]);
-
-  const filteredUsers = useMemo(() => {
-    return allUsers.filter(u => 
-      u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).filter(u => !workers.some(w => w.uid === u.uid)); // Exclude already added workers
-  }, [searchTerm, allUsers, workers]);
-
-  const addWorker = (worker: User) => {
-    setWorkers([...workers, worker]);
+  const openNewWorkerDialog = () => {
+    setEditingWorkerIndex(null);
+    setCurrentWorker({
+      nombre: '',
+      cedula: '',
+      rol: '',
+      eps: '',
+      arl: '',
+      pensiones: '',
+    });
+    setIsWorkerDialogOpen(true);
+  };
+  
+  const openEditWorkerDialog = (worker: ExternalWorker, index: number) => {
+    setEditingWorkerIndex(index);
+    setCurrentWorker(worker);
+    setIsWorkerDialogOpen(true);
   };
 
-  const removeWorker = (workerUid: string) => {
-    setWorkers(workers.filter(w => w.uid !== workerUid));
+  const handleSaveWorker = () => {
+    if (!currentWorker || !currentWorker.nombre || !currentWorker.cedula || !currentWorker.rol) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos Incompletos',
+        description: 'Nombre, cédula y rol son requeridos.',
+      });
+      return;
+    }
+
+    if (editingWorkerIndex !== null) {
+      const updatedWorkers = [...workers];
+      updatedWorkers[editingWorkerIndex] = currentWorker as ExternalWorker;
+      setWorkers(updatedWorkers);
+      toast({ title: 'Trabajador Actualizado' });
+    } else {
+      setWorkers([...workers, currentWorker as ExternalWorker]);
+      toast({ title: 'Trabajador Agregado' });
+    }
+
+    setIsWorkerDialogOpen(false);
+    setCurrentWorker(null);
+    setEditingWorkerIndex(null);
+  };
+  
+  const removeWorker = (index: number) => {
+    setWorkers(workers.filter((_, i) => i !== index));
+  };
+  
+  const handleWorkerInputChange = (field: keyof ExternalWorker, value: string) => {
+    setCurrentWorker(prev => prev ? { ...prev, [field]: value } : null);
   };
 
+  const handleFileUpload = (field: keyof ExternalWorker) => {
+     // This is a placeholder for actual file upload logic
+    handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
+    toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
+  }
 
   const colors = {
     primary: 'hsl(var(--primary))',
@@ -234,7 +257,7 @@ export default function CreatePermitPage() {
         annexes: selectedAnnexes,
         ppe: ppeData,
         emergency: emergencyData,
-        workers: workers.map(w => w.uid),
+        workers: workers, // Save external workers
         approvals: {
           solicitante: {
             userId: user.uid,
@@ -245,7 +268,7 @@ export default function CreatePermitPage() {
         }
       };
 
-      await createPermit(fullPermitData);
+      await createPermit(fullPermitData as any);
       
       toast({
         title: 'Permiso Creado Exitosamente',
@@ -434,7 +457,11 @@ export default function CreatePermitPage() {
                   onChange={(e) => setFormData({...formData, procedure: e.target.value})}
                   rows={8}
                   className="w-full px-4 py-3 border-2 border-input rounded-xl focus:border-primary transition-all"
-                  placeholder="Describa el procedimiento detallado paso a paso:&#10;1. Preparación del área y equipos&#10;2. Instalación de señalización&#10;3. Verificación de EPP&#10;4. ..."
+                  placeholder="Describa el procedimiento detallado paso a paso:
+1. Preparación del área y equipos
+2. Instalación de señalización
+3. Verificación de EPP
+4. ..."
                 />
               </div>
 
@@ -836,9 +863,9 @@ export default function CreatePermitPage() {
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Trabajadores Ejecutantes
+                  Trabajadores Ejecutantes Externos
                 </h2>
-                <p className="text-muted-foreground">Registre todos los trabajadores que participarán en esta tarea</p>
+                <p className="text-muted-foreground">Registre todos los trabajadores externos que participarán en esta tarea</p>
               </div>
 
               <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-500">
@@ -852,26 +879,25 @@ export default function CreatePermitPage() {
 
               <div className="space-y-4">
                 {workers.length > 0 ? (
-                  workers.map(worker => (
-                    <div key={worker.uid} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                  workers.map((worker, index) => (
+                    <div key={index} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
                       <div className="flex flex-col sm:flex-row items-center gap-4">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={worker.photoURL || undefined} />
-                          <AvatarFallback>{getInitials(worker.displayName)}</AvatarFallback>
+                          {worker.foto && <AvatarImage src={worker.foto} />}
+                          <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 text-center sm:text-left">
-                          <p className="font-bold text-lg text-gray-800">{worker.displayName}</p>
-                          <p className="text-sm text-gray-600">{worker.email}</p>
+                          <p className="font-bold text-lg text-gray-800">{worker.nombre}</p>
+                          <p className="text-sm text-gray-600">C.C. {worker.cedula} - {worker.rol}</p>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => {
-                          // TODO: Implement signature logic
-                          toast({ title: "Próximamente", description: "La funcionalidad de firma estará disponible pronto."})
-                        }}>
-                          <Signature size={16} className="mr-2"/> Pendiente de Firma
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => removeWorker(worker.uid)}>
-                          <X className="h-5 w-5 text-destructive" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -883,14 +909,13 @@ export default function CreatePermitPage() {
                   </div>
                 )}
 
-                <Button onClick={() => setIsAddWorkerDialogOpen(true)} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
+                <Button onClick={openNewWorkerDialog} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
                   <UserPlus size={24} className="mr-3" />
                   <span className="font-bold">+ Agregar Trabajador</span>
                 </Button>
               </div>
             </div>
           )}
-
 
           {step === 7 && (
             <div className="space-y-8">
@@ -1076,60 +1101,85 @@ export default function CreatePermitPage() {
         </div>
       </div>
       
-       {/* Add Worker Dialog */}
-      <Dialog open={isAddWorkerDialogOpen} onOpenChange={setIsAddWorkerDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] h-[70vh] flex flex-col">
+      {/* Add/Edit Worker Dialog */}
+      <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
+        <DialogContent className="sm:max-w-[650px] h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Agregar Trabajador</DialogTitle>
+            <DialogTitle>{editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador Externo</DialogTitle>
             <DialogDescription>
-              Busque y seleccione los usuarios para agregar al permiso de trabajo.
+              Complete la información del trabajador que ejecutará la tarea.
             </DialogDescription>
           </DialogHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o correo electrónico..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
           <ScrollArea className="flex-1 -mx-6 px-6">
-            {loadingUsers ? (
-              <div className="flex justify-center items-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nombre">Nombre y Apellido *</Label>
+                  <Input id="nombre" value={currentWorker?.nombre || ''} onChange={(e) => handleWorkerInputChange('nombre', e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="cedula">Cédula *</Label>
+                  <Input id="cedula" value={currentWorker?.cedula || ''} onChange={(e) => handleWorkerInputChange('cedula', e.target.value)} />
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2 py-4">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map(u => (
-                    <div key={u.uid} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
-                      <Avatar>
-                        <AvatarImage src={u.photoURL || undefined} />
-                        <AvatarFallback>{getInitials(u.displayName)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{u.displayName}</p>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
-                      </div>
-                      <Button size="sm" onClick={() => {
-                        addWorker(u);
-                        toast({ title: 'Trabajador Agregado', description: `${u.displayName} ha sido agregado.`});
-                      }}>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Agregar
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">No se encontraron usuarios o ya han sido agregados.</p>
-                )}
+              <div>
+                <Label htmlFor="rol">Rol dentro del permiso *</Label>
+                <Input id="rol" value={currentWorker?.rol || ''} onChange={(e) => handleWorkerInputChange('rol', e.target.value)} />
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                 <div>
+                  <Label htmlFor="eps">EPS</Label>
+                  <Input id="eps" value={currentWorker?.eps || ''} onChange={(e) => handleWorkerInputChange('eps', e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="arl">ARL</Label>
+                  <Input id="arl" value={currentWorker?.arl || ''} onChange={(e) => handleWorkerInputChange('arl', e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="pensiones">Fondo de Pensiones</Label>
+                  <Input id="pensiones" value={currentWorker?.pensiones || ''} onChange={(e) => handleWorkerInputChange('pensiones', e.target.value)} />
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                 <Label>Documentos y Certificaciones</Label>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">Certificado Aptitud Médica</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('certificadoAptitudMedica')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.certificadoAptitudMedica ? 'Cargado' : 'Cargar'}</Button>
+                 </div>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">TSA - TEC</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('tsaTec')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.tsaTec ? 'Cargado' : 'Cargar'}</Button>
+                 </div>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">Entrenamiento / Capacitación</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('entrenamiento')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.entrenamiento ? 'Cargado' : 'Cargar'}</Button>
+                 </div>
+              </div>
+
+               <div className="space-y-3">
+                 <Label>Identificación y Firmas</Label>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">Foto (Selfie)</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('foto')}> <Camera className="mr-2 h-4 w-4" />{currentWorker?.foto ? 'Cargada' : 'Cargar'}</Button>
+                 </div>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">Firma Apertura</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('firmaApertura')}> <Signature className="mr-2 h-4 w-4" />{currentWorker?.firmaApertura ? 'Cargada' : 'Cargar'}</Button>
+                 </div>
+                 <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="text-sm font-medium">Firma Cierre</span>
+                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('firmaCierre')}> <Signature className="mr-2 h-4 w-4" />{currentWorker?.firmaCierre ? 'Cargada' : 'Cargar'}</Button>
+                 </div>
+              </div>
+            </div>
           </ScrollArea>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setIsAddWorkerDialogOpen(false)}>
-              Cerrar
+            <DialogClose asChild>
+              <Button variant="secondary">Cancelar</Button>
+            </DialogClose>
+            <Button onClick={handleSaveWorker}>
+              {editingWorkerIndex !== null ? 'Guardar Cambios' : 'Agregar Trabajador'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1137,5 +1187,3 @@ export default function CreatePermitPage() {
     </div>
   );
 }
-
-    

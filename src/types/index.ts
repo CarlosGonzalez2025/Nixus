@@ -21,6 +21,21 @@ export type Approval = {
   comments?: string;
 }
 
+export interface ExternalWorker {
+  nombre: string;
+  cedula: string;
+  rol: string;
+  certificadoAptitudMedica?: string; // URL o path al archivo
+  tsaTec?: string; // URL o path al archivo
+  entrenamiento?: string; // URL o path al archivo
+  eps: string;
+  arl: string;
+  pensiones: string;
+  foto?: string; // URL o path a la selfie
+  firmaApertura?: string; // URL o path a la firma
+  firmaCierre?: string; // URL o path a la firma
+}
+
 export type Permit = {
   id: string;
   number?: string;
@@ -39,7 +54,7 @@ export type Permit = {
   hazards?: any;
   annexes?: any;
   ppe?: any;
-  workers?: string[]; // Array of user UIDs
+  workers?: ExternalWorker[]; // Array of external workers
   approvals?: {
     solicitante?: Approval;
     lider_tarea?: Approval;
@@ -47,5 +62,3 @@ export type Permit = {
     lider_sst?: Approval;
   };
 };
-
-    
