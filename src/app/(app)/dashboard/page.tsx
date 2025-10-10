@@ -94,10 +94,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    // Query for user's permits
     const permitsCollection = collection(db, 'permits');
-    // NOTE: The query was simplified to avoid needing a composite index.
-    // Filtering by user is now done on the client side.
     const q = query(
       permitsCollection, 
       orderBy('createdAt', 'desc'),
@@ -114,15 +111,13 @@ export default function Dashboard() {
         } as Permit;
       });
       
-      const userPermits = allRecentPermits.filter(p => p.createdBy === user.uid);
-      setPermits(userPermits);
+      setPermits(allRecentPermits);
       
-      // Calculate stats based on the user's permits
       setStats({
-        total: userPermits.length,
-        pendiente: userPermits.filter(p => p.status === 'pendiente_revision').length,
-        aprobado: userPermits.filter(p => p.status === 'aprobado').length,
-        enEjecucion: userPermits.filter(p => p.status === 'en_ejecucion').length
+        total: allRecentPermits.length,
+        pendiente: allRecentPermits.filter(p => p.status === 'pendiente_revision').length,
+        aprobado: allRecentPermits.filter(p => p.status === 'aprobado').length,
+        enEjecucion: allRecentPermits.filter(p => p.status === 'en_ejecucion').length
       });
       
       setLoading(false);
@@ -136,7 +131,7 @@ export default function Dashboard() {
 
   const statsCards = [
       {
-        title: 'Mis Permisos',
+        title: 'Permisos Recientes',
         value: stats.total,
         icon: FileText,
         color: 'hsl(var(--primary))',
@@ -225,7 +220,7 @@ export default function Dashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Mis Permisos Recientes</CardTitle>
+          <CardTitle>Permisos Recientes</CardTitle>
         </CardHeader>
         <CardContent>
            {loading ? (
@@ -253,6 +248,7 @@ export default function Dashboard() {
                     <TableRow>
                         <TableHead>Número</TableHead>
                         <TableHead>Tipo de Trabajo</TableHead>
+                        <TableHead>Creado por</TableHead>
                         <TableHead>Fecha Creación</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead></TableHead>
@@ -267,6 +263,7 @@ export default function Dashboard() {
                           </Link>
                         </TableCell>
                         <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
+                        <TableCell>{permit.user?.displayName || 'N/A'}</TableCell>
                         <TableCell>
                           {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}
                         </TableCell>
