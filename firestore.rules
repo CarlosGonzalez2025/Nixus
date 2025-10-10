@@ -1,0 +1,18 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow users to read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow authenticated users to create permits, and only the creator can read/update them.
+    match /permits/{permitId} {
+      allow read, update: if request.auth != null && request.auth.uid == resource.data.createdBy;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.createdBy;
+    }
+  }
+}

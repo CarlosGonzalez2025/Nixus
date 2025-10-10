@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -21,7 +22,7 @@ export async function createPermit(data: PermitData) {
     await addDoc(collection(db, 'permits'), {
       ...data,
       createdBy: data.userId,
-      status: 'Pending',
+      status: 'pendiente_revision',
       createdAt: serverTimestamp(),
     });
 
