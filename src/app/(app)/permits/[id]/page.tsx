@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -356,16 +356,109 @@ export default function PermitDetailPage() {
     return null;
   }
 
-  const ppeSections = [
-    { title: "Ropa", ids: ['overol_trabajo', 'overol_ignifugo', 'peto', 'manguillas', 'polainas', 'otro_ropa'] },
-    { title: "Protección de pies y piernas", ids: ['botas_seguridad', 'botas_dielectricas', 'otro_pies'] },
-    { title: "Protección auditiva", ids: ['tipo_insercion', 'tipo_copa'] },
-    { title: "Protección respiratoria", ids: ['respirador_cartuchos', 'mascarilla_desechable', 'otro_respiratoria'] },
-    { title: "Protección cabeza", ids: ['casco', 'chavo'] },
-    { title: "Protección facial y ocular", ids: ['careta_lente_neutro', 'monogafas', 'gafas_oxicorte', 'careta_soldador', 'careta_dielectrica', 'otro_facial'] },
-    { title: "Barrera/Señales de advertencia", ids: ['senalizacion', 'barandas', 'delimitacion', 'control_acceso'] },
-    { title: "Guantes", ids: ['proteccion_mecanica', 'proteccion_dielectrica_guantes', 'proteccion_quimica', 'otro_guantes'] },
-    { title: "Otros", ids: ['tapete_dielectrico', 'pertiga_dielectrica', 'otro_otros'] }
+ const hazards = [
+    { id: 'ruido', label: 'Ruido' },
+    { id: 'vibracion', label: 'Vibración' },
+    { id: 'temperatura', label: 'Temperatura' },
+    { id: 'radiacion', label: 'Radiación' },
+    { id: 'iluminacion', label: 'Deficiencia / Exceso de iluminación' },
+    { id: 'desnivel', label: 'Diferencias de nivel (Huecos y desnivel)' },
+    { id: 'quimicos', label: 'Contacto con sustancias químicas' },
+    { id: 'biologicos', label: 'Contacto con animales, virus, bacteria' },
+    { id: 'carga_fisica', label: 'Carga física (manipulación manual)' },
+    { id: 'electrica', label: 'Contacto con energía eléctrica A/M/B' },
+    { id: 'hidraulica', label: 'Contacto con energía hidráulica' },
+    { id: 'neumatica', label: 'Contacto con energía neumática' },
+    { id: 'mecanica', label: 'Contacto con energía mecánica (atrap)' },
+    { id: 'termica', label: 'Contacto con energía térmica' },
+    { id: 'confinados', label: 'Espacios confinados' },
+    { id: 'altura', label: 'Caídas de altura' },
+    { id: 'caliente', label: 'Trabajo en caliente' },
+    { id: 'izaje', label: 'Izaje de cargas' },
+    { id: 'transito', label: 'Tránsito' },
+    { id: 'fenomenos_naturales', label: 'Fenómenos naturales' },
+    { id: 'incendio', label: 'Incendio / Explosión' },
+    { id: 'emisiones', label: 'Emisiones / Vertimientos' },
+    { id: 'residuos', label: 'Residuos Peligrosos' },
+    { id: 'otros_riesgos', label: 'Otros riesgos (Cuales):' },
+  ];
+
+  const ppe = {
+    "Ropa": [
+      { id: 'overol_trabajo', label: 'Overol de trabajo' },
+      { id: 'overol_ignifugo', label: 'Overol Ignifugo, Categoria:' },
+      { id: 'peto', label: 'Peto' },
+      { id: 'manguillas', label: 'Manguillas' },
+      { id: 'polainas', label: 'Polainas' },
+      { id: 'otro_ropa', label: 'Otro (Cual):' },
+    ],
+    "Protección de pies y piernas": [
+      { id: 'botas_seguridad', label: 'Botas de seguridad con puntera' },
+      { id: 'botas_dielectricas', label: 'Botas dieléctricas' },
+      { id: 'otro_pies', label: 'Otro (Cual):' },
+    ],
+     "Protección auditiva": [
+      { id: 'tipo_insercion', label: 'Tipo Inserción' },
+      { id: 'tipo_copa', label: 'Tipo copa' },
+    ],
+    "Protección respiratoria": [
+      { id: 'respirador_cartuchos', label: 'Respirador con cartuchos para:' },
+      { id: 'mascarilla_desechable', label: 'Mascarilla desechable para:' },
+      { id: 'otro_respiratoria', label: 'Otro (Cual):' },
+    ],
+    "Protección cabeza": [
+        { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuque' },
+        { id: 'chavo', label: 'Chavo en tela o carnaza' },
+    ],
+    "Protección facial y ocular": [
+        { id: 'careta_lente_neutro', label: 'Careta lente neutro' },
+        { id: 'monogafas', label: 'Monogafas / Gafas' },
+        { id: 'gafas_oxicorte', label: 'Gafas de oxicorte' },
+        { id: 'careta_soldador', label: 'Careta de soldador' },
+        { id: 'careta_dielectrica', label: 'Careta de dieléctrica, clase:' },
+        { id: 'otro_facial', label: 'Otro (Cual):' },
+    ],
+    "Barrera/Señales de advertencia": [
+        { id: 'senalizacion', label: 'Señalización' },
+        { id: 'barandas', label: 'Barandas' },
+        { id: 'delimitacion', label: 'Delimitación Perimetral' },
+        { id: 'control_acceso', label: 'Control de acceso' },
+    ],
+    "Guantes": [
+        { id: 'proteccion_mecanica', label: 'Protección mecánica:' },
+        { id: 'proteccion_dielectrica_guantes', label: 'Protección dieléctrica:' },
+        { id: 'proteccion_quimica', label: 'Protección química' },
+        { id: 'otro_guantes', label: 'Otro (Cual):' },
+    ],
+    "Otros": [
+        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico' },
+        { id: 'pertiga_dielectrica', label: 'Pértiga dieléctrica' },
+        { id: 'otro_otros', label: 'Otro (Cual):' },
+    ]
+  }
+
+  const ppeSystems = [
+      { id: 'arnes', label: 'Arnés, Tipo:' },
+      { id: 'mosqueton', label: 'Mosquetón' },
+      { id: 'eslinga', label: 'Eslinga, Tipo:' },
+      { id: 'linea_vida', label: 'Línea de vida, Tipo:' },
+      { id: 'freno_arrestador', label: 'Freno/Arrestador' },
+      { id: 'punto_anclaje', label: 'Punto de anclaje (Cual):' },
+      { id: 'autoretractil', label: 'Autoretráctil' },
+      { id: 'tie_off', label: 'Tie-off' },
+      { id: 'baranda_rodapies', label: 'Baranda con rodapiés' },
+      { id: 'sistema_acceso', label: 'Sistema de acceso (Cual):' },
+      { id: 'tripode', label: 'Tripode / pescante' },
+      { id: 'otro_sistemas', label: 'Otro (Cual):' },
+  ];
+  
+  const emergencyQuestions = [
+    {id: 'potenciales', label: 'A.- Las emergencias potenciales que pueden ocurrir'},
+    {id: 'procedimientos', label: 'B.- Los procedimientos establecidos para tales situaciones.'},
+    {id: 'rutas_evacuacion', label: 'C.- Rutas de Evacuación'},
+    {id: 'puntos_encuentro', label: 'D.- Puntos de encuentro'},
+    {id: 'equipos_emergencia', label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo'},
+    {id: 'brigadistas', label: 'F.- Ubicación de Brigadistas cercanos'},
   ];
 
   return (
@@ -448,20 +541,20 @@ export default function PermitDetailPage() {
 
                     <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                          {Object.entries(permit.hazards || {}).map(([key, value]) => (
-                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          {hazards.map(hazard => (
+                              <RadioCheck key={hazard.id} label={hazard.label} value={permit.hazards?.[hazard.id]} />
                           ))}
                         </div>
                     </Section>
                     
                     <Section title="EPP - SEÑALIZACION (Verificar)">
                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {ppeSections.map(section => (
-                                <div key={section.title}>
-                                   <h4 className="font-bold mb-2 text-gray-600 text-sm">{section.title}</h4>
+                            {Object.entries(ppe).map(([sectionTitle, sectionItems]) => (
+                                <div key={sectionTitle}>
+                                   <h4 className="font-bold mb-2 text-gray-600 text-sm">{sectionTitle}</h4>
                                    <div className="space-y-1">
-                                    {section.ids.map(id => permit.ppe && permit.ppe[id] && (
-                                         <RadioCheck key={id} label={id.replace(/_/g, ' ').toUpperCase()} value={permit.ppe[id]} />
+                                    {sectionItems.map(item => (
+                                         <RadioCheck key={item.id} label={item.label} value={permit.ppe?.[item.id]} />
                                     ))}
                                    </div>
                                 </div>
@@ -471,8 +564,8 @@ export default function PermitDetailPage() {
                     
                     <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                          {Object.entries(permit.ppeSystems || {}).map(([key, value]) => (
-                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          {ppeSystems.map(system => (
+                              <RadioCheck key={system.id} label={system.label} value={permit.ppeSystems?.[system.id]} />
                           ))}
                         </div>
                     </Section>
@@ -480,8 +573,8 @@ export default function PermitDetailPage() {
                     <Section title="Notificación y Emergencias">
                         <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
                          <div className="mt-4 space-y-1">
-                          {Object.entries(permit.emergency || {}).filter(([key]) => key !== 'notification').map(([key, value]) => (
-                              <RadioCheck key={key} label={key.replace(/_/g, ' ').toUpperCase()} value={value as string} />
+                          {emergencyQuestions.map(item => (
+                              <RadioCheck key={item.id} label={item.label} value={permit.emergency?.[item.id]} />
                           ))}
                         </div>
                     </Section>
@@ -489,7 +582,7 @@ export default function PermitDetailPage() {
                     <Section title="Trabajadores Ejecutantes">
                          {permit.workers && permit.workers.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {permit.workers.map((worker, index) => (
+                            {(permit.workers as ExternalWorker[]).map((worker, index) => (
                                 <Card key={index} className="p-4">
                                     <div className="flex items-center gap-4">
                                         <Avatar className="w-12 h-12">
@@ -580,7 +673,7 @@ export default function PermitDetailPage() {
                                   }/>
                                 )}
                                 <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
-                                 <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/MM/yyyy') : 'Pendiente'}/>
+                                 <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/yyyy') : 'Pendiente'}/>
                                  <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>
                             </div>
                         </div>
@@ -608,5 +701,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
