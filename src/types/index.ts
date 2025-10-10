@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -69,7 +68,7 @@ export type PermitClosure = {
 export type Permit = {
   id: string;
   number?: string;
-  workType: string;
+  workType: string[];
   status: PermitStatus;
   createdBy: string;
   createdAt: Timestamp;

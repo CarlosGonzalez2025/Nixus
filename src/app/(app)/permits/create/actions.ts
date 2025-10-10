@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin';
@@ -30,7 +31,7 @@ export async function createPermit(data: PermitCreateData) {
   const permitPayload = {
     ...permitData,
     number: '', // Will be generated after creation
-    workType: permitData.workType || 'general',
+    workType: permitData.workType && permitData.workType.length > 0 ? permitData.workType : ['general'],
     status: 'pendiente_revision' as const,
     createdBy: userId,
     createdAt: FieldValue.serverTimestamp(), // ✅ Usar serverTimestamp del Admin SDK

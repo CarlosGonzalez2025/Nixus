@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -24,6 +23,7 @@ import {
   Plus,
   Trash2,
   Clock,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,7 @@ import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
@@ -79,7 +80,7 @@ export default function CreatePermitPage() {
   const [recommendations, setRecommendations] = useState('');
 
   // Step 1
-  const [workType, setWorkType] = useState('');
+  const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
   const [generalInfo, setGeneralInfo] = useState({
     workDescription: '',
     suspensionCauses: '',
@@ -112,6 +113,13 @@ export default function CreatePermitPage() {
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | null>(null);
 
+  const handleWorkTypeChange = (workTypeKey: string) => {
+    setSelectedWorkTypes(prev => 
+      prev.includes(workTypeKey) 
+        ? prev.filter(item => item !== workTypeKey)
+        : [...prev, workTypeKey]
+    );
+  };
 
   const openNewWorkerDialog = () => {
     setEditingWorkerIndex(null);
@@ -320,7 +328,7 @@ export default function CreatePermitPage() {
 
   const canProceed = () => {
     if (step === 1) {
-      return workType && generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
+      return selectedWorkTypes.length > 0 && generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
     }
     return true;
   };
@@ -330,7 +338,7 @@ export default function CreatePermitPage() {
     setRecommendations('');
     try {
       const result = await getRiskAssessmentRecommendations({
-        workType: workTypes[workType] || workType,
+        workType: selectedWorkTypes.map(key => workTypes[key]).join(', ') || 'General',
         environmentalFactors: "Factores diversos según peligros seleccionados",
         permitDetails: generalInfo.procedure,
       });
@@ -359,7 +367,7 @@ export default function CreatePermitPage() {
     setIsSubmitting(true);
     try {
       const fullPermitData: PermitFormData = {
-        workType,
+        workType: selectedWorkTypes,
         generalInfo,
         hazards: hazardsData,
         ppe: ppeData,
@@ -524,16 +532,20 @@ export default function CreatePermitPage() {
                 
                  <div>
                     <label className="font-bold text-gray-700">Tipo de Trabajo *</label>
-                    <Select value={workType} onValueChange={setWorkType}>
-                        <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Seleccione el tipo de trabajo a realizar..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Object.entries(workTypes).map(([key, value]) => (
-                                <SelectItem key={key} value={key}>{value}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="p-4 border rounded-lg mt-2 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(workTypes).map(([key, value]) => (
+                          <div key={key} className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`worktype-${key}`} 
+                              checked={selectedWorkTypes.includes(key)}
+                              onCheckedChange={() => handleWorkTypeChange(key)}
+                            />
+                            <Label htmlFor={`worktype-${key}`} className="font-normal">{value}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                  </div>
 
                 <div>

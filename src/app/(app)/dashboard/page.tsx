@@ -160,6 +160,11 @@ export default function Dashboard() {
       }
     ];
 
+  const getWorkTypesString = (types: string[]): string => {
+    if (!Array.isArray(types) || types.length === 0) return 'General';
+    return types.map(key => workTypes[key] || key).join(', ');
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
        <div className="flex items-center justify-between">
@@ -262,7 +267,7 @@ export default function Dashboard() {
                             {permit.number || permit.id.substring(0, 8)}
                           </Link>
                         </TableCell>
-                        <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
+                        <TableCell>{getWorkTypesString(permit.workType)}</TableCell>
                         <TableCell>{permit.user?.displayName || 'N/A'}</TableCell>
                         <TableCell>
                           {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}

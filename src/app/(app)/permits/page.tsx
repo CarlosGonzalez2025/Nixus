@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -115,11 +116,16 @@ export default function PermitsPage() {
 
     return () => unsubscribe();
   }, [toast]);
+  
+  const getWorkTypesString = (types: string[]): string => {
+    if (!Array.isArray(types)) return 'General';
+    return types.map(key => workTypes[key] || key).join(', ');
+  }
 
   const filteredPermits = permits.filter(permit => 
     permit.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     permit.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (workTypes[permit.workType] || permit.workType).toLowerCase().includes(searchTerm.toLowerCase())
+    getWorkTypesString(permit.workType).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -180,7 +186,7 @@ export default function PermitsPage() {
                             {permit.number || permit.id.substring(0, 8)}
                           </Link>
                         </TableCell>
-                        <TableCell>{workTypes[permit.workType] || permit.workType}</TableCell>
+                        <TableCell>{getWorkTypesString(permit.workType)}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariant[permit.status] || 'default'}>
                             {getStatusText(permit.status)}

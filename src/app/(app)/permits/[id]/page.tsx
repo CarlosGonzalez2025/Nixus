@@ -482,6 +482,20 @@ export default function PermitDetailPage() {
     {id: 'brigadistas', label: 'F.- Ubicación de Brigadistas cercanos'},
   ];
 
+  const getWorkTypesString = (types: string[]): string => {
+    const workTypesMap: {[key: string]: string} = {
+        'altura': 'Trabajo en Alturas',
+        'confinado': 'Espacios Confinados',
+        'energia': 'Control de Energías',
+        'izaje': 'Izaje de Cargas',
+        'caliente': 'Trabajo en Caliente',
+        'excavacion': 'Excavaciones',
+        'general': 'Trabajo General'
+    };
+    if (!Array.isArray(types) || types.length === 0) return workTypesMap['general'];
+    return types.map(key => workTypesMap[key] || key).join(', ');
+  }
+
   return (
     <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
         {/* Action Bar */}
@@ -525,6 +539,7 @@ export default function PermitDetailPage() {
                 <div className="space-y-6 mt-6">
                     <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
                         <div className="space-y-4">
+                            <Field label="Tipo(s) de Trabajo" value={getWorkTypesString(permit.workType)} fullWidth/>
                             <Field label="El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
                             <Field label="Causales para la suspensión del Permiso:" value={permit.generalInfo?.suspensionCauses} fullWidth/>
                             <Field label="Descripción o procedimiento de la teras a realizar:" value={permit.generalInfo?.procedure} fullWidth/>
