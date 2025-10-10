@@ -34,7 +34,6 @@ export interface ExternalWorker {
   nombre: string;
   cedula: string;
   rol: string;
-  certificadoAptitudMedica?: string;
   tsaTec: 'tsa' | 'tec' | 'otro' | 'na';
   eps: string;
   arl: string;

@@ -165,6 +165,7 @@ export default function CreatePermitPage() {
   };
 
   const handleFileUpload = (field: keyof ExternalWorker) => {
+    // This is a simulation. In a real app, you'd handle file uploads.
     handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
@@ -932,13 +933,9 @@ export default function CreatePermitPage() {
               </div>
               
               <div className="space-y-3">
-                 <Label>Documentos y Certificaciones</Label>
-                 <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <span className="text-sm font-medium">Certificado Aptitud Médica</span>
-                    <Button variant="outline" size="sm" onClick={() => handleFileUpload('certificadoAptitudMedica')}> <FileUp className="mr-2 h-4 w-4" />{currentWorker?.certificadoAptitudMedica ? 'Cargado' : 'Cargar'}</Button>
-                 </div>
+                 <Label>Certificaciones</Label>
                  <div className="p-3 border rounded-lg space-y-2">
-                    <Label htmlFor="tsa-tec-select">Certificación TSA / TEC</Label>
+                    <Label htmlFor="tsa-tec-select">Certificado Aptitud Médica</Label>
                     <Select value={currentWorker?.tsaTec || 'na'} onValueChange={(value) => handleWorkerInputChange('tsaTec', value)}>
                       <SelectTrigger id="tsa-tec-select"><SelectValue placeholder="Seleccione certificación..." /></SelectTrigger>
                       <SelectContent>
