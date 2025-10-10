@@ -13,6 +13,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser } from '@/hooks/use-user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
@@ -37,7 +38,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useUser();
+  const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
@@ -96,16 +98,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span>Work Permits</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => router.push('/permits/create')}
-                isActive={pathname === '/permits/create'}
-                tooltip="New Permit"
-              >
-                <PlusCircle />
-                <span>New Permit</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+             {user.role === 'Líder de Tarea' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => router.push('/permits/create')}
+                  isActive={pathname === '/permits/create'}
+                  tooltip="New Permit"
+                >
+                  <PlusCircle />
+                  <span>New Permit</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -144,7 +148,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 align="start"
                 className="w-56"
               >
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{user.role || 'User'}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />

@@ -47,7 +47,7 @@ export default function LoginPage() {
       await login(values.email, values.password);
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: 'Welcome!',
       });
       router.push('/dashboard');
     } catch (error) {
@@ -109,7 +109,7 @@ export default function LoginPage() {
                 {isLoading && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Sign In
+                Sign In / Sign Up
               </Button>
             </form>
           </Form>

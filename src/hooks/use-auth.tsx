@@ -14,9 +14,12 @@ import {
   type User,
   getAuth,
   type Auth,
+  createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -43,8 +46,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [auth]);
 
-  const login = (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const login = async (email: string, password: string) => {
+    try {
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = newUserCredential.user;
+        if(user) {
+           await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.email,
+            photoURL: '',
+            role: 'Líder de Tarea'
+          });
+        }
+        return newUserCredential;
+      }
+      throw error;
+    }
   }
 
   const logout = async () => {

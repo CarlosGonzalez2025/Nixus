@@ -20,7 +20,7 @@ import { Loader2, Wand2, ShieldCheck } from 'lucide-react';
 import { getRiskAssessmentRecommendations } from '@/ai/flows/risk-assessment-recommendation';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from './actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/hooks/use-user';
 
 const formSchema = z.object({
   workType: z.string().min(5, 'Please provide a descriptive work type.'),
@@ -29,7 +29,7 @@ const formSchema = z.object({
 });
 
 export default function CreatePermitPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isAssessing, setIsAssessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
