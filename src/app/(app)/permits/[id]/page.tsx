@@ -576,20 +576,22 @@ export default function PermitDetailPage() {
                     </Section>
                     
                     {permit.anexoAltura && (
-                        <Section title="ANEXO 1 - TRABAJOS EN ALTURA">
-                            <div className="p-4 border rounded-lg bg-gray-50/50 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Field label="A.- Altura de trabajo:" value={permit.anexoAltura.alturaTrabajo} />
-                                    <Field label="B.- Coordinador TSA" value={permit.anexoAltura.coordinadorTSA?.toUpperCase()} />
-                                    <Field label="C.- Auxiliar TSA" value={permit.anexoAltura.auxiliarTSA?.toUpperCase()} />
-                                    <Field label="D.- Elaboración ATS y procedimientos" value={permit.anexoAltura.elaboracionATS?.toUpperCase()} />
-                                </div>
-                                <Field label="Requerimiento de claridad o espacio libre de caída" value={permit.anexoAltura.claridadEspacioLibre} fullWidth/>
-
-                                {/* Aquí irían todas las demás secciones del anexo, pero por brevedad se omite */}
-                                <Field label="Observaciones / Supervisión" value={permit.anexoAltura.observaciones} fullWidth/>
+                      <Collapsible className="space-y-6 mt-6 border rounded-lg">
+                        <CollapsibleTrigger className="w-full bg-gray-100 hover:bg-gray-200 p-4 flex justify-between items-center cursor-pointer group rounded-t-lg">
+                            <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 1 - TRABAJOS EN ALTURA</h3>
+                            <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 space-y-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="A.- Altura de trabajo:" value={permit.anexoAltura.alturaTrabajo} />
+                                <Field label="B.- Coordinador TSA" value={permit.anexoAltura.coordinadorTSA?.toUpperCase()} />
+                                <Field label="C.- Auxiliar TSA" value={permit.anexoAltura.auxiliarTSA?.toUpperCase()} />
+                                <Field label="D.- Elaboración ATS y procedimientos" value={permit.anexoAltura.elaboracionATS?.toUpperCase()} />
                             </div>
-                        </Section>
+                            <Field label="Requerimiento de claridad o espacio libre de caída" value={permit.anexoAltura.claridadEspacioLibre} fullWidth/>
+                            <Field label="Observaciones / Supervisión" value={permit.anexoAltura.observaciones} fullWidth/>
+                        </CollapsibleContent>
+                      </Collapsible>
                     )}
 
 
@@ -775,3 +777,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
