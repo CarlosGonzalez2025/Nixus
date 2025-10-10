@@ -40,7 +40,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, MedicionAtmosferica } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -106,6 +106,19 @@ export default function CreatePermitPage() {
     supervisor: { nombres: '', cedula: '', firmaApertura: '' }
   });
 
+  // Anexo Izaje
+  const [anexoIzaje, setAnexoIzaje] = useState<Partial<AnexoIzaje>>({
+    informacionGeneral: {
+      accion: {},
+      pesoCarga: {},
+      equipoUtilizar: {},
+    },
+    aspectosRequeridos: {},
+    precauciones: {},
+    observaciones: '',
+    liderIzaje: { nombre: '', cedula: '', firmaApertura: '' }
+  });
+
   // Step 2
   const [hazardsData, setHazardsData] = useState<{ [key: string]: string }>({});
 
@@ -123,7 +136,7 @@ export default function CreatePermitPage() {
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
-  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'medicion' | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
 
 
@@ -197,7 +210,7 @@ export default function CreatePermitPage() {
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
 
-  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'medicion', context?: any) => {
+  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion', context?: any) => {
     setSignatureTarget(target);
     setSignatureContext(context);
     setIsSignaturePadOpen(true);
@@ -210,6 +223,11 @@ export default function CreatePermitPage() {
         setAnexoConfinado(prev => ({
             ...prev,
             supervisor: { ...(prev.supervisor!), firmaApertura: signatureDataUrl }
+        }))
+    } else if (signatureTarget === 'liderIzaje') {
+        setAnexoIzaje(prev => ({
+            ...prev,
+            liderIzaje: { ...(prev.liderIzaje!), firmaApertura: signatureDataUrl }
         }))
     } else if (signatureTarget === 'medicion' && signatureContext?.medicionId) {
         setAnexoConfinado(prev => ({
@@ -431,6 +449,7 @@ export default function CreatePermitPage() {
         workers: workers,
         anexoAltura: selectedWorkTypes.includes('altura') ? anexoAltura : undefined,
         anexoConfinado: selectedWorkTypes.includes('confinado') ? anexoConfinado : undefined,
+        anexoIzaje: selectedWorkTypes.includes('izaje') ? anexoIzaje : undefined,
       };
 
       const result = await createPermit({
@@ -467,6 +486,7 @@ export default function CreatePermitPage() {
     { label: "Info General", condition: true },
     { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
     { label: "Anexo Confinado", condition: selectedWorkTypes.includes('confinado')},
+    { label: "Anexo Izaje", condition: selectedWorkTypes.includes('izaje')},
     { label: "Peligros", condition: true },
     { label: "EPP", condition: true },
     { label: "Sistemas y Emergencia", condition: true },
@@ -482,75 +502,80 @@ export default function CreatePermitPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency', id: string, value: string) => {
+  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
+      let state: any;
+      let setState: (value: any) => void;
+
       switch(group) {
-          case 'hazards': setHazardsData(prev => ({...prev, [id]: value})); break;
-          case 'ppe': setPpeData(prev => ({...prev, [id]: value})); break;
-          case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); break;
-          case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); break;
+          case 'hazards': setHazardsData(prev => ({...prev, [id]: value})); return;
+          case 'ppe': setPpeData(prev => ({...prev, [id]: value})); return;
+          case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); return;
+          case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); return;
+          case 'anexoAltura': 
+              setState = setAnexoAltura;
+              state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
+              break;
+          case 'anexoConfinado':
+              setState = (value) => setAnexoConfinado(prev => ({...prev, checklist: value}));
+              state = anexoConfinado.checklist || {};
+              break;
+          case 'anexoIzaje':
+              setState = (value) => setAnexoIzaje(prev => ({...prev, aspectosRequeridos: value}));
+              state = anexoIzaje.aspectosRequeridos || {};
+              break;
+          default: return;
       }
+      
+      const handleChange = (value: string) => {
+          if ((group === 'anexoAltura' || group === 'anexoConfinado' || group === 'anexoIzaje') && anexoSection) {
+              setState((prev: any) => ({
+                  ...prev,
+                  [anexoSection]: {
+                      ...(prev as any)[anexoSection],
+                      [id]: value
+                  }
+              }));
+          } else {
+              setState((prev: any) => ({...prev, [id]: value}));
+          }
+      };
+      
+      handleChange(value);
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado) => {
-    let state: any;
-    let setState: (value: any) => void;
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+    let state: any = {};
+    let onValueChange = (value: string) => {};
+    let defaultValue = 'na';
 
     switch(group) {
-        case 'hazards': state = hazardsData; setState = setHazardsData; break;
-        case 'ppe': state = ppeData; setState = setPpeData; break;
-        case 'ppeSystems': state = ppeSystemsData; setState = setPpeSystemsData; break;
-        case 'emergency': state = emergencyData; setState = setEmergencyData; break;
+        case 'hazards': state = hazardsData; onValueChange = (v) => setHazardsData(p => ({...p, [id]: v})); break;
+        case 'ppe': state = ppeData; onValueChange = (v) => setPpeData(p => ({...p, [id]: v})); break;
+        case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
+        case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
         case 'anexoAltura': 
-            state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
-            setState = (value: any) => setAnexoAltura(prev => ({...prev, [anexoSection!]: value}));
+            state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {};
+            onValueChange = (v) => setAnexoAltura(p => ({...p, [anexoSection as string]: { ...((p as any)[anexoSection as string] || {}), [id]: v }}));
             break;
         case 'anexoConfinado':
             state = anexoConfinado.checklist || {};
-            setState = (value: any) => setAnexoConfinado(prev => ({ ...prev, checklist: value }));
+            onValueChange = (v) => setAnexoConfinado(p => ({...p, checklist: { ...(p.checklist || {}), [id]: v }}));
+            defaultValue = 'no';
             break;
-        default: state = {}; setState = () => {};
+        case 'anexoIzaje':
+            state = anexoIzaje.aspectosRequeridos || {};
+            onValueChange = (v) => setAnexoIzaje(p => ({...p, aspectosRequeridos: { ...(p.aspectosRequeridos || {}), [id]: v }}));
+            break;
     }
-
-    const handleChange = (value: string) => {
-        if ((group === 'anexoAltura' || group === 'anexoConfinado') && anexoSection) {
-            setState({
-                ...state,
-                [id]: value
-            });
-        } else {
-            setState((prev: any) => ({ ...prev, [id]: value }));
-        }
-    };
     
     return (
-        <RadioGroup value={state[id] || (group === 'anexoConfinado' ? 'no' : 'na')} onValueChange={handleChange} className="flex">
-            <RadioGroupItem value="si" id={`${group}-${id}-si`} /> <Label htmlFor={`${group}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${group}-${id}-no`} /> <Label htmlFor={`${group}-${id}-no`}>NO</Label>
-            { (group === 'anexoAltura' || group === 'hazards') && <>
-                <RadioGroupItem value="na" id={`${group}-${id}-na`} /> <Label htmlFor={`${group}-${id}-na`}>NA</Label>
+        <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
+            <RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`} className="mr-2">SI</Label>
+            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label>
+            { (group !== 'anexoConfinado') && <>
+                <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
             </>
             }
-        </RadioGroup>
-    )
-  }
-
-  const renderAnexoRadioGroup = (id: string, section: keyof AnexoAltura) => {
-     const state = (anexoAltura as any)[section] || {};
-
-     const handleChange = (value: string) => {
-        setAnexoAltura(prev => ({
-            ...prev,
-            [section]: {
-                ...(prev as any)[section],
-                [id]: value
-            }
-        }))
-     }
-    
-    return (
-        <RadioGroup value={state[id] || 'no'} onValueChange={handleChange} className="flex">
-            <RadioGroupItem value="si" id={`anexo-${section}-${id}-si`} /> <Label htmlFor={`anexo-${section}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`anexo-${section}-${id}-no`} /> <Label htmlFor={`anexo-${section}-${id}-no`}>NO</Label>
         </RadioGroup>
     )
   }
@@ -631,6 +656,72 @@ export default function CreatePermitPage() {
           { id: 'W', label: 'W.- existe olor perceptible' }
       ]
   }
+
+  const anexoIzajeInfoGeneral = {
+    accion: [
+      { id: 'levantar', label: 'Levantar'},
+      { id: 'trasladar', label: 'Trasladar'},
+      { id: 'montar', label: 'Montar'},
+      { id: 'desmontar', label: 'Desmontar'},
+      { id: 'cargar', label: 'Cargar'},
+      { id: 'descargar', label: 'Descargar'},
+    ],
+    pesoCarga: [
+      { id: 'menor1000', label: 'Menor a 1000 kg'},
+      { id: 'entre1000_2000', label: 'Entre 1000 kg y 2000 kg'},
+      { id: 'entre2000_3000', label: 'Entre 2000 kg y 3000 kg'},
+      { id: 'entre3000_4000', label: 'Entre 3000 kg y 4000 kg'},
+      { id: 'entre4000_5000', label: 'Entre 4000 kg y 5000 kg'},
+      { id: 'mayor5000', label: 'Mas de 5000'},
+    ],
+    equipoUtilizar: [
+      'Puente grua', 'Camion Grus', 'Grua Movil', 'Tome Grua', 'Retro excavadora', 'Tole Handler', 'Diferenciales / Polipasto'
+    ]
+  };
+
+  const anexoIzajeAspectos = {
+    left: [
+      { id: 'A', label: 'A. Está estabilizado el terreno donde se encuentra el equipo de izaje.' },
+      { id: 'B', label: 'B. El operador visualiza bien la carga y la operación que va a realizar.' },
+      { id: 'C', label: 'C. Se calculo tecnicamente la maniobra. (Se cuenta con plan de izaje de cargas).' },
+      { id: 'D', label: 'D. Se encuentra señalizada y demarcada el área de trabajo.' },
+      { id: 'E', label: 'E. Se verifico la capacidad de cargue del equipo de izaje' },
+      { id: 'F', label: 'F. Se retiraron los curiosos del área de izaje y del radio del equipo de izaje.' },
+      { id: 'G', label: 'G. Existe comunicación clara entre el operador, el encargado de la actividad y quienes participan en ella.' },
+      { id: 'H', label: 'H. Se realizo el ATS (Analisis de Trabajo Seguro) para la ejecución de la actividad.' },
+      { id: 'I', label: 'I. Se encuentran en buen estado las eslingas, aparejos y demás elementos de sujeción o accesorios de izaje. Sin uniones o hebras' },
+      { id: 'J', label: 'J. Los polines para nivelación de las grúas están en buen estado.' },
+      { id: 'K', label: 'K. Los polines quedan estables con respecto al terreno.' },
+    ],
+    right: [
+      { id: 'L', label: 'L. Está dispuesta y despejada el área donde se colocarán los elementos a izar.' },
+      { id: 'M', label: 'M. No existen personas bajo la carga izada.' },
+      { id: 'N', label: 'N. Se evaluó el área donde se va a llevar la carga izada y el área de movimiento de la carga.' },
+      { id: 'O', label: 'O. La actividad esta realizándose con la distancia de redes électricas recomendada?' },
+      { id: 'P', label: 'P. Las condiciones climiticas son buenas para la realización de la actividad?' },
+      { id: 'Q', label: 'Q. El equipo tiene conexión a tierra?' },
+      { id: 'R', label: 'R. Se verifico que no halla ningun material que pudiera caer arriba de la carga al ser izada?' },
+      { id: 'S', label: 'S. Hay un señalizador capacitado y entrenado para la actividad?' },
+      { id: 'T', label: 'T. Las partes del equipo a realizar izaje se encuentran en buen estado y no evidencian soldaduras o uniones inadecuadas' },
+      { id: 'U', label: 'U. Se verifico que los colaboradores estén afiliados al Sistema de Seguridad Social (EPS, ARL, AFP).' },
+    ]
+  };
+
+  const anexoIzajePrecauciones = [
+    {id: 'inspeccion', label: 'INSPECCION GRUA/APAR'},
+    {id: 'carnet', label: 'CARNET DIA VIG CA ALUM'},
+    {id: 'certificacion', label: 'CERTIFICACION OPERADOR RI'},
+    {id: 'plan_izaje', label: 'PLAN DE IZAJE'},
+    {id: 'uso_epps', label: 'USO DE EPPS'},
+    {id: 'bloqueo_etiquetado', label: 'BLOQUEO Y ETIQUETADO'},
+    {id: 'clima_seguro', label: 'CLIMA SEGURO'},
+    {id: 'vigia', label: 'VIGIA PARA LINEAS ELECTRICA'},
+    {id: 'apoyo_terreno', label: 'APOYO DEL TERRENO'},
+    {id: 'comunicacion_radial', label: 'COMUNICACION RADIAL/LUMINICA'},
+    {id: 'plan_rescate', label: 'PLAN DE RESCATE'},
+    {id: 'senalizacion_area', label: 'SEÑALIZACION Y DEMARCACION AREA'},
+    {id: 'estabilizadores', label: 'ESTABILIZADORES & TERRENO'},
+  ];
 
 
   return (
@@ -875,7 +966,7 @@ export default function CreatePermitPage() {
                             {sectionData.items.map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                     <Label className="flex-1 text-sm">{item.label}</Label>
-                                    {renderAnexoRadioGroup(item.id, sectionKey as keyof AnexoAltura)}
+                                    {renderRadioGroup(item.id, 'anexoAltura', sectionKey as keyof AnexoAltura)}
                                 </div>
                             ))}
                         </div>
@@ -930,13 +1021,13 @@ export default function CreatePermitPage() {
                         {anexoConfinadoChecklist.left.map(item => (
                             <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                 <Label className="flex-1 text-sm">{item.label}</Label>
-                                {renderRadioGroup(item.id, 'anexoConfinado', 'checklist')}
+                                {renderRadioGroup(item.id, 'anexoConfinado')}
                             </div>
                         ))}
                          {anexoConfinadoChecklist.right.map(item => (
                             <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                 <Label className="flex-1 text-sm">{item.label}</Label>
-                                {renderRadioGroup(item.id, 'anexoConfinado', 'checklist')}
+                                {renderRadioGroup(item.id, 'anexoConfinado')}
                             </div>
                         ))}
                     </div>
@@ -998,6 +1089,122 @@ export default function CreatePermitPage() {
                     <Textarea value={anexoConfinado.observaciones || ''} onChange={e => setAnexoConfinado(p => ({...p, observaciones: e.target.value}))} rows={4}/>
                 </div>
 
+            </div>
+          )}
+
+          {currentStepInfo.label === "Anexo Izaje" && (
+             <div className="space-y-6">
+                 <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        ANEXO 4 - IZAJE DE CARGAS
+                    </h2>
+                    <p className="text-muted-foreground">Complete toda la información requerida para este anexo.</p>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-bold text-primary mb-2">INFORMACIÓN GENERAL</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <h4 className="font-semibold text-sm mb-2">Acción a Realizar</h4>
+                        {anexoIzajeInfoGeneral.accion.map(item => (
+                          <div key={item.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`izaje-accion-${item.id}`}
+                                checked={anexoIzaje.informacionGeneral?.accion?.[item.id]}
+                                onCheckedChange={(checked) => setAnexoIzaje(p => ({...p, informacionGeneral: {...p.informacionGeneral!, accion: {...p.informacionGeneral?.accion, [item.id]: !!checked }}}))}
+                              />
+                              <Label htmlFor={`izaje-accion-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                       <div>
+                        <h4 className="font-semibold text-sm mb-2">Peso de la Carga</h4>
+                        {anexoIzajeInfoGeneral.pesoCarga.map(item => (
+                          <div key={item.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`izaje-peso-${item.id}`}
+                                checked={anexoIzaje.informacionGeneral?.pesoCarga?.[item.id]}
+                                onCheckedChange={(checked) => setAnexoIzaje(p => ({...p, informacionGeneral: {...p.informacionGeneral!, pesoCarga: {...p.informacionGeneral?.pesoCarga, [item.id]: !!checked }}}))}
+                              />
+                              <Label htmlFor={`izaje-peso-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                       <div>
+                        <h4 className="font-semibold text-sm mb-2">Equipo a Utilizar (Capacidad en Ton)</h4>
+                        {anexoIzajeInfoGeneral.equipoUtilizar.map(item => (
+                          <div key={item} className="flex items-center gap-2 mb-2">
+                              <Label htmlFor={`izaje-equipo-${item}`} className="flex-1 text-sm">{item}</Label>
+                              <Input 
+                                id={`izaje-equipo-${item}`} 
+                                className="w-24" 
+                                placeholder="Ton"
+                                value={anexoIzaje.informacionGeneral?.equipoUtilizar?.[item] || ''}
+                                onChange={e => setAnexoIzaje(p => ({...p, informacionGeneral: {...p.informacionGeneral!, equipoUtilizar: {...p.informacionGeneral?.equipoUtilizar, [item]: e.target.value }}}))}
+                              />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                </div>
+
+                 <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Aspectos Requeridos para Realizar Izaje de Carga</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                       {[...anexoIzajeAspectos.left, ...anexoIzajeAspectos.right].map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                <Label className="flex-1 text-sm">{item.label}</Label>
+                                {renderRadioGroup(item.id, 'anexoIzaje', 'aspectosRequeridos')}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                 <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Precauciones y Controles Específicos</h4>
+                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                       {anexoIzajePrecauciones.map(item => (
+                          <div key={item.id} className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`izaje-prec-${item.id}`}
+                                checked={anexoIzaje.precauciones?.[item.id]}
+                                onCheckedChange={(checked) => setAnexoIzaje(p => ({...p, precauciones: {...p.precauciones, [item.id]: !!checked }}))}
+                              />
+                              <Label htmlFor={`izaje-prec-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                          </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                    <h4 className="font-bold text-primary">Observaciones</h4>
+                    <Textarea value={anexoIzaje.observaciones || ''} onChange={e => setAnexoIzaje(p => ({...p, observaciones: e.target.value}))} rows={4}/>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Lider de Izaje - Proyecto</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                       <div>
+                            <Label>Nombre y apellido</Label>
+                            <Input value={anexoIzaje.liderIzaje?.nombre || ''} onChange={e => setAnexoIzaje(p => ({...p, liderIzaje: { ...p.liderIzaje!, nombre: e.target.value}}))}/>
+                       </div>
+                       <div>
+                            <Label>Cédula</Label>
+                            <Input value={anexoIzaje.liderIzaje?.cedula || ''} onChange={e => setAnexoIzaje(p => ({...p, liderIzaje: { ...p.liderIzaje!, cedula: e.target.value}}))}/>
+                       </div>
+                    </div>
+                     <div className="text-center">
+                        <Label>Firma Apertura</Label>
+                        {anexoIzaje.liderIzaje?.firmaApertura ? (
+                          <Image src={anexoIzaje.liderIzaje.firmaApertura} alt="Firma Lider Izaje" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
+                        )}
+                        <Button size="sm" variant="link" onClick={() => openSignaturePad('liderIzaje')}>
+                          {anexoIzaje.liderIzaje?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
+                        </Button>
+                    </div>
+                </div>
             </div>
           )}
 

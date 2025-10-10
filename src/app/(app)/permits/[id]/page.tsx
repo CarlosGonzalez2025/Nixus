@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, MedicionAtmosferica } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -56,6 +56,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ✅ Helper function to handle different date formats
 const parseFirestoreDate = (dateValue: any): Date | null => {
@@ -607,6 +608,72 @@ export default function PermitDetailPage() {
       ]
     }
 
+    const anexoIzajeInfoGeneral = {
+      accion: [
+        { id: 'levantar', label: 'Levantar'},
+        { id: 'trasladar', label: 'Trasladar'},
+        { id: 'montar', label: 'Montar'},
+        { id: 'desmontar', label: 'Desmontar'},
+        { id: 'cargar', label: 'Cargar'},
+        { id: 'descargar', label: 'Descargar'},
+      ],
+      pesoCarga: [
+        { id: 'menor1000', label: 'Menor a 1000 kg'},
+        { id: 'entre1000_2000', label: 'Entre 1000 kg y 2000 kg'},
+        { id: 'entre2000_3000', label: 'Entre 2000 kg y 3000 kg'},
+        { id: 'entre3000_4000', label: 'Entre 3000 kg y 4000 kg'},
+        { id: 'entre4000_5000', label: 'Entre 4000 kg y 5000 kg'},
+        { id: 'mayor5000', label: 'Mas de 5000'},
+      ],
+      equipoUtilizar: [
+        'Puente grua', 'Camion Grus', 'Grua Movil', 'Tome Grua', 'Retro excavadora', 'Tole Handler', 'Diferenciales / Polipasto'
+      ]
+    };
+  
+    const anexoIzajeAspectos = {
+      left: [
+        { id: 'A', label: 'A. Está estabilizado el terreno donde se encuentra el equipo de izaje.' },
+        { id: 'B', label: 'B. El operador visualiza bien la carga y la operación que va a realizar.' },
+        { id: 'C', label: 'C. Se calculo tecnicamente la maniobra. (Se cuenta con plan de izaje de cargas).' },
+        { id: 'D', label: 'D. Se encuentra señalizada y demarcada el área de trabajo.' },
+        { id: 'E', label: 'E. Se verifico la capacidad de cargue del equipo de izaje' },
+        { id: 'F', label: 'F. Se retiraron los curiosos del área de izaje y del radio del equipo de izaje.' },
+        { id: 'G', label: 'G. Existe comunicación clara entre el operador, el encargado de la actividad y quienes participan en ella.' },
+        { id: 'H', label: 'H. Se realizo el ATS (Analisis de Trabajo Seguro) para la ejecución de la actividad.' },
+        { id: 'I', label: 'I. Se encuentran en buen estado las eslingas, aparejos y demás elementos de sujeción o accesorios de izaje. Sin uniones o hebras' },
+        { id: 'J', label: 'J. Los polines para nivelación de las grúas están en buen estado.' },
+        { id: 'K', label: 'K. Los polines quedan estables con respecto al terreno.' },
+      ],
+      right: [
+        { id: 'L', label: 'L. Está dispuesta y despejada el área donde se colocarán los elementos a izar.' },
+        { id: 'M', label: 'M. No existen personas bajo la carga izada.' },
+        { id: 'N', label: 'N. Se evaluó el área donde se va a llevar la carga izada y el área de movimiento de la carga.' },
+        { id: 'O', label: 'O. La actividad esta realizándose con la distancia de redes électricas recomendada?' },
+        { id: 'P', label: 'P. Las condiciones climiticas son buenas para la realización de la actividad?' },
+        { id: 'Q', label: 'Q. El equipo tiene conexión a tierra?' },
+        { id: 'R', label: 'R. Se verifico que no halla ningun material que pudiera caer arriba de la carga al ser izada?' },
+        { id: 'S', label: 'S. Hay un señalizador capacitado y entrenado para la actividad?' },
+        { id: 'T', label: 'T. Las partes del equipo a realizar izaje se encuentran en buen estado y no evidencian soldaduras o uniones inadecuadas' },
+        { id: 'U', label: 'U. Se verifico que los colaboradores estén afiliados al Sistema de Seguridad Social (EPS, ARL, AFP).' },
+      ]
+    };
+  
+    const anexoIzajePrecauciones = [
+      {id: 'inspeccion', label: 'INSPECCION GRUA/APAR'},
+      {id: 'carnet', label: 'CARNET DIA VIG CA ALUM'},
+      {id: 'certificacion', label: 'CERTIFICACION OPERADOR RI'},
+      {id: 'plan_izaje', label: 'PLAN DE IZAJE'},
+      {id: 'uso_epps', label: 'USO DE EPPS'},
+      {id: 'bloqueo_etiquetado', label: 'BLOQUEO Y ETIQUETADO'},
+      {id: 'clima_seguro', label: 'CLIMA SEGURO'},
+      {id: 'vigia', label: 'VIGIA PARA LINEAS ELECTRICA'},
+      {id: 'apoyo_terreno', label: 'APOYO DEL TERRENO'},
+      {id: 'comunicacion_radial', label: 'COMUNICACION RADIAL/LUMINICA'},
+      {id: 'plan_rescate', label: 'PLAN DE RESCATE'},
+      {id: 'senalizacion_area', label: 'SEÑALIZACION Y DEMARCACION AREA'},
+      {id: 'estabilizadores', label: 'ESTABILIZADORES & TERRENO'},
+    ];
+
   return (
     <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
         {/* Action Bar */}
@@ -800,6 +867,83 @@ export default function PermitDetailPage() {
                         </Collapsible>
                     )}
 
+                     {permit.anexoIzaje && (
+                        <Collapsible className="space-y-6 mt-6 border rounded-lg" defaultOpen>
+                            <CollapsibleTrigger className="w-full bg-gray-100 hover:bg-gray-200 p-4 flex justify-between items-center cursor-pointer group rounded-t-lg">
+                                <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 4 - IZAJE DE CARGAS</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="p-6 space-y-6">
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Información General</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border rounded-md">
+                                        <div>
+                                            <h5 className="font-semibold text-xs mb-2">Acción a Realizar</h5>
+                                            {anexoIzajeInfoGeneral.accion.map(item => (
+                                                <div key={item.id} className="flex items-center space-x-2">
+                                                    <Checkbox id={`view-izaje-accion-${item.id}`} checked={permit.anexoIzaje?.informacionGeneral?.accion?.[item.id]} disabled/>
+                                                    <label htmlFor={`view-izaje-accion-${item.id}`} className="text-xs font-normal">{item.label}</label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div>
+                                            <h5 className="font-semibold text-xs mb-2">Peso de la Carga</h5>
+                                            {anexoIzajeInfoGeneral.pesoCarga.map(item => (
+                                                <div key={item.id} className="flex items-center space-x-2">
+                                                    <Checkbox id={`view-izaje-peso-${item.id}`} checked={permit.anexoIzaje?.informacionGeneral?.pesoCarga?.[item.id]} disabled/>
+                                                    <label htmlFor={`view-izaje-peso-${item.id}`} className="text-xs font-normal">{item.label}</label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div>
+                                            <h5 className="font-semibold text-xs mb-2">Equipo a Utilizar (Capacidad en Ton)</h5>
+                                            {anexoIzajeInfoGeneral.equipoUtilizar.map(item => (
+                                                <div key={item} className="flex items-center gap-2 mb-1">
+                                                    <label className="flex-1 text-xs">{item}</label>
+                                                    <span className="font-mono text-xs p-1 bg-gray-100 rounded w-16 text-center">{permit.anexoIzaje?.informacionGeneral?.equipoUtilizar?.[item] || 'N/A'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Aspectos Requeridos</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                                      {[...anexoIzajeAspectos.left, ...anexoIzajeAspectos.right].map(item => (
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoIzaje?.aspectosRequeridos?.[item.id]} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Precauciones y Controles Específicos</h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {anexoIzajePrecauciones.map(item => (
+                                            <div key={item.id} className="flex items-center space-x-2 text-xs">
+                                                <Checkbox id={`view-izaje-prec-${item.id}`} checked={permit.anexoIzaje?.precauciones?.[item.id]} disabled/>
+                                                <label htmlFor={`view-izaje-prec-${item.id}`} className="font-normal">{item.label}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Líder de Izaje - Proyecto</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Field label="Nombre y apellido" value={permit.anexoIzaje.liderIzaje?.nombre} />
+                                        <Field label="Cédula" value={permit.anexoIzaje.liderIzaje?.cedula} />
+                                        <Field label="Firma Apertura" value={
+                                            permit.anexoIzaje.liderIzaje?.firmaApertura ? <Image src={permit.anexoIzaje.liderIzaje.firmaApertura} alt="Firma Lider Izaje" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
+                                        }/>
+                                    </div>
+                                </div>
+
+                                <Field label="Observaciones" value={permit.anexoIzaje.observaciones} fullWidth />
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )}
+
 
                     <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
@@ -983,7 +1127,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
-
-    

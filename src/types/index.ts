@@ -114,6 +114,22 @@ export type AnexoConfinado = {
     supervisor: SupervisorConfinado;
 };
 
+export type AnexoIzaje = {
+  informacionGeneral: {
+    accion: { [key: string]: boolean };
+    pesoCarga: { [key: string]: boolean };
+    equipoUtilizar: { [key: string]: string };
+  };
+  aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
+  precauciones: { [key: string]: boolean };
+  observaciones: string;
+  liderIzaje: {
+    nombre: string;
+    cedula: string;
+    firmaApertura: string;
+  };
+};
+
 
 export type Permit = {
   id: string;
@@ -152,4 +168,5 @@ export type Permit = {
   closure?: Partial<PermitClosure>;
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
+  anexoIzaje?: Partial<AnexoIzaje>;
 };
