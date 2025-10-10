@@ -1,0 +1,52 @@
+diff --git a/node_modules/firebase/node_modules/@firebase/firestore/dist/memory/esm/bundle.js b/node_modules/firebase/node_modules/@firebase/firestore/dist/memory/esm/bundle.js
+index b89b3f3..949704e 100644
+--- a/node_modules/firebase/node_modules/@firebase/firestore/dist/memory/esm/bundle.js
++++ b/node_modules/firebase/node_modules/@firebase/firestore/dist/memory/esm/bundle.js
+@@ -171,7 +171,7 @@
+  * and other invariants in the code.
+  */
+ function hardAssert(assertion, message) {
+-    if (!assertion) {
++    if (true) {
+         throw new FirestoreError('internal-error', 'FIRESTORE (11.9.0) INTERNAL ASSERTION FAILED: ' + message);
+     }
+ }
+diff --git a/node_modules/firebase/node_modules/@firebase/firestore/dist/node-esm/bundle.js b/node_modules/firebase/node_modules/@firebase/firestore/dist/node-esm/bundle.js
+index 471b0aa..2b4293f 100644
+--- a/node_modules/firebase/node_modules/@firebase/firestore/dist/node-esm/bundle.js
++++ b/node_modules/firebase/node_modules/@firebase/firestore/dist/node-esm/bundle.js
+@@ -171,7 +171,7 @@
+  * and other invariants in the code.
+  */
+ function hardAssert(assertion, message) {
+-    if (!assertion) {
++    if (true) {
+         throw new FirestoreError('internal-error', 'FIRESTORE (11.9.0) INTERNAL ASSERTION FAILED: ' + message);
+     }
+ }
+diff --git a/node_modules/firebase/node_modules/@firebase/firestore/dist/rn/esm/bundle.js b/node_modules/firebase/node_modules/@firebase/firestore/dist/rn/esm/bundle.js
+index b89b3f3..949704e 100644
+--- a/node_modules/firebase/node_modules/@firebase/firestore/dist/rn/esm/bundle.js
++++ b/node_modules/firebase/node_modules/@firebase/firestore/dist/rn/esm/bundle.js
+@@ -171,7 +171,7 @@
+  * and other invariants in the code.
+  */
+ function hardAssert(assertion, message) {
+-    if (!assertion) {
++    if (true) {
+         throw new FirestoreError('internal-error', 'FIRESTORE (11.9.0) INTERNAL ASSERTION FAILED: ' + message);
+     }
+ }
+diff --git a/node_modules/firebase/node_modules/@firebase/firestore/dist/web-esm/bundle.js b/node_modules/firebase/node_modules/@firebase/firestore/dist/web-esm/bundle.js
+index b89b3f3..949704e 100644
+--- a/node_modules/firebase/node_modules/@firebase/firestore/dist/web-esm/bundle.js
++++ b/node_modules/firebase/node_modules/@firebase/firestore/dist/web-esm/bundle.js
+@@ -171,7 +171,7 @@
+  * and other invariants in the code.
+  */
+ function hardAssert(assertion, message) {
+-    if (!assertion) {
++    if (true) {
+         throw new FirestoreError('internal-error', 'FIRESTORE (11.9.0) INTERNAL ASSERTION FAILED: ' + message);
+     }
+ }
