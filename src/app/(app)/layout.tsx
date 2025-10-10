@@ -38,6 +38,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+
 
 const getRoleName = (role?: string) => {
   const roles: { [key: string]: string } = {
@@ -83,6 +85,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
+      <FirebaseErrorListener />
       <Sidebar>
         <SidebarHeader>
           <div className="flex h-10 items-center justify-between px-2">
