@@ -25,6 +25,7 @@ import {
   Loader2,
   Settings,
   FlaskConical,
+  Users,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -45,6 +46,7 @@ const getRoleName = (role?: string) => {
     lider_tarea: 'Líder de la Tarea',
     ejecutante: 'Ejecutante del Trabajo',
     lider_sst: 'Líder SST',
+    admin: 'Administrador',
   };
   return role ? roles[role] || role : 'Usuario';
 };
@@ -119,6 +121,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 >
                   <PlusCircle />
                   <span>Nuevo Permiso</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+             {user.role === 'admin' && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => router.push('/admin/users')}
+                  isActive={pathname === '/admin/users'}
+                  tooltip="Gestión de Usuarios"
+                >
+                  <Users />
+                  <span>Gestión de Usuarios</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}

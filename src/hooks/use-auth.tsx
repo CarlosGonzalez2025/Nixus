@@ -23,6 +23,7 @@ import type { User } from '@/types';
 
 // Demo users as provided in the UI mock
 const demoUsers: { [email: string]: { name: string, role: User['role'] } } = {
+  'info@datenova.io': { name: 'Admin', role: 'admin' },
   'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante' },
   'maria@italcol.com': { name: 'María García', role: 'autorizante' },
   'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea' },
