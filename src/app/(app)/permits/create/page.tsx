@@ -763,7 +763,7 @@ export default function CreatePermitPage() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
                             <div>
-                                <p className="font-bold text-gray-700">QUIEN SOLICITA (JEFES Y DUELOS DE AREA)</p>
+                                <p className="font-bold text-gray-700">QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)</p>
                                 <p className="text-sm text-gray-600">{user?.displayName}</p>
                             </div>
                             <div className="text-right">

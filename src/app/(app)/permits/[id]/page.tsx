@@ -111,7 +111,7 @@ const RadioCheck: React.FC<{ label: string, value?: string }> = ({ label, value 
 
 type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst';
 const signatureRoles: { [key in SignatureRole]: string } = {
-  solicitante: 'QUIEN SOLICITA (JEFES Y DUELOS DE AREA)',
+  solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
   autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   sst: 'AREA SST (si aplica)',
