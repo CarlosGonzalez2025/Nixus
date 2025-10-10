@@ -36,6 +36,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { format } from 'date-fns';
@@ -580,25 +588,32 @@ export default function PermitDetailPage() {
                     </Section>
                     
                     <Section title="Trabajadores Ejecutantes">
-                         {permit.workers && permit.workers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {permit.workers && permit.workers.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nombre</TableHead>
+                              <TableHead>Cédula</TableHead>
+                              <TableHead>Rol</TableHead>
+                              <TableHead>EPS</TableHead>
+                              <TableHead>ARL</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
                             {(permit.workers as ExternalWorker[]).map((worker, index) => (
-                                <Card key={index} className="p-4">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="w-12 h-12">
-                                            {worker.foto && <AvatarImage src={worker.foto} />}
-                                            <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-bold">{worker.nombre}</p>
-                                            <p className="text-sm text-muted-foreground">C.C. {worker.cedula}</p>
-                                            <p className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full inline-block mt-1">{worker.rol}</p>
-                                        </div>
-                                    </div>
-                                </Card>
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">{worker.nombre}</TableCell>
+                                <TableCell>{worker.cedula}</TableCell>
+                                <TableCell>{worker.rol}</TableCell>
+                                <TableCell>{worker.eps}</TableCell>
+                                <TableCell>{worker.arl}</TableCell>
+                              </TableRow>
                             ))}
-                            </div>
-                        ) : <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>
+                      )}
                     </Section>
 
                      <Section title="Autorizaciones">
@@ -701,3 +716,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
