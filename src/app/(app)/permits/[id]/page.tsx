@@ -458,7 +458,7 @@ export default function PermitDetailPage() {
                                               approval?.firmaApertura ? (
                                                   <div className="bg-gray-100 p-2 rounded-md">
                                                     <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
-                                                    <p className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</p>
+                                                    <div className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</div>
                                                   </div>
                                               ) : 'Pendiente'
                                             } />
@@ -526,5 +526,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
