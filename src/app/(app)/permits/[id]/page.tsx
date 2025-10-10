@@ -106,16 +106,27 @@ const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: bool
     </div>
 );
 
-const RadioCheck: React.FC<{ label: string, value?: string }> = ({ label, value }) => (
-    <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-        <span className="text-xs flex-1">{label}</span>
-        <div className="flex gap-2 items-center text-xs font-mono">
-            <span className={value === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
-            <span className={value === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
-            <span className={value === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
+const RadioCheck: React.FC<{ label: string, value?: string | boolean }> = ({ label, value }) => {
+    let checkValue: string;
+    if (value === true || value === 'si') {
+        checkValue = 'si';
+    } else if (value === false || value === 'no') {
+        checkValue = 'no';
+    } else {
+        checkValue = 'na';
+    }
+
+    return (
+        <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+            <span className="text-xs flex-1">{label}</span>
+            <div className="flex gap-2 items-center text-xs font-mono">
+                <span className={checkValue === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
+                <span className={checkValue === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
+                <span className={checkValue === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst';
 const signatureRoles: { [key in SignatureRole]: string } = {
@@ -579,7 +590,7 @@ export default function PermitDetailPage() {
                     </Section>
 
                     <Section title="Notificación y Emergencias">
-                        <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification ? 'si' : 'no'} />
+                        <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification} />
                          <div className="mt-4 space-y-1">
                           {emergencyQuestions.map(item => (
                               <RadioCheck key={item.id} label={item.label} value={permit.emergency?.[item.id]} />
@@ -589,28 +600,32 @@ export default function PermitDetailPage() {
                     
                     <Section title="Trabajadores Ejecutantes">
                       {permit.workers && permit.workers.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Nombre</TableHead>
-                              <TableHead>Cédula</TableHead>
-                              <TableHead>Rol</TableHead>
-                              <TableHead>EPS</TableHead>
-                              <TableHead>ARL</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {(permit.workers as ExternalWorker[]).map((worker, index) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">{worker.nombre}</TableCell>
-                                <TableCell>{worker.cedula}</TableCell>
-                                <TableCell>{worker.rol}</TableCell>
-                                <TableCell>{worker.eps}</TableCell>
-                                <TableCell>{worker.arl}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                        <div className="space-y-4">
+                          {(permit.workers as ExternalWorker[]).map((worker, index) => (
+                            <div key={index} className="border rounded-lg p-4">
+                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                  <Field label="Nombre" value={worker.nombre} />
+                                  <Field label="Cédula" value={worker.cedula} />
+                                  <Field label="Rol" value={worker.rol} />
+                                  <Field label="EPS" value={worker.eps} />
+                                  <Field label="ARL" value={worker.arl} />
+                                  <Field label="Fondo de Pensiones" value={worker.pensiones} />
+                               </div>
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <Field label="Certificado Aptitud Médica" value={worker.tsaTec?.toUpperCase() || 'N/A'} />
+                                  <Field label="Entrenamiento / Capacitación" value={worker.entrenamiento?.toUpperCase() || 'N/A'} />
+                               </div>
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <Field label="Firma Apertura" value={
+                                     worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={120} height={60} className="bg-gray-100 rounded" /> : 'Pendiente'
+                                  }/>
+                                  <Field label="Firma Cierre" value={
+                                      worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma Cierre" width={120} height={60} className="bg-gray-100 rounded" /> : 'Pendiente'
+                                  }/>
+                               </div>
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <p className="text-muted-foreground">No se agregaron trabajadores externos.</p>
                       )}
@@ -716,5 +731,7 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
 
     
