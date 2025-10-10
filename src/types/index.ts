@@ -40,6 +40,8 @@ export interface ExternalWorker {
   arl: string;
   pensiones: string;
   foto?: string;
+  firmaApertura?: string;
+  firmaCierre?: string;
 }
 
 export type Tool = {
@@ -100,5 +102,3 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
 };
-
-    

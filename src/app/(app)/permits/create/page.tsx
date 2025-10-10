@@ -109,6 +109,8 @@ export default function CreatePermitPage() {
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
+  const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
+  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | null>(null);
 
 
   const openNewWorkerDialog = () => {
@@ -122,6 +124,8 @@ export default function CreatePermitPage() {
       pensiones: '',
       tsaTec: 'na',
       entrenamiento: 'otro',
+      firmaApertura: '',
+      firmaCierre: ''
     });
     setIsWorkerDialogOpen(true);
   };
@@ -170,6 +174,19 @@ export default function CreatePermitPage() {
     handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
+
+  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre') => {
+    setSignatureTarget(target);
+    setIsSignaturePadOpen(true);
+  };
+
+  const handleSaveSignature = (signatureDataUrl: string) => {
+    if (signatureTarget) {
+      handleWorkerInputChange(signatureTarget, signatureDataUrl);
+    }
+    setIsSignaturePadOpen(false);
+    setSignatureTarget(null);
+  };
   
   const addTool = () => {
     if (newToolName.trim()) {
@@ -967,6 +984,35 @@ export default function CreatePermitPage() {
                     <Button variant="outline" size="sm" onClick={() => handleFileUpload('foto')}> <Camera className="mr-2 h-4 w-4" />{currentWorker?.foto ? 'Cargada' : 'Cargar'}</Button>
                  </div>
               </div>
+
+              <div className="space-y-3">
+                <Label>Firmas del Trabajador</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 border rounded-lg text-center">
+                    <Label>Firma Apertura</Label>
+                    {currentWorker?.firmaApertura ? (
+                      <Image src={currentWorker.firmaApertura} alt="Firma Apertura" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
+                    )}
+                    <Button size="sm" variant="link" onClick={() => openSignaturePad('firmaApertura')}>
+                      {currentWorker?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
+                    </Button>
+                  </div>
+                  <div className="p-3 border rounded-lg text-center">
+                    <Label>Firma Cierre</Label>
+                     {currentWorker?.firmaCierre ? (
+                      <Image src={currentWorker.firmaCierre} alt="Firma Cierre" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
+                    )}
+                    <Button size="sm" variant="link" onClick={() => openSignaturePad('firmaCierre')} disabled={!currentWorker?.firmaApertura}>
+                       {currentWorker?.firmaCierre ? 'Cambiar Firma' : 'Firmar'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </ScrollArea>
           <DialogFooter>
@@ -979,8 +1025,15 @@ export default function CreatePermitPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+       <Dialog open={isSignaturePadOpen} onOpenChange={setIsSignaturePadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Firma del Trabajador</DialogTitle>
+          </DialogHeader>
+          <SignaturePad onSave={handleSaveSignature} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-    
