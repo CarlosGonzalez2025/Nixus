@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -23,6 +24,8 @@ import {
   XCircle,
   Clock,
   UserCheck,
+  ListChecks,
+  Siren,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,13 +69,13 @@ const getStatusInfo = (status: string): { text: string; icon: React.ElementType;
   return statusInfo[status] || { text: status, icon: FileText, color: 'text-gray-500' };
 };
 
-const workTypes: { [key: string]: string } = {
-  altura: 'Trabajo en Alturas',
-  confinado: 'Espacios Confinados',
-  energia: 'Control de Energías',
-  izaje: 'Izaje de Cargas',
-  caliente: 'Trabajo en Caliente',
-  excavacion: 'Excavaciones',
+const workTypes: { [key: string]: {name: string, icon: string} } = {
+  altura: { name: 'Trabajo en Alturas', icon: '⬆️' },
+  confinado: { name: 'Espacios Confinados', icon: '📦' },
+  energia: { name: 'Control de Energías', icon: '⚡' },
+  izaje: { name: 'Izaje de Cargas', icon: '🏗️' },
+  caliente: { name: 'Trabajo en Caliente', icon: '🔥' },
+  excavacion: { name: 'Excavaciones', icon: '⛏️' }
 };
 
 export default function PermitDetailPage() {
@@ -169,7 +172,7 @@ export default function PermitDetailPage() {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                   <div>
                       <p className="text-sm font-medium text-primary">Permiso de Trabajo #{permit.id.substring(0, 8)}</p>
-                      <CardTitle className="text-3xl mt-1">{workTypes[permit.workType] || permit.workType}</CardTitle>
+                      <CardTitle className="text-3xl mt-1">{workTypes[permit.workType]?.name || permit.workType}</CardTitle>
                       <CardDescription className="mt-2">
                         Creado el {permit.createdAt ? format(new Date(permit.createdAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}
                       </CardDescription>
@@ -201,7 +204,7 @@ export default function PermitDetailPage() {
           </Card>
         </div>
 
-        <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4', 'item-5']} className="w-full space-y-4">
+        <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4', 'item-5', 'item-6', 'item-7']} className="w-full space-y-4">
           <AccordionItem value="item-1" className="border-none">
             <Card>
               <CardHeader className="p-0">
@@ -243,7 +246,8 @@ export default function PermitDetailPage() {
                       {Object.entries(permit.hazards).map(([name, data]: [string, any]) => (
                         <li key={name} className="p-3 border rounded-md bg-gray-50">
                           <p className="font-semibold">{name}</p>
-                          <p className="text-sm text-muted-foreground mt-1"><strong>Control:</strong> {data.controls || 'No especificado'}</p>
+                          <p className="text-xs mt-1"><strong>Estado:</strong> <Badge variant={data.status === 'si' ? 'default' : data.status === 'no' ? 'destructive' : 'secondary'}>{data.status || 'N/A'}</Badge></p>
+                          <p className="text-sm text-muted-foreground mt-2"><strong>Control:</strong> {data.controls || 'No especificado'}</p>
                         </li>
                       ))}
                     </ul>
@@ -251,8 +255,87 @@ export default function PermitDetailPage() {
               </AccordionContent>
             </Card>
           </AccordionItem>
-
+          
           <AccordionItem value="item-3" className="border-none">
+            <Card>
+               <CardHeader className="p-0">
+                <AccordionTrigger className="flex items-center justify-between w-full p-6 text-lg font-semibold hover:no-underline">
+                    <div className="flex items-center gap-3">
+                        <ListChecks className="h-6 w-6 text-primary" />
+                        Anexos y Listas de Verificación
+                    </div>
+                </AccordionTrigger>
+               </CardHeader>
+              <AccordionContent className="p-6 pt-0">
+                  {permit.annexes && permit.annexes.length > 0 ? (
+                     <div className="flex flex-wrap gap-3">
+                        {permit.annexes.map((annexId: string) => {
+                             const type = workTypes[annexId];
+                             if (!type) return null;
+                             return (
+                               <Badge key={annexId} className="px-4 py-2 text-sm">
+                                   <span className="mr-2">{type.icon}</span>
+                                   {type.name}
+                               </Badge>
+                             );
+                        })}
+                     </div>
+                  ) : <p className="text-muted-foreground">No se seleccionaron anexos.</p>}
+              </AccordionContent>
+            </Card>
+          </AccordionItem>
+          
+          <AccordionItem value="item-4" className="border-none">
+            <Card>
+               <CardHeader className="p-0">
+                <AccordionTrigger className="flex items-center justify-between w-full p-6 text-lg font-semibold hover:no-underline">
+                    <div className="flex items-center gap-3">
+                        <Shield className="h-6 w-6 text-primary" />
+                        Equipos de Protección Personal (EPP)
+                    </div>
+                </AccordionTrigger>
+               </CardHeader>
+              <AccordionContent className="p-6 pt-0">
+                   {permit.ppe && Object.keys(permit.ppe).length > 0 ? (
+                    <ul className="space-y-2">
+                      {Object.entries(permit.ppe).filter(([, data]: [string, any]) => data.required).map(([name, data]: [string, any]) => (
+                        <li key={name} className="p-3 border rounded-md bg-gray-50 flex justify-between items-center">
+                          <p className="font-semibold">{name}</p>
+                          {data.verified ? <CheckCircle className="text-green-500" /> : <XCircle className="text-red-500" />}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-muted-foreground">No se requirieron EPP específicos.</p>}
+              </AccordionContent>
+            </Card>
+          </AccordionItem>
+          
+          <AccordionItem value="item-5" className="border-none">
+            <Card>
+               <CardHeader className="p-0">
+                <AccordionTrigger className="flex items-center justify-between w-full p-6 text-lg font-semibold hover:no-underline">
+                    <div className="flex items-center gap-3">
+                        <Siren className="h-6 w-6 text-primary" />
+                        Plan de Emergencias
+                    </div>
+                </AccordionTrigger>
+               </CardHeader>
+              <AccordionContent className="p-6 pt-0">
+                   {permit.emergency && Object.keys(permit.emergency).length > 0 ? (
+                    <ul className="space-y-2">
+                      {Object.entries(permit.emergency).map(([question, answer]: [string, any]) => (
+                        <li key={question} className="p-3 border rounded-md bg-gray-50 flex justify-between items-center">
+                          <p className="font-semibold text-sm flex-1">{question}</p>
+                           <Badge variant={answer === 'si' ? 'default' : 'destructive'} className="uppercase">{answer}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-muted-foreground">No se completó el plan de emergencias.</p>}
+              </AccordionContent>
+            </Card>
+          </AccordionItem>
+
+          <AccordionItem value="item-6" className="border-none">
             <Card>
                <CardHeader className="p-0">
                 <AccordionTrigger className="flex items-center justify-between w-full p-6 text-lg font-semibold hover:no-underline">
@@ -286,7 +369,7 @@ export default function PermitDetailPage() {
             </Card>
           </AccordionItem>
           
-          <AccordionItem value="item-4" className="border-none">
+          <AccordionItem value="item-7" className="border-none">
             <Card>
                <CardHeader className="p-0">
                 <AccordionTrigger className="flex items-center justify-between w-full p-6 text-lg font-semibold hover:no-underline">
@@ -341,5 +424,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    
