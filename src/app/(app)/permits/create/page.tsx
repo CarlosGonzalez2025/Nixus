@@ -39,7 +39,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { Approval, ExternalWorker, Permit, Tool } from '@/types';
+import type { ExternalWorker, Permit, Tool } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -328,10 +328,16 @@ export default function CreatePermitPage() {
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
-        closure: {} // Initialize closure object
+        workType: 'general',
       };
 
-      const result = await createPermit({userId: user.uid, userDisplayName: user.displayName, ...fullPermitData});
+      const result = await createPermit({
+          userId: user.uid, 
+          userDisplayName: user.displayName || null, 
+          userEmail: user.email || null,
+          userPhotoURL: user.photoURL || null,
+          ...fullPermitData
+        });
       
       if (result.success) {
         toast({

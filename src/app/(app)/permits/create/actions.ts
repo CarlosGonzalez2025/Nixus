@@ -9,6 +9,8 @@ import type { Permit } from '@/types';
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' > & {
   userId: string;
   userDisplayName: string | null;
+  userEmail: string | null;
+  userPhotoURL: string | null;
 };
 
 
@@ -17,7 +19,7 @@ export async function createPermit(data: PermitCreateData) {
     return { success: false, error: 'User not authenticated' };
   }
 
-  const { userId, userDisplayName, ...permitData } = data;
+  const { userId, userDisplayName, userEmail, userPhotoURL, ...permitData } = data;
 
   // Initialize all approval roles as pending
   const initialApprovals = {
@@ -29,10 +31,18 @@ export async function createPermit(data: PermitCreateData) {
 
   const permitPayload: Omit<Permit, 'id'> = {
     ...permitData,
+    number: '', // Initialize optional field
+    workType: permitData.workType || 'general', // Initialize optional field
     status: 'pendiente_revision',
     createdBy: userId,
     createdAt: serverTimestamp(),
+    user: {
+        displayName: userDisplayName,
+        email: userEmail,
+        photoURL: userPhotoURL,
+    },
     approvals: initialApprovals,
+    closure: {},
   };
   
   const permitsCollectionRef = collection(db, 'permits');
