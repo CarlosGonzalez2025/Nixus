@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import {
@@ -95,15 +96,16 @@ export default function Dashboard() {
 
     // Query for user's permits
     const permitsCollection = collection(db, 'permits');
+    // NOTE: The query was simplified to avoid needing a composite index.
+    // Filtering by user is now done on the client side.
     const q = query(
       permitsCollection, 
-      where('createdBy', '==', user.uid),
       orderBy('createdAt', 'desc'),
       limit(10)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const permitsData = snapshot.docs.map(doc => {
+      const allRecentPermits = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -112,14 +114,15 @@ export default function Dashboard() {
         } as Permit;
       });
       
-      setPermits(permitsData);
+      const userPermits = allRecentPermits.filter(p => p.createdBy === user.uid);
+      setPermits(userPermits);
       
-      // Calculate stats
+      // Calculate stats based on the user's permits
       setStats({
-        total: permitsData.length,
-        pendiente: permitsData.filter(p => p.status === 'pendiente_revision').length,
-        aprobado: permitsData.filter(p => p.status === 'aprobado').length,
-        enEjecucion: permitsData.filter(p => p.status === 'en_ejecucion').length
+        total: userPermits.length,
+        pendiente: userPermits.filter(p => p.status === 'pendiente_revision').length,
+        aprobado: userPermits.filter(p => p.status === 'aprobado').length,
+        enEjecucion: userPermits.filter(p => p.status === 'en_ejecucion').length
       });
       
       setLoading(false);
@@ -289,3 +292,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    

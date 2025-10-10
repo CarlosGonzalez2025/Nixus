@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -922,3 +923,5 @@ export default function CreatePermitPage() {
     </div>
   );
 }
+
+    

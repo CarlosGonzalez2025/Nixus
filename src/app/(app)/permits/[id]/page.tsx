@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -148,7 +149,7 @@ export default function PermitDetailPage() {
         setPermit({
           id: docSnap.id,
           ...data,
-          createdAt: parseFirestoreDate(data.createdAt), // ✅ Use helper function
+          createdAt: parseFirestoreDate(data.createdAt),
         } as Permit);
         setError(null);
       } else {
@@ -525,3 +526,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
