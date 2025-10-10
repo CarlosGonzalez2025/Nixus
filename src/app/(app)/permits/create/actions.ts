@@ -11,6 +11,7 @@ import type { Permit } from '@/types';
 
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' > & {
   userId: string;
+  userDisplayName: string | null;
 };
 
 
@@ -19,36 +20,42 @@ export async function createPermit(data: PermitCreateData) {
     return { error: 'User not authenticated' };
   }
 
-  const { userId, ...permitData } = data;
+  const { userId, userDisplayName, ...permitData } = data;
+
+  // Initialize all approval roles as pending
+  const initialApprovals = {
+    solicitante: { status: 'pendiente', userId: userId, userName: userDisplayName },
+    autorizante: { status: 'pendiente' },
+    mantenimiento: { status: 'pendiente' },
+    sst: { status: 'pendiente' }
+  };
 
   const permitPayload: Omit<Permit, 'id'> = {
     ...permitData,
     status: 'pendiente_revision',
     createdBy: userId,
     createdAt: serverTimestamp(),
+    approvals: initialApprovals,
   };
   
   const permitsCollectionRef = collection(db, 'permits');
 
-  // No await here, let it run in the background
-  addDoc(permitsCollectionRef, permitPayload)
-    .then(() => {
-      // Revalidate paths to show the new permit in the lists
-      revalidatePath('/permits');
-      revalidatePath('/dashboard');
-    })
-    .catch((serverError) => {
-      const permissionError = new FirestorePermissionError({
-        path: permitsCollectionRef.path,
-        operation: 'create',
-        requestResourceData: permitPayload,
-      } satisfies SecurityRuleContext);
-      
-      errorEmitter.emit('permission-error', permissionError);
+  try {
+    const docRef = await addDoc(permitsCollectionRef, permitPayload);
+    // Revalidate paths to show the new permit in the lists
+    revalidatePath('/permits');
+    revalidatePath('/dashboard');
+    return { success: true, permitId: docRef.id };
+  } catch (serverError: any) {
+    const permissionError = new FirestorePermissionError({
+      path: permitsCollectionRef.path,
+      operation: 'create',
+      requestResourceData: permitPayload,
+    } satisfies SecurityRuleContext);
+    
+    errorEmitter.emit('permission-error', permissionError);
 
-      // We don't throw here to avoid unhandled promise rejection on the server.
-      // The client will get the error via the listener.
-    });
-
-    return { success: true };
+    // Return a structured error for the client
+    return { success: false, error: 'Permission denied. Could not create permit.' };
+  }
 }

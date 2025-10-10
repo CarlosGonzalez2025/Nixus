@@ -49,14 +49,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
-type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
-  approvals: {
-      solicitante: Approval,
-      autorizante: Approval,
-      mantenimiento: Approval,
-      sst: Approval,
-  }
-}
+type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
 
 
 export default function CreatePermitPage() {
@@ -335,33 +328,27 @@ export default function CreatePermitPage() {
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
-        approvals: {
-          solicitante: {
-            userId: user.uid,
-            userName: user.displayName,
-            signedAt: new Date().toISOString(),
-            status: 'aprobado',
-            firmaApertura: 'url_firma_digital' // Placeholder for digital signature
-          },
-          autorizante: { status: 'pendiente' },
-          mantenimiento: { status: 'pendiente' },
-          sst: { status: 'pendiente' }
-        }
+        closure: {} // Initialize closure object
       };
 
-      await createPermit({userId: user.uid, ...fullPermitData});
+      const result = await createPermit({userId: user.uid, userDisplayName: user.displayName, ...fullPermitData});
       
-      toast({
-        title: 'Permiso Creado Exitosamente',
-        description: 'Su permiso ha sido enviado para revisión.',
-        className: 'bg-green-100 dark:bg-green-900',
-      });
-      router.push('/dashboard');
+      if (result.success) {
+        toast({
+          title: 'Permiso Creado Exitosamente',
+          description: 'Su permiso ha sido enviado para revisión.',
+          className: 'bg-green-100 dark:bg-green-900',
+        });
+        router.push('/dashboard');
+      } else {
+        throw new Error(result.error || 'Hubo un error creando el permiso.');
+      }
+      
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Falló el Envío',
-        description: error.message || 'Hubo un error creando el permiso.',
+        description: error.message,
       });
     } finally {
       setIsSubmitting(false);
@@ -767,14 +754,13 @@ export default function CreatePermitPage() {
                     </h3>
                     <p className='text-xs text-muted-foreground mb-4'>He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-200">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
                             <div>
-                                <p className="font-bold text-green-700">QUIEN SOLICITA (JEFES Y DUELOS DE AREA)</p>
+                                <p className="font-bold text-gray-700">QUIEN SOLICITA (JEFES Y DUELOS DE AREA)</p>
                                 <p className="text-sm text-gray-600">{user?.displayName}</p>
                             </div>
                             <div className="text-right">
-                               <p className="font-semibold text-sm text-green-600 flex items-center gap-2"><CheckCircle size={16}/> Firmado (al enviar)</p>
-                               <p className="text-xs text-gray-500">{new Date().toLocaleDateString()}</p>
+                               <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente de Firma</p>
                             </div>
                         </div>
                          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
@@ -793,7 +779,7 @@ export default function CreatePermitPage() {
                   <p className="text-sm flex items-start gap-3 text-yellow-800">
                     <AlertTriangle className="text-yellow-500" style={{minWidth: 20}} size={20} />
                     <span>
-                      <strong>Importante:</strong> Al hacer clic en "Enviar para Aprobación", usted firma digitalmente este permiso y confirma que toda la información es correcta y verídica.
+                      <strong>Importante:</strong> Al hacer clic en "Enviar para Aprobación", usted crea el permiso y lo envía para el flujo de firmas. Deberá ir a la página de detalles para firmarlo.
                     </span>
                   </p>
                 </div>

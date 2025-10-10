@@ -86,10 +86,10 @@ export type Permit = {
   emergency?: { [key: string]: string } & { notification: boolean };
   workers?: ExternalWorker[];
   approvals: {
-    solicitante: Approval;
-    autorizante: Approval;
-    mantenimiento: Approval;
-    sst: Approval;
+    solicitante: Partial<Approval>;
+    autorizante: Partial<Approval>;
+    mantenimiento: Partial<Approval>;
+    sst: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
 };
