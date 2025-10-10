@@ -43,6 +43,8 @@ import { useRouter } from 'next/navigation';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { User, UserRole } from '@/types';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -95,14 +97,20 @@ export default function UsersPage() {
       const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as User[];
       setUsers(usersData);
       setLoadingUsers(false);
-    }, (error) => {
-      console.error("Error fetching users:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al cargar usuarios',
-        description: 'No se pudieron obtener los datos de los usuarios.',
-      });
-      setLoadingUsers(false);
+    }, (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: usersCollection.path,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        
+        errorEmitter.emit('permission-error', permissionError);
+
+        toast({
+            variant: 'destructive',
+            title: 'Error al cargar usuarios',
+            description: 'No se pudieron obtener los datos de los usuarios.',
+        });
+        setLoadingUsers(false);
     });
 
     return () => unsubscribe();
