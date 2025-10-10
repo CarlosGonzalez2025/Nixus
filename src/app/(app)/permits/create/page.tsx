@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -23,6 +22,7 @@ import {
   Edit,
   Plus,
   Trash2,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +49,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
-type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals'> & {
+type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
   approvals: {
       solicitante: Approval,
       autorizante: Approval,
