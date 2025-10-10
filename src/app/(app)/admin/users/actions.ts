@@ -75,8 +75,11 @@ export async function createUser(data: z.infer<typeof formSchema>) {
     return { success: true, userId: user.uid };
 
   } catch (error: any) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user:', error.code, error.message);
+    if (error.code === 'auth/email-already-in-use') {
+      return { error: 'Este correo electrónico ya está registrado. Por favor, use otro.' };
+    }
     // Return a serializable error object
-    return { error: error.message || 'Ocurrió un error inesperado.' };
+    return { error: 'Ocurrió un error inesperado al crear el usuario.' };
   }
 }
