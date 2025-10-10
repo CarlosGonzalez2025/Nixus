@@ -33,8 +33,13 @@ async function getTempAuth() {
     return getAuth(existingApp);
   }
 
+  const firebaseConfigString = process.env.NEXT_PUBLIC_FIREBASE_CONFIG;
+  if (!firebaseConfigString) {
+    throw new Error('Firebase config not found in environment variables.');
+  }
+
   // If not, initialize a new temporary app
-  const tempApp = initializeApp(JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG!), tempAppName);
+  const tempApp = initializeApp(JSON.parse(firebaseConfigString), tempAppName);
   return getAuth(tempApp);
 }
 
