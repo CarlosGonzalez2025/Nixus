@@ -278,14 +278,19 @@ export default function PermitDetailPage() {
       const signedAtPath = `approvals.${role}.signedAt`;
 
       try {
-        await updateDoc(docRef, {
+        const updateData: { [key: string]: any } = {
             [signaturePath]: signatureDataUrl,
-            // Keep status logic simple for now, might need more complex logic later
-            [statusPath]: 'aprobado', 
-            [userIdPath]: currentUser.uid,
-            [userNamePath]: currentUser.displayName,
-            [signedAtPath]: new Date().toISOString(),
-        });
+            [`${userNamePath}`]: currentUser.displayName,
+            [`${userIdPath}`]: currentUser.uid,
+        };
+
+        if (type === 'firmaApertura') {
+            updateData[statusPath] = 'aprobado';
+            updateData[signedAtPath] = new Date().toISOString();
+        }
+
+        await updateDoc(docRef, updateData);
+
         toast({ title: 'Permiso Firmado', description: `Has firmado como ${signatureRoles[role]}`});
         setIsSignatureDialogOpen(false);
         setSigningRole(null);
@@ -293,9 +298,10 @@ export default function PermitDetailPage() {
         const permissionError = new FirestorePermissionError({
             path: docRef.path,
             operation: 'update',
+            requestResourceData: { [signaturePath]: '...' }
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: 'destructive', title: 'Error al firmar', description: e.message });
+        toast({ variant: 'destructive', title: 'Error al firmar', description: 'No tienes permiso para realizar esta acción.' });
       }
   }
 
@@ -306,13 +312,18 @@ export default function PermitDetailPage() {
   
   const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser || !permit || !permit.approvals) return false;
+      
       const approval = permit.approvals[role];
+      const isCorrectRole = currentUser.role === role;
+      
       if (type === 'firmaApertura') {
-          return currentUser.role === role && approval?.status === 'pendiente' && !approval?.firmaApertura;
+          // Can sign for opening if user is the correct role, it's pending, and there's no opening signature yet
+          return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura;
       }
        if (type === 'firmaCierre') {
-          // Add logic for closing signature if needed
-          return currentUser.role === role && !approval?.firmaCierre;
+          // Can sign for closing if user is correct role, opening is signed, and no closing signature yet
+          const allOpeningSignaturesDone = permit.approvals.solicitante?.firmaApertura && permit.approvals.autorizante?.firmaApertura;
+          return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'aprobado');
       }
       return false;
   }
@@ -597,3 +608,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    

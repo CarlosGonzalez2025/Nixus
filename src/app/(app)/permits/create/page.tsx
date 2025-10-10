@@ -120,7 +120,8 @@ export default function CreatePermitPage() {
       eps: '',
       arl: '',
       pensiones: '',
-      tsaTec: 'na'
+      tsaTec: 'na',
+      entrenamiento: 'otro',
     });
     setIsWorkerDialogOpen(true);
   };
@@ -946,6 +947,17 @@ export default function CreatePermitPage() {
                       </SelectContent>
                     </Select>
                  </div>
+                 <div className="p-3 border rounded-lg space-y-2">
+                    <Label htmlFor="entrenamiento-select">Entrenamiento / Capacitación</Label>
+                    <Select value={currentWorker?.entrenamiento || 'otro'} onValueChange={(value) => handleWorkerInputChange('entrenamiento', value)}>
+                      <SelectTrigger id="entrenamiento-select"><SelectValue placeholder="Seleccione entrenamiento..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tsa">TSA</SelectItem>
+                        <SelectItem value="tec">TEC</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                 </div>
               </div>
 
                <div className="space-y-3">
@@ -970,3 +982,5 @@ export default function CreatePermitPage() {
     </div>
   );
 }
+
+    
