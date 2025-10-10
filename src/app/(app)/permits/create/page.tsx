@@ -930,7 +930,3 @@ export default function CreatePermitPage() {
     </div>
   );
 }
-
-    
-
-    

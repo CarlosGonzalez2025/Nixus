@@ -42,6 +42,11 @@ import { format } from 'date-fns';
 import { Logo } from '@/components/logo';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { SignaturePad } from '@/components/ui/signature-pad';
+import Image from 'next/image';
+
 
 const getStatusInfo = (status: string): { text: string; icon: React.ElementType; color: string } => {
   const statusInfo: { [key: string]: { text: string; icon: React.ElementType; color: string } } = {
@@ -104,6 +109,10 @@ export default function PermitDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [signingRole, setSigningRole] = useState<{role: SignatureRole, type: 'firmaApertura' | 'firmaCierre'} | null>(null);
+
 
   useEffect(() => {
     if (!permitId) {
@@ -159,18 +168,22 @@ export default function PermitDetailPage() {
     });
   };
 
-  const handleSign = async (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
-      if (!permit || !currentUser) return;
+  const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
+      setSigningRole({role, type: signatureType});
+      setIsSignatureDialogOpen(true);
+  }
+
+  const handleSaveSignature = async (signatureDataUrl: string) => {
+      if (!permit || !currentUser || !signingRole) return;
       
+      const { role, type } = signingRole;
       const docRef = doc(db, 'permits', permit.id);
-      const signaturePath = `approvals.${role}.${signatureType}`;
+      
+      const signaturePath = `approvals.${role}.${type}`;
       const statusPath = `approvals.${role}.status`;
       const userIdPath = `approvals.${role}.userId`;
       const userNamePath = `approvals.${role}.userName`;
       const signedAtPath = `approvals.${role}.signedAt`;
-
-      // For now, using a placeholder. This would be replaced with actual signature capture logic.
-      const signatureDataUrl = 'url_placeholder_firma_digital';
 
       try {
         await updateDoc(docRef, {
@@ -180,7 +193,9 @@ export default function PermitDetailPage() {
             [userNamePath]: currentUser.displayName,
             [signedAtPath]: new Date().toISOString(),
         });
-        toast({ title: 'Permiso Firmado', description: `Has firmado como ${role}`});
+        toast({ title: 'Permiso Firmado', description: `Has firmado como ${signatureRoles[role]}`});
+        setIsSignatureDialogOpen(false);
+        setSigningRole(null);
       } catch (e: any) {
         const permissionError = new FirestorePermissionError({
             path: docRef.path,
@@ -196,11 +211,17 @@ export default function PermitDetailPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
   
-  const canSign = (role: SignatureRole) => {
+  const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser || !permit) return false;
       const approval = permit.approvals[role];
-      // simplified logic: can sign if role matches and firmaApertura is not set.
-      return currentUser.role === role && approval?.status === 'pendiente';
+      if (type === 'firmaApertura') {
+          return currentUser.role === role && approval?.status === 'pendiente' && !approval?.firmaApertura;
+      }
+       if (type === 'firmaCierre') {
+          // Add logic for closing signature if needed
+          return false;
+      }
+      return false;
   }
 
 
@@ -389,12 +410,19 @@ export default function PermitDetailPage() {
                                         <div>
                                             <Field label="Área" value={approval?.area || 'N/A'} />
                                             <Field label="Nombre" value={approval?.userName || 'Pendiente'} />
-                                            <Field label="Firma Apertura" value={approval?.firmaApertura ? `Firmado ${format(new Date(approval.signedAt!), "dd/MM/yy")}` : 'Pendiente'} />
+                                            <Field label="Firma Apertura" value={
+                                              approval?.firmaApertura ? (
+                                                  <div className="bg-gray-100 p-2 rounded-md">
+                                                    <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
+                                                    <p className="text-center text-xs mt-1">Firmado el {format(new Date(approval.signedAt!), "dd/MM/yyyy 'a las' HH:mm")}</p>
+                                                  </div>
+                                              ) : 'Pendiente'
+                                            } />
                                             <Field label="Firma Cierre" value={approval?.firmaCierre ? 'Firmado' : 'Pendiente'} />
                                         </div>
 
-                                        {canSign(role) && (
-                                            <Button size="sm" className="w-full mt-4" onClick={() => handleSign(role, 'firmaApertura')}>
+                                        {canSign(role, 'firmaApertura') && (
+                                            <Button size="sm" className="w-full mt-4" onClick={() => openSignatureDialog(role, 'firmaApertura')}>
                                                 <SignatureIcon className="mr-2 h-4 w-4"/>
                                                 Firmar Apertura
                                             </Button>
@@ -418,14 +446,14 @@ export default function PermitDetailPage() {
                         <div className="space-y-2">
                             <Field label="Seguimiento trabajo en caliente" value={
                                 <div className="flex gap-2">
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora1} readOnly className="text-xs"/>
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora2} readOnly className="text-xs"/>
-                                    <Input value={permit.closure?.seguimientoCaliente?.hora3} readOnly className="text-xs"/>
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora1 || ''} readOnly className="text-xs"/>
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora2 || ''} readOnly className="text-xs"/>
+                                    <Input value={permit.closure?.seguimientoCaliente?.hora3 || ''} readOnly className="text-xs"/>
                                 </div>
                             }/>
                             <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
-                             <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre}/>
-                             <Field label="Hora de Cierre" value={permit.closure?.horaCierre}/>
+                             <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/MM/yyyy') : 'Pendiente'}/>
+                             <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>
                         </div>
                     </div>
                  </Section>
@@ -437,6 +465,18 @@ export default function PermitDetailPage() {
                 <p>Versión: 05</p>
             </footer>
         </main>
+        
+        <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Firmar Permiso de Trabajo</DialogTitle>
+                    <DialogDescription>
+                        {signingRole && `Está firmando como ${signatureRoles[signingRole.role]}. Su firma quedará registrada.`}
+                    </DialogDescription>
+                </DialogHeader>
+                <SignaturePad onSave={handleSaveSignature} />
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

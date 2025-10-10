@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -28,13 +27,13 @@ export interface ExternalWorker {
   nombre: string;
   cedula: string;
   rol: string;
-  certificadoAptitudMedica?: string; // URL o path al archivo
-  tsaTec?: string; // URL o path al archivo
-  entrenamiento?: string; // URL o path al archivo
+  certificadoAptitudMedica?: string;
+  tsaTec?: string;
+  entrenamiento?: string;
   eps: string;
   arl: string;
   pensiones: string;
-  foto?: string; // URL o path a la selfie
+  foto?: string;
 }
 
 export type Tool = {
@@ -94,6 +93,3 @@ export type Permit = {
   };
   closure?: Partial<PermitClosure>;
 };
-
-
-    

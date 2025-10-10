@@ -28,6 +28,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   }, []);
 
   const startDrawing = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
     const ctx = getCanvasContext();
     if (!ctx) return;
     
@@ -38,6 +39,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   };
 
   const draw = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
     if (!isDrawing) return;
     const ctx = getCanvasContext();
     if (!ctx) return;
@@ -84,6 +86,15 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (canvas) {
+      // Check if canvas is empty
+      const blank = document.createElement('canvas');
+      blank.width = canvas.width;
+      blank.height = canvas.height;
+      if(canvas.toDataURL() === blank.toDataURL()) {
+        alert("Por favor, provea una firma.");
+        return;
+      }
+      
       const dataUrl = canvas.toDataURL('image/png');
       onSave(dataUrl);
     }
