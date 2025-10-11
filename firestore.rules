@@ -1,31 +1,54 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+    // Colección de Usuarios (users)
+    match /users/{userId} {
+      // Un usuario solo puede leer y actualizar su propio perfil.
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+
+      // La creación de usuarios se hace desde el servidor (Admin SDK).
+      allow create: if false;
+
+      // Nadie puede borrar perfiles de usuario desde la app.
+      allow delete: if false;
     }
 
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow get: if isAdmin();
-    }
-    
-    match /users/{userId} {
-       allow list, create: if isAdmin();
-    }
-
+    // Colección de Permisos (permits)
     match /permits/{permitId} {
-      allow create: if request.auth != null;
-      // Allow any authenticated user to read/list permits.
-      // Updates are still restricted.
-      allow read: if request.auth != null;
-      allow update: if request.auth.uid == resource.data.createdBy || isAdmin();
+      // Cualquier usuario autenticado puede leer un permiso individual.
+      // Esto es necesario para ver la página de detalles de un permiso.
+      allow get: if request.auth != null;
+
+      // Cualquier usuario autenticado puede listar los permisos.
+      // Necesario para el dashboard y la página de listado.
+      allow list: if request.auth != null;
+
+      // La creación de permisos se gestiona a través del Admin SDK en el servidor.
+      // No se permite la creación directa desde el cliente para más seguridad.
+      allow create: if false;
+
+      // Un usuario puede firmar (actualizar) un permiso si es del rol correcto
+      // o si es un administrador.
+      allow update: if request.auth != null && (
+        (request.resource.data.approvals.solicitante.userId == request.auth.uid && resource.data.approvals.solicitante.userId != request.resource.data.approvals.solicitante.userId) ||
+        (request.resource.data.approvals.autorizante.userId == request.auth.uid && resource.data.approvals.autorizante.userId != request.resource.data.approvals.autorizante.userId) ||
+        (request.resource.data.approvals.mantenimiento.userId == request.auth.uid && resource.data.approvals.mantenimiento.userId != request.resource.data.approvals.mantenimiento.userId) ||
+        (request.resource.data.approvals.sst.userId == request.auth.uid && resource.data.approvals.sst.userId != request.resource.data.approvals.sst.userId) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
+      // Nadie puede borrar permisos desde la app.
+      allow delete: if false;
     }
 
+    // Colección de prueba (test)
     match /test/{docId} {
-      allow read, write: if request.auth != null;
+      // Cualquiera puede leer, pero solo usuarios autenticados pueden escribir.
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
