@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -673,6 +673,24 @@ export default function PermitDetailPage() {
       {id: 'senalizacion_area', label: 'SEÑALIZACION Y DEMARCACION AREA'},
       {id: 'estabilizadores', label: 'ESTABILIZADORES & TERRENO'},
     ];
+    
+  const anexoEnergiasTension: { id: AnexoEnergias['tensionExpuesta'], label: string }[] = [
+    { id: 'muy_baja', label: 'Muy baja tensión (Tensiones menores de 25 V).' },
+    { id: 'baja', label: 'Baja tensión (Tensión nominal mayor o igual 25 V y menor o igual a 1000 V).' },
+    { id: 'media', label: 'Media tensión (Tensión nominal superior a 1000 V e inferior a 57,5 kV).' },
+    { id: 'alta', label: 'Alta tensión (Tensiones mayores o iguales a 57,5 kV y menores o iguales a 230 kV).' },
+    { id: 'extra_alta', label: 'Extra alta tensión (Tensiones superiores a 230kV).' },
+  ];
+
+  const anexoEnergiasPlaneacion = [
+    { id: 'personalHabilitado', label: 'Personal habilitado, certificado de competencia laboral vigente (Conte, Conaltel, Matrícula profesional)' },
+    { id: 'evaluacionViabilidad', label: 'El personal habilitado evalúa la viabilidad técnica (visita previa) y el riesgo asociado para las personas y para el sistema, cumpliendo las etapas de diagnóstico, planeación y ejecución de trabajos.' },
+    { id: 'noSimultaneos', label: 'No se realizan trabajos simultáneos sin y con tensión por el mismo trabajador en la misma área de trabajo.' },
+    { id: 'autorizacionMantenimiento', label: 'Autorización del área de mantenimiento' },
+    { id: 'revisionInformacion', label: 'Revisión de información técnica del sistema (diagrama unifilar, planos)' },
+    { id: 'procedimientoNormalizado', label: 'Se cuenta con un procedimiento normalizado para realizar la actividad y ATS' },
+    { id: 'supervisionControl', label: 'Se realizar supervisión y control en el sitio de trabajo considerando en forma prioritaria la detección y el control de los riesgos, vigilando el cumplimiento estricto de las normas y procedimientos de seguridad aplicables' },
+  ];
 
   return (
     <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
@@ -863,6 +881,35 @@ export default function PermitDetailPage() {
 
                                 <Field label="Observaciones / Supervisión" value={permit.anexoConfinado.observaciones} fullWidth />
 
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )}
+
+                    {permit.anexoEnergias && (
+                        <Collapsible className="space-y-6 mt-6 border rounded-lg" defaultOpen>
+                            <CollapsibleTrigger className="w-full bg-gray-100 hover:bg-gray-200 p-4 flex justify-between items-center cursor-pointer group rounded-t-lg">
+                                <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 3 - TRABAJOS CON ENERGÍAS</h3>
+                                <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="p-6 space-y-6">
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Tensión a la cual el personal estará expuesto</h4>
+                                    <Field label="Nivel de Tensión" value={anexoEnergiasTension.find(t => t.id === permit.anexoEnergias?.tensionExpuesta)?.label || 'No especificado'} />
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Planeación</h4>
+                                    <div className="space-y-1">
+                                        {anexoEnergiasPlaneacion.map(item => (
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoEnergias?.planeacion?.[item.id]} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Método de trabajo</h4>
+                                    <Field label="Método" value={permit.anexoEnergias.metodoTrabajo === 'con_tension' ? 'Con Tensión' : 'Sin Tensión'} />
+                                </div>
                             </CollapsibleContent>
                         </Collapsible>
                     )}

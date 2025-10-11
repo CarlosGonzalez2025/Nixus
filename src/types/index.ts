@@ -130,6 +130,12 @@ export type AnexoIzaje = {
   };
 };
 
+export type AnexoEnergias = {
+  tensionExpuesta: 'muy_baja' | 'baja' | 'media' | 'alta' | 'extra_alta';
+  planeacion: { [key: string]: 'si' | 'no' };
+  metodoTrabajo: 'sin_tension' | 'con_tension';
+};
+
 
 export type Permit = {
   id: string;
@@ -169,4 +175,5 @@ export type Permit = {
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoIzaje?: Partial<AnexoIzaje>;
+  anexoEnergias?: Partial<AnexoEnergias>;
 };

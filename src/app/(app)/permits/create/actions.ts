@@ -55,6 +55,10 @@ export async function createPermit(data: PermitCreateData) {
     permitPayload.anexoIzaje = permitData.anexoIzaje;
   }
 
+  if (permitData.anexoEnergias) {
+    permitPayload.anexoEnergias = permitData.anexoEnergias;
+  }
+
 
   try {
     // Add document to Firestore using Admin SDK

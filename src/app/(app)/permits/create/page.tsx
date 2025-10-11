@@ -40,7 +40,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -117,6 +117,13 @@ export default function CreatePermitPage() {
     precauciones: {},
     observaciones: '',
     liderIzaje: { nombre: '', cedula: '', firmaApertura: '' }
+  });
+
+  // Anexo Energias
+  const [anexoEnergias, setAnexoEnergias] = useState<Partial<AnexoEnergias>>({
+    tensionExpuesta: 'muy_baja',
+    planeacion: {},
+    metodoTrabajo: 'sin_tension'
   });
 
   // Step 2
@@ -450,6 +457,7 @@ export default function CreatePermitPage() {
         anexoAltura: selectedWorkTypes.includes('altura') ? anexoAltura : undefined,
         anexoConfinado: selectedWorkTypes.includes('confinado') ? anexoConfinado : undefined,
         anexoIzaje: selectedWorkTypes.includes('izaje') ? anexoIzaje : undefined,
+        anexoEnergias: selectedWorkTypes.includes('energia') ? anexoEnergias : undefined,
       };
 
       const result = await createPermit({
@@ -487,6 +495,7 @@ export default function CreatePermitPage() {
     { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
     { label: "Anexo Confinado", condition: selectedWorkTypes.includes('confinado')},
     { label: "Anexo Izaje", condition: selectedWorkTypes.includes('izaje')},
+    { label: "Anexo Energías", condition: selectedWorkTypes.includes('energia')},
     { label: "Peligros", condition: true },
     { label: "EPP", condition: true },
     { label: "Sistemas y Emergencia", condition: true },
@@ -502,7 +511,7 @@ export default function CreatePermitPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
+  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
       let state: any;
       let setState: (value: any) => void;
 
@@ -511,6 +520,7 @@ export default function CreatePermitPage() {
           case 'ppe': setPpeData(prev => ({...prev, [id]: value})); return;
           case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); return;
           case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); return;
+          case 'anexoEnergias': setAnexoEnergias(prev => ({...prev, planeacion: { ...prev.planeacion, [id]: value }})); return;
           case 'anexoAltura': 
               setState = setAnexoAltura;
               state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
@@ -543,7 +553,7 @@ export default function CreatePermitPage() {
       handleChange(value);
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
     let state: any = {};
     let onValueChange = (value: string) => {};
     let defaultValue = 'na';
@@ -553,6 +563,7 @@ export default function CreatePermitPage() {
         case 'ppe': state = ppeData; onValueChange = (v) => setPpeData(p => ({...p, [id]: v})); break;
         case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
         case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
+        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v }})); break;
         case 'anexoAltura': 
             state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {};
             onValueChange = (v) => setAnexoAltura(p => ({...p, [anexoSection as string]: { ...((p as any)[anexoSection as string] || {}), [id]: v }}));
@@ -721,6 +732,24 @@ export default function CreatePermitPage() {
     {id: 'plan_rescate', label: 'PLAN DE RESCATE'},
     {id: 'senalizacion_area', label: 'SEÑALIZACION Y DEMARCACION AREA'},
     {id: 'estabilizadores', label: 'ESTABILIZADORES & TERRENO'},
+  ];
+
+  const anexoEnergiasTension = [
+    { id: 'muy_baja', label: 'Muy baja tensión (Tensiones menores de 25 V).' },
+    { id: 'baja', label: 'Baja tensión (Tensión nominal mayor o igual 25 V y menor o igual a 1000 V).' },
+    { id: 'media', label: 'Media tensión (Tensión nominal superior a 1000 V e inferior a 57,5 kV).' },
+    { id: 'alta', label: 'Alta tensión (Tensiones mayores o iguales a 57,5 kV y menores o iguales a 230 kV).' },
+    { id: 'extra_alta', label: 'Extra alta tensión (Tensiones superiores a 230kV).' },
+  ];
+
+  const anexoEnergiasPlaneacion = [
+    { id: 'personalHabilitado', label: 'Personal habilitado, certificado de competencia laboral vigente (Conte, Conaltel, Matrícula profesional)' },
+    { id: 'evaluacionViabilidad', label: 'El personal habilitado evalúa la viabilidad técnica (visita previa) y el riesgo asociado para las personas y para el sistema, cumpliendo las etapas de diagnóstico, planeación y ejecución de trabajos.' },
+    { id: 'noSimultaneos', label: 'No se realizan trabajos simultáneos sin y con tensión por el mismo trabajador en la misma área de trabajo.' },
+    { id: 'autorizacionMantenimiento', label: 'Autorización del área de mantenimiento' },
+    { id: 'revisionInformacion', label: 'Revisión de información técnica del sistema (diagrama unifilar, planos)' },
+    { id: 'procedimientoNormalizado', label: 'Se cuenta con un procedimiento normalizado para realizar la actividad y ATS' },
+    { id: 'supervisionControl', label: 'Se realizar supervisión y control en el sitio de trabajo considerando en forma prioritaria la detección y el control de los riesgos, vigilando el cumplimiento estricto de las normas y procedimientos de seguridad aplicables' },
   ];
 
 
@@ -1204,6 +1233,66 @@ export default function CreatePermitPage() {
                           {anexoIzaje.liderIzaje?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
                         </Button>
                     </div>
+                </div>
+            </div>
+          )}
+          
+          {currentStepInfo.label === "Anexo Energías" && (
+            <div className="space-y-6">
+                 <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        ANEXO 3 - TRABAJOS CON ENERGÍAS
+                    </h2>
+                    <p className="text-muted-foreground">Complete toda la información requerida para este anexo.</p>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Tensión a la cual el personal estará expuesto</h4>
+                    <RadioGroup 
+                      value={anexoEnergias.tensionExpuesta} 
+                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, tensionExpuesta: value as any }))}
+                      className="space-y-2"
+                    >
+                      {anexoEnergiasTension.map(item => (
+                        <div key={item.id} className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value={item.id} id={`tension-${item.id}`} />
+                          <Label htmlFor={`tension-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Planeación</h4>
+                    <div className="space-y-3">
+                       {anexoEnergiasPlaneacion.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                              <Label className="flex-1 text-sm">{item.label}</Label>
+                              <RadioGroup value={(anexoEnergias.planeacion || {})[item.id] || 'no'} onValueChange={v => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [item.id]: v as 'si'|'no' }}))} className="flex">
+                                  <RadioGroupItem value="si" id={`planeacion-${item.id}-si`} /> <Label htmlFor={`planeacion-${item.id}-si`} className="mr-2">SI</Label>
+                                  <RadioGroupItem value="no" id={`planeacion-${item.id}-no`} /> <Label htmlFor={`planeacion-${item.id}-no`}>NO</Label>
+                              </RadioGroup>
+                          </div>
+                      ))}
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Método de trabajo</h4>
+                    <RadioGroup 
+                      value={anexoEnergias.metodoTrabajo} 
+                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, metodoTrabajo: value as any }))}
+                      className="flex gap-4"
+                    >
+                        <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value="sin_tension" id="metodo-sin" />
+                          <Label htmlFor="metodo-sin" className="font-normal text-sm">Sin Tensión</Label>
+                        </div>
+                         <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value="con_tension" id="metodo-con" />
+                          <Label htmlFor="metodo-con" className="font-normal text-sm">Con Tensión</Label>
+                        </div>
+                    </RadioGroup>
                 </div>
             </div>
           )}
