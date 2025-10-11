@@ -3,6 +3,10 @@
 
 import twilio from 'twilio';
 import type { Permit } from '@/types';
+import { config } from 'dotenv';
+
+// Cargar explícitamente las variables de entorno del archivo .env
+config();
 
 // Load credentials directly from environment variables
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
