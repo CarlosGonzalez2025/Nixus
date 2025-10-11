@@ -52,7 +52,7 @@ const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
   email: z.string().email({ message: 'Correo electrónico inválido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin']),
+  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: 'La empresa es requerida.'}),
@@ -376,3 +376,5 @@ export default function UsersPage() {
     </div>
   );
 }
+
+    
