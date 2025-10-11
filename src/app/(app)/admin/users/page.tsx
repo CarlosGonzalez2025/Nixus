@@ -56,7 +56,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -115,16 +117,22 @@ export default function UsersPage() {
     }
     
     if(adminUser?.role === 'admin') {
-        const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const usersCollection = collection(db, 'users');
+        const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
             const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
             setUsers(usersData);
             setLoadingUsers(false);
         }, (error) => {
-            console.error("Error fetching users:", error);
+            const permissionError = new FirestorePermissionError({
+                path: usersCollection.path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            
             toast({
                 variant: 'destructive',
                 title: 'Error al cargar usuarios',
-                description: 'No se pudieron cargar los datos de los usuarios. Verifique las reglas de seguridad.'
+                description: 'No tiene permisos para ver la lista de usuarios.'
             });
             setLoadingUsers(false);
         });
@@ -444,5 +452,3 @@ export default function UsersPage() {
     </div>
   );
 }
-
-    

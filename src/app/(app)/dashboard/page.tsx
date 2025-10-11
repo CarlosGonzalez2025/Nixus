@@ -24,6 +24,8 @@ import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/f
 import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { format } from 'date-fns';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const getStatusColor = (status: string) => {
     const statusColors: {[key: string]: string} = {
@@ -122,14 +124,24 @@ export default function Dashboard() {
             aprobado: allPermits.filter(p => p.status === 'aprobado').length,
             enEjecucion: allPermits.filter(p => p.status === 'en_ejecucion').length
           });
+      }, (error) => {
+          const permissionError = new FirestorePermissionError({
+            path: statsQuery.converter?.toString() || 'permits',
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
       });
       
       setLoading(false);
 
       return () => statsUnsubscribe();
     }, (error) => {
-      console.error('Error loading permits:', error);
-      setLoading(false);
+        const permissionError = new FirestorePermissionError({
+          path: q.converter?.toString() || 'permits',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoading(false);
     });
 
     return () => unsubscribe();

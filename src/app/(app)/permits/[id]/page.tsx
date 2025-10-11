@@ -185,7 +185,7 @@ export default function PermitDetailPage() {
       const permissionError = new FirestorePermissionError({
         path: docRef.path,
         operation: 'get',
-      } satisfies SecurityRuleContext);
+      });
       
       errorEmitter.emit('permission-error', permissionError);
       setError('No tiene permisos para ver este documento.');
@@ -311,19 +311,22 @@ export default function PermitDetailPage() {
             updateData[signedAtPath] = new Date().toISOString();
         }
 
-        await updateDoc(docRef, updateData);
+        updateDoc(docRef, updateData).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: { [signaturePath]: '...' }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ variant: 'destructive', title: 'Error al firmar', description: 'No tienes permiso para realizar esta acción.' });
+        });
 
         toast({ title: 'Permiso Firmado', description: `Has firmado como ${signatureRoles[role]}`});
         setIsSignatureDialogOpen(false);
         setSigningRole(null);
       } catch (e: any) {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'update',
-            requestResourceData: { [signaturePath]: '...' }
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: 'destructive', title: 'Error al firmar', description: 'No tienes permiso para realizar esta acción.' });
+          // This local try/catch is for synchronous errors, the .catch() handles the async permission error.
+          toast({ variant: 'destructive', title: 'Error al firmar', description: 'Ocurrió un error inesperado.' });
       }
   }
 

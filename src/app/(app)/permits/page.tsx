@@ -115,7 +115,7 @@ export default function PermitsPage() {
         const permissionError = new FirestorePermissionError({
           path: permitsCollection.path,
           operation: 'list',
-        } satisfies SecurityRuleContext);
+        });
         
         errorEmitter.emit('permission-error', permissionError);
 
