@@ -522,7 +522,7 @@ export default function UsersPage() {
       </div>
     </div>
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>Editar Usuario</DialogTitle>
                 <DialogDescription>
@@ -530,7 +530,7 @@ export default function UsersPage() {
                 </DialogDescription>
             </DialogHeader>
             <Form {...updateForm}>
-                <form onSubmit={updateForm.handleSubmit(onUpdateSubmit)} className="space-y-4 py-4">
+                <form onSubmit={updateForm.handleSubmit(onUpdateSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                      <FormField
                       control={updateForm.control}
                       name="displayName"
@@ -570,6 +570,62 @@ export default function UsersPage() {
                         </FormItem>
                       )}
                     />
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={updateForm.control}
+                        name="ciudad"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Ciudad</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Bogotá" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                         <FormField
+                        control={updateForm.control}
+                        name="planta"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Planta</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Faca" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={updateForm.control}
+                        name="area"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Área</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Mantenimiento" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={updateForm.control}
+                        name="telefono"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Teléfono</FormLabel>
+                            <FormControl>
+                                <Input type="tel" placeholder="Ej: 3001234567" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
                     <FormField
                       control={updateForm.control}
                       name="role"
@@ -594,7 +650,7 @@ export default function UsersPage() {
                         </FormItem>
                       )}
                     />
-                    <DialogFooter>
+                    <DialogFooter className="mt-6 sticky bottom-0 bg-background pt-4">
                       <DialogClose asChild>
                          <Button type="button" variant="secondary">Cancelar</Button>
                       </DialogClose>
