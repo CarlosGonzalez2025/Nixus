@@ -22,9 +22,9 @@ service cloud.firestore {
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      // PERMITIR LECTURA y LISTADO: Cualquier usuario autenticado puede ver los permisos.
+      // PERMITIR LECTURA (get y list): Cualquier usuario autenticado puede ver los permisos.
       // Esto es necesario para el dashboard y la lista de permisos.
-      allow get, list: if request.auth != null;
+      allow read: if request.auth != null;
 
       // PERMITIR ACTUALIZACIÓN: Un usuario puede actualizar un permiso (ej. firmar),
       // o un administrador puede realizar cualquier cambio.
