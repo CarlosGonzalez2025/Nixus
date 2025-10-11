@@ -3,12 +3,15 @@
 
 import twilio from 'twilio';
 import type { Permit } from '@/types';
+import getConfig from 'next/config';
 
-// Load credentials from environment variables
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_FROM;
-const whatsAppTo = process.env.WHATSAPP_TO;
+const { serverRuntimeConfig } = getConfig();
+
+// Load credentials from runtime config
+const accountSid = serverRuntimeConfig.TWILIO_ACCOUNT_SID;
+const authToken = serverRuntimeConfig.TWILIO_AUTH_TOKEN;
+const twilioWhatsAppFrom = serverRuntimeConfig.TWILIO_WHATSAPP_FROM;
+const whatsAppTo = serverRuntimeConfig.WHATSAPP_TO;
 
 const workTypesMap: {[key: string]: string} = {
   'altura': 'Trabajo en Alturas',
@@ -34,7 +37,7 @@ interface NotificationPayload {
 
 export async function sendWhatsAppNotification(payload: NotificationPayload) {
   if (!accountSid || !authToken || !twilioWhatsAppFrom || !whatsAppTo) {
-    console.error('Twilio credentials or phone numbers are not configured in environment variables.');
+    console.error('Twilio credentials or phone numbers are not configured in environment variables or next.config.js.');
     throw new Error('Notification service is not configured.');
   }
 
