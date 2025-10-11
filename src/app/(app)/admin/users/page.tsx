@@ -28,25 +28,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { createUser } from './actions';
-import { Loader2, UserPlus, Users } from 'lucide-react';
+import { Loader2, UserPlus } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { User, UserRole } from '@/types';
-import { errorEmitter } from '@/lib/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import type { UserRole } from '@/types';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -75,8 +62,6 @@ export default function UsersPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,31 +88,6 @@ export default function UsersPage() {
       router.replace('/dashboard');
     }
   }, [adminUser, adminLoading, router, toast]);
-
-  useEffect(() => {
-    const usersCollection = collection(db, 'users');
-    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
-      const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as User[];
-      setUsers(usersData);
-      setLoadingUsers(false);
-    }, (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: usersCollection.path,
-          operation: 'list',
-        } satisfies SecurityRuleContext);
-        
-        errorEmitter.emit('permission-error', permissionError);
-
-        toast({
-            variant: 'destructive',
-            title: 'Error al cargar usuarios',
-            description: 'No se pudieron obtener los datos de los usuarios.',
-        });
-        setLoadingUsers(false);
-    });
-
-    return () => unsubscribe();
-  }, [toast]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -167,12 +127,12 @@ export default function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestión de Usuarios</h1>
           <p className="text-muted-foreground">
-            Crear nuevos usuarios y administrar roles en el sistema.
+            Crear nuevos usuarios en el sistema.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1fr_2fr]">
+      <div className="mx-auto w-full max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -326,55 +286,7 @@ export default function UsersPage() {
             </Form>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users />
-              Listado de Usuarios
-            </CardTitle>
-            <CardDescription>
-              Usuarios registrados actualmente en el sistema.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <ScrollArea className="h-[600px] w-full">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Correo</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Planta</TableHead>
-                    <TableHead>Empresa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loadingUsers ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    users.map((user) => (
-                      <TableRow key={user.uid}>
-                        <TableCell className="font-medium">{user.displayName}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{roleNames[user.role as UserRole] || 'No asignado'}</TableCell>
-                        <TableCell>{user.planta || 'N/A'}</TableCell>
-                        <TableCell>{user.empresa || 'N/A'}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
 }
-
-    
