@@ -15,6 +15,7 @@ export interface User {
   empresa?: string;
   ciudad?: string;
   planta?: string;
+  disabled?: boolean;
 }
 
 export type Approval = {
@@ -177,3 +178,5 @@ export type Permit = {
   anexoIzaje?: Partial<AnexoIzaje>;
   anexoEnergias?: Partial<AnexoEnergias>;
 };
+
+    

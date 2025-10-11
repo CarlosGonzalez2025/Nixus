@@ -29,11 +29,34 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser } from './actions';
-import { Loader2, UserPlus } from 'lucide-react';
+import { createUser, updateUserStatus } from './actions';
+import { Loader2, UserPlus, Users, Edit, Trash2 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
-import type { UserRole } from '@/types';
+import type { User, UserRole } from '@/types';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -62,6 +85,8 @@ export default function UsersPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,7 +111,27 @@ export default function UsersPage() {
         description: 'No tiene permisos para acceder a esta página.',
       });
       router.replace('/dashboard');
+      return;
     }
+    
+    if(adminUser?.role === 'admin') {
+        const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+            const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+            setUsers(usersData);
+            setLoadingUsers(false);
+        }, (error) => {
+            console.error("Error fetching users:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error al cargar usuarios',
+                description: 'No se pudieron cargar los datos de los usuarios. Verifique las reglas de seguridad.'
+            });
+            setLoadingUsers(false);
+        });
+
+        return () => unsubscribe();
+    }
+
   }, [adminUser, adminLoading, router, toast]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -112,6 +157,30 @@ export default function UsersPage() {
       setIsSubmitting(false);
     }
   }
+
+  const handleStatusChange = async (userId: string, newStatus: boolean) => {
+    const originalStatus = users.find(u => u.uid === userId)?.disabled;
+    
+    // Optimistic UI update
+    setUsers(users.map(u => u.uid === userId ? { ...u, disabled: !newStatus } : u));
+
+    const result = await updateUserStatus(userId, !newStatus);
+
+    if (result.error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error al actualizar',
+            description: result.error
+        });
+        // Revert UI change on error
+        setUsers(users.map(u => u.uid === userId ? { ...u, disabled: originalStatus } : u));
+    } else {
+        toast({
+            title: 'Estado Actualizado',
+            description: `El usuario ha sido ${!newStatus ? 'desactivado' : 'activado'}.`
+        });
+    }
+  }
   
   if (adminLoading || adminUser?.role !== 'admin') {
      return (
@@ -122,171 +191,258 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestión de Usuarios</h1>
           <p className="text-muted-foreground">
-            Crear nuevos usuarios en el sistema.
+            Crear y administrar usuarios en el sistema.
           </p>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus />
-              Crear Nuevo Usuario
-            </CardTitle>
-            <CardDescription>
-              Complete el formulario para añadir un nuevo usuario al sistema.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre Completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: Juan Pérez" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Correo Electrónico</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="usuario@italcol.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contraseña</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="empresa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Empresa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: ITALCOL" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Users/>
+                    Lista de Usuarios
+                </CardTitle>
+                 <CardDescription>
+                    Visualice y gestione los usuarios existentes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingUsers ? (
+                     <div className="flex items-center justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                     </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead className="hidden md:table-cell">Empresa</TableHead>
+                                <TableHead className="hidden lg:table-cell">Rol</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map(user => (
+                                <TableRow key={user.uid}>
+                                    <TableCell>
+                                        <div className="font-medium">{user.displayName}</div>
+                                        <div className="text-sm text-muted-foreground md:hidden">{roleNames[user.role || 'ejecutante']}</div>
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">{user.empresa}</TableCell>
+                                    <TableCell className="hidden lg:table-cell">
+                                        <Badge variant="outline">{roleNames[user.role || 'ejecutante']}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={user.disabled ? 'destructive' : 'default'}>
+                                            {user.disabled ? 'Inactivo' : 'Activo'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                       <div className="flex items-center justify-end gap-2">
+                                        <Button variant="ghost" size="icon" disabled>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" disabled>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario.
+                                                </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        <Switch
+                                            checked={!user.disabled}
+                                            onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
+                                            aria-label="Activar/Desactivar usuario"
+                                        />
+                                       </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus />
+                  Crear Nuevo Usuario
+                </CardTitle>
+                <CardDescription>
+                  Complete el formulario para añadir un nuevo usuario.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
-                    control={form.control}
-                    name="ciudad"
-                    render={({ field }) => (
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Ciudad</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ej: Bogotá" {...field} />
-                        </FormControl>
-                        <FormMessage />
+                          <FormLabel>Nombre Completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Juan Pérez" {...field} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
-                    )}
-                    />
-                     <FormField
-                    control={form.control}
-                    name="planta"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Planta</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ej: Faca" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                    control={form.control}
-                    name="area"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Área</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ej: Mantenimiento" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                      )}
                     />
                     <FormField
-                    control={form.control}
-                    name="telefono"
-                    render={({ field }) => (
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Teléfono</FormLabel>
-                        <FormControl>
-                            <Input type="tel" placeholder="Ej: 3001234567" {...field} />
-                        </FormControl>
-                        <FormMessage />
+                          <FormLabel>Correo Electrónico</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="usuario@italcol.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
                         </FormItem>
-                    )}
+                      )}
                     />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rol del Usuario</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un rol" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(roleNames).map(([role, name]) => (
-                            <SelectItem key={role} value={role}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isSubmitting ? 'Creando...' : 'Crear Usuario'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contraseña</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="empresa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Empresa</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: ITALCOL" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="ciudad"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Ciudad</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Bogotá" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                         <FormField
+                        control={form.control}
+                        name="planta"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Planta</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Faca" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                        control={form.control}
+                        name="area"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Área</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Mantenimiento" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="telefono"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Teléfono</FormLabel>
+                            <FormControl>
+                                <Input type="tel" placeholder="Ej: 3001234567" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rol del Usuario</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccione un rol" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(roleNames).map(([role, name]) => (
+                                <SelectItem key={role} value={role}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={isSubmitting} className="w-full">
+                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
 }
+
+    

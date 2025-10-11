@@ -1,54 +1,57 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // Colección de Usuarios (users)
     match /users/{userId} {
-      // Un usuario solo puede leer y actualizar su propio perfil.
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      // An admin can read all user profiles for the management table.
+      // A user can read their own profile.
+      allow get: if request.auth != null && (isAdmin() || request.auth.uid == userId);
+      allow list: if request.auth != null && isAdmin();
 
-      // La creación de usuarios se hace desde el servidor (Admin SDK).
-      allow create: if false;
+      // An admin can update any user profile.
+      // A user can update their own profile.
+      allow update: if request.auth != null && (isAdmin() || request.auth.uid == userId);
 
-      // Nadie puede borrar perfiles de usuario desde la app.
-      allow delete: if false;
+      // Creation and deletion are handled by the Admin SDK server-side.
+      allow create, delete: if false;
     }
 
     // Colección de Permisos (permits)
     match /permits/{permitId} {
-      // Cualquier usuario autenticado puede leer un permiso individual.
-      // Esto es necesario para ver la página de detalles de un permiso.
-      allow get: if request.auth != null;
+      // Any authenticated user can read an individual permit or list all permits.
+      // This is necessary for the dashboard and permit list pages.
+      allow get, list: if request.auth != null;
 
-      // Cualquier usuario autenticado puede listar los permisos.
-      // Necesario para el dashboard y la página de listado.
-      allow list: if request.auth != null;
-
-      // La creación de permisos se gestiona a través del Admin SDK en el servidor.
-      // No se permite la creación directa desde el cliente para más seguridad.
+      // Creation is handled by the Admin SDK server-side for security.
       allow create: if false;
 
-      // Un usuario puede firmar (actualizar) un permiso si es del rol correcto
-      // o si es un administrador.
+      // An admin or a user with the correct role can update (sign) a permit.
       allow update: if request.auth != null && (
+        isAdmin() ||
         (request.resource.data.approvals.solicitante.userId == request.auth.uid && resource.data.approvals.solicitante.userId != request.resource.data.approvals.solicitante.userId) ||
         (request.resource.data.approvals.autorizante.userId == request.auth.uid && resource.data.approvals.autorizante.userId != request.resource.data.approvals.autorizante.userId) ||
         (request.resource.data.approvals.mantenimiento.userId == request.auth.uid && resource.data.approvals.mantenimiento.userId != request.resource.data.approvals.mantenimiento.userId) ||
-        (request.resource.data.approvals.sst.userId == request.auth.uid && resource.data.approvals.sst.userId != request.resource.data.approvals.sst.userId) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        (request.resource.data.approvals.sst.userId == request.auth.uid && resource.data.approvals.sst.userId != request.resource.data.approvals.sst.userId)
       );
 
-      // Nadie puede borrar permisos desde la app.
+      // Deletion is not allowed from the client.
       allow delete: if false;
     }
 
     // Colección de prueba (test)
     match /test/{docId} {
-      // Cualquiera puede leer, pero solo usuarios autenticados pueden escribir.
+      // Anyone can read, but only authenticated users can write.
       allow read: if true;
       allow write: if request.auth != null;
     }
   }
 }
+
+    

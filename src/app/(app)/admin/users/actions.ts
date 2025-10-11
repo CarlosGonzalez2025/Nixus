@@ -41,6 +41,7 @@ export async function createUser(data: z.infer<typeof formSchema>) {
       ciudad: data.ciudad,
       planta: data.planta,
       photoURL: userRecord.photoURL || '',
+      disabled: false,
     };
     
     // The Admin SDK bypasses security rules, so no permission error handling is needed here.
@@ -56,3 +57,17 @@ export async function createUser(data: z.infer<typeof formSchema>) {
     return { error: 'Ocurrió un error inesperado al crear el usuario.' };
   }
 }
+
+export async function updateUserStatus(userId: string, disabled: boolean) {
+    try {
+        const auth = getAuth();
+        await auth.updateUser(userId, { disabled });
+        await adminDb.collection('users').doc(userId).update({ disabled });
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating user status:', error);
+        return { error: 'No se pudo actualizar el estado del usuario.'};
+    }
+}
+
+    
