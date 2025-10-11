@@ -5,6 +5,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import type { Permit } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
+import { sendWhatsAppNotification } from '@/lib/notifications';
 
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user'> & {
   userId: string;
@@ -69,6 +70,21 @@ export async function createPermit(data: PermitCreateData) {
     await docRef.update({ number: permitNumber });
     
     console.log('✅ Permit created successfully:', docRef.id);
+
+    // Send WhatsApp notification
+    try {
+      await sendWhatsAppNotification({
+        permitNumber: permitNumber,
+        solicitante: userDisplayName || 'N/A',
+        workTypes: permitPayload.workType || ['general'],
+        permitId: docRef.id,
+      });
+      console.log('✅ WhatsApp notification sent successfully.');
+    } catch (notificationError) {
+      console.error('⚠️ Failed to send WhatsApp notification:', notificationError);
+      // We don't fail the whole operation if the notification fails,
+      // but we log it for debugging.
+    }
     
     // Revalidate paths to show the new permit in the lists
     revalidatePath('/permits');
