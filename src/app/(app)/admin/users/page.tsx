@@ -29,12 +29,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUserStatus } from './actions';
+import { createUser, updateUser, updateUserStatus } from './actions';
 import { Loader2, UserPlus, Users, Edit, Trash2 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   Table,
@@ -46,6 +46,15 @@ import {
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,7 +69,7 @@ import {
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
-const formSchema = z.object({
+const createFormSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
   email: z.string().email({ message: 'Correo electrónico inválido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
@@ -71,6 +80,19 @@ const formSchema = z.object({
   ciudad: z.string().optional(),
   planta: z.string().optional(),
 });
+
+const updateFormSchema = z.object({
+  uid: z.string(),
+  displayName: z.string().min(3, { message: "El nombre es requerido." }),
+  email: z.string().email({ message: "Correo electrónico inválido." }),
+  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
+  area: z.string().optional(),
+  telefono: z.string().optional(),
+  empresa: z.string().min(2, { message: "La empresa es requerida." }),
+  ciudad: z.string().optional(),
+  planta: z.string().optional(),
+});
+
 
 const roleNames: { [key in UserRole]: string } = {
   solicitante: 'Solicitante de la Tarea',
@@ -90,8 +112,11 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const createForm = useForm<z.infer<typeof createFormSchema>>({
+    resolver: zodResolver(createFormSchema),
     defaultValues: {
       fullName: '',
       email: '',
@@ -103,6 +128,10 @@ export default function UsersPage() {
       ciudad: '',
       planta: ''
     },
+  });
+
+  const updateForm = useForm<z.infer<typeof updateFormSchema>>({
+    resolver: zodResolver(updateFormSchema),
   });
 
   useEffect(() => {
@@ -118,8 +147,9 @@ export default function UsersPage() {
     
     if(adminUser?.role === 'admin') {
         const usersCollection = collection(db, 'users');
-        const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
-            const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+        const q = query(usersCollection);
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const usersData = snapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as User));
             setUsers(usersData);
             setLoadingUsers(false);
         }, (error) => {
@@ -142,7 +172,7 @@ export default function UsersPage() {
 
   }, [adminUser, adminLoading, router, toast]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onCreateSubmit(values: z.infer<typeof createFormSchema>) {
     setIsSubmitting(true);
     try {
       const result = await createUser(values);
@@ -154,7 +184,7 @@ export default function UsersPage() {
         description: `El usuario ${values.fullName} ha sido creado exitosamente.`,
         className: 'bg-green-100 dark:bg-green-900',
       });
-      form.reset();
+      createForm.reset();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -166,10 +196,35 @@ export default function UsersPage() {
     }
   }
 
+  async function onUpdateSubmit(values: z.infer<typeof updateFormSchema>) {
+    setIsSubmitting(true);
+    try {
+      const result = await updateUser(values);
+       if (result.error) {
+        throw new Error(result.error);
+      }
+       toast({
+        title: 'Usuario Actualizado',
+        description: `El usuario ${values.displayName} ha sido actualizado.`,
+        className: 'bg-green-100 dark:bg-green-900',
+      });
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Error al actualizar',
+        description: error.message || 'Ocurrió un error inesperado.',
+      });
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
+
+
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
     const originalStatus = users.find(u => u.uid === userId)?.disabled;
     
-    // Optimistic UI update
     setUsers(users.map(u => u.uid === userId ? { ...u, disabled: !newStatus } : u));
 
     const result = await updateUserStatus(userId, !newStatus);
@@ -180,7 +235,6 @@ export default function UsersPage() {
             title: 'Error al actualizar',
             description: result.error
         });
-        // Revert UI change on error
         setUsers(users.map(u => u.uid === userId ? { ...u, disabled: originalStatus } : u));
     } else {
         toast({
@@ -188,6 +242,22 @@ export default function UsersPage() {
             description: `El usuario ha sido ${!newStatus ? 'desactivado' : 'activado'}.`
         });
     }
+  }
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    updateForm.reset({
+        uid: user.uid,
+        displayName: user.displayName || '',
+        email: user.email || '',
+        role: user.role || 'ejecutante',
+        area: user.area || '',
+        telefono: user.telefono || '',
+        empresa: user.empresa || '',
+        ciudad: user.ciudad || '',
+        planta: user.planta || '',
+    });
+    setIsEditModalOpen(true);
   }
   
   if (adminLoading || adminUser?.role !== 'admin') {
@@ -199,6 +269,7 @@ export default function UsersPage() {
   }
 
   return (
+    <>
     <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div>
@@ -255,7 +326,7 @@ export default function UsersPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                        <div className="flex items-center justify-end gap-2">
-                                        <Button variant="ghost" size="icon" disabled>
+                                        <Button variant="ghost" size="icon" onClick={() => openEditModal(user)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                          <AlertDialog>
@@ -305,10 +376,10 @@ export default function UsersPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <Form {...createForm}>
+                  <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={createForm.control}
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
@@ -321,7 +392,7 @@ export default function UsersPage() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={createForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -334,7 +405,7 @@ export default function UsersPage() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={createForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
@@ -347,7 +418,7 @@ export default function UsersPage() {
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={createForm.control}
                       name="empresa"
                       render={({ field }) => (
                         <FormItem>
@@ -361,7 +432,7 @@ export default function UsersPage() {
                     />
                      <div className="grid grid-cols-2 gap-4">
                         <FormField
-                        control={form.control}
+                        control={createForm.control}
                         name="ciudad"
                         render={({ field }) => (
                             <FormItem>
@@ -374,7 +445,7 @@ export default function UsersPage() {
                         )}
                         />
                          <FormField
-                        control={form.control}
+                        control={createForm.control}
                         name="planta"
                         render={({ field }) => (
                             <FormItem>
@@ -389,7 +460,7 @@ export default function UsersPage() {
                     </div>
                      <div className="grid grid-cols-2 gap-4">
                         <FormField
-                        control={form.control}
+                        control={createForm.control}
                         name="area"
                         render={({ field }) => (
                             <FormItem>
@@ -402,7 +473,7 @@ export default function UsersPage() {
                         )}
                         />
                         <FormField
-                        control={form.control}
+                        control={createForm.control}
                         name="telefono"
                         render={({ field }) => (
                             <FormItem>
@@ -416,7 +487,7 @@ export default function UsersPage() {
                         />
                     </div>
                     <FormField
-                      control={form.control}
+                      control={createForm.control}
                       name="role"
                       render={({ field }) => (
                         <FormItem>
@@ -450,5 +521,92 @@ export default function UsersPage() {
         </div>
       </div>
     </div>
+    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Editar Usuario</DialogTitle>
+                <DialogDescription>
+                    Modifique la información del usuario. Haga clic en guardar cuando haya terminado.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...updateForm}>
+                <form onSubmit={updateForm.handleSubmit(onUpdateSubmit)} className="space-y-4 py-4">
+                     <FormField
+                      control={updateForm.control}
+                      name="displayName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre Completo</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={updateForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Correo Electrónico</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={updateForm.control}
+                      name="empresa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Empresa</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={updateForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rol</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                               {Object.entries(roleNames).map(([role, name]) => (
+                                <SelectItem key={role} value={role}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <DialogClose asChild>
+                         <Button type="button" variant="secondary">Cancelar</Button>
+                      </DialogClose>
+                      <Button type="submit" disabled={isSubmitting}>
+                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         Guardar Cambios
+                      </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
