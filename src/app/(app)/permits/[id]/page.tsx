@@ -362,7 +362,7 @@ export default function PermitDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-screen items-center justify-center text-center">
+      <div className="flex flex-col h-screen items-center justify-center text-center p-4">
         <XCircle className="h-16 w-16 text-destructive mb-4" />
         <h2 className="text-2xl font-bold mb-2">Error al Cargar el Permiso</h2>
         <p className="text-muted-foreground mb-6">{error}</p>
@@ -693,16 +693,16 @@ export default function PermitDetailPage() {
   ];
 
   return (
-    <div className="flex flex-1 flex-col bg-gray-100 p-4 md:p-8">
+    <div className="flex flex-1 flex-col bg-gray-100 pb-16 md:pb-0">
         {/* Action Bar */}
-        <div className="max-w-4xl mx-auto w-full mb-4">
+        <div className="max-w-4xl mx-auto w-full bg-gray-100 p-4 sticky top-0 md:top-auto z-10 md:relative">
             <div className="flex justify-between items-center">
-                 <Button variant="ghost" onClick={() => router.push('/permits')} className="mb-4">
+                 <Button variant="ghost" onClick={() => router.push('/permits')} className="">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Volver al listado
                 </Button>
                 <div className="flex gap-2">
-                     <Button onClick={handleExportToPDF} variant="outline">
+                     <Button onClick={handleExportToPDF} variant="outline" size="sm">
                         <FileDown className="mr-2 h-4 w-4" />
                         Exportar a PDF
                     </Button>
@@ -711,16 +711,16 @@ export default function PermitDetailPage() {
         </div>
 
         {/* Permit Document Wrapper for PDF generation */}
-        <div className="max-w-4xl mx-auto w-full bg-white p-8 shadow-lg rounded-lg border font-sans">
+        <div className="max-w-4xl mx-auto w-full bg-white p-4 md:p-8 shadow-lg md:rounded-lg border font-sans">
              <header ref={headerRef} className="flex justify-between items-start pb-4 border-b-4 border-primary">
                 <div>
                      <Logo textOnly />
                 </div>
                 <div className="text-right">
-                    <h1 className="text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
-                    <p className="font-mono text-gray-600 mt-2">N°: {permit.number || permit.id.substring(0, 10)}</p>
+                    <h1 className="text-xl md:text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
+                    <p className="font-mono text-sm md:text-base text-gray-600 mt-2">N°: {permit.number || permit.id.substring(0, 10)}</p>
                     {permit.createdAt && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs md:text-sm text-gray-500 mt-1">
                         Creado: {format(permit.createdAt, "dd/MM/yyyy HH:mm")}
                       </p>
                     )}
@@ -752,7 +752,7 @@ export default function PermitDetailPage() {
 
                     {permit.generalInfo?.tools && permit.generalInfo.tools.length > 0 && (
                       <Section title="HERRAMIENTAS Y EQUIPOS">
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                               {permit.generalInfo.tools.map((tool: Tool, index: number) => (
                                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
                                       <span className="text-xs flex-1">{tool.name}</span>
@@ -777,7 +777,7 @@ export default function PermitDetailPage() {
                             <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 1 - TRABAJOS EN ALTURA</h3>
                             <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="p-6 space-y-6">
+                        <CollapsibleContent className="p-4 md:p-6 space-y-6">
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Field label="A.- Altura de trabajo:" value={permit.anexoAltura.alturaTrabajo} />
                                 <Field label="B.- Coordinador TSA" value={permit.anexoAltura.coordinadorTSA?.toUpperCase()} />
@@ -823,7 +823,7 @@ export default function PermitDetailPage() {
                                 <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 2 - TRABAJOS EN ESPACIOS CONFINADOS</h3>
                                 <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="p-6 space-y-6">
+                            <CollapsibleContent className="p-4 md:p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Field label="Tipo" value={`Tipo ${permit.anexoConfinado.tipo}`} />
                                     <Field label="Grado de Peligro" value={`Grado ${permit.anexoConfinado.gradoPeligro}`} />
@@ -891,7 +891,7 @@ export default function PermitDetailPage() {
                                 <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 3 - TRABAJOS CON ENERGÍAS</h3>
                                 <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="p-6 space-y-6">
+                            <CollapsibleContent className="p-4 md:p-6 space-y-6">
                                 <div>
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Tensión a la cual el personal estará expuesto</h4>
                                     <Field label="Nivel de Tensión" value={anexoEnergiasTension.find(t => t.id === permit.anexoEnergias?.tensionExpuesta)?.label || 'No especificado'} />
@@ -920,7 +920,7 @@ export default function PermitDetailPage() {
                                 <h3 className="text-sm font-bold uppercase text-gray-600">ANEXO 4 - IZAJE DE CARGAS</h3>
                                 <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="p-6 space-y-6">
+                            <CollapsibleContent className="p-4 md:p-6 space-y-6">
                                 <div>
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Información General</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border rounded-md">
@@ -1161,7 +1161,7 @@ export default function PermitDetailPage() {
         </div>
         
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
-             <DialogContent>
+             <DialogContent className="w-[90vw] max-w-lg">
                  <DialogHeader>
                     <DialogTitle>Firmar Permiso de Trabajo</DialogTitle>
                     <DialogDescription>

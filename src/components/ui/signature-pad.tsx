@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from './button';
 import { Eraser, Save } from 'lucide-react';
 import { DialogClose, DialogFooter } from './dialog';
@@ -11,6 +12,7 @@ interface SignaturePadProps {
 
 export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const getCanvasContext = () => {
@@ -19,12 +21,24 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
     return canvas.getContext('2d');
   };
 
-  React.useEffect(() => {
-    const ctx = getCanvasContext();
-    if (ctx) {
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 2;
+  const resizeCanvas = () => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (canvas && container) {
+      canvas.width = container.offsetWidth;
+      canvas.height = 200; // Keep a fixed height or make it responsive too
+      const ctx = getCanvasContext();
+      if(ctx) {
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+      }
     }
+  };
+
+  useEffect(() => {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
   }, []);
 
   const startDrawing = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -61,17 +75,20 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
 
+    let clientX, clientY;
+
     if ('touches' in event.nativeEvent) {
-      const touch = event.nativeEvent.touches[0];
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
-      };
+      if (event.nativeEvent.touches.length === 0) return { x: 0, y: 0};
+      clientX = event.nativeEvent.touches[0].clientX;
+      clientY = event.nativeEvent.touches[0].clientY;
+    } else {
+      clientX = (event.nativeEvent as MouseEvent).clientX;
+      clientY = (event.nativeEvent as MouseEvent).clientY;
     }
     
     return {
-      x: event.nativeEvent.offsetX,
-      y: event.nativeEvent.offsetY,
+      x: clientX - rect.left,
+      y: clientY - rect.top,
     };
   }
 
@@ -101,12 +118,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full" ref={containerRef}>
       <canvas
         ref={canvasRef}
-        width={400}
-        height={200}
-        className="border border-gray-300 rounded-md bg-white cursor-crosshair touch-none"
+        className="border border-gray-300 rounded-md bg-white cursor-crosshair touch-none w-full"
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

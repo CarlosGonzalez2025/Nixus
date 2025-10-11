@@ -51,6 +51,7 @@ const getRoleName = (role?: string) => {
     ejecutante: 'Ejecutante del Trabajo',
     lider_sst: 'Líder SST',
     admin: 'Administrador',
+    mantenimiento: 'Mantenimiento',
   };
   return role ? roles[role] || role : 'Usuario';
 };
@@ -213,7 +214,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex h-12 items-center border-b bg-background px-4 md:hidden">
           <SidebarTrigger className="text-foreground" />
         </header>
-        <SidebarInset>{children}</SidebarInset>
+        <SidebarInset className="md:p-0">{children}</SidebarInset>
       </main>
     </SidebarProvider>
   );

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, Loader2, FileX } from 'lucide-react';
+import { PlusCircle, Search, Loader2, FileX, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,19 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
     cerrado: 'outline',
     en_ejecucion: 'default'
 };
+
+const getStatusColor = (status: string) => {
+    const statusColors: {[key: string]: string} = {
+      'borrador': 'bg-gray-100 text-gray-800',
+      'pendiente_revision': 'bg-yellow-100 text-yellow-800',
+      'aprobado': 'bg-green-100 text-green-800',
+      'en_ejecucion': 'bg-purple-100 text-purple-800',
+      'suspendido': 'bg-orange-100 text-orange-800',
+      'cerrado': 'bg-blue-100 text-blue-800',
+      'rechazado': 'bg-red-100 text-red-800',
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  };
 
 const getStatusText = (status: string) => {
     const statusText: {[key: string]: string} = {
@@ -123,9 +136,9 @@ export default function PermitsPage() {
   }
 
   const filteredPermits = permits.filter(permit => 
-    permit.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    permit.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getWorkTypesString(permit.workType).toLowerCase().includes(searchTerm.toLowerCase())
+    (permit.number || permit.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getWorkTypesString(permit.workType).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getStatusText(permit.status).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -151,73 +164,94 @@ export default function PermitsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Buscar por ID, número o tipo de trabajo..."
+                placeholder="Buscar por ID, número, tipo o estado..."
                 className="w-full rounded-lg bg-background pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Tipo de Trabajo</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden md:table-cell">Creado</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Acciones</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-60 text-center">
-                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-                        <p className="mt-2 text-sm">Cargando permisos...</p>
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredPermits.length > 0 ? (
-                    filteredPermits.map((permit) => (
-                      <TableRow key={permit.id}>
-                        <TableCell className="font-medium">
-                          <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
-                            {permit.number || permit.id.substring(0, 8)}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{getWorkTypesString(permit.workType)}</TableCell>
-                        <TableCell>
-                          <Badge variant={statusVariant[permit.status] || 'default'}>
-                            {getStatusText(permit.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <Button asChild variant="outline" size="sm">
-                             <Link href={`/permits/${permit.id}`}>
-                              Ver Detalles
-                            </Link>
-                          </Button>
-                        </TableCell>
+             {loading ? (
+                <div className="flex justify-center items-center h-60">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : filteredPermits.length > 0 ? (
+                <>
+                {/* Mobile View */}
+                <div className="md:hidden space-y-3">
+                    {filteredPermits.map((permit) => (
+                        <Link key={permit.id} href={`/permits/${permit.id}`} className="block">
+                            <Card className="hover:bg-muted/50 transition-colors">
+                                <CardContent className="p-4 flex justify-between items-center">
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-primary truncate">{permit.number || permit.id.substring(0,8)}</p>
+                                        <p className="text-sm text-muted-foreground truncate">{getWorkTypesString(permit.workType)}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy") : 'N/A'}</p>
+                                    </div>
+                                    <div className="flex flex-col items-end ml-2">
+                                        <Badge className={`${getStatusColor(permit.status)} mb-2`}>
+                                            {getStatusText(permit.status)}
+                                        </Badge>
+                                        <ChevronRight className="h-5 w-5 text-muted-foreground"/>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+
+                {/* Desktop View */}
+                <div className="rounded-md border hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Número</TableHead>
+                        <TableHead>Tipo de Trabajo</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Creado</TableHead>
+                        <TableHead>
+                          <span className="sr-only">Acciones</span>
+                        </TableHead>
                       </TableRow>
-                    ))
-                  ) : (
-                     <TableRow>
-                      <TableCell colSpan={5} className="h-60 text-center">
-                        <FileX className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <p className="mt-4 font-semibold">No se encontraron permisos</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {searchTerm ? `No hay resultados para "${searchTerm}".` : 'No hay permisos registrados.'}
-                        </p>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredPermits.map((permit) => (
+                          <TableRow key={permit.id}>
+                            <TableCell className="font-medium">
+                              <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
+                                {permit.number || permit.id.substring(0, 8)}
+                              </Link>
+                            </TableCell>
+                            <TableCell>{getWorkTypesString(permit.workType)}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(permit.status)}>
+                                {getStatusText(permit.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Button asChild variant="outline" size="sm">
+                                 <Link href={`/permits/${permit.id}`}>
+                                  Ver Detalles
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                </>
+            ) : (
+                <div className="h-60 text-center flex flex-col justify-center items-center">
+                    <FileX className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 font-semibold">No se encontraron permisos</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {searchTerm ? `No hay resultados para "${searchTerm}".` : 'No hay permisos registrados.'}
+                    </p>
+                </div>
+            )}
           </div>
         </CardContent>
       </Card>

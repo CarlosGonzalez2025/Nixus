@@ -24,6 +24,8 @@ import {
   Trash2,
   Clock,
   Check,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -494,8 +496,8 @@ export default function CreatePermitPage() {
     { label: "Info General", condition: true },
     { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
     { label: "Anexo Confinado", condition: selectedWorkTypes.includes('confinado')},
-    { label: "Anexo Izaje", condition: selectedWorkTypes.includes('izaje')},
     { label: "Anexo Energías", condition: selectedWorkTypes.includes('energia')},
+    { label: "Anexo Izaje", condition: selectedWorkTypes.includes('izaje')},
     { label: "Peligros", condition: true },
     { label: "EPP", condition: true },
     { label: "Sistemas y Emergencia", condition: true },
@@ -755,8 +757,8 @@ export default function CreatePermitPage() {
 
   return (
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
-      <div className="text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)` }}>
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <header className="text-white shadow-lg sticky top-0 z-20" style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)` }}>
+        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
           <div className="flex justify-between items-center">
             <div>
               <div className="flex items-center gap-3">
@@ -783,16 +785,16 @@ export default function CreatePermitPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </header>
       
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-white border-b shadow-sm sticky top-[68px] md:top-[80px] z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
           <div className="flex items-center justify-between mb-4">
             {steps.map((s_info, s_idx) => {
               const s = s_idx + 1;
               return(
               <div key={s} className="flex items-center flex-1">
-                <div className={`relative flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all ${
+                <div className={`relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full font-bold text-sm transition-all ${
                   s === step ? 'ring-4 scale-110 shadow-lg text-white' :
                   s < step ? 'text-white' :
                   'bg-gray-200 text-gray-600'
@@ -801,7 +803,7 @@ export default function CreatePermitPage() {
                   {s < step ? <CheckCircle size={20}/> : s_idx + 1}
                 </div>
                 {s < steps.length && (
-                  <div className="flex-1 h-1 mx-2 rounded" style={{ 
+                  <div className="flex-1 h-1 mx-1 md:mx-2 rounded" style={{ 
                     backgroundColor: s < step ? colors.success : '#E5E7EB' 
                   }} />
                 )}
@@ -810,21 +812,21 @@ export default function CreatePermitPage() {
           </div>
           <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
             {steps.map((s_info, s_idx) => (
-              <span key={s_idx} className="text-xs text-center font-medium" style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{s_info.label}</span>
+              <span key={s_idx} className="text-[10px] md:text-xs text-center font-medium" style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{s_info.label}</span>
             ))}
           </div>
         </div>
       </div>
       
-      <div className="max-w-5xl mx-auto p-4 pb-24 w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
+        <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
           {currentStepInfo.label === "Info General" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                   Información General del Permiso
                 </h2>
-                <p className="text-muted-foreground">Complete todos los campos obligatorios (*)</p>
+                <p className="text-muted-foreground text-sm">Complete todos los campos obligatorios (*)</p>
               </div>
                 
                  <div>
@@ -945,10 +947,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Anexo Altura" && (
               <div className="space-y-6">
                    <div className="text-center mb-6">
-                      <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                      <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                           ANEXO 1 - TRABAJOS EN ALTURA
                       </h2>
-                      <p className="text-muted-foreground">Complete toda la información requerida para trabajos en altura.</p>
+                      <p className="text-muted-foreground text-sm">Complete toda la información requerida para trabajos en altura.</p>
                   </div>
 
                    <div className="p-4 border rounded-lg space-y-4">
@@ -1012,10 +1014,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Anexo Confinado" && (
             <div className="space-y-6">
                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                         ANEXO 2 - TRABAJOS EN ESPACIOS CONFINADOS
                     </h2>
-                    <p className="text-muted-foreground">Complete toda la información requerida para este anexo.</p>
+                    <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
                 </div>
 
                 <div className="p-4 border rounded-lg space-y-4">
@@ -1124,10 +1126,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Anexo Izaje" && (
              <div className="space-y-6">
                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                         ANEXO 4 - IZAJE DE CARGAS
                     </h2>
-                    <p className="text-muted-foreground">Complete toda la información requerida para este anexo.</p>
+                    <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
                 </div>
 
                 <div className="p-4 border rounded-lg space-y-4">
@@ -1240,10 +1242,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Anexo Energías" && (
             <div className="space-y-6">
                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                         ANEXO 3 - TRABAJOS CON ENERGÍAS
                     </h2>
-                    <p className="text-muted-foreground">Complete toda la información requerida para este anexo.</p>
+                    <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
                 </div>
 
                 <div className="p-4 border rounded-lg space-y-4">
@@ -1300,10 +1302,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Peligros" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                   Verificación de Peligros
                 </h2>
-                <p className="text-muted-foreground">Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control</p>
+                <p className="text-muted-foreground text-sm">Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
@@ -1320,10 +1322,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "EPP" && (
             <div className="space-y-6">
                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                         EPP - Señalización
                     </h2>
-                    <p className="text-muted-foreground">Verifique el estado de los equipos de protección y señalización.</p>
+                    <p className="text-muted-foreground text-sm">Verifique el estado de los equipos de protección y señalización.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1345,10 +1347,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Sistemas y Emergencia" && (
              <div className="space-y-6">
                 <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                     Sistemas de Prevención y Emergencias
                   </h2>
-                  <p className="text-muted-foreground">Verifique los sistemas de prevención y el plan de emergencias.</p>
+                  <p className="text-muted-foreground text-sm">Verifique los sistemas de prevención y el plan de emergencias.</p>
                 </div>
                 
                  <div className="p-4 border rounded-lg">
@@ -1388,10 +1390,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Trabajadores" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                   Trabajadores Ejecutantes Externos
                 </h2>
-                <p className="text-muted-foreground">Registre todos los trabajadores externos que participarán en esta tarea</p>
+                <p className="text-muted-foreground text-sm">Registre todos los trabajadores externos que participarán en esta tarea</p>
               </div>
 
               <div className="space-y-4">
@@ -1437,10 +1439,10 @@ export default function CreatePermitPage() {
           {currentStepInfo.label === "Revisión" && (
             <div className="space-y-8">
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                   Revisión Final y Envío
                 </h2>
-                <p className="text-muted-foreground">Verifique toda la información antes de enviar</p>
+                <p className="text-muted-foreground text-sm">Verifique toda la información antes de enviar</p>
               </div>
                 <div className="border-2 border-gray-200 rounded-xl p-6">
                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
@@ -1498,7 +1500,7 @@ export default function CreatePermitPage() {
 
                 <div className="rounded-xl p-6 bg-yellow-50 border-2 border-yellow-400">
                   <p className="text-sm flex items-start gap-3 text-yellow-800">
-                    <AlertTriangle className="text-yellow-500" style={{minWidth: 20}} size={20} />
+                    <AlertTriangle className="text-yellow-500 mt-1" style={{minWidth: 20}} size={20} />
                     <span>
                       <strong>Importante:</strong> Al hacer clic en "Enviar para Aprobación", usted crea el permiso y lo envía para el flujo de firmas. Deberá ir a la página de detalles para firmarlo.
                     </span>
@@ -1510,18 +1512,17 @@ export default function CreatePermitPage() {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-20">
-          <div className="max-w-5xl mx-auto px-4 py-4 flex gap-4">
-            {step > 1 && (
-              <Button
-                onClick={() => setStep(step - 1)}
-                disabled={isSubmitting}
-                variant="outline"
-                className="px-8 py-3 h-auto"
-              >
-                ← Anterior
-              </Button>
-            )}
+        <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20">
+          <div className="max-w-5xl mx-auto px-4 py-3 flex gap-4">
+            <Button
+              onClick={() => setStep(step - 1)}
+              disabled={isSubmitting || step === 1}
+              variant="outline"
+              className="px-6 py-3 h-auto md:px-8"
+            >
+              <ArrowLeft className="mr-2" />
+              Anterior
+            </Button>
             
             {step < steps.length ? (
               <Button
@@ -1532,27 +1533,28 @@ export default function CreatePermitPage() {
                     toast({
                       variant: 'destructive',
                       title: 'Campos incompletos',
-                      description: 'Por favor complete todos los campos obligatorios para continuar.'
+                      description: 'Por favor complete todos los campos obligatorios (*) para continuar.'
                     })
                   }
                 }}
                 disabled={isSubmitting}
                 className="flex-1 py-3 h-auto"
               >
-                Siguiente →
+                Siguiente
+                <ArrowRight className="ml-2" />
               </Button>
             ) : (
               <Button
                 onClick={handleSavePermit}
                 disabled={isSubmitting}
-                className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700"
+                className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
               >
                 {isSubmitting ? (
-                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
-                   <CheckCircle size={24} className="mr-2" />
+                   <CheckCircle size={22} className="mr-2" />
                 )}
-                <span className="text-lg">Enviar para Aprobación</span>
+                <span>Enviar para Aprobación</span>
               </Button>
             )}
           </div>
@@ -1651,7 +1653,7 @@ export default function CreatePermitPage() {
 
               <div className="space-y-3">
                 <Label>Firmas del Trabajador</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 border rounded-lg text-center">
                     <Label>Firma Apertura</Label>
                     {currentWorker?.firmaApertura ? (
@@ -1691,7 +1693,7 @@ export default function CreatePermitPage() {
       </Dialog>
 
        <Dialog open={isSignaturePadOpen} onOpenChange={setIsSignaturePadOpen}>
-        <DialogContent>
+        <DialogContent className="w-[90vw] max-w-lg">
           <DialogHeader>
             <DialogTitle>Registrar Firma</DialogTitle>
           </DialogHeader>

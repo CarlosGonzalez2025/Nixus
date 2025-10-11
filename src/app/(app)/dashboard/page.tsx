@@ -113,14 +113,20 @@ export default function Dashboard() {
       
       setPermits(allRecentPermits);
       
-      setStats({
-        total: allRecentPermits.length,
-        pendiente: allRecentPermits.filter(p => p.status === 'pendiente_revision').length,
-        aprobado: allRecentPermits.filter(p => p.status === 'aprobado').length,
-        enEjecucion: allRecentPermits.filter(p => p.status === 'en_ejecucion').length
+      const statsQuery = query(collection(db, 'permits'));
+      const statsUnsubscribe = onSnapshot(statsQuery, (statsSnapshot) => {
+          const allPermits = statsSnapshot.docs.map(d => d.data() as Permit);
+          setStats({
+            total: allPermits.length,
+            pendiente: allPermits.filter(p => p.status === 'pendiente_revision').length,
+            aprobado: allPermits.filter(p => p.status === 'aprobado').length,
+            enEjecucion: allPermits.filter(p => p.status === 'en_ejecucion').length
+          });
       });
       
       setLoading(false);
+
+      return () => statsUnsubscribe();
     }, (error) => {
       console.error('Error loading permits:', error);
       setLoading(false);
@@ -131,7 +137,7 @@ export default function Dashboard() {
 
   const statsCards = [
       {
-        title: 'Permisos Recientes',
+        title: 'Permisos Totales',
         value: stats.total,
         icon: FileText,
         color: 'hsl(var(--primary))',
@@ -166,7 +172,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
+    <div className="flex flex-1 flex-col gap-6 p-4 md:p-8">
        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -248,7 +254,34 @@ export default function Dashboard() {
                   )}
                 </div>
               ) : (
-                <Table>
+                <>
+                {/* Mobile View - Cards */}
+                <div className="md:hidden space-y-4">
+                  {permits.map((permit) => (
+                    <Link key={permit.id} href={`/permits/${permit.id}`} className="block">
+                      <Card className="hover:bg-muted/50 transition-colors">
+                        <CardContent className="p-4 flex flex-col gap-2">
+                           <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-semibold text-primary">{permit.number || permit.id.substring(0,8)}</p>
+                                <p className="text-sm text-muted-foreground">{getWorkTypesString(permit.workType)}</p>
+                              </div>
+                              <Badge className={getStatusColor(permit.status)}>
+                                  {getStatusText(permit.status)}
+                              </Badge>
+                           </div>
+                           <div className="text-xs text-muted-foreground pt-2 border-t mt-2">
+                            <p>Creado por: {permit.user?.displayName || 'N/A'}</p>
+                            <p>Fecha: {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'}</p>
+                           </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+                
+                {/* Desktop View - Table */}
+                <Table className="hidden md:table">
                     <TableHeader>
                     <TableRow>
                         <TableHead>Número</TableHead>
@@ -288,11 +321,10 @@ export default function Dashboard() {
                     ))}
                     </TableBody>
                 </Table>
+                </>
              )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
