@@ -29,6 +29,7 @@ import {
   Settings,
   Users,
   Shield,
+  MessageSquare,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
