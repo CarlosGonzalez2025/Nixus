@@ -26,6 +26,7 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
+  Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +81,9 @@ export default function CreatePermitPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAssessing, setIsAssessing] = useState(false);
   const [recommendations, setRecommendations] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '', link: '' });
+
 
   // Step 1
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
@@ -470,13 +474,13 @@ export default function CreatePermitPage() {
           ...fullPermitData
         });
       
-      if (result.success) {
-        toast({
-          title: 'Permiso Creado Exitosamente',
-          description: 'Su permiso ha sido enviado para revisión.',
-          className: 'bg-green-100 dark:bg-green-900',
+      if (result.success && result.permitId) {
+        setNewPermitInfo({
+            id: result.permitId,
+            number: result.permitNumber || '',
+            link: `${window.location.origin}/permits/${result.permitId}/register-worker`
         });
-        router.push('/dashboard');
+        setShowSuccessDialog(true);
       } else {
         throw new Error(result.error || 'Hubo un error creando el permiso.');
       }
@@ -756,6 +760,7 @@ export default function CreatePermitPage() {
 
 
   return (
+    <>
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
       <header className="text-white shadow-lg sticky top-0 z-20" style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)` }}>
         <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
@@ -1561,6 +1566,48 @@ export default function CreatePermitPage() {
         </div>
       </div>
       
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-green-600">
+                      <CheckCircle />
+                      ¡Permiso Creado Exitosamente!
+                  </DialogTitle>
+                  <DialogDescription>
+                      El permiso N° <strong>{newPermitInfo.number}</strong> ha sido creado y enviado para revisión.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                  <p>Puedes agregar trabajadores de dos maneras:</p>
+                  <div className="space-y-2">
+                      <Label className="font-bold">Opción 1: Link de Auto-Registro</Label>
+                      <p className="text-xs text-muted-foreground">Comparte este link con los trabajadores para que ellos mismos completen su información.</p>
+                      <div className="flex items-center space-x-2">
+                          <Input value={newPermitInfo.link} readOnly />
+                          <Button type="button" size="sm" onClick={() => {
+                              navigator.clipboard.writeText(newPermitInfo.link);
+                              toast({ title: "Link Copiado" });
+                          }}>
+                              <Copy className="h-4 w-4" />
+                          </Button>
+                      </div>
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="font-bold">Opción 2: Ir al Permiso</Label>
+                      <p className="text-xs text-muted-foreground">Ve a la página de detalles del permiso para gestionar las firmas y ver el progreso.</p>
+                       <Button onClick={() => router.push(`/permits/${newPermitInfo.id}`)} className="w-full">
+                          Ver Detalles del Permiso
+                       </Button>
+                  </div>
+              </div>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                      Ir al Dashboard
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+
       {/* Add/Edit Worker Dialog */}
       <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
         <DialogContent className="sm:max-w-[650px] h-[90vh] flex flex-col">
@@ -1701,5 +1748,6 @@ export default function CreatePermitPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }

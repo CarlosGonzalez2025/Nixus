@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit } from '@/types';
+import type { Permit, ExternalWorker } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 
@@ -97,6 +97,33 @@ export async function createPermit(data: PermitCreateData) {
     return { 
       success: false, 
       error: error.message || 'Could not create permit. Please try again.' 
+    };
+  }
+}
+
+export async function registerWorkerForPermit(permitId: string, workerData: ExternalWorker) {
+  if (!permitId || !workerData) {
+    return { success: false, error: 'Invalid data provided.' };
+  }
+
+  try {
+    const permitRef = adminDb.collection('permits').doc(permitId);
+    
+    // Atomically add the new worker to the 'workers' array
+    await permitRef.update({
+      workers: FieldValue.arrayUnion(workerData)
+    });
+
+    console.log(`✅ Worker ${workerData.nombre} added to permit ${permitId}`);
+    
+    revalidatePath(`/permits/${permitId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("❌ Error registering worker:", error);
+    return { 
+      success: false, 
+      error: error.message || 'Could not register worker. Please try again.' 
     };
   }
 }
