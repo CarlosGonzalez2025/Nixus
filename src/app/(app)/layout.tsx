@@ -41,10 +41,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import type { UserRole } from '@/types';
 
 
-const getRoleName = (role?: string) => {
-  const roles: { [key: string]: string } = {
+const getRoleName = (role?: UserRole) => {
+  const roles: { [key in UserRole]: string } = {
     solicitante: 'Solicitante de la Tarea',
     autorizante: 'Quien Autoriza',
     lider_tarea: 'Líder de la Tarea',
@@ -53,7 +54,7 @@ const getRoleName = (role?: string) => {
     admin: 'Administrador',
     mantenimiento: 'Mantenimiento',
   };
-  return role ? roles[role] || role : 'Usuario';
+  return role ? roles[role] || 'Usuario' : 'Usuario';
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -207,6 +208,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Configuración</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings/whatsapp')}>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <span>Notificaciones WhatsApp</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
