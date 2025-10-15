@@ -73,23 +73,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router, pathname, isPublicWorkerPage]);
 
-  // For public pages, we don't need to show a loading spinner or wait for the user.
-  if (isPublicWorkerPage) {
-    return (
-       <main className="flex-1">
-          {children}
-       </main>
-    );
-  }
-
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     return name
@@ -98,6 +81,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       .slice(0, 2)
       .join('');
   };
+
+  // For public pages, we just render the children.
+  if (isPublicWorkerPage) {
+    return (
+       <main className="flex-1">
+          {children}
+       </main>
+    );
+  }
+
+  // For protected pages, show loader until auth is checked, then render layout.
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
