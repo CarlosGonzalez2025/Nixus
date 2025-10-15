@@ -43,6 +43,17 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -413,9 +424,24 @@ export default function CreatePermitPage() {
 
 
   const canProceed = () => {
-    if (step === 1) {
-      return selectedWorkTypes.length > 0 && generalInfo.workDescription && generalInfo.validFrom && generalInfo.validUntil;
+    const currentStepInfo = steps[step - 1];
+    if (currentStepInfo.label === "Info General") {
+      const missingFields = [];
+      if (selectedWorkTypes.length === 0) missingFields.push("Tipo de Trabajo");
+      if (!generalInfo.workDescription) missingFields.push("Descripción del Trabajo");
+      if (!generalInfo.validFrom) missingFields.push("Fecha de Inicio");
+      if (!generalInfo.validUntil) missingFields.push("Fecha de Fin");
+      
+      if (missingFields.length > 0) {
+        toast({
+            variant: "destructive",
+            title: "Campos Incompletos",
+            description: `Por favor, complete los siguientes campos: ${missingFields.join(', ')}.`,
+        });
+        return false;
+      }
     }
+    // Add more validation for other steps if needed
     return true;
   };
   
@@ -1502,14 +1528,6 @@ export default function CreatePermitPage() {
                     </div>
                 </div>
 
-                <div className="rounded-xl p-6 bg-yellow-50 border-2 border-yellow-400">
-                  <p className="text-sm flex items-start gap-3 text-yellow-800">
-                    <AlertTriangle className="text-yellow-500 mt-1" style={{minWidth: 20}} size={20} />
-                    <span>
-                      <strong>Importante:</strong> Al hacer clic en "Enviar para Aprobación", usted crea el permiso y lo envía para el flujo de firmas. Deberá ir a la página de detalles para firmarlo.
-                    </span>
-                  </p>
-                </div>
             </div>
           )}
 
@@ -1533,12 +1551,6 @@ export default function CreatePermitPage() {
                 onClick={() => {
                   if (canProceed()) {
                     setStep(step + 1);
-                  } else {
-                    toast({
-                      variant: 'destructive',
-                      title: 'Campos incompletos',
-                      description: 'Por favor complete todos los campos obligatorios (*) para continuar.'
-                    })
                   }
                 }}
                 disabled={isSubmitting}
@@ -1548,18 +1560,35 @@ export default function CreatePermitPage() {
                 <ArrowRight className="ml-2" />
               </Button>
             ) : (
-              <Button
-                onClick={handleSavePermit}
-                disabled={isSubmitting}
-                className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
-              >
-                {isSubmitting ? (
-                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                   <CheckCircle size={22} className="mr-2" />
-                )}
-                <span>Enviar para Aprobación</span>
-              </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                         <Button
+                            disabled={isSubmitting}
+                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
+                        >
+                            {isSubmitting ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            ) : (
+                            <CheckCircle size={22} className="mr-2" />
+                            )}
+                            <span>Enviar para Aprobación</span>
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Está seguro de enviar el permiso?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Una vez que envíe el permiso para su aprobación, ya no podrá realizar modificaciones. Asegúrese de que toda la información es correcta.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleSavePermit} disabled={isSubmitting}>
+                                 {isSubmitting ? 'Enviando...' : 'Sí, enviar ahora'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
           </div>
         </div>
