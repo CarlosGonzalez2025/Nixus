@@ -4,7 +4,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from './button';
 import { Eraser, Save } from 'lucide-react';
-import { DialogClose, DialogFooter } from './dialog';
+import { DialogFooter } from './dialog';
+import { Checkbox } from './checkbox';
+import { Label } from './label';
 
 interface SignaturePadProps {
   onSave: (signature: string) => void;
@@ -14,6 +16,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [hasConsented, setHasConsented] = useState(false);
 
   const getCanvasContext = () => {
     const canvas = canvasRef.current;
@@ -130,12 +133,22 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
+      <div className="flex items-start space-x-3 my-4">
+        <Checkbox 
+          id="terms" 
+          checked={hasConsented}
+          onCheckedChange={(checked) => setHasConsented(checked as boolean)}
+        />
+        <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
+          Autorizo el tratamiento de mis datos personales y el uso de mi firma digital, de conformidad con la Ley 1581 de 2012 de Colombia, para la validación y gestión de documentos dentro del sistema SGPT Móvil.
+        </Label>
+      </div>
       <DialogFooter className="w-full">
          <Button variant="outline" onClick={clearPad}>
           <Eraser className="mr-2 h-4 w-4" />
           Limpiar
         </Button>
-        <Button onClick={handleSave}>
+        <Button onClick={handleSave} disabled={!hasConsented}>
           <Save className="mr-2 h-4 w-4" />
           Guardar Firma
         </Button>
