@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/hooks/use-auth';
-import { Toaster } from '@/components/ui/toaster';
+import { Providers } from './providers';
 
 // ========================================
 // METADATA
@@ -71,7 +70,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#00B4D8', // ✅ Movido aquí desde metadata
+  themeColor: '#00B4D8',
 };
 
 // ========================================
@@ -97,10 +96,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
+        <Providers>
           {children}
-          <Toaster />
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

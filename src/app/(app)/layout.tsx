@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   FileText,
@@ -63,15 +63,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
 
-  // Check if the current page is the public worker registration page.
-  const isPublicWorkerPage = pathname.includes('/register-worker');
+  const [isPublicRoute, setIsPublicRoute] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // If it's a protected page, enforce authentication.
-    if (!isPublicWorkerPage && !loading && !user) {
+    // Verificar si es una ruta pública (register-worker)
+    const checkRoute = pathname?.includes('/register-worker');
+    setIsPublicRoute(checkRoute || false);
+    setIsChecking(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    // Solo redirigir al login si:
+    // 1. No estamos cargando auth
+    // 2. No hay usuario
+    // 3. NO es una ruta pública
+    // 4. Ya terminamos de verificar la ruta
+    if (!loading && !user && !isPublicRoute && !isChecking) {
       router.replace('/login');
     }
-  }, [user, loading, router, pathname, isPublicWorkerPage]);
+  }, [user, loading, router, isPublicRoute, isChecking]);
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -82,8 +93,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       .join('');
   };
 
-  // For public pages, we just render the children.
-  if (isPublicWorkerPage) {
+  // Mostrar loader mientras se verifica la ruta y la autenticación
+  if (isChecking || loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // Si es ruta pública, renderizar solo el contenido
+  if (isPublicRoute) {
     return (
        <main className="flex-1">
           {children}
@@ -91,8 +111,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // For protected pages, show loader until auth is checked, then render layout.
-  if (loading || !user) {
+  // Si no hay usuario, el useEffect de arriba ya está manejando la redirección,
+  // mientras tanto, mostramos un loader para evitar parpadeos.
+  if (!user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -100,6 +121,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Renderizar el layout completo para usuarios autenticados
   return (
     <SidebarProvider>
       <FirebaseErrorListener />
