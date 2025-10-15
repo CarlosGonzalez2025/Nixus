@@ -406,6 +406,9 @@ export default function PermitDetailPage() {
     const { role } = currentUser;
     const { status, approvals } = permit;
 
+    // Defensive check for approvals object
+    if (!approvals) return false;
+
     const allRequiredSignaturesDone = 
       approvals.solicitante?.status === 'aprobado' &&
       approvals.autorizante?.status === 'aprobado';
