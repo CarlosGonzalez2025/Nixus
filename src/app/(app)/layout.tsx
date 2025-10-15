@@ -30,6 +30,7 @@ import {
   Users,
   Shield,
   MessageSquare,
+  BookOpen,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -149,6 +150,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+             </SidebarGroup>
+             <SidebarSeparator />
+             <SidebarGroup>
+                <SidebarGroupLabel>Ayuda</SidebarGroupLabel>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.push('/guide')}
+                    isActive={pathname === '/guide'}
+                    tooltip="Guía de Flujo"
+                  >
+                    <BookOpen />
+                    <span>Guía de Flujo</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
              </SidebarGroup>
              <SidebarSeparator />
             {user.role === 'admin' && (
