@@ -9,7 +9,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit, ExternalWorker } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { registerWorkerForPermit } from '../create/actions';
+import { registerWorkerForPermit } from '@/app/(app)/permits/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +25,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import { Loader2, UserPlus, FileText, Send, CheckCircle, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { Logo } from '@/components/logo';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const epsList = ["SURA", "Sanitas", "Compensar", "Nueva EPS", "Salud Total", "Coomeva", "Famisanar", "Aliansalud", "Mutual SER", "Cajacopi", "Otra"];
 const arlList = ["SURA", "Positiva", "Colmena", "AXA Colpatria", "Equidad Seguros", "Bolívar", "Alfa", "Otra"];
@@ -319,3 +320,5 @@ export default function RegisterWorkerPage() {
     </div>
   );
 }
+
+    

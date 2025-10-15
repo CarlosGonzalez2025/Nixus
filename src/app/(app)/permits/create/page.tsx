@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
-import { createPermit } from './actions';
+import { createPermit } from '../actions';
 import {
   CheckCircle,
   XCircle,
@@ -1751,3 +1751,5 @@ export default function CreatePermitPage() {
     </>
   );
 }
+
+    
