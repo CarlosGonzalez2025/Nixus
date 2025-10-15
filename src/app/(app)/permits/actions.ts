@@ -102,32 +102,3 @@ export async function createPermit(data: PermitCreateData) {
     };
   }
 }
-
-export async function registerWorkerForPermit(permitId: string, workerData: ExternalWorker) {
-  if (!permitId || !workerData) {
-    return { success: false, error: 'Invalid data provided.' };
-  }
-
-  try {
-    const permitRef = adminDb.collection('permits').doc(permitId);
-    
-    // Atomically add the new worker to the 'workers' array
-    await permitRef.update({
-      workers: FieldValue.arrayUnion(workerData)
-    });
-
-    console.log(`✅ Worker ${workerData.nombre} added to permit ${permitId}`);
-    
-    revalidatePath(`/permits/${permitId}`);
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("❌ Error registering worker:", error);
-    return { 
-      success: false, 
-      error: error.message || 'Could not register worker. Please try again.' 
-    };
-  }
-}
-
-    

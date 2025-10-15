@@ -82,7 +82,7 @@ export default function CreatePermitPage() {
   const [isAssessing, setIsAssessing] = useState(false);
   const [recommendations, setRecommendations] = useState('');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '', link: '' });
+  const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
 
   // Step 1
@@ -478,7 +478,6 @@ export default function CreatePermitPage() {
         setNewPermitInfo({
             id: result.permitId,
             number: result.permitNumber || '',
-            link: `${window.location.origin}/permits/${result.permitId}/register-worker`
         });
         setShowSuccessDialog(true);
       } else {
@@ -1577,33 +1576,13 @@ export default function CreatePermitPage() {
                       El permiso N° <strong>{newPermitInfo.number}</strong> ha sido creado y enviado para revisión.
                   </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                  <p>Puedes agregar trabajadores de dos maneras:</p>
-                  <div className="space-y-2">
-                      <Label className="font-bold">Opción 1: Link de Auto-Registro</Label>
-                      <p className="text-xs text-muted-foreground">Comparte este link con los trabajadores para que ellos mismos completen su información.</p>
-                      <div className="flex items-center space-x-2">
-                          <Input value={newPermitInfo.link} readOnly />
-                          <Button type="button" size="sm" onClick={() => {
-                              navigator.clipboard.writeText(newPermitInfo.link);
-                              toast({ title: "Link Copiado" });
-                          }}>
-                              <Copy className="h-4 w-4" />
-                          </Button>
-                      </div>
-                  </div>
-                  <div className="space-y-2">
-                      <Label className="font-bold">Opción 2: Ir al Permiso</Label>
-                      <p className="text-xs text-muted-foreground">Ve a la página de detalles del permiso para gestionar las firmas y ver el progreso.</p>
-                       <Button onClick={() => router.push(`/permits/${newPermitInfo.id}`)} className="w-full">
-                          Ver Detalles del Permiso
-                       </Button>
-                  </div>
-              </div>
-              <DialogFooter>
+              <DialogFooter className="sm:justify-between gap-2">
                   <Button variant="outline" onClick={() => router.push('/dashboard')}>
                       Ir al Dashboard
                   </Button>
+                   <Button onClick={() => router.push(`/permits/${newPermitInfo.id}`)}>
+                      Ver Detalles del Permiso
+                   </Button>
               </DialogFooter>
           </DialogContent>
       </Dialog>
@@ -1751,5 +1730,3 @@ export default function CreatePermitPage() {
     </>
   );
 }
-
-    
