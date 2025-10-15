@@ -63,11 +63,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
 
+  // Check if the current page is the public worker registration page.
+  const isPublicWorkerPage = pathname.includes('/register-worker');
+
   useEffect(() => {
-    if (!loading && !user) {
+    // If it's a protected page, enforce authentication.
+    if (!isPublicWorkerPage && !loading && !user) {
       router.replace('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname, isPublicWorkerPage]);
+
+  // For public pages, we don't need to show a loading spinner or wait for the user.
+  if (isPublicWorkerPage) {
+    return (
+       <main className="flex-1">
+          {children}
+       </main>
+    );
+  }
 
   if (loading || !user) {
     return (
@@ -120,7 +133,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => router.push('/permits')}
-                    isActive={pathname.startsWith('/permits') && pathname !== '/permits/create'}
+                    isActive={pathname.startsWith('/permits') && !pathname.includes('/create') && !pathname.includes('/register-worker')}
                     tooltip="Permisos de Trabajo"
                   >
                     <FileText />
