@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -28,6 +28,9 @@ import {
   Check,
   Building,
   ChevronDown,
+  PlayCircle,
+  PauseCircle,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,11 +55,25 @@ import { Logo } from '@/components/logo';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
+import { updatePermitStatus } from '../actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from '@/components/ui/textarea';
+
 
 // ✅ Helper function to handle different date formats
 const parseFirestoreDate = (dateValue: any): Date | null => {
@@ -80,17 +97,17 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
   return null;
 };
 
-const getStatusInfo = (status: string): { text: string; icon: React.ElementType; color: string } => {
-  const statusInfo: { [key: string]: { text: string; icon: React.ElementType; color: string } } = {
-    borrador: { text: 'Borrador', icon: Clock, color: 'text-gray-500' },
-    pendiente_revision: { text: 'Pendiente de Revisión', icon: Clock, color: 'text-yellow-500' },
-    aprobado: { text: 'Aprobado', icon: CheckCircle, color: 'text-green-500' },
-    en_ejecucion: { text: 'En Ejecución', icon: AlertTriangle, color: 'text-purple-500' },
-    suspendido: { text: 'Suspendido', icon: XCircle, color: 'text-orange-500' },
-    cerrado: { text: 'Cerrado', icon: CheckCircle, color: 'text-blue-500' },
-    rechazado: { text: 'Rechazado', icon: XCircle, color: 'text-red-500' },
-  };
-  return statusInfo[status] || { text: status, icon: FileText, color: 'text-gray-500' };
+const getStatusInfo = (status: string): { text: string; icon: React.ElementType; color: string; bgColor: string } => {
+    const statusInfo: { [key: string]: { text: string; icon: React.ElementType; color: string, bgColor: string } } = {
+        borrador: { text: 'Borrador', icon: Clock, color: 'text-gray-600', bgColor: 'bg-gray-100' },
+        pendiente_revision: { text: 'Pendiente de Revisión', icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
+        aprobado: { text: 'Aprobado', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-100' },
+        en_ejecucion: { text: 'En Ejecución', icon: PlayCircle, color: 'text-purple-600', bgColor: 'bg-purple-100' },
+        suspendido: { text: 'Suspendido', icon: PauseCircle, color: 'text-orange-600', bgColor: 'bg-orange-100' },
+        cerrado: { text: 'Cerrado', icon: Lock, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+        rechazado: { text: 'Rechazado', icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100' },
+    };
+    return statusInfo[status] || { text: status, icon: FileText, color: 'text-gray-500', bgColor: 'bg-gray-100' };
 };
 
 const Section: React.FC<{ title: string, children: React.ReactNode, className?: string }> = ({ title, children, className }) => (
@@ -158,6 +175,9 @@ export default function PermitDetailPage() {
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signingRole, setSigningRole] = useState<{role: SignatureRole, type: 'firmaApertura' | 'firmaCierre'} | null>(null);
 
+  const [isStatusChanging, setIsStatusChanging] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!permitId) {
@@ -330,6 +350,34 @@ export default function PermitDetailPage() {
       }
   }
 
+  const handleChangeStatus = async (newStatus: PermitStatus, reason?: string) => {
+    if (!permit) return;
+    setIsStatusChanging(true);
+    try {
+      const result = await updatePermitStatus(permit.id, newStatus, reason);
+      if (result.success) {
+        toast({
+          title: 'Estado Actualizado',
+          description: `El permiso ahora está ${getStatusInfo(newStatus).text}.`,
+          className: 'bg-green-100 dark:bg-green-900',
+        });
+        if(isRejectionDialogOpen) setIsRejectionDialogOpen(false);
+        if(rejectionReason) setRejectionReason("");
+      } else {
+        throw new Error(result.error || 'No se pudo actualizar el estado.');
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error al actualizar',
+        description: error.message,
+      });
+    } finally {
+      setIsStatusChanging(false);
+    }
+  };
+
+
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
@@ -339,19 +387,44 @@ export default function PermitDetailPage() {
       if(!currentUser || !permit || !permit.approvals) return false;
       
       const approval = permit.approvals[role];
-      const isCorrectRole = currentUser.role === role;
+      const isCorrectRole = currentUser.role === role || currentUser.role === 'admin';
       
       if (type === 'firmaApertura') {
           // Can sign for opening if user is the correct role, it's pending, and there's no opening signature yet
-          return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura;
+          return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura && permit.status === 'pendiente_revision';
       }
        if (type === 'firmaCierre') {
           // Can sign for closing if user is correct role, opening is signed, and no closing signature yet
-          const allOpeningSignaturesDone = permit.approvals.solicitante?.firmaApertura && permit.approvals.autorizante?.firmaApertura;
+          const allOpeningSignaturesDone = Object.values(permit.approvals).every(a => a.status === 'aprobado' || a.firmaApertura);
           return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'aprobado');
       }
       return false;
   }
+  
+  const canChangeStatus = (targetStatus: PermitStatus) => {
+    if (!currentUser || !permit) return false;
+    const { role } = currentUser;
+    const { status, approvals } = permit;
+
+    const allRequiredSignaturesDone = 
+      approvals.solicitante?.status === 'aprobado' &&
+      approvals.autorizante?.status === 'aprobado';
+
+    switch (targetStatus) {
+      case 'aprobado':
+        return status === 'pendiente_revision' && allRequiredSignaturesDone && (role === 'autorizante' || role === 'admin');
+      case 'rechazado':
+        return (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
+      case 'en_ejecucion':
+        return status === 'aprobado' && (role === 'lider_tarea' || role === 'admin');
+      case 'suspendido':
+        return status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
+      case 'cerrado':
+        return (status === 'en_ejecucion' || status === 'suspendido') && (role === 'lider_tarea' || role === 'admin');
+      default:
+        return false;
+    }
+  };
 
 
   if (loading || userLoading) {
@@ -380,6 +453,9 @@ export default function PermitDetailPage() {
   if (!permit) {
     return null;
   }
+  
+  const statusInfo = getStatusInfo(permit.status);
+
 
  const hazards = [
     { id: 'ruido', label: 'Ruido' },
@@ -699,16 +775,23 @@ export default function PermitDetailPage() {
     <div className="flex flex-1 flex-col bg-gray-100 pb-16 md:pb-0">
         {/* Action Bar */}
         <div className="max-w-4xl mx-auto w-full bg-gray-100 p-4 sticky top-0 md:top-auto z-10 md:relative">
-            <div className="flex justify-between items-center">
-                 <Button variant="ghost" onClick={() => router.push('/permits')} className="">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-center">
+                 <Button variant="ghost" onClick={() => router.push('/permits')} className="justify-self-start">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Volver al listado
+                    Volver
                 </Button>
-                <div className="flex gap-2">
+                <div className="col-span-1 md:col-span-3 flex justify-end items-center gap-2">
                      <Button onClick={handleExportToPDF} variant="outline" size="sm">
                         <FileDown className="mr-2 h-4 w-4" />
-                        Exportar a PDF
+                        PDF
                     </Button>
+                    {canChangeStatus('aprobado') && <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleChangeStatus('aprobado')} disabled={isStatusChanging}><CheckCircle className="mr-2 h-4 w-4" /> Aprobar</Button> }
+                    {canChangeStatus('rechazado') && 
+                      <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setIsRejectionDialogOpen(true)} disabled={isStatusChanging}><XCircle className="mr-2 h-4 w-4" /> Rechazar</Button> 
+                    }
+                    {canChangeStatus('en_ejecucion') && <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}><PlayCircle className="mr-2 h-4 w-4" /> Iniciar Ejecución</Button>}
+                    {canChangeStatus('suspendido') && <Button size="sm" variant="outline" className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700" onClick={() => handleChangeStatus('suspendido')} disabled={isStatusChanging}><PauseCircle className="mr-2 h-4 w-4" /> Suspender</Button>}
+                    {canChangeStatus('cerrado') && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}><Lock className="mr-2 h-4 w-4" /> Cerrar Permiso</Button>}
                 </div>
             </div>
         </div>
@@ -719,7 +802,7 @@ export default function PermitDetailPage() {
                 <div>
                      <Logo textOnly />
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                     <h1 className="text-xl md:text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
                     <p className="font-mono text-sm md:text-base text-gray-600 mt-2">N°: {permit.number || permit.id.substring(0, 10)}</p>
                     {permit.createdAt && (
@@ -727,6 +810,10 @@ export default function PermitDetailPage() {
                         Creado: {format(permit.createdAt, "dd/MM/yyyy HH:mm")}
                       </p>
                     )}
+                    <Badge className={`mt-2 ${statusInfo.bgColor} ${statusInfo.color} text-base`} >
+                        <statusInfo.icon className="mr-2 h-4 w-4" />
+                        {statusInfo.text}
+                    </Badge>
                 </div>
             </header>
             
@@ -1174,6 +1261,39 @@ export default function PermitDetailPage() {
                 <SignaturePad onSave={handleSaveSignature} />
             </DialogContent>
         </Dialog>
+        
+        <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Rechazar Permiso de Trabajo</DialogTitle>
+                    <DialogDescription>
+                        Por favor, especifique el motivo del rechazo. Este motivo será registrado y visible para el solicitante.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Textarea 
+                        placeholder="Escriba aquí el motivo del rechazo..."
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        rows={4}
+                    />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost">Cancelar</Button>
+                    </DialogClose>
+                    <Button 
+                        variant="destructive"
+                        onClick={() => handleChangeStatus('rechazado', rejectionReason)}
+                        disabled={!rejectionReason || isStatusChanging}
+                    >
+                        {isStatusChanging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Confirmar Rechazo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

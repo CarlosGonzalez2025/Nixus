@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -101,4 +101,33 @@ export async function createPermit(data: PermitCreateData) {
       error: error.message || 'Could not create permit. Please try again.' 
     };
   }
+}
+
+export async function updatePermitStatus(permitId: string, status: PermitStatus, reason?: string) {
+    if (!permitId) {
+        return { success: false, error: 'Permit ID is required.' };
+    }
+
+    try {
+        const docRef = adminDb.collection('permits').doc(permitId);
+        const updateData: { status: PermitStatus; rejectionReason?: string } = { status };
+
+        if (status === 'rechazado' && reason) {
+            updateData.rejectionReason = reason;
+        }
+
+        await docRef.update(updateData);
+        
+        revalidatePath(`/permits/${permitId}`);
+        revalidatePath('/permits');
+        revalidatePath('/dashboard');
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("❌ Error updating permit status:", error);
+        return {
+            success: false,
+            error: error.message || 'Could not update permit status.'
+        };
+    }
 }

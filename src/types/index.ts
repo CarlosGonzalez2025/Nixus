@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -145,6 +146,7 @@ export type Permit = {
   status: PermitStatus;
   createdBy: string;
   createdAt: Timestamp;
+  rejectionReason?: string;
   user?: {
     displayName?: string | null;
     email?: string | null;
@@ -178,5 +180,3 @@ export type Permit = {
   anexoIzaje?: Partial<AnexoIzaje>;
   anexoEnergias?: Partial<AnexoEnergias>;
 };
-
-    
