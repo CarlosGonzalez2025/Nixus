@@ -96,9 +96,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
