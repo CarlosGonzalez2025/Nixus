@@ -34,8 +34,9 @@ interface NotificationPayload {
 
 export async function sendWhatsAppNotification(payload: NotificationPayload) {
   if (!accountSid || !authToken || !twilioWhatsAppFrom || !whatsAppTo) {
-    console.error('Twilio credentials or phone numbers are not configured in environment variables.');
-    throw new Error('Notification service is not configured.');
+    console.error('⚠️ [Twilio] Error: Credenciales no configuradas. Las variables de entorno (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM, WHATSAPP_TO) deben estar definidas.');
+    // No lanzar error para no detener el flujo principal, solo registrar.
+    return { success: false, error: 'Servicio de notificaciones no configurado en el servidor.' };
   }
 
   const client = twilio(accountSid, authToken);
@@ -49,18 +50,22 @@ Se ha creado una nueva solicitud de permiso de trabajo.
 👤 *Solicitante:* ${payload.solicitante}
 🛠️ *Tipo de Trabajo:* ${workTypesText}
 
-Por favor, revise la solicitud para su aprobación.`;
+Por favor, revise la solicitud para su aprobación en el siguiente enlace:
+https://sgpt-movil.web.app/permits/${payload.permitId}`;
 
   try {
+    console.log(`[Twilio] Intentando enviar notificación a ${whatsAppTo}...`);
     const message = await client.messages.create({
       body: messageBody,
       from: twilioWhatsAppFrom,
       to: whatsAppTo,
     });
-    console.log(`Message sent with SID: ${message.sid}`);
+    console.log(`✅ [Twilio] Notificación enviada con éxito. SID: ${message.sid}`);
     return { success: true, sid: message.sid };
   } catch (error) {
-    console.error('Failed to send WhatsApp message:', error);
-    throw error;
+    console.error('❌ [Twilio] Falló el envío de la notificación por WhatsApp:', error);
+    // No relanzar el error para no afectar la experiencia de usuario.
+    // El error ya está registrado en el servidor para depuración.
+    return { success: false, error: 'No se pudo enviar la notificación por WhatsApp.' };
   }
 }

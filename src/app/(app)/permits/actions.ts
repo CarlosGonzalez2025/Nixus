@@ -71,22 +71,15 @@ export async function createPermit(data: PermitCreateData) {
     const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
     await docRef.update({ number: permitNumber });
     
-    console.log('✅ Permit created successfully:', docRef.id);
+    console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
 
     // Send WhatsApp notification
-    try {
-      await sendWhatsAppNotification({
+    await sendWhatsAppNotification({
         permitNumber: permitNumber,
         solicitante: userDisplayName || 'N/A',
         workTypes: permitPayload.workType || ['general'],
         permitId: docRef.id,
       });
-      console.log('✅ WhatsApp notification sent successfully.');
-    } catch (notificationError) {
-      console.error('⚠️ Failed to send WhatsApp notification:', notificationError);
-      // We don't fail the whole operation if the notification fails,
-      // but we log it for debugging.
-    }
     
     // Revalidate paths to show the new permit in the lists
     revalidatePath('/permits');
@@ -94,7 +87,7 @@ export async function createPermit(data: PermitCreateData) {
     
     return { success: true, permitId: docRef.id, permitNumber };
   } catch (error: any) {
-    console.error("❌ Error creating permit:", error);
+    console.error("❌ [Action] Error al crear permiso:", error);
     // Return a structured error for the client
     return { 
       success: false, 

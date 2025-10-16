@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,15 +20,23 @@ export default function WhatsAppSetupPage() {
   };
 
   return (
-    <div className="container max-w-2xl py-10">
-      <Card>
+    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+       <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Notificaciones WhatsApp</h1>
+          <p className="text-muted-foreground">
+            Configure su dispositivo para recibir alertas.
+          </p>
+        </div>
+      </div>
+      <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-6 w-6 text-green-600" />
             Configurar Notificaciones de WhatsApp
           </CardTitle>
           <CardDescription>
-            Activa las notificaciones para recibir alertas de permisos de trabajo
+            Siga estos pasos para activar las notificaciones de nuevos permisos de trabajo en su dispositivo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -37,10 +46,10 @@ export default function WhatsAppSetupPage() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm">
                 1
               </span>
-              Abre WhatsApp
+              Abra WhatsApp en su teléfono
             </h3>
             <p className="text-sm text-muted-foreground ml-8">
-              Inicia un nuevo chat con el número de Twilio
+              Inicie un nuevo chat con el número de Twilio Sandbox.
             </p>
           </div>
 
@@ -50,11 +59,14 @@ export default function WhatsAppSetupPage() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm">
                 2
               </span>
-              Envía el código de activación
+              Envíe el código de activación
             </h3>
             <div className="ml-8 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Copie el siguiente código y envíelo como un mensaje al número de Twilio:
+              </p>
               <div className="flex gap-2">
-                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm">
+                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
                   join adjective-thrown
                 </code>
                 <Button 
@@ -70,7 +82,7 @@ export default function WhatsAppSetupPage() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Al número: <strong>+1 415 523 8886</strong>
+                El número de destino es: <strong>+1 415 523 8886</strong>
               </p>
             </div>
           </div>
@@ -81,10 +93,10 @@ export default function WhatsAppSetupPage() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm">
                 3
               </span>
-              Confirmación
+              Reciba la confirmación
             </h3>
             <p className="text-sm text-muted-foreground ml-8">
-              Recibirás un mensaje de confirmación en menos de 5 segundos
+              Si el código es correcto, recibirá un mensaje de confirmación de Twilio en menos de 5 segundos.
             </p>
           </div>
 
@@ -95,7 +107,7 @@ export default function WhatsAppSetupPage() {
             onClick={handleOpenWhatsApp}
           >
             <MessageSquare className="mr-2 h-5 w-5" />
-            Abrir WhatsApp y Activar
+            Activar con un clic
           </Button>
 
           {/* Advertencia */}
@@ -106,8 +118,8 @@ export default function WhatsAppSetupPage() {
                 Nota importante
               </p>
               <p className="text-amber-800">
-                Esta conexión expira cada 72 horas. Si dejas de recibir 
-                notificaciones, simplemente envía el mensaje nuevamente.
+                La conexión con el Sandbox de Twilio expira cada 72 horas. Si deja de recibir 
+                notificaciones, simplemente debe enviar el mensaje de activación nuevamente para reconectar.
               </p>
             </div>
           </div>
