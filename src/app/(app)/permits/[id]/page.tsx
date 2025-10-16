@@ -126,7 +126,7 @@ const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: bool
     </div>
 );
 
-const RadioCheck: React.FC<{ label: string, value?: string | boolean }> = ({ label, value }) => {
+const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueChange?: (value: 'si' | 'no' | 'na') => void, readOnly?: boolean }> = ({ label, value, onValueChange, readOnly = false }) => {
     let checkValue: string;
     if (value === true || value === 'si') {
         checkValue = 'si';
@@ -136,17 +136,39 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean }> = ({ lab
         checkValue = 'na';
     }
 
+    const baseClasses = "flex justify-between items-center p-2 rounded-md";
+    const readOnlyClasses = "bg-gray-50";
+    const interactiveClasses = "bg-white border";
+
+    const getOptionClasses = (option: 'si' | 'no' | 'na') => {
+      const base = "cursor-pointer";
+      const selected = "font-bold text-black";
+      const unselected = "text-gray-400";
+      return `${base} ${checkValue === option ? selected : unselected}`;
+    }
+
     return (
-        <div className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+        <div className={`${baseClasses} ${readOnly ? readOnlyClasses : interactiveClasses}`}>
             <span className="text-xs flex-1">{label}</span>
             <div className="flex gap-2 items-center text-xs font-mono">
-                <span className={checkValue === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
-                <span className={checkValue === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
-                <span className={checkValue === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
+              {readOnly ? (
+                <>
+                  <span className={checkValue === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
+                  <span className={checkValue === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
+                  <span className={checkValue === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
+                </>
+              ) : (
+                <>
+                  <span onClick={() => onValueChange?.('si')} className={getOptionClasses('si')}>SI</span>
+                  <span onClick={() => onValueChange?.('no')} className={getOptionClasses('no')}>NO</span>
+                  <span onClick={() => onValueChange?.('na')} className={getOptionClasses('na')}>NA</span>
+                </>
+              )}
             </div>
         </div>
     );
 };
+
 
 type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst';
 const signatureRoles: { [key in SignatureRole]: string } = {
@@ -178,6 +200,7 @@ export default function PermitDetailPage() {
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
+  const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!permitId) {
@@ -194,6 +217,7 @@ export default function PermitDetailPage() {
           id: docSnap.id,
           ...data,
           createdAt: parseFirestoreDate(data.createdAt),
+          closure: data.closure || {}, // Ensure closure object exists
         } as Permit);
         setError(null);
       } else {
@@ -354,7 +378,7 @@ export default function PermitDetailPage() {
     if (!permit) return;
     setIsStatusChanging(true);
     try {
-      const result = await updatePermitStatus(permit.id, newStatus, reason);
+      const result = await updatePermitStatus(permit.id, newStatus, reason, permit.closure);
       if (result.success) {
         toast({
           title: 'Estado Actualizado',
@@ -363,6 +387,7 @@ export default function PermitDetailPage() {
         });
         if(isRejectionDialogOpen) setIsRejectionDialogOpen(false);
         if(rejectionReason) setRejectionReason("");
+        if(isClosureDialogOpen) setIsClosureDialogOpen(false);
       } else {
         throw new Error(result.error || 'No se pudo actualizar el estado.');
       }
@@ -396,7 +421,7 @@ export default function PermitDetailPage() {
        if (type === 'firmaCierre') {
           // Can sign for closing if user is correct role, opening is signed, and no closing signature yet
           const allOpeningSignaturesDone = Object.values(permit.approvals).every(a => a.status === 'aprobado' || a.firmaApertura);
-          return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'aprobado');
+          return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'suspendido');
       }
       return false;
   }
@@ -428,6 +453,20 @@ export default function PermitDetailPage() {
         return false;
     }
   };
+
+  const handleClosureFieldChange = (field: string, value: any) => {
+    if (!permit) return;
+    setPermit(prev => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            closure: {
+                ...prev.closure,
+                [field]: value,
+            }
+        };
+    });
+  }
 
 
   if (loading || userLoading) {
@@ -794,7 +833,7 @@ export default function PermitDetailPage() {
                     }
                     {canChangeStatus('en_ejecucion') && <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}><PlayCircle className="mr-2 h-4 w-4" /> Iniciar Ejecución</Button>}
                     {canChangeStatus('suspendido') && <Button size="sm" variant="outline" className="text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700" onClick={() => handleChangeStatus('suspendido')} disabled={isStatusChanging}><PauseCircle className="mr-2 h-4 w-4" /> Suspender</Button>}
-                    {canChangeStatus('cerrado') && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}><Lock className="mr-2 h-4 w-4" /> Cerrar Permiso</Button>}
+                    {canChangeStatus('cerrado') && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsClosureDialogOpen(true)} disabled={isStatusChanging}><Lock className="mr-2 h-4 w-4" /> Cerrar Permiso</Button>}
                 </div>
             </div>
         </div>
@@ -860,8 +899,8 @@ export default function PermitDetailPage() {
                     )}
                     
                     <Section title="Verificaciones Previas">
-                        <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} />
-                        <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} />
+                        <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} readOnly />
+                        <RadioCheck label="ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo" value={permit.generalInfo?.atsVerificado} readOnly />
                     </Section>
                     
                     {permit.anexoAltura && (
@@ -888,6 +927,7 @@ export default function PermitDetailPage() {
                                       key={item.id} 
                                       label={item.label} 
                                       value={(permit.anexoAltura as any)?.[sectionKey]?.[item.id]} 
+                                      readOnly
                                     />
                                   ))}
                                 </div>
@@ -926,7 +966,7 @@ export default function PermitDetailPage() {
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Lista de Verificación</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                                         {[...anexoConfinadoChecklist.left, ...anexoConfinadoChecklist.right].map(item => (
-                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoConfinado?.checklist?.[item.id]} />
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoConfinado?.checklist?.[item.id]} readOnly />
                                         ))}
                                     </div>
                                 </div>
@@ -994,7 +1034,7 @@ export default function PermitDetailPage() {
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Planeación</h4>
                                     <div className="space-y-1">
                                         {anexoEnergiasPlaneacion.map(item => (
-                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoEnergias?.planeacion?.[item.id]} />
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoEnergias?.planeacion?.[item.id]} readOnly />
                                         ))}
                                     </div>
                                 </div>
@@ -1051,7 +1091,7 @@ export default function PermitDetailPage() {
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Aspectos Requeridos</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                                       {[...anexoIzajeAspectos.left, ...anexoIzajeAspectos.right].map(item => (
-                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoIzaje?.aspectosRequeridos?.[item.id]} />
+                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoIzaje?.aspectosRequeridos?.[item.id]} readOnly />
                                         ))}
                                     </div>
                                 </div>
@@ -1088,7 +1128,7 @@ export default function PermitDetailPage() {
                     <Section title="Verifique que se haya considerado dentro del ATS todos los peligros y las medidas de control estén implementadas">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                           {hazards.map(hazard => (
-                              <RadioCheck key={hazard.id} label={hazard.label} value={permit.hazards?.[hazard.id]} />
+                              <RadioCheck key={hazard.id} label={hazard.label} value={permit.hazards?.[hazard.id]} readOnly />
                           ))}
                         </div>
                     </Section>
@@ -1100,7 +1140,7 @@ export default function PermitDetailPage() {
                                    <h4 className="font-bold mb-2 text-gray-600 text-sm">{sectionTitle}</h4>
                                    <div className="space-y-1">
                                     {sectionItems.map(item => (
-                                         <RadioCheck key={item.id} label={item.label} value={permit.ppe?.[item.id]} />
+                                         <RadioCheck key={item.id} label={item.label} value={permit.ppe?.[item.id]} readOnly />
                                     ))}
                                    </div>
                                 </div>
@@ -1111,16 +1151,16 @@ export default function PermitDetailPage() {
                     <Section title="Sistema / Equipo de Prevención - Protección Contra Caída y Espacios Confinados">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                           {ppeSystems.map(system => (
-                              <RadioCheck key={system.id} label={system.label} value={permit.ppeSystems?.[system.id]} />
+                              <RadioCheck key={system.id} label={system.label} value={permit.ppeSystems?.[system.id]} readOnly />
                           ))}
                         </div>
                     </Section>
 
                     <Section title="Notificación y Emergencias">
-                        <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification} />
+                        <RadioCheck label="El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados" value={permit.emergency?.notification} readOnly />
                          <div className="mt-4 space-y-1">
                           {emergencyQuestions.map(item => (
-                              <RadioCheck key={item.id} label={item.label} value={permit.emergency?.[item.id]} />
+                              <RadioCheck key={item.id} label={item.label} value={permit.emergency?.[item.id]} readOnly />
                           ))}
                         </div>
                     </Section>
@@ -1223,10 +1263,10 @@ export default function PermitDetailPage() {
                         <p className="text-xs text-muted-foreground mb-4">Para trabajo en caliente el cierre del permiso se debe hacer minimo 2 horas posterior a la terminación de la tarea y se deben inspeccionar el lugar 30 min, 60 min y 2 horas posterior a la culminación de la tarea.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                 <RadioCheck label="Se informo al responsable del área sobre la culminación de las actividades." value={permit.closure?.informeCulminacion}/>
-                                 <RadioCheck label="Área se encuentra despejada, ordenada, demarcación retirada." value={permit.closure?.areaDespejada}/>
-                                 <RadioCheck label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente" value={permit.closure?.evidenciaParticulas}/>
-                                 <RadioCheck label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
+                                 <RadioCheck readOnly label="Se informo al responsable del área sobre la culminación de las actividades." value={permit.closure?.informeCulminacion}/>
+                                 <RadioCheck readOnly label="Área se encuentra despejada, ordenada, demarcación retirada." value={permit.closure?.areaDespejada}/>
+                                 <RadioCheck readOnly label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente" value={permit.closure?.evidenciaParticulas}/>
+                                 <RadioCheck readOnly label="Se continua con la labor de manera normal." value={permit.closure?.continuaLabor}/>
                             </div>
                             <div className="space-y-2">
                                 {permit.closure?.seguimientoCaliente && (
@@ -1238,7 +1278,7 @@ export default function PermitDetailPage() {
                                       </div>
                                   }/>
                                 )}
-                                <RadioCheck label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
+                                <RadioCheck readOnly label="Se retiraron todos los dispositivos de bloqueo(candados y tarjetas)." value={permit.closure?.dispositivosRetirados}/>
                                  <Field label="Fecha de Cierre" value={permit.closure?.fechaCierre ? format(new Date(permit.closure.fechaCierre), 'dd/yyyy') : 'Pendiente'}/>
                                  <Field label="Hora de Cierre" value={permit.closure?.horaCierre || 'Pendiente'}/>
                             </div>
@@ -1292,6 +1332,65 @@ export default function PermitDetailPage() {
                     >
                         {isStatusChanging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                         Confirmar Rechazo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Cerrar Permiso de Trabajo</DialogTitle>
+                    <DialogDescription>
+                        Complete las verificaciones finales antes de cerrar el permiso.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <RadioCheck 
+                        label="¿Se informó al responsable del área?" 
+                        value={permit.closure?.informeCulminacion} 
+                        onValueChange={(v) => handleClosureFieldChange('informeCulminacion', v)}
+                    />
+                     <RadioCheck 
+                        label="¿Área despejada y ordenada?" 
+                        value={permit.closure?.areaDespejada} 
+                        onValueChange={(v) => handleClosureFieldChange('areaDespejada', v)}
+                    />
+                    <RadioCheck 
+                        label="¿Sin partículas o material encendido?" 
+                        value={permit.closure?.evidenciaParticulas} 
+                        onValueChange={(v) => handleClosureFieldChange('evidenciaParticulas', v)}
+                    />
+                     <RadioCheck 
+                        label="¿Se continúa con la labor normal?" 
+                        value={permit.closure?.continuaLabor} 
+                        onValueChange={(v) => handleClosureFieldChange('continuaLabor', v)}
+                    />
+                     <RadioCheck 
+                        label="¿Se retiraron dispositivos de bloqueo?" 
+                        value={permit.closure?.dispositivosRetirados} 
+                        onValueChange={(v) => handleClosureFieldChange('dispositivosRetirados', v)}
+                    />
+                    <div>
+                        <label className="text-xs text-gray-500">Hora de Cierre</label>
+                        <Input 
+                            type="time" 
+                            value={permit.closure?.horaCierre || ''}
+                            onChange={(e) => handleClosureFieldChange('horaCierre', e.target.value)}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost">Cancelar</Button>
+                    </DialogClose>
+                    <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleChangeStatus('cerrado')}
+                        disabled={isStatusChanging}
+                    >
+                        {isStatusChanging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Lock className="mr-2 h-4 w-4" />}
+                        Confirmar Cierre
                     </Button>
                 </DialogFooter>
             </DialogContent>

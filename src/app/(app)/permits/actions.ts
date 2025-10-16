@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -103,17 +103,24 @@ export async function createPermit(data: PermitCreateData) {
   }
 }
 
-export async function updatePermitStatus(permitId: string, status: PermitStatus, reason?: string) {
+export async function updatePermitStatus(permitId: string, status: PermitStatus, reason?: string, closureData?: Partial<PermitClosure>) {
     if (!permitId) {
         return { success: false, error: 'Permit ID is required.' };
     }
 
     try {
         const docRef = adminDb.collection('permits').doc(permitId);
-        const updateData: { status: PermitStatus; rejectionReason?: string } = { status };
+        const updateData: { status: PermitStatus; rejectionReason?: string; closure?: Partial<PermitClosure> } = { status };
 
         if (status === 'rechazado' && reason) {
             updateData.rejectionReason = reason;
+        }
+
+        if (status === 'cerrado') {
+            updateData.closure = {
+                ...(closureData || {}),
+                fechaCierre: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            };
         }
 
         await docRef.update(updateData);
