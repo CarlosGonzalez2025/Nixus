@@ -3,16 +3,17 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from './button';
-import { Eraser, Save } from 'lucide-react';
+import { Eraser, Loader2, Save } from 'lucide-react';
 import { DialogFooter } from './dialog';
 import { Checkbox } from './checkbox';
 import { Label } from './label';
 
 interface SignaturePadProps {
   onSave: (signature: string) => void;
+  isSaving?: boolean;
 }
 
-export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
+export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = false }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -106,7 +107,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      // Check if canvas is empty
       const blank = document.createElement('canvas');
       blank.width = canvas.width;
       blank.height = canvas.height;
@@ -144,13 +144,13 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave }) => {
         </Label>
       </div>
       <DialogFooter className="w-full">
-         <Button variant="outline" onClick={clearPad}>
+         <Button variant="outline" onClick={clearPad} disabled={isSaving}>
           <Eraser className="mr-2 h-4 w-4" />
           Limpiar
         </Button>
-        <Button onClick={handleSave} disabled={!hasConsented}>
-          <Save className="mr-2 h-4 w-4" />
-          Guardar Firma
+        <Button onClick={handleSave} disabled={!hasConsented || isSaving}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          {isSaving ? 'Guardando...' : 'Guardar Firma'}
         </Button>
       </DialogFooter>
     </div>

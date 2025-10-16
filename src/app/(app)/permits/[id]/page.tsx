@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -60,7 +60,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updatePermitStatus } from '../actions';
+import { updatePermitStatus, addSignatureAndNotify } from '../actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -196,6 +196,7 @@ export default function PermitDetailPage() {
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signingRole, setSigningRole] = useState<{role: SignatureRole, type: 'firmaApertura' | 'firmaCierre'} | null>(null);
+  const [isSigning, setIsSigning] = useState(false);
 
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -218,6 +219,7 @@ export default function PermitDetailPage() {
           ...data,
           createdAt: parseFirestoreDate(data.createdAt),
           closure: data.closure || {}, // Ensure closure object exists
+          approvals: data.approvals || {}, // Ensure approvals object exists
         } as Permit);
         setError(null);
       } else {
@@ -332,46 +334,37 @@ export default function PermitDetailPage() {
   }
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
-      if (!permit || !currentUser || !signingRole) return;
-      
-      const { role, type } = signingRole;
-      const docRef = doc(db, 'permits', permit.id);
-      
-      const signaturePath = `approvals.${role}.${type}`;
-      const statusPath = `approvals.${role}.status`;
-      const userIdPath = `approvals.${role}.userId`;
-      const userNamePath = `approvals.${role}.userName`;
-      const signedAtPath = `approvals.${role}.signedAt`;
+    if (!permit || !currentUser || !signingRole) return;
+    setIsSigning(true);
 
-      try {
-        const updateData: { [key: string]: any } = {
-            [signaturePath]: signatureDataUrl,
-            [`${userNamePath}`]: currentUser.displayName,
-            [`${userIdPath}`]: currentUser.uid,
-        };
+    try {
+        const result = await addSignatureAndNotify(
+            permit.id,
+            signingRole.role,
+            signingRole.type,
+            signatureDataUrl,
+            { uid: currentUser.uid, displayName: currentUser.displayName || null }
+        );
 
-        if (type === 'firmaApertura') {
-            updateData[statusPath] = 'aprobado';
-            updateData[signedAtPath] = new Date().toISOString();
-        }
-
-        updateDoc(docRef, updateData).catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'update',
-                requestResourceData: { [signaturePath]: '...' }
+        if (result.success) {
+            toast({
+                title: 'Permiso Firmado',
+                description: `Has firmado como ${signatureRoles[signingRole.role]}`,
             });
-            errorEmitter.emit('permission-error', permissionError);
-            toast({ variant: 'destructive', title: 'Error al firmar', description: 'No tienes permiso para realizar esta acción.' });
+            setIsSignatureDialogOpen(false);
+            setSigningRole(null);
+        } else {
+            throw new Error(result.error || 'No se pudo guardar la firma.');
+        }
+    } catch (e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error al firmar',
+            description: e.message || 'Ocurrió un error inesperado.',
         });
-
-        toast({ title: 'Permiso Firmado', description: `Has firmado como ${signatureRoles[role]}`});
-        setIsSignatureDialogOpen(false);
-        setSigningRole(null);
-      } catch (e: any) {
-          // This local try/catch is for synchronous errors, the .catch() handles the async permission error.
-          toast({ variant: 'destructive', title: 'Error al firmar', description: 'Ocurrió un error inesperado.' });
-      }
+    } finally {
+        setIsSigning(false);
+    }
   }
 
   const handleChangeStatus = async (newStatus: PermitStatus, reason?: string) => {
@@ -415,12 +408,10 @@ export default function PermitDetailPage() {
       const isCorrectRole = currentUser.role === role || currentUser.role === 'admin';
       
       if (type === 'firmaApertura') {
-          // Can sign for opening if user is the correct role, it's pending, and there's no opening signature yet
           return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura && permit.status === 'pendiente_revision';
       }
        if (type === 'firmaCierre') {
-          // Can sign for closing if user is correct role, opening is signed, and no closing signature yet
-          const allOpeningSignaturesDone = Object.values(permit.approvals).every(a => a.status === 'aprobado' || a.firmaApertura);
+          const allOpeningSignaturesDone = Object.values(permit.approvals).every(a => a.status === 'aprobado');
           return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'suspendido');
       }
       return false;
@@ -431,7 +422,6 @@ export default function PermitDetailPage() {
     const { role } = currentUser;
     const { status, approvals } = permit;
 
-    // Defensive check for approvals object
     if (!approvals) return false;
 
     const allRequiredSignaturesDone = 
@@ -1225,7 +1215,7 @@ export default function PermitDetailPage() {
                                                   approval?.firmaApertura ? (
                                                       <div className="bg-gray-100 p-2 rounded-md">
                                                         <Image src={approval.firmaApertura} alt={`Firma de ${approval.userName}`} width={150} height={75} className="mx-auto"/>
-                                                        <div className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(new Date(approval.signedAt), "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</div>
+                                                        <div className="text-center text-xs mt-1">Firmado el {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, "dd/MM/yyyy 'a las' HH:mm") : 'N/A'}</div>
                                                       </div>
                                                   ) : 'Pendiente'
                                                 } />
@@ -1301,7 +1291,7 @@ export default function PermitDetailPage() {
                         {signingRole && `Está firmando como ${signatureRoles[signingRole.role]}. Su firma quedará registrada.`}
                     </DialogDescription>
                 </DialogHeader>
-                <SignaturePad onSave={handleSaveSignature} />
+                <SignaturePad onSave={handleSaveSignature} isSaving={isSigning} />
             </DialogContent>
         </Dialog>
         
