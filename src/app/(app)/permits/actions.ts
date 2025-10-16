@@ -98,6 +98,9 @@ export async function createPermit(data: PermitCreateData) {
     console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
 
     const workTypesText = getWorkTypesString(permitPayload.workType || ['general']);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+    const permitUrl = `${baseUrl}/permits/${docRef.id}`;
+    
     const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
 Se ha creado una nueva solicitud de permiso de trabajo.
 
@@ -106,7 +109,7 @@ Se ha creado una nueva solicitud de permiso de trabajo.
 🛠️ *Tipo de Trabajo:* ${workTypesText}
 
 Por favor, revise la solicitud para su aprobación en el siguiente enlace:
-https://sgpt-movil.web.app/permits/${docRef.id}`;
+${permitUrl}`;
     
     await sendWhatsAppNotification(messageBody);
     
@@ -161,6 +164,9 @@ export async function addSignatureAndNotify(
         const permitData = permitDoc.data() as Permit;
         
         const signatureRoleName = (signatureRoles as any)[role] || role;
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${permitId}`;
+        
         const messageBody = `*Notificación de Firma - SGPT* 🖋️
 El permiso *${permitData.number || permitId}* ha sido firmado.
 
@@ -169,7 +175,7 @@ El permiso *${permitData.number || permitId}* ha sido firmado.
 ✍️ *Tipo de firma:* ${signatureType === 'firmaApertura' ? 'Apertura' : 'Cierre'}
 
 Puede ver los detalles aquí:
-https://sgpt-movil.web.app/permits/${permitId}`;
+${permitUrl}`;
         
         await sendWhatsAppNotification(messageBody);
 
@@ -213,13 +219,16 @@ export async function updatePermitStatus(permitId: string, status: PermitStatus,
         const permitData = permitDoc.data() as Permit;
 
         const statusText = getStatusText(status);
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${permitId}`;
+
         let messageBody = `*Actualización de Estado - SGPT* 🔄
 El estado del permiso *${permitData.number || permitId}* ha cambiado.
 
 *Nuevo Estado:* ${statusText}
 
 Puede ver los detalles aquí:
-https://sgpt-movil.web.app/permits/${permitId}`;
+${permitUrl}`;
 
         if (status === 'rechazado' && reason) {
           messageBody += `\n\n*Motivo del rechazo:* ${reason}`;
