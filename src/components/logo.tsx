@@ -1,32 +1,22 @@
 import { cn } from '@/lib/utils';
-import { Shield } from 'lucide-react';
+import Image from 'next/image';
 
-export function Logo({
-  className,
-  textOnly = false,
-}: {
-  className?: string;
-  textOnly?: boolean;
-}) {
-  if (textOnly) {
-    return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <div className="bg-primary rounded-full p-2">
-          <Shield className="text-white" size={24} />
-        </div>
-        <span className="text-2xl font-bold text-primary">SGPT Móvil</span>
-      </div>
-    );
-  }
+// Asumiendo que tienes un logo de Italcol en tu carpeta public
+const italcolLogoUrl = '/logo-italcol.png'; // <- Debes agregar el logo aqui
 
+export function Logo({ className }: { className?: string }) {
   return (
     <div className={cn('flex flex-col items-center', className)}>
-       <div className="flex items-center gap-3 text-primary mb-4">
-            <div className="bg-primary rounded-full p-3">
-                <Shield className="text-white" size={32} />
-            </div>
-            <span className="text-3xl font-bold">SGPT Móvil</span>
-        </div>
+      <div className="mb-4">
+        {/* Usamos el componente Image de Next.js para optimización */}
+        <Image 
+          src={italcolLogoUrl} 
+          alt="Logo Italcol" 
+          width={180} // Ajusta el tamaño según sea necesario
+          height={60} // Ajusta el tamaño según sea necesario
+          priority // Carga la imagen con prioridad ya que es LCP
+        />
+      </div>
       <p className="text-gray-600 dark:text-gray-400 mt-2">
         Sistema de Gestión de Permisos de Trabajo
       </p>
