@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Logo } from '@/components/logo';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -74,7 +74,12 @@ export default function LoginPage() {
     >
       <Card className="w-full max-w-md rounded-3xl shadow-2xl">
         <CardHeader className="items-center p-8">
-          <Logo />
+            <div className="flex items-center gap-3 text-primary">
+                <div className="bg-primary rounded-full p-3">
+                    <Shield className="text-white" size={32} />
+                </div>
+                <span className="text-3xl font-bold">SGPT Móvil</span>
+            </div>
         </CardHeader>
         <CardContent className="p-8 space-y-6">
           <Form {...form}>
@@ -97,7 +102,7 @@ export default function LoginPage() {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="usuario@italcol.com"
+                        placeholder="usuario@nixus.com"
                         {...field}
                         type="email"
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
@@ -145,11 +150,11 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="bg-secondary/30 py-4 text-center text-xs text-gray-500">
-          <p className="w-full">
-            © {new Date().getFullYear()} ITALCOL - Todos los derechos
-            reservados
-          </p>
+        <CardFooter className="bg-muted/50 py-4 text-center text-xs text-gray-600">
+            <p className="w-full">
+                © {new Date().getFullYear()} Nixus - Todos los derechos
+                reservados
+            </p>
         </CardFooter>
       </Card>
     </div>

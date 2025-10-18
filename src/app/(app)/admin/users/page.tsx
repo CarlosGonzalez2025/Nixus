@@ -124,7 +124,7 @@ export default function UsersPage() {
       role: 'ejecutante',
       area: '',
       telefono: '',
-      empresa: 'ITALCOL',
+      empresa: 'NIXUS',
       ciudad: '',
       planta: ''
     },
@@ -398,7 +398,7 @@ export default function UsersPage() {
                         <FormItem>
                           <FormLabel>Correo Electrónico</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="usuario@italcol.com" {...field} />
+                            <Input type="email" placeholder="usuario@nixus.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -424,7 +424,7 @@ export default function UsersPage() {
                         <FormItem>
                           <FormLabel>Empresa</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ej: ITALCOL" {...field} />
+                            <Input placeholder="Ej: NIXUS" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -24,12 +24,12 @@ import type { User } from '@/types';
 
 // Demo users as provided in the UI mock
 const demoUsers: { [email: string]: Partial<User> & { name: string, role: User['role'] } } = {
-  'info@datenova.io': { name: 'Admin', role: 'admin', empresa: 'DATENOVA', ciudad: 'Bogotá', planta: 'Principal' },
-  'juan@italcol.com': { name: 'Juan Pérez', role: 'solicitante', empresa: 'ITALCOL', ciudad: 'Cali', planta: 'Yumbo' },
-  'maria@italcol.com': { name: 'María García', role: 'autorizante', empresa: 'ITALCOL', ciudad: 'Barranquilla', planta: 'Malambo' },
-  'carlos@italcol.com': { name: 'Carlos López', role: 'lider_tarea', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
-  'ana@italcol.com': { name: 'Ana Martínez', role: 'ejecutante', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
-  'roberto@italcol.com': { name: 'Roberto Sánchez', role: 'lider_sst', empresa: 'ITALCOL', ciudad: 'Bogotá', planta: 'Sede Principal' }
+  'info@nixus.com': { name: 'Admin Nixus', role: 'admin', empresa: 'NIXUS', ciudad: 'Bogotá', planta: 'Principal' },
+  'juan@nixus.com': { name: 'Juan Pérez', role: 'solicitante', empresa: 'NIXUS', ciudad: 'Cali', planta: 'Yumbo' },
+  'maria@nixus.com': { name: 'María García', role: 'autorizante', empresa: 'NIXUS', ciudad: 'Barranquilla', planta: 'Malambo' },
+  'carlos@nixus.com': { name: 'Carlos López', role: 'lider_tarea', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
+  'ana@nixus.com': { name: 'Ana Martínez', role: 'ejecutante', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
+  'roberto@nixus.com': { name: 'Roberto Sánchez', role: 'lider_sst', empresa: 'NIXUS', ciudad: 'Bogotá', planta: 'Sede Principal' }
 };
 
 interface AuthContextType {
