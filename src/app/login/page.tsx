@@ -69,23 +69,18 @@ export default function LoginPage() {
       className="flex min-h-screen items-center justify-center bg-primary/80 p-4"
       style={{
         background:
-          'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%)',
+          'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%)',
       }}
     >
-      <Card className="w-full max-w-md rounded-3xl shadow-2xl">
+      <Card className="w-full max-w-md rounded-2xl shadow-2xl">
         <CardHeader className="items-center p-8">
           <Logo />
         </CardHeader>
-        <CardContent className="p-8 space-y-6">
+        <CardContent className="px-8 pb-8 pt-2 space-y-6">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-4"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  form.handleSubmit(onSubmit)();
-                }
-              }}
             >
               <FormField
                 control={form.control}
@@ -100,7 +95,7 @@ export default function LoginPage() {
                         placeholder="usuario@italcol.com"
                         {...field}
                         type="email"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                       />
                     </FormControl>
                     <FormMessage />
@@ -125,7 +120,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         {...field}
                         type="password"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-all"
+                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                       />
                     </FormControl>
                     <FormMessage />
@@ -134,7 +129,7 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all transform hover:scale-105 shadow-lg"
+                className="w-full text-white py-3 rounded-md font-semibold hover:opacity-90 transition-all shadow-md"
                 disabled={isLoading}
               >
                 {isLoading && (
@@ -145,9 +140,9 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="bg-muted/50 py-4 text-center text-xs text-gray-600">
+        <CardFooter className="bg-muted/50 py-4 px-8 text-center text-xs text-gray-600">
             <p className="w-full">
-                © {new Date().getFullYear()} Italcol - Todos los derechos
+                © 2025 ITALCOL - Todos los derechos
                 reservados
             </p>
         </CardFooter>
