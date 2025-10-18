@@ -69,7 +69,7 @@ export default function LoginPage() {
       className="flex min-h-screen items-center justify-center bg-primary/80 p-4"
       style={{
         background:
-          'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%)',
+          'hsl(var(--primary))',
       }}
     >
       <Card className="w-full max-w-md rounded-2xl shadow-2xl">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                         placeholder="usuario@italcol.com"
                         {...field}
                         type="email"
-                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                        className="w-full px-4 py-2 bg-muted border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                       />
                     </FormControl>
                     <FormMessage />
@@ -120,7 +120,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         {...field}
                         type="password"
-                        className="w-full px-4 py-2 border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                        className="w-full px-4 py-2 bg-muted border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                       />
                     </FormControl>
                     <FormMessage />
