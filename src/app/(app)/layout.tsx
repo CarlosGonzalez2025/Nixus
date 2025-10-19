@@ -103,14 +103,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <FirebaseErrorListener />
       <Sidebar>
         <SidebarHeader>
-          <div className="flex h-12 items-center gap-2 px-2">
-            <div className="flex items-center gap-2">
-              <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={32} height={32} />
-              <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-                SGPT Móvil
-              </span>
+          <div className="flex flex-col items-center gap-2 p-4 text-center">
+            <div className="flex w-full items-start justify-between">
+              <div className="w-8" />
+              <div className="bg-white rounded-lg p-2">
+                <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={40} height={40} />
+              </div>
+              <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent" />
             </div>
-            <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent ml-auto" />
+            <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+              SGPT Móvil
+            </span>
           </div>
         </SidebarHeader>
         <SidebarContent>
