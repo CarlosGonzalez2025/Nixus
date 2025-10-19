@@ -51,7 +51,6 @@ const getStatusText = (status: string) => {
   return statusText[status] || status;
 };
 
-// ✅ Helper function to handle different date formats
 const parseFirestoreDate = (dateValue: any): Date | null => {
   if (!dateValue) return null;
   
@@ -77,7 +76,12 @@ const workTypes: {[key: string]: string} = {
   'izaje': 'Izaje de Cargas',
   'caliente': 'Trabajo en Caliente',
   'excavacion': 'Excavaciones',
-  'general': 'Trabajo General'
+  'general': 'Trabajo General',
+  'alturas': 'Trabajo en Alturas',
+  'espaciosConfinados': 'Espacios Confinados',
+  'izajeCarga': 'Izaje de Cargas',
+  'trabajoCaliente': 'Trabajo en Caliente',
+  'excavaciones': 'Excavaciones'
 };
 
 export default function Dashboard() {
@@ -93,13 +97,11 @@ export default function Dashboard() {
   });
   
   useEffect(() => {
-    // ✅ CRÍTICO: No configurar listeners mientras se verifica auth
     if (userLoading) {
       console.log('⏳ Waiting for auth...');
       return;
     }
 
-    // ✅ CRÍTICO: Si no hay usuario, limpiar estado y NO configurar listeners
     if (!user) {
       console.log('🔒 No user - cleaning up and redirecting');
       setPermits([]);
@@ -111,13 +113,9 @@ export default function Dashboard() {
 
     console.log('✅ User authenticated, setting up listeners for:', user.email);
 
-    // Array para almacenar todas las funciones unsubscribe
     const unsubscribers: Unsubscribe[] = [];
 
     try {
-      // ========================================
-      // LISTENER 1: Permisos Recientes
-      // ========================================
       const permitsCollection = collection(db, 'permits');
       const recentPermitsQuery = query(
         permitsCollection, 
@@ -144,7 +142,6 @@ export default function Dashboard() {
         (error) => {
           console.error('❌ Error fetching recent permits:', error);
           
-          // Si es error de permisos, redirigir
           if (error.code === 'permission-denied') {
             console.log('🚫 Permission denied - redirecting to login');
             router.push('/login');
@@ -156,9 +153,6 @@ export default function Dashboard() {
 
       unsubscribers.push(permitsUnsubscribe);
 
-      // ========================================
-      // LISTENER 2: Estadísticas
-      // ========================================
       const allPermitsQuery = query(collection(db, 'permits'));
       
       const statsUnsubscribe = onSnapshot(
@@ -176,7 +170,6 @@ export default function Dashboard() {
         (error) => {
           console.error('❌ Error fetching stats:', error);
           
-          // Si es error de permisos, redirigir
           if (error.code === 'permission-denied') {
             console.log('🚫 Permission denied on stats - redirecting to login');
             router.push('/login');
@@ -191,7 +184,6 @@ export default function Dashboard() {
       setLoading(false);
     }
 
-    // ✅ CRÍTICO: Limpiar TODOS los listeners al desmontar o cuando user cambie
     return () => {
       console.log('🧹 Cleaning up dashboard listeners');
       unsubscribers.forEach(unsub => {
@@ -202,36 +194,36 @@ export default function Dashboard() {
         }
       });
     };
-  }, [user, userLoading, router]); // ✅ Dependencias correctas
+  }, [user, userLoading, router]);
 
   const statsCards = [
     {
       title: 'Permisos Totales',
       value: stats.total,
       icon: FileText,
-      color: 'hsl(var(--primary))',
-      bgColor: 'hsl(var(--primary) / 0.1)'
+      color: 'hsl(188, 75%, 43%)',
+      bgColor: 'hsl(188, 75%, 43%, 0.1)'
     },
     {
       title: 'Pendientes',
       value: stats.pendiente,
       icon: Clock,
-      color: 'hsl(var(--secondary))',
-      bgColor: 'hsl(var(--secondary) / 0.1)'
+      color: 'hsl(45, 93%, 57%)',
+      bgColor: 'hsl(45, 93%, 57%, 0.1)'
     },
     {
       title: 'Aprobados',
       value: stats.aprobado,
       icon: CheckCircle,
-      color: 'hsl(var(--accent))',
-      bgColor: 'hsl(var(--accent) / 0.1)'
+      color: 'hsl(142, 71%, 45%)',
+      bgColor: 'hsl(142, 71%, 45%, 0.1)'
     },
     {
       title: 'En Ejecución',
       value: stats.enEjecucion,
       icon: Activity,
-      color: 'hsl(var(--info))',
-      bgColor: 'hsl(var(--info) / 0.1)'
+      color: 'hsl(188, 75%, 38%)',
+      bgColor: 'hsl(188, 75%, 38%, 0.1)'
     }
   ];
 
@@ -240,7 +232,6 @@ export default function Dashboard() {
     return types.map(key => workTypes[key] || key).join(', ');
   };
 
-  // ✅ Mostrar loading mientras se verifica auth
   if (userLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
@@ -250,7 +241,6 @@ export default function Dashboard() {
     );
   }
 
-  // ✅ No renderizar nada si no hay usuario (ya se redirigió)
   if (!user) {
     return null;
   }
@@ -288,18 +278,18 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="text-primary" />
+              <TrendingUp style={{ color: 'hsl(188, 75%, 43%)' }} />
               Acciones Rápidas
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button asChild className="h-auto py-4" size="lg">
+            <Button asChild className="h-auto py-4" size="lg" style={{ backgroundColor: 'hsl(188, 75%, 43%)', color: 'white' }}>
               <Link href="/permits/create">
                 <PlusCircle className="mr-2"/>
                 Nuevo Permiso de Trabajo
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-auto py-4" size="lg">
+            <Button asChild variant="outline" className="h-auto py-4" size="lg" style={{ borderColor: 'hsl(188, 75%, 43%)', color: 'hsl(188, 75%, 43%)' }}>
               <Link href="/permits">
                 <FileText className="mr-2"/>
                 Ver Todos los Permisos
@@ -329,7 +319,7 @@ export default function Dashboard() {
               <p className="text-lg font-semibold">No hay permisos de trabajo registrados</p>
               <p className="text-sm mt-2 mb-4">Crea tu primer permiso para comenzar</p>
               {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'administrador') && (
-                <Button asChild>
+                <Button asChild style={{ backgroundColor: 'hsl(188, 75%, 43%)', color: 'white' }}>
                   <Link href="/permits/create">
                     <PlusCircle className="mr-2"/>
                     Crear Primer Permiso
@@ -339,7 +329,6 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {/* Mobile View - Cards */}
               <div className="md:hidden space-y-4">
                 {permits.map((permit) => (
                   <Link key={permit.id} href={`/permits/${permit.id}`} className="block">
@@ -347,8 +336,12 @@ export default function Dashboard() {
                       <CardContent className="p-4 flex flex-col gap-2">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold text-primary">{permit.number || permit.id.substring(0,8)}</p>
-                            <p className="text-sm text-muted-foreground">{getWorkTypesString(permit.workType)}</p>
+                            <p className="font-semibold" style={{ color: 'hsl(188, 75%, 43%)' }}>
+                              {permit.number || permit.id.substring(0,8)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {getWorkTypesString(permit.workType)}
+                            </p>
                           </div>
                           <Badge className={getStatusColor(permit.status)}>
                             {getStatusText(permit.status)}
@@ -364,7 +357,6 @@ export default function Dashboard() {
                 ))}
               </div>
               
-              {/* Desktop View - Table */}
               <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow>
@@ -380,7 +372,7 @@ export default function Dashboard() {
                   {permits.map((permit) => (
                     <TableRow key={permit.id}>
                       <TableCell className="font-medium">
-                        <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
+                        <Link href={`/permits/${permit.id}`} className="hover:underline" style={{ color: 'hsl(188, 75%, 43%)' }}>
                           {permit.number || permit.id.substring(0, 8)}
                         </Link>
                       </TableCell>

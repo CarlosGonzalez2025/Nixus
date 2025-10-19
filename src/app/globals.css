@@ -10,32 +10,35 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 34 98% 50%; /* Naranja Italcol */
+    --primary: 188 75% 43%; /* Azul turquesa NIXUS #1DB5C1 */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%; /* Un acento sutil */
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 188 75% 43%; /* Accent también con color NIXUS */
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 34 98% 50%;
+    --ring: 188 75% 43%; /* Ring con color NIXUS */
     --radius: 0.5rem;
 
     /* Colores adicionales específicos */
-    --info: 204 92% 53%; /* Azul informativo */
+    --info: 188 75% 43%; /* Info con color NIXUS */
+    --success: 142 71% 45%; /* Verde para éxito */
+    --warning: 45 93% 57%; /* Amarillo para advertencias */
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 34 98% 50%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 34 98% 50%;
+    /* Variables sidebar con colores NIXUS */
+    --sidebar-background: 188 75% 43%; /* Fondo sidebar con color NIXUS */
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%; /* Blanco para contraste */
+    --sidebar-primary-foreground: 188 75% 43%;
+    --sidebar-accent: 188 75% 38%; /* Versión más oscura del color NIXUS */
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 188 75% 38%;
+    --sidebar-ring: 210 40% 98%;
   }
 
   .dark {
@@ -45,28 +48,29 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 34 98% 50%;
+    --primary: 188 75% 43%; /* Azul turquesa NIXUS */
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 188 75% 43%; /* Accent con color NIXUS */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 34 98% 50%;
+    --ring: 188 75% 43%;
     
-    --sidebar-background: 222.2 84% 4.9%;
+    /* Sidebar dark mode con NIXUS */
+    --sidebar-background: 188 75% 25%; /* Versión más oscura para dark mode */
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 34 98% 50%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 188 75% 25%;
     --sidebar-accent: 217.2 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 34 98% 50%;
+    --sidebar-ring: 188 75% 43%;
   }
 }
 
@@ -76,5 +80,21 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Clases utilitarias personalizadas para NIXUS */
+@layer utilities {
+  .text-nixus {
+    color: hsl(188, 75%, 43%);
+  }
+  .bg-nixus {
+    background-color: hsl(188, 75%, 43%);
+  }
+  .border-nixus {
+    border-color: hsl(188, 75%, 43%);
+  }
+  .gradient-nixus {
+    background: linear-gradient(135deg, hsl(188, 75%, 43%) 0%, hsl(188, 75%, 38%) 100%);
   }
 }

@@ -20,6 +20,7 @@ import { useUser } from '@/hooks/use-user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   FileText,
@@ -104,9 +105,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
           <div className="flex h-12 items-center gap-2 px-2">
             <div className="flex items-center gap-2">
-              <div className="bg-sidebar-primary rounded-lg p-1.5">
-                <Shield className="text-sidebar-primary-foreground" size={20} />
-              </div>
+              <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={32} height={32} />
               <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                 SGPT Móvil
               </span>
