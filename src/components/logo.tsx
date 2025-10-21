@@ -9,10 +9,7 @@ export function Logo({ className, textOnly = false }: { className?: string, text
   if (textOnly) {
      return (
         <div className={cn('flex flex-col items-start', className)}>
-            <h2 className="text-2xl font-bold text-gray-800">SGPT</h2>
-            <p className="text-xs text-gray-600">
-                Sistema de Gestión de Permisos de Trabajo
-            </p>
+            {/* Textos eliminados como se solicitó */}
         </div>
      );
   }
