@@ -19,6 +19,7 @@ import {
   MessageSquare,
   BookOpen,
 } from 'lucide-react';
+import Image from 'next/image';
 
 const FlowStep = ({
   step,
@@ -67,7 +68,13 @@ export default function GuidePage() {
   return (
     <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
       <div className="flex items-center gap-4">
-        <BookOpen className="h-8 w-8 text-primary" />
+        <Image
+          src="https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg"
+          alt="Guide Icon"
+          width={56}
+          height={56}
+          className="rounded-full"
+        />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Guía de Flujo de Trabajo</h1>
           <p className="text-muted-foreground">
