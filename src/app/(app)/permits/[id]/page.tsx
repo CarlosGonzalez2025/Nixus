@@ -518,7 +518,7 @@ export default function PermitDetailPage() {
     { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
     { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
     { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
-    { seccion: 'AMBIENTales', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
+    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
  ];
 
  const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {

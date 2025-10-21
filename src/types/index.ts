@@ -82,8 +82,8 @@ export type AnexoAltura = {
   auxiliarTSA: 'si' | 'no' | 'na';
   elaboracionATS: 'si' | 'no';
   claridadEspacioLibre: string;
-  trabajoConEscaleras: { [key: string]: 'si' | 'no' };
-  trabajoConAndamios: { [key: string]: 'si' | 'no' };
+  trabajoConEscaleras: { [key: string]: 'si' | 'no' | 'na' };
+  trabajoConAndamios: { [key: string]: 'si' | 'no' | 'na' };
   trabajoConCanastilla: { [key: string]: 'si' | 'no' };
   lineaDeVida: { [key: string]: 'si' | 'no' };
   arnesCuerpoEntero: { [key: string]: 'si' | 'no' };
@@ -120,7 +120,7 @@ export type SupervisorConfinado = {
 export type AnexoConfinado = {
     tipo: '1' | '2';
     gradoPeligro: 'A' | 'B' | 'C';
-    checklist: { [key: string]: 'si' | 'no' };
+    checklist: { [key: string]: 'si' | 'no' | 'na' };
     mediciones: MedicionAtmosferica[];
     observaciones: string;
     supervisor: SupervisorConfinado;

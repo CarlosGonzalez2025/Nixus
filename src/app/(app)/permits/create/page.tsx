@@ -593,7 +593,7 @@ export default function CreatePermitPage() {
     { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
     { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
     { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
-    { seccion: 'BIOLÓGicos', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
+    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
     { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
     { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
     { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
@@ -613,29 +613,36 @@ export default function CreatePermitPage() {
  }, {} as {[key: string]: typeof atsPeligros});
 
  const atsEpp = [
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'aire_comprimido', label: 'Aire respirable (compresor o cilindro)' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'botas_caucho', label: 'Botas de caucho de seguridad' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'botas_dielectricas', label: 'Botas dieléctricas' },
     { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'botas_seguridad_epp', label: 'Botas de seguridad' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'casco_seguridad', label: 'Casco de seguridad' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'traje_tyvek', label: 'Traje tyvek' },
     { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'chaleco_reflectivo', label: 'Chaleco reflectivo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'chaqueta_cuero', label: 'Chaqueta de cuero o carnaza' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'delantal_cuero', label: 'Delantal de cuero o carnaza' },
     { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'delantal_pvc', label: 'Delantal de PVC' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'chaqueta_cuero', label: 'Chaqueta de cuero' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_dielectricos', label: 'Guantes dieléctricos clase' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_caucho', label: 'Guantes de caucho o nitrilo' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_vaqueta', label: 'Guantes de vaqueta o Anticorte' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_filtros', label: 'Mascarilla con filtros' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_polvo', label: 'Mascarilla para polvo' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'overol_desechable', label: 'Overol desechable' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'protector_auditivo_copa', label: 'Protector auditivo tipo copa' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'protector_auditivo_insercion', label: 'Protector auditivo de inserción' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'proteccion_facial', label: 'Protección facial' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_dielectricos', label: 'Guante dieléctrico clase _______ (guantín, guante dieléctrico,  protección mecánica)' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_caucho', label: 'Guante de caucho y/o nitrilo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_cuero', label: 'Guante de cuero o carnaza' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_vaqueta', label: 'Guante de vaqueta o Anticorte' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_filtros', label: 'Mascarilla con filtro' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_polvo', label: 'Mascarilla material particulado' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'polainas', label: 'Polainas' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'overol_trabajo', label: 'Overol de trabajo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'overol_ignifugo', label: 'Overol ignífugo clase' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'protector_auditivo', label: 'Protector auditivo tipo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras' },
     { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'gafas_seguridad', label: 'Gafas de seguridad' },
-    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'ropa_trabajo', label: 'Ropa de trabajo' },
-    { seccion: 'TRABAJO EN ALTURAS', id: 'arnes', label: 'Arnés' },
-    { seccion: 'TRABAJO EN ALTURAS', id: 'eslinga_absorvedor', label: 'Eslinga con absorvedor' },
-    { seccion: 'TRABAJO EN ALTURAS', id: 'eslinga_posicionamiento', label: 'Eslinga de posicionamiento' },
-    { seccion: 'TRABAJO EN ALTURAS', id: 'anclaje', label: 'Anclaje' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'visor_careta', label: 'Visor / careta para' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'careta_arco', label: 'Careta arco eléctrico clase' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'eslinga', label: 'Eslinga tipo____________, ________ absorbedor' },
     { seccion: 'TRABAJO EN ALTURAS', id: 'linea_vida', label: 'Línea de vida' },
-    { seccion: 'TRABAJO EN ALTURAS', id: 'casco_barbuquejo', label: 'Casco con barbuquejo' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'arnes', label: 'Arnés' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'adaptador_anclaje', label: 'Adaptador de anclaje' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'casco_barbuquejo', label: 'Casco de seguridad Tipo_____, Clase_____,  ________ barbuquejo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'otro_epp', label: 'Otro:' },
  ];
 
  const atsEppAgrupados = atsEpp.reduce((acc, epp) => {
@@ -1049,9 +1056,9 @@ export default function CreatePermitPage() {
                 <div className="space-y-6">
                   <div className="text-center mb-6">
                     <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                      Trabajadores Ejecutantes
+                      Ejecutores del Trabajo o Personal Involucrado
                     </h2>
-                    <p className="text-muted-foreground text-sm">Registre todos los trabajadores que participarán en esta tarea</p>
+                    <p className="text-muted-foreground text-sm">Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura...</p>
                   </div>
 
                   <div className="space-y-4">
