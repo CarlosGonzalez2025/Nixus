@@ -924,7 +924,13 @@ export default function CreatePermitPage() {
           <div className="flex justify-between items-center">
             <div>
               <div className="flex items-center gap-3">
-                <Logo textOnly />
+                <Image 
+                    src="https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg"
+                    alt="Crear Permiso Icon"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                />
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
@@ -1962,3 +1968,5 @@ export default function CreatePermitPage() {
     </>
   );
 }
+
+    
