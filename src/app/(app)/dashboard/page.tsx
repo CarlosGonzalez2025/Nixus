@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const getStatusColor = (status: string) => {
   const statusColors: {[key: string]: string} = {
@@ -248,11 +249,20 @@ export default function Dashboard() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Resumen de permisos de trabajo y acciones rápidas.
-          </p>
+        <div className="flex items-center gap-4">
+            <Image 
+                src="https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg"
+                alt="Dashboard Icon"
+                width={56}
+                height={56}
+                className="rounded-full"
+            />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Resumen de permisos de trabajo y acciones rápidas.
+            </p>
+          </div>
         </div>
       </div>
 
