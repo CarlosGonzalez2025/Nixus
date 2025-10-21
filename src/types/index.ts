@@ -73,6 +73,7 @@ export type AnexoATS = {
   fechaTerminacion: string;
   descripcionTarea: string;
   peligros: { [key: string]: 'si' | 'no' };
+  epp: { [key: string]: 'si' | 'no' };
 };
 
 export type AnexoAltura = {

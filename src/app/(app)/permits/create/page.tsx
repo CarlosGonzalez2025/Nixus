@@ -104,6 +104,7 @@ export default function CreatePermitPage() {
     fechaTerminacion: '',
     descripcionTarea: '',
     peligros: {},
+    epp: {},
   });
 
   // Step 2
@@ -560,7 +561,6 @@ export default function CreatePermitPage() {
     { label: "Peligros", condition: true },
     { label: "EPP", condition: true },
     { label: "Sistemas y Emergencia", condition: true },
-    { label: "Trabajadores", condition: true },
     { label: "Revisión", condition: true }
   ];
 
@@ -612,6 +612,40 @@ export default function CreatePermitPage() {
     return acc;
  }, {} as {[key: string]: typeof atsPeligros});
 
+ const atsEpp = [
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'aire_comprimido', label: 'Aire respirable (compresor o cilindro)' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'botas_seguridad_epp', label: 'Botas de seguridad' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'casco_seguridad', label: 'Casco de seguridad' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'chaleco_reflectivo', label: 'Chaleco reflectivo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'delantal_pvc', label: 'Delantal de PVC' },
+    { seccionchaqueta_cuero: 'PROTECCIÓN INDIVIDUAL', id: 'chaqueta_cuero', label: 'Chaqueta de cuero' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_dielectricos', label: 'Guantes dieléctricos clase' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_caucho', label: 'Guantes de caucho o nitrilo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'guantes_vaqueta', label: 'Guantes de vaqueta o Anticorte' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_filtros', label: 'Mascarilla con filtros' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'mascarilla_polvo', label: 'Mascarilla para polvo' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'overol_desechable', label: 'Overol desechable' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'protector_auditivo_copa', label: 'Protector auditivo tipo copa' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'protector_auditivo_insercion', label: 'Protector auditivo de inserción' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'proteccion_facial', label: 'Protección facial' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'gafas_seguridad', label: 'Gafas de seguridad' },
+    { seccion: 'PROTECCIÓN INDIVIDUAL', id: 'ropa_trabajo', label: 'Ropa de trabajo' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'arnes', label: 'Arnés' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'eslinga_absorvedor', label: 'Eslinga con absorvedor' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'eslinga_posicionamiento', label: 'Eslinga de posicionamiento' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'anclaje', label: 'Anclaje' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'linea_vida', label: 'Línea de vida' },
+    { seccion: 'TRABAJO EN ALTURAS', id: 'casco_barbuquejo', label: 'Casco con barbuquejo' },
+ ];
+
+ const atsEppAgrupados = atsEpp.reduce((acc, epp) => {
+    if (!acc[epp.seccion]) {
+        acc[epp.seccion] = [];
+    }
+    acc[epp.seccion].push(epp);
+    return acc;
+ }, {} as {[key: string]: typeof atsEpp});
+
 
   const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
       let state: any;
@@ -623,7 +657,10 @@ export default function CreatePermitPage() {
           case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); return;
           case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); return;
           case 'anexoEnergias': setAnexoEnergias(prev => ({...prev, planeacion: { ...prev.planeacion, [id]: value }})); return;
-          case 'anexoATS': setAnexoATS(prev => ({...prev, peligros: { ...prev.peligros, [id]: value as 'si' | 'no' }})); return;
+          case 'anexoATS': 
+              setState = (v) => setAnexoATS(p => ({...p, ...v}));
+              state = anexoATS;
+              break;
           case 'anexoAltura': 
               setState = setAnexoAltura;
               state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
@@ -640,7 +677,15 @@ export default function CreatePermitPage() {
       }
       
       const handleChange = (value: string) => {
-          if ((group === 'anexoAltura' || group === 'anexoConfinado' || group === 'anexoIzaje') && anexoSection) {
+          if (group === 'anexoATS') {
+              setState((prev: any) => ({
+                  ...prev,
+                  peligros: {
+                    ...(prev.peligros || {}),
+                    [id]: value
+                  }
+              }));
+          } else if ((group === 'anexoAltura' || group === 'anexoConfinado' || group === 'anexoIzaje') && anexoSection) {
               setState((prev: any) => ({
                   ...prev,
                   [anexoSection]: {
@@ -656,7 +701,7 @@ export default function CreatePermitPage() {
       handleChange(value);
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos' | 'epp') => {
     let state: any = {};
     let onValueChange = (value: string) => {};
     let defaultValue = 'na';
@@ -667,7 +712,14 @@ export default function CreatePermitPage() {
         case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
         case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
         case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v as 'si'|'no' }})); break;
-        case 'anexoATS': state = anexoATS.peligros || {}; onValueChange = (v) => setAnexoATS(p => ({...p, peligros: { ...p.peligros, [id]: v as 'si'|'no' }})); defaultValue = 'no'; break;
+        case 'anexoATS': 
+            state = anexoSection === 'epp' ? anexoATS.epp || {} : anexoATS.peligros || {};
+            onValueChange = (v) => setAnexoATS(p => ({
+                ...p, 
+                [anexoSection as string]: { ...(p as any)[anexoSection as string], [id]: v as 'si'|'no' }
+            }));
+            defaultValue = 'no';
+            break;
         case 'anexoAltura': 
             state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {};
             onValueChange = (v) => setAnexoAltura(p => ({...p, [anexoSection as string]: { ...((p as any)[anexoSection as string] || {}), [id]: v }}));
@@ -686,7 +738,7 @@ export default function CreatePermitPage() {
     return (
         <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
             <RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>{group === 'anexoATS' ? 'NO' : ''}</Label>
+            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>{group === 'anexoATS' ? '' : 'NO'}</Label>
             { (group !== 'anexoConfinado' && group !== 'anexoATS') && <>
                 <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
             </>
@@ -965,13 +1017,80 @@ export default function CreatePermitPage() {
                                     {peligros.map(peligro => (
                                         <div key={peligro.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                             <Label className="flex-1 text-sm">{peligro.label}</Label>
-                                            {renderRadioGroup(peligro.id, 'anexoATS')}
+                                            {renderRadioGroup(peligro.id, 'anexoATS', 'peligros')}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         ))}
                     </div>
+                </div>
+                
+                 <div>
+                    <Label className="font-bold text-gray-700">EPP Requeridos</Label>
+                    <p className="text-xs text-muted-foreground">Marque SI o NO si el equipo de protección personal es requerido.</p>
+                     <div className="mt-4 space-y-4">
+                        {Object.entries(atsEppAgrupados).map(([seccion, epps]) => (
+                            <div key={seccion} className="p-4 border rounded-lg">
+                                <h4 className="font-bold mb-4 text-primary">{seccion}</h4>
+                                <div className="space-y-2">
+                                    {epps.map(epp => (
+                                        <div key={epp.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                            <Label className="flex-1 text-sm">{epp.label}</Label>
+                                            {renderRadioGroup(epp.id, 'anexoATS', 'epp')}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                      Trabajadores Ejecutantes
+                    </h2>
+                    <p className="text-muted-foreground text-sm">Registre todos los trabajadores que participarán en esta tarea</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {workers.length > 0 ? (
+                      workers.map((worker, index) => (
+                        <div key={index} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                          <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <Avatar className="w-12 h-12">
+                              {worker.foto && <AvatarImage src={worker.foto} />}
+                              <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 text-center sm:text-left">
+                              <p className="font-bold text-lg text-gray-800">{worker.nombre}</p>
+                              <p className="text-sm text-gray-600">C.C. {worker.cedula} - {worker.rol}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-10 border-2 border-dashed rounded-xl">
+                          <Users size={48} className="mx-auto text-gray-300" />
+                          <p className="mt-4 font-semibold text-gray-600">No hay trabajadores agregados</p>
+                          <p className="text-sm text-gray-500">Haga clic en el botón de abajo para empezar a agregar.</p>
+                      </div>
+                    )}
+
+                    <Button onClick={openNewWorkerDialog} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
+                      <UserPlus size={24} className="mr-3" />
+                      <span className="font-bold">+ Agregar Trabajador</span>
+                    </Button>
+                  </div>
                 </div>
             </div>
           )}
@@ -1542,56 +1661,7 @@ export default function CreatePermitPage() {
                 </div>
             </div>
           )}
-
-          {currentStepInfo.label === "Trabajadores" && (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Trabajadores Ejecutantes Externos
-                </h2>
-                <p className="text-muted-foreground text-sm">Registre todos los trabajadores externos que participarán en esta tarea</p>
-              </div>
-
-              <div className="space-y-4">
-                {workers.length > 0 ? (
-                  workers.map((worker, index) => (
-                    <div key={index} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
-                      <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <Avatar className="w-12 h-12">
-                          {worker.foto && <AvatarImage src={worker.foto} />}
-                          <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 text-center sm:text-left">
-                          <p className="font-bold text-lg text-gray-800">{worker.nombre}</p>
-                          <p className="text-sm text-gray-600">C.C. {worker.cedula} - {worker.rol}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 border-2 border-dashed rounded-xl">
-                      <Users size={48} className="mx-auto text-gray-300" />
-                      <p className="mt-4 font-semibold text-gray-600">No hay trabajadores agregados</p>
-                      <p className="text-sm text-gray-500">Haga clic en el botón de abajo para empezar a agregar.</p>
-                  </div>
-                )}
-
-                <Button onClick={openNewWorkerDialog} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
-                  <UserPlus size={24} className="mr-3" />
-                  <span className="font-bold">+ Agregar Trabajador</span>
-                </Button>
-              </div>
-            </div>
-          )}
-
+          
           {currentStepInfo.label === "Revisión" && (
             <div className="space-y-8">
               <div className="text-center mb-6">
@@ -1746,7 +1816,7 @@ export default function CreatePermitPage() {
       <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
         <DialogContent className="sm:max-w-[650px] h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>{editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador Externo</DialogTitle>
+            <DialogTitle>{editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador</DialogTitle>
             <DialogDescription>
               Complete la información del trabajador que ejecutará la tarea.
             </DialogDescription>
