@@ -872,7 +872,7 @@ export default function PermitDetailPage() {
         <div className="max-w-4xl mx-auto w-full bg-white p-4 md:p-8 shadow-lg md:rounded-lg border font-sans">
              <header ref={headerRef} className="flex justify-between items-start pb-4 border-b-4 border-primary">
                 <div>
-                     <Logo textOnly />
+                     <Image src="https://i.postimg.cc/VsZBSkmH/Italcol.png" alt="Logo Italcol" width={120} height={40} />
                 </div>
                 <div className="text-right flex-shrink-0">
                     <h1 className="text-xl md:text-3xl font-bold text-gray-800">PERMISO DE TRABAJO</h1>
