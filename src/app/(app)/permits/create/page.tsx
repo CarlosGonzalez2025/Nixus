@@ -54,7 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -96,7 +96,17 @@ export default function CreatePermitPage() {
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
 
-  // Step 1
+  // Step 1 - ATS
+  const [anexoATS, setAnexoATS] = useState<Partial<AnexoATS>>({
+    area: '',
+    solicitante: '',
+    fechaInicio: '',
+    fechaTerminacion: '',
+    descripcionTarea: '',
+    peligros: {},
+  });
+
+  // Step 2
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
   const [generalInfo, setGeneralInfo] = useState({
     workDescription: '',
@@ -143,18 +153,18 @@ export default function CreatePermitPage() {
     metodoTrabajo: 'sin_tension'
   });
 
-  // Step 2
+  // Step 3
   const [hazardsData, setHazardsData] = useState<{ [key: string]: string }>({});
 
-  // Step 3
+  // Step 4
   const [ppeData, setPpeData] = useState<{ [key: string]: string }>({});
   const [ppeSystemsData, setPpeSystemsData] = useState<{ [key: string]: string }>({});
 
-  // Step 4
+  // Step 5
   const [emergencyData, setEmergencyData] = useState<{ [key: string]: string }>({});
   const [notification, setNotification] = useState(false);
   
-  // Step 5
+  // Step 6
   const [workers, setWorkers] = useState<ExternalWorker[]>([]);
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
@@ -425,6 +435,24 @@ export default function CreatePermitPage() {
 
   const canProceed = () => {
     const currentStepInfo = steps[step - 1];
+    if (currentStepInfo.label === "Análisis de Trabajo Seguro") {
+        const { area, solicitante, fechaInicio, fechaTerminacion, descripcionTarea } = anexoATS;
+        const missingFields = [];
+        if (!area) missingFields.push("Área");
+        if (!solicitante) missingFields.push("Solicitante");
+        if (!fechaInicio) missingFields.push("Fecha de Inicio");
+        if (!fechaTerminacion) missingFields.push("Fecha de Terminación");
+        if (!descripcionTarea) missingFields.push("Descripción de la Tarea");
+        
+        if (missingFields.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "Campos Incompletos",
+                description: `Por favor, complete los siguientes campos en el ATS: ${missingFields.join(', ')}.`,
+            });
+            return false;
+        }
+    }
     if (currentStepInfo.label === "Info General") {
       const missingFields = [];
       if (selectedWorkTypes.length === 0) missingFields.push("Tipo de Trabajo");
@@ -486,6 +514,7 @@ export default function CreatePermitPage() {
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
+        anexoATS,
         anexoAltura: selectedWorkTypes.includes('altura') ? anexoAltura : undefined,
         anexoConfinado: selectedWorkTypes.includes('confinado') ? anexoConfinado : undefined,
         anexoIzaje: selectedWorkTypes.includes('izaje') ? anexoIzaje : undefined,
@@ -522,6 +551,7 @@ export default function CreatePermitPage() {
   };
 
   const baseSteps = [
+    { label: "Análisis de Trabajo Seguro", condition: true },
     { label: "Info General", condition: true },
     { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
     { label: "Anexo Confinado", condition: selectedWorkTypes.includes('confinado')},
@@ -542,7 +572,48 @@ export default function CreatePermitPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
+  const atsPeligros = [
+    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
+    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
+    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
+    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
+    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
+    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
+    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
+    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
+    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
+    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
+    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
+    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
+    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
+    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
+    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
+    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
+    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herramienta o equipos eléctricos' },
+    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
+    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
+    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
+    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
+    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
+    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
+    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
+    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
+    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
+    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
+ ];
+
+ const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {
+    if (!acc[peligro.seccion]) {
+        acc[peligro.seccion] = [];
+    }
+    acc[peligro.seccion].push(peligro);
+    return acc;
+ }, {} as {[key: string]: typeof atsPeligros});
+
+
+  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
       let state: any;
       let setState: (value: any) => void;
 
@@ -552,6 +623,7 @@ export default function CreatePermitPage() {
           case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); return;
           case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); return;
           case 'anexoEnergias': setAnexoEnergias(prev => ({...prev, planeacion: { ...prev.planeacion, [id]: value }})); return;
+          case 'anexoATS': setAnexoATS(prev => ({...prev, peligros: { ...prev.peligros, [id]: value as 'si' | 'no' }})); return;
           case 'anexoAltura': 
               setState = setAnexoAltura;
               state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
@@ -584,7 +656,7 @@ export default function CreatePermitPage() {
       handleChange(value);
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
     let state: any = {};
     let onValueChange = (value: string) => {};
     let defaultValue = 'na';
@@ -594,7 +666,8 @@ export default function CreatePermitPage() {
         case 'ppe': state = ppeData; onValueChange = (v) => setPpeData(p => ({...p, [id]: v})); break;
         case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
         case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
-        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v }})); break;
+        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v as 'si'|'no' }})); break;
+        case 'anexoATS': state = anexoATS.peligros || {}; onValueChange = (v) => setAnexoATS(p => ({...p, peligros: { ...p.peligros, [id]: v as 'si'|'no' }})); defaultValue = 'no'; break;
         case 'anexoAltura': 
             state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {};
             onValueChange = (v) => setAnexoAltura(p => ({...p, [anexoSection as string]: { ...((p as any)[anexoSection as string] || {}), [id]: v }}));
@@ -613,8 +686,8 @@ export default function CreatePermitPage() {
     return (
         <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
             <RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label>
-            { (group !== 'anexoConfinado') && <>
+            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>{group === 'anexoATS' ? 'NO' : ''}</Label>
+            { (group !== 'anexoConfinado' && group !== 'anexoATS') && <>
                 <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
             </>
             }
@@ -850,6 +923,59 @@ export default function CreatePermitPage() {
       
       <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
         <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
+          {currentStepInfo.label === "Análisis de Trabajo Seguro" && (
+            <div className="space-y-6">
+                <div className="text-center mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        Análisis de Trabajo Seguro - ATS
+                    </h2>
+                    <p className="text-muted-foreground text-sm">Diligencie la información base para el análisis de riesgos.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label className="font-bold text-gray-700">Área *</Label>
+                        <Input value={anexoATS.area || ''} onChange={(e) => setAnexoATS(p => ({...p, area: e.target.value}))} placeholder="Ej: Producción"/>
+                    </div>
+                    <div>
+                        <Label className="font-bold text-gray-700">Solicitante *</Label>
+                        <Input value={anexoATS.solicitante || ''} onChange={(e) => setAnexoATS(p => ({...p, solicitante: e.target.value}))} placeholder="Ej: Juan Pérez"/>
+                    </div>
+                    <div>
+                        <Label className="font-bold text-gray-700">Fecha y Hora de Inicio *</Label>
+                        <Input type="datetime-local" value={anexoATS.fechaInicio || ''} onChange={(e) => setAnexoATS(p => ({...p, fechaInicio: e.target.value}))}/>
+                    </div>
+                    <div>
+                        <Label className="font-bold text-gray-700">Fecha y Hora de Terminación *</Label>
+                        <Input type="datetime-local" value={anexoATS.fechaTerminacion || ''} onChange={(e) => setAnexoATS(p => ({...p, fechaTerminacion: e.target.value}))}/>
+                    </div>
+                </div>
+                <div>
+                    <Label className="font-bold text-gray-700">Descripción de la Tarea *</Label>
+                    <Textarea value={anexoATS.descripcionTarea || ''} onChange={(e) => setAnexoATS(p => ({...p, descripcionTarea: e.target.value}))} placeholder="Describa detalladamente la tarea a realizar..."/>
+                </div>
+
+                <div>
+                    <Label className="font-bold text-gray-700">Identificación de Peligros, Riesgos y Controles</Label>
+                    <p className="text-xs text-muted-foreground">Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando se asigne un "SI" para un peligro, RESALTAR en la 2a columna el CONTROL para cada una de las condiciones relacionadas al peligro.</p>
+                    <div className="mt-4 space-y-4">
+                        {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
+                            <div key={seccion} className="p-4 border rounded-lg">
+                                <h4 className="font-bold mb-4 text-primary">{seccion}</h4>
+                                <div className="space-y-2">
+                                    {peligros.map(peligro => (
+                                        <div key={peligro.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                            <Label className="flex-1 text-sm">{peligro.label}</Label>
+                                            {renderRadioGroup(peligro.id, 'anexoATS')}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+          )}
+
           {currentStepInfo.label === "Info General" && (
             <div className="space-y-6">
               <div className="text-center mb-6">

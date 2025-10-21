@@ -66,6 +66,15 @@ export type PermitClosure = {
   horaCierre: string;
 }
 
+export type AnexoATS = {
+  area: string;
+  solicitante: string;
+  fechaInicio: string;
+  fechaTerminacion: string;
+  descripcionTarea: string;
+  peligros: { [key: string]: 'si' | 'no' };
+};
+
 export type AnexoAltura = {
   alturaTrabajo: string;
   coordinadorTSA: 'si' | 'no';
@@ -175,6 +184,7 @@ export type Permit = {
     sst: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
+  anexoATS?: Partial<AnexoATS>;
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoIzaje?: Partial<AnexoIzaje>;

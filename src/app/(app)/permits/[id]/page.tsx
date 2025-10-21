@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -489,6 +489,46 @@ export default function PermitDetailPage() {
   const statusInfo = getStatusInfo(permit.status);
 
 
+ const atsPeligros = [
+    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
+    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
+    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
+    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
+    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
+    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
+    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
+    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
+    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
+    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
+    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
+    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
+    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
+    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
+    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
+    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
+    { seccion: 'MECÁNICOS', id jerky: 'manejo_herramientas', label: 'Manejo de herramienta o equipos eléctricos' },
+    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
+    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
+    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
+    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
+    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
+    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
+    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
+    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
+    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
+    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
+ ];
+
+ const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {
+    if (!acc[peligro.seccion]) {
+        acc[peligro.seccion] = [];
+    }
+    acc[peligro.seccion].push(peligro);
+    return acc;
+ }, {} as {[key: string]: typeof atsPeligros});
+
  const hazards = [
     { id: 'ruido', label: 'Ruido' },
     { id: 'vibracion', label: 'Vibración' },
@@ -853,6 +893,45 @@ export default function PermitDetailPage() {
                 <div className="my-4 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-xs text-yellow-800 print:hidden">
                     <p><strong>Marque dentro de los cuadros SI/NO/NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
                 </div>
+
+                {permit.anexoATS && (
+                    <Collapsible className="space-y-6 mt-6 border rounded-lg" defaultOpen>
+                        <CollapsibleTrigger className="w-full bg-gray-100 hover:bg-gray-200 p-4 flex justify-between items-center cursor-pointer group rounded-t-lg">
+                            <h3 className="text-sm font-bold uppercase text-gray-600">ANÁLISIS DE TRABAJO SEGURO - ATS</h3>
+                            <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 md:p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Field label="ÁREA" value={permit.anexoATS.area} />
+                                <Field label="SOLICITANTE" value={permit.anexoATS.solicitante} />
+                                <Field label="FECHA Y HORA DE INICIO" value={permit.anexoATS.fechaInicio ? format(new Date(permit.anexoATS.fechaInicio), "dd/MM/yyyy HH:mm") : undefined} />
+                                <Field label="FECHA Y HORA DE TERMINACIÓN" value={permit.anexoATS.fechaTerminacion ? format(new Date(permit.anexoATS.fechaTerminacion), "dd/MM/yyyy HH:mm") : undefined} />
+                            </div>
+                            <Field label="DESCRIPCIÓN DE LA TAREA" value={permit.anexoATS.descripcionTarea} fullWidth />
+                            <div>
+                                <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Identificación de Peligros, Riesgos y Controles</h4>
+                                <div className="space-y-4">
+                                    {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
+                                        <div key={seccion}>
+                                            <h5 className="font-semibold text-gray-600 text-xs mb-2 uppercase">{seccion}</h5>
+                                            <div className="space-y-1">
+                                                {peligros.map(peligro => (
+                                                    <div key={peligro.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                                        <span className="text-xs flex-1">{peligro.label}</span>
+                                                        <div className="flex gap-2 items-center text-xs font-mono">
+                                                            <span className={permit.anexoATS?.peligros?.[peligro.id] === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
+                                                            <span className={permit.anexoATS?.peligros?.[peligro.id] === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
                 
                 <div className="space-y-6 mt-6">
                     <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
