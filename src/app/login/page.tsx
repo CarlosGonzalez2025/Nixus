@@ -84,10 +84,10 @@ export default function LoginPage() {
           
           {/* Título del Sistema */}
           <div className="text-center space-y-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">SGPT</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">SGTC</h1>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed text-center">
-              Sistema de Gestión de<br />
-              Permisos de Trabajo
+              Sistema de Gestión<br />
+              Tareas de Alto Riesgo
             </p>
           </div>
         </CardHeader>

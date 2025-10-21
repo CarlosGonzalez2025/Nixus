@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SGPT Móvil - Sistema de Permisos de Trabajo',
-  description: 'Sistema de Gestión de Permisos de Trabajo - Nixus Consultoría',
+  title: 'SGTC Móvil - Sistema de Gestión Tareas de Alto Riesgo',
+  description: 'Sistema de Gestión Tareas de Alto Riesgo - Nixus Consultoría',
 };
 
 export default function RootLayout({

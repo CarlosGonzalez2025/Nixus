@@ -9,7 +9,6 @@ export function Logo({ className, textOnly = false }: { className?: string, text
   if (textOnly) {
      return (
         <div className={cn('flex flex-col items-start', className)}>
-            {/* Textos eliminados como se solicitó */}
         </div>
      );
   }
@@ -26,9 +25,9 @@ export function Logo({ className, textOnly = false }: { className?: string, text
           priority // Carga la imagen con prioridad ya que es LCP
         />
       </div>
-      <h2 className="text-2xl font-bold text-gray-800 mt-2">SGPT</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mt-2">SGTC</h2>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Sistema de Gestión de Permisos de Trabajo
+        Sistema de Gestión Tareas de Alto Riesgo
       </p>
     </div>
   );

@@ -113,7 +113,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent" />
               </div>
               <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-                SGPT Móvil
+                SGTC Móvil
               </span>
             </div>
           </SidebarHeader>
