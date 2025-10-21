@@ -157,8 +157,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="bg-gray-50 py-3 sm:py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500 rounded-b-lg">
             <p className="w-full">
-                © 2025 ITALCOL - Todos los derechos
-                reservados
+                © 2025 Axa Colpatria & Nixus Capital - Todos los derechos reservados
             </p>
         </CardFooter>
       </Card>
