@@ -51,7 +51,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { format } from 'date-fns';
-import { Logo } from '@/components/logo';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Input } from '@/components/ui/input';
@@ -151,19 +150,9 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueCha
         <div className={`${baseClasses} ${readOnly ? readOnlyClasses : interactiveClasses}`}>
             <span className="text-xs flex-1">{label}</span>
             <div className="flex gap-2 items-center text-xs font-mono">
-              {readOnly ? (
-                <>
-                  <span className={checkValue === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
-                  <span className={checkValue === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
-                  <span className={checkValue === 'na' ? 'font-bold text-black' : 'text-gray-400'}>NA</span>
-                </>
-              ) : (
-                <>
-                  <span onClick={() => onValueChange?.('si')} className={getOptionClasses('si')}>SI</span>
-                  <span onClick={() => onValueChange?.('no')} className={getOptionClasses('no')}>NO</span>
-                  <span onClick={() => onValueChange?.('na')} className={getOptionClasses('na')}>NA</span>
-                </>
-              )}
+              <span className={getOptionClasses('si')}>SI</span>
+              <span className={getOptionClasses('no')}>NO</span>
+              <span className={getOptionClasses('na')}>NA</span>
             </div>
         </div>
     );
@@ -879,7 +868,7 @@ export default function PermitDetailPage() {
                     <p className="font-mono text-sm md:text-base text-gray-600 mt-2">N°: {permit.number || permit.id.substring(0, 10)}</p>
                     {permit.createdAt && (
                       <p className="text-xs md:text-sm text-gray-500 mt-1">
-                        Creado: {format(permit.createdAt, "dd/MM/yyyy HH:mm")}
+                        Creado: {format(parseFirestoreDate(permit.createdAt)!, "dd/MM/yyyy HH:mm")}
                       </p>
                     )}
                     <Badge className={`mt-2 ${statusInfo.bgColor} ${statusInfo.color} text-base`} >
@@ -916,13 +905,12 @@ export default function PermitDetailPage() {
                                             <h5 className="font-semibold text-gray-600 text-xs mb-2 uppercase">{seccion}</h5>
                                             <div className="space-y-1">
                                                 {peligros.map(peligro => (
-                                                    <div key={peligro.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                                                        <span className="text-xs flex-1">{peligro.label}</span>
-                                                        <div className="flex gap-2 items-center text-xs font-mono">
-                                                            <span className={permit.anexoATS?.peligros?.[peligro.id] === 'si' ? 'font-bold text-black' : 'text-gray-400'}>SI</span>
-                                                            <span className={permit.anexoATS?.peligros?.[peligro.id] === 'no' ? 'font-bold text-black' : 'text-gray-400'}>NO</span>
-                                                        </div>
-                                                    </div>
+                                                    <RadioCheck 
+                                                        key={peligro.id} 
+                                                        label={peligro.label} 
+                                                        value={permit.anexoATS?.peligros?.[peligro.id]} 
+                                                        readOnly 
+                                                    />
                                                 ))}
                                             </div>
                                         </div>

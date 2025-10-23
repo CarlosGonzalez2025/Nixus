@@ -32,7 +32,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { getRiskAssessmentRecommendations } from '@/ai/flows/risk-assessment-recommendation';
-import { Logo } from '@/components/logo';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -666,7 +665,6 @@ export default function CreatePermitPage() {
 
 
   const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
-      let state: any;
       let setState: (value: any) => void;
 
       switch(group) {
@@ -677,30 +675,26 @@ export default function CreatePermitPage() {
           case 'anexoEnergias': setAnexoEnergias(prev => ({...prev, planeacion: { ...prev.planeacion, [id]: value }})); return;
           case 'anexoATS': 
               setState = (v) => setAnexoATS(p => ({...p, ...v}));
-              state = anexoATS;
               break;
           case 'anexoAltura': 
               setState = setAnexoAltura;
-              state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : anexoAltura;
               break;
           case 'anexoConfinado':
               setState = (value) => setAnexoConfinado(prev => ({...prev, checklist: value}));
-              state = anexoConfinado.checklist || {};
               break;
           case 'anexoIzaje':
               setState = (value) => setAnexoIzaje(prev => ({...prev, aspectosRequeridos: value}));
-              state = anexoIzaje.aspectosRequeridos || {};
               break;
           default: return;
       }
       
-      const handleChange = (value: string) => {
+      const handleChange = (val: string) => {
           if (group === 'anexoATS') {
               setState((prev: any) => ({
                   ...prev,
                   peligros: {
                     ...(prev.peligros || {}),
-                    [id]: value
+                    [id]: val
                   }
               }));
           } else if ((group === 'anexoAltura' || group === 'anexoConfinado' || group === 'anexoIzaje') && anexoSection) {
@@ -708,11 +702,11 @@ export default function CreatePermitPage() {
                   ...prev,
                   [anexoSection]: {
                       ...(prev as any)[anexoSection],
-                      [id]: value
+                      [id]: val
                   }
               }));
           } else {
-              setState((prev: any) => ({...prev, [id]: value}));
+              setState((prev: any) => ({...prev, [id]: val}));
           }
       };
       
@@ -729,12 +723,12 @@ export default function CreatePermitPage() {
         case 'ppe': state = ppeData; onValueChange = (v) => setPpeData(p => ({...p, [id]: v})); break;
         case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
         case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
-        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v as 'si'|'no' }})); break;
+        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v as 'si'|'no'|'na' }})); break;
         case 'anexoATS': 
             state = anexoSection === 'epp' ? anexoATS.epp || {} : anexoATS.peligros || {};
             onValueChange = (v) => setAnexoATS(p => ({
                 ...p, 
-                [anexoSection as string]: { ...(p as any)[anexoSection as string], [id]: v as 'si'|'no' }
+                [anexoSection as string]: { ...(p as any)[anexoSection as string], [id]: v as 'si'|'no'|'na' }
             }));
             defaultValue = 'no';
             break;
@@ -756,11 +750,8 @@ export default function CreatePermitPage() {
     return (
         <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
             <RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>{group === 'anexoATS' ? '' : 'NO'}</Label>
-            { (group !== 'anexoConfinado' && group !== 'anexoATS') && <>
-                <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
-            </>
-            }
+            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label>
+            <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
         </RadioGroup>
     )
   }
@@ -1224,16 +1215,15 @@ export default function CreatePermitPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="font-bold text-gray-700">Reunión de Inicio</label>
-                <RadioGroup value={generalInfo.reunionInicio} onValueChange={(value) => setGeneralInfo({...generalInfo, reunionInicio: value})} className="flex">
+                <label className="font-bold text-gray-700">Verificaciones Previas</label>
+                 <RadioGroup value={generalInfo.reunionInicio} onValueChange={(value) => setGeneralInfo({...generalInfo, reunionInicio: value})} className="flex p-2 rounded-md bg-gray-50 items-center">
+                    <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
                     <RadioGroupItem value="si" id="reunion-si" /> <Label htmlFor="reunion-si" className="mr-2">SI</Label>
                     <RadioGroupItem value="no" id="reunion-no" /> <Label htmlFor="reunion-no" className="mr-2">NO</Label>
                     <RadioGroupItem value="na" id="reunion-na" /> <Label htmlFor="reunion-na">NA</Label>
                 </RadioGroup>
-              </div>
-              <div className="space-y-2">
-                <label className="font-bold text-gray-700">ATS Verificado</label>
-                 <RadioGroup value={generalInfo.atsVerificado} onValueChange={(value) => setGeneralInfo({...generalInfo, atsVerificado: value})} className="flex">
+                 <RadioGroup value={generalInfo.atsVerificado} onValueChange={(value) => setGeneralInfo({...generalInfo, atsVerificado: value})} className="flex p-2 rounded-md bg-gray-50 items-center">
+                    <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
                     <RadioGroupItem value="si" id="ats-si" /> <Label htmlFor="ats-si" className="mr-2">SI</Label>
                     <RadioGroupItem value="no" id="ats-no" /> <Label htmlFor="ats-no" className="mr-2">NO</Label>
                     <RadioGroupItem value="na" id="ats-na" /> <Label htmlFor="ats-na">NA</Label>
@@ -1260,9 +1250,10 @@ export default function CreatePermitPage() {
                           </div>
                           <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                             <Label>B.- Coordinador TSA</Label>
-                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'}))} className="flex">
+                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'|'na'}))} className="flex">
                               <RadioGroupItem value="si" id="anexo-coord-si" /><Label htmlFor="anexo-coord-si" className="mr-2">SI</Label>
                               <RadioGroupItem value="no" id="anexo-coord-no" /><Label htmlFor="anexo-coord-no" >NO</Label>
+                              <RadioGroupItem value="na" id="anexo-coord-na" /><Label htmlFor="anexo-coord-na" >NA</Label>
                             </RadioGroup>
                           </div>
                       </div>
@@ -1277,9 +1268,10 @@ export default function CreatePermitPage() {
                           </div>
                            <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                             <Label>D.- Elaboración ATS y procedimientos</Label>
-                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'}))} className="flex">
+                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'|'na'}))} className="flex">
                               <RadioGroupItem value="si" id="anexo-ats-si" /><Label htmlFor="anexo-ats-si" className="mr-2">SI</Label>
-                              <RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no" >NO</Label>
+                              <RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no" className="mr-2">NO</Label>
+                              <RadioGroupItem value="na" id="anexo-ats-na" /><Label htmlFor="anexo-ats-na" >NA</Label>
                             </RadioGroup>
                           </div>
                       </div>
@@ -1569,9 +1561,10 @@ export default function CreatePermitPage() {
                        {anexoEnergiasPlaneacion.map(item => (
                           <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                               <Label className="flex-1 text-sm">{item.label}</Label>
-                              <RadioGroup value={(anexoEnergias.planeacion || {})[item.id] || 'no'} onValueChange={v => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [item.id]: v as 'si'|'no' }}))} className="flex">
+                              <RadioGroup value={(anexoEnergias.planeacion || {})[item.id] || 'no'} onValueChange={v => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [item.id]: v as 'si'|'no'|'na' }}))} className="flex">
                                   <RadioGroupItem value="si" id={`planeacion-${item.id}-si`} /> <Label htmlFor={`planeacion-${item.id}-si`} className="mr-2">SI</Label>
-                                  <RadioGroupItem value="no" id={`planeacion-${item.id}-no`} /> <Label htmlFor={`planeacion-${item.id}-no`}>NO</Label>
+                                  <RadioGroupItem value="no" id={`planeacion-${item.id}-no`} /> <Label htmlFor={`planeacion-${item.id}-no`} className="mr-2">NO</Label>
+                                  <RadioGroupItem value="na" id={`planeacion-${item.id}-na`} /> <Label htmlFor={`planeacion-${item.id}-na`}>NA</Label>
                               </RadioGroup>
                           </div>
                       ))}
@@ -1984,5 +1977,3 @@ export default function CreatePermitPage() {
     </>
   );
 }
-
-    
