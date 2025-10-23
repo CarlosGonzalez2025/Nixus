@@ -724,10 +724,10 @@ export default function CreatePermitPage() {
         case 'ppeSystems': state = ppeSystemsData; onValueChange = handleRadioChange(id, group); break;
         case 'emergency': state = emergencyData; onValueChange = handleRadioChange(id, group); break;
         case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoATS-peligros': state = anexoATS.peligros || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
-        case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
+        case 'anexoATS-peligros': state = anexoATS.peligros || {}; onValueChange = handleRadioChange(id, group); break;
+        case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; onValueChange = handleRadioChange(id, group, anexoSection); break;
-        case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
+        case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos'); break;
         case 'generalInfo': state = generalInfo; onValueChange = handleRadioChange(id, group); break;
     }
@@ -1104,11 +1104,25 @@ export default function CreatePermitPage() {
                 <p className="text-muted-foreground text-sm">Complete todos los campos obligatorios (*)</p>
               </div>
 
-                <div className="my-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-yellow-800">
-                    <p><strong>Marque dentro de los cuadros SI / NO /NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
+                <div>
+                    <Label className="font-bold text-gray-700">Tipo de Trabajo *</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4 border rounded-lg mt-2">
+                    {Object.entries(workTypes).map(([key, name]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                        <Checkbox
+                            id={key}
+                            checked={selectedWorkTypes.includes(key)}
+                            onCheckedChange={() => handleWorkTypeChange(key)}
+                        />
+                        <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {name}
+                        </label>
+                        </div>
+                    ))}
+                    </div>
                 </div>
-                
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <Label>Fecha de Expedición</Label>
                         <Input type="date" value={generalInfo.fechaExpedicion} onChange={e => setGeneralInfo(p => ({...p, fechaExpedicion: e.target.value}))}/>
@@ -1201,6 +1215,19 @@ export default function CreatePermitPage() {
                <div>
                     <Label>No. Trabajadores</Label>
                     <Input type="number" value={generalInfo.numTrabajadores} onChange={e => setGeneralInfo(p => ({...p, numTrabajadores: e.target.value}))} placeholder="Cantidad de trabajadores"/>
+                </div>
+
+                <div className="my-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-yellow-800">
+                    <p><strong>Marque dentro de los cuadros SI / NO /NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                    <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
+                    {renderRadioGroup('reunionInicio', 'generalInfo')}
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                    <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
+                    {renderRadioGroup('atsVerificado', 'generalInfo')}
                 </div>
 
             </div>
