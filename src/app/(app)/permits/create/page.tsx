@@ -53,7 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -119,16 +119,20 @@ export default function CreatePermitPage() {
 
   // Step 2
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
-  const [generalInfo, setGeneralInfo] = useState({
-    workDescription: '',
-    suspensionCauses: '',
-    procedure: '',
-    isEmergencyExtension: false,
+  const [generalInfo, setGeneralInfo] = useState<Partial<PermitGeneralInfo>>({
+    fechaExpedicion: '',
+    planta: '',
+    proceso: '',
+    contrato: '',
+    empresa: '',
+    nombreSolicitante: '',
     validFrom: '',
     validUntil: '',
-    reunionInicio: 'na' as 'si' | 'no' | 'na',
-    atsVerificado: 'na' as 'si' | 'no' | 'na',
-    tools: [] as Tool[],
+    workDescription: '',
+    tools: [],
+    numTrabajadores: '',
+    reunionInicio: 'na',
+    atsVerificado: 'na',
   });
   const [newToolName, setNewToolName] = useState('');
   
@@ -165,14 +169,14 @@ export default function CreatePermitPage() {
   });
 
   // Step 3
-  const [hazardsData, setHazardsData] = useState<{ [key: string]: string }>({});
+  const [hazardsData, setHazardsData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
 
   // Step 4
-  const [ppeData, setPpeData] = useState<{ [key: string]: string }>({});
-  const [ppeSystemsData, setPpeSystemsData] = useState<{ [key: string]: string }>({});
+  const [ppeData, setPpeData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
+  const [ppeSystemsData, setPpeSystemsData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
 
   // Step 5
-  const [emergencyData, setEmergencyData] = useState<{ [key: string]: string }>({});
+  const [emergencyData, setEmergencyData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
   const [notification, setNotification] = useState(false);
   
   // Step 6
@@ -290,19 +294,19 @@ export default function CreatePermitPage() {
   
   const addTool = () => {
     if (newToolName.trim()) {
-      setGeneralInfo(prev => ({...prev, tools: [...prev.tools, { name: newToolName.trim(), status: 'B' }]}));
+      setGeneralInfo(prev => ({...prev, tools: [...(prev.tools || []), { name: newToolName.trim(), status: 'B' }]}));
       setNewToolName('');
     }
   };
 
   const updateToolStatus = (index: number, status: 'B' | 'M') => {
-    const updatedTools = [...generalInfo.tools];
+    const updatedTools = [...(generalInfo.tools || [])];
     updatedTools[index].status = status;
     setGeneralInfo(prev => ({...prev, tools: updatedTools}));
   };
 
   const removeTool = (index: number) => {
-    setGeneralInfo(prev => ({...prev, tools: prev.tools.filter((_, i) => i !== index)}));
+    setGeneralInfo(prev => ({...prev, tools: (prev.tools || []).filter((_, i) => i !== index)}));
   };
   
   const addMedicion = () => {
@@ -491,7 +495,7 @@ export default function CreatePermitPage() {
       const result = await getRiskAssessmentRecommendations({
         workType: selectedWorkTypes.map(key => workTypes[key]).join(', ') || 'General',
         environmentalFactors: "Factores diversos según peligros seleccionados",
-        permitDetails: generalInfo.procedure,
+        permitDetails: generalInfo.workDescription || '',
       });
       setRecommendations(result.recommendedControls);
       toast({
@@ -1099,113 +1103,105 @@ export default function CreatePermitPage() {
                 </h2>
                 <p className="text-muted-foreground text-sm">Complete todos los campos obligatorios (*)</p>
               </div>
+
+                <div className="my-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-yellow-800">
+                    <p><strong>Marque dentro de los cuadros SI / NO /NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
+                </div>
                 
-                 <div>
-                    <label className="font-bold text-gray-700">Tipo de Trabajo *</label>
-                    <div className="p-4 border rounded-lg mt-2 space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(workTypes).map(([key, value]) => (
-                          <div key={key} className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`worktype-${key}`} 
-                              checked={selectedWorkTypes.includes(key)}
-                              onCheckedChange={() => handleWorkTypeChange(key)}
-                            />
-                            <Label htmlFor={`worktype-${key}`} className="font-normal">{value}</Label>
-                          </div>
-                        ))}
-                      </div>
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <Label>Fecha de Expedición</Label>
+                        <Input type="date" value={generalInfo.fechaExpedicion} onChange={e => setGeneralInfo(p => ({...p, fechaExpedicion: e.target.value}))}/>
                     </div>
-                 </div>
+                     <div>
+                        <Label>Planta</Label>
+                        <Input value={generalInfo.planta} onChange={e => setGeneralInfo(p => ({...p, planta: e.target.value}))} placeholder="Planta"/>
+                    </div>
+                     <div>
+                        <Label>Proceso</Label>
+                        <Input value={generalInfo.proceso} onChange={e => setGeneralInfo(p => ({...p, proceso: e.target.value}))} placeholder="Proceso"/>
+                    </div>
+                     <div>
+                        <Label>Contrato</Label>
+                        <Input value={generalInfo.contrato} onChange={e => setGeneralInfo(p => ({...p, contrato: e.target.value}))} placeholder="Contrato"/>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                     <div>
+                        <Label>Empresa</Label>
+                        <Input value={generalInfo.empresa} onChange={e => setGeneralInfo(p => ({...p, empresa: e.target.value}))} placeholder="Empresa"/>
+                    </div>
+                     <div>
+                        <Label>Nombre del Solicitante</Label>
+                        <Input value={generalInfo.nombreSolicitante} onChange={e => setGeneralInfo(p => ({...p, nombreSolicitante: e.target.value}))} placeholder="Nombre del solicitante"/>
+                    </div>
+                </div>
 
                 <div>
-                    <label className="font-bold text-gray-700">El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo): *</label>
+                    <Label className="font-bold text-gray-700">Duración del Permiso *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg">
+                        <div>
+                        <label className="text-sm font-medium">Desde</label>
+                        <Input
+                            type="datetime-local"
+                            value={generalInfo.validFrom}
+                            onChange={(e) => setGeneralInfo({...generalInfo, validFrom: e.target.value})}
+                        />
+                        </div>
+
+                        <div>
+                        <label className="text-sm font-medium">Hasta</label>
+                        <Input
+                            type="datetime-local"
+                            value={generalInfo.validUntil}
+                            onChange={(e) => setGeneralInfo({...generalInfo, validUntil: e.target.value})}
+                        />
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <Label className="font-bold">ALCANCE. El trabajo se LIMITA a lo siguiente (Alcance del Trabajo - Descripcion y Area/Equipo): *</Label>
                     <Textarea
-                      value={generalInfo.workDescription}
-                      onChange={(e) => setGeneralInfo({...generalInfo, workDescription: e.target.value})}
-                      rows={3}
-                      className="w-full mt-1"
-                      placeholder="Describa el tipo, alcance, descripción y área/equipo..."
+                        value={generalInfo.workDescription}
+                        onChange={(e) => setGeneralInfo({...generalInfo, workDescription: e.target.value})}
+                        rows={3}
+                        className="w-full mt-1"
+                        placeholder="Describa el alcance, descripción y área/equipo..."
                     />
                 </div>
-              
-              <div>
-                  <label className="font-bold text-gray-700">Causales para la suspensión del Permiso: LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:</label>
-                  <Input
-                      value={generalInfo.suspensionCauses}
-                      onChange={(e) => setGeneralInfo({...generalInfo, suspensionCauses: e.target.value})}
-                      className="w-full mt-1"
-                      placeholder="Indique otras causales si las hay..."
-                  />
-              </div>
 
               <div>
-                <label className="font-bold text-gray-700">Descripción o procedimiento de la teras a realizar:</label>
-                <Textarea
-                  value={generalInfo.procedure}
-                  onChange={(e) => setGeneralInfo({...generalInfo, procedure: e.target.value})}
-                  rows={4}
-                  className="w-full mt-1"
-                  placeholder="Describa el procedimiento detallado paso a paso..."
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch id="emergency-extension" checked={generalInfo.isEmergencyExtension} onCheckedChange={(checked) => setGeneralInfo({...generalInfo, isEmergencyExtension: checked})} />
-                <Label htmlFor="emergency-extension">Extensión Emergencia</Label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="font-bold text-gray-700">Válido Desde (DD/MM/AA HH:MM) *</label>
-                  <Input
-                    type="datetime-local"
-                    value={generalInfo.validFrom}
-                    onChange={(e) => setGeneralInfo({...generalInfo, validFrom: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-gray-700">Válido Hasta (DD/MM/AA HH:MM) *</label>
-                  <Input
-                    type="datetime-local"
-                    value={generalInfo.validUntil}
-                    onChange={(e) => setGeneralInfo({...generalInfo, validUntil: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-700">Herramientas y Equipos</label>
-                <div className="p-4 border rounded-lg mt-2 space-y-2">
-                  {generalInfo.tools.map((tool, index) => (
-                    <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
-                      <span className="flex-1">{tool.name}</span>
-                       <RadioGroup value={tool.status} onValueChange={(value: 'B' | 'M') => updateToolStatus(index, value)} className="flex">
-                          <div className="flex items-center space-x-2"><RadioGroupItem value="B" id={`tool-${index}-b`} /><Label htmlFor={`tool-${index}-b`}>B</Label></div>
-                          <div className="flex items-center space-x-2"><RadioGroupItem value="M" id={`tool-${index}-m`} /><Label htmlFor={`tool-${index}-m`}>M</Label></div>
-                      </RadioGroup>
-                      <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                <Label className="font-bold text-gray-700">Equipos y/o Herramientas</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg mt-2">
+                    <div className="space-y-2">
+                        {generalInfo.tools?.slice(0, 4).map((tool, index) => (
+                            <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
+                            <span className="flex-1">{tool.name}</span>
+                            <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
                     </div>
-                  ))}
-                  <div className="flex gap-2">
-                    <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
-                    <Button onClick={addTool}><Plus/></Button>
-                  </div>
+                     <div className="space-y-2">
+                        {generalInfo.tools?.slice(4, 8).map((tool, index) => (
+                            <div key={index + 4} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
+                            <span className="flex-1">{tool.name}</span>
+                            <Button variant="ghost" size="icon" onClick={() => removeTool(index + 4)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="md:col-span-2 flex gap-2">
+                        <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
+                        <Button onClick={addTool}><Plus/></Button>
+                    </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="font-bold text-gray-700">Verificaciones Previas</label>
-                 <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                    <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
-                    {renderRadioGroup('reunionInicio', 'generalInfo')}
+               <div>
+                    <Label>No. Trabajadores</Label>
+                    <Input type="number" value={generalInfo.numTrabajadores} onChange={e => setGeneralInfo(p => ({...p, numTrabajadores: e.target.value}))} placeholder="Cantidad de trabajadores"/>
                 </div>
-                 <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                    <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
-                    {renderRadioGroup('atsVerificado', 'generalInfo')}
-                </div>
-              </div>
 
             </div>
           )}

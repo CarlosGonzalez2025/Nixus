@@ -72,8 +72,8 @@ export type AnexoATS = {
   fechaInicio: string;
   fechaTerminacion: string;
   descripcionTarea: string;
-  peligros: { [key: string]: 'si' | 'no' };
-  epp: { [key: string]: 'si' | 'no' };
+  peligros: { [key: string]: 'si' | 'no' | 'na' };
+  epp: { [key: string]: 'si' | 'no' | 'na' };
 };
 
 export type AnexoAltura = {
@@ -148,6 +148,22 @@ export type AnexoEnergias = {
   metodoTrabajo: 'sin_tension' | 'con_tension';
 };
 
+export type PermitGeneralInfo = {
+    fechaExpedicion: string;
+    planta: string;
+    proceso: string;
+    contrato: string;
+    empresa: string;
+    nombreSolicitante: string;
+    validFrom: string;
+    validUntil: string;
+    workDescription: string;
+    tools: Tool[];
+    numTrabajadores: string;
+    reunionInicio: 'si' | 'no' | 'na';
+    atsVerificado: 'si' | 'no' | 'na';
+}
+
 
 export type Permit = {
   id: string;
@@ -162,17 +178,7 @@ export type Permit = {
     email?: string | null;
     photoURL?: string | null;
   };
-  generalInfo?: {
-    workDescription: string;
-    suspensionCauses: string;
-    procedure: string;
-    isEmergencyExtension: boolean;
-    validFrom: string;
-    validUntil: string;
-    tools: Tool[];
-    reunionInicio: string; // 'si', 'no', 'na'
-    atsVerificado: string; // 'si', 'no', 'na'
-  };
+  generalInfo?: Partial<PermitGeneralInfo>;
   hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
   ppe?: { [key:string]: string };
   ppeSystems?: { [key: string]: string };

@@ -924,36 +924,37 @@ export default function PermitDetailPage() {
                 <div className="space-y-6 mt-6">
                     <Section title="INFORMACIÓN GENERAL- Aplica a todos los Permisos">
                         <div className="space-y-4">
-                            <Field label="Tipo(s) de Trabajo" value={getWorkTypesString(permit.workType)} fullWidth/>
-                            <Field label="El trabajo se LIMITA a lo siguiente (Tipo y Alcance del Trabajo - Descripción y Área/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
-                            <Field label="Causales para la suspensión del Permiso:" value={permit.generalInfo?.suspensionCauses} fullWidth/>
-                            <Field label="Descripción o procedimiento de la teras a realizar:" value={permit.generalInfo?.procedure} fullWidth/>
-                            <div className="flex items-center space-x-2">
-                                <CheckCircle className={`h-4 w-4 ${permit.generalInfo?.isEmergencyExtension ? 'text-green-500' : 'text-gray-300'}`} />
-                                <span className="text-sm font-medium">Extensión Emergencia</span>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <Field label="Fecha de Expedición:" value={permit.generalInfo?.fechaExpedicion ? format(new Date(permit.generalInfo.fechaExpedicion), "dd/MM/yyyy") : undefined} />
+                                <Field label="Planta:" value={permit.generalInfo?.planta} />
+                                <Field label="Proceso:" value={permit.generalInfo?.proceso} />
+                                <Field label="Contrato:" value={permit.generalInfo?.contrato} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                               <Field label="Válido Desde:" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : undefined}/>
-                               <Field label="Válido Hasta:" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : undefined}/>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Empresa:" value={permit.generalInfo?.empresa} />
+                                <Field label="Nombre del Solicitante:" value={permit.generalInfo?.nombreSolicitante} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                               <Field label="Duración Desde:" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), "dd/MM/yyyy HH:mm") : undefined}/>
+                               <Field label="Duración Hasta:" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), "dd/MM/yyyy HH:mm") : undefined}/>
+                            </div>
+                            <Field label="ALCANCE. El trabajo se LIMITA a lo siguiente (Alcance del Trabajo - Descripcion y Area/Equipo):" value={permit.generalInfo?.workDescription} fullWidth/>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="text-xs text-gray-500">Equipos y/o Herramientas</h4>
+                                    <div className="grid grid-cols-1 gap-1 mt-1">
+                                        {permit.generalInfo?.tools?.map((tool: Tool, index: number) => (
+                                            <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md text-xs">
+                                                <span>{tool.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                 <Field label="No. Trabajadores" value={permit.generalInfo?.numTrabajadores} />
                             </div>
                         </div>
                     </Section>
 
-                    {permit.generalInfo?.tools && permit.generalInfo.tools.length > 0 && (
-                      <Section title="HERRAMIENTAS Y EQUIPOS">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                              {permit.generalInfo.tools.map((tool: Tool, index: number) => (
-                                   <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-md">
-                                      <span className="text-xs flex-1">{tool.name}</span>
-                                      <div className="flex gap-2 items-center text-xs font-mono">
-                                          <span className={tool.status === 'B' ? 'font-bold text-black' : 'text-gray-400'}>B</span>
-                                          <span className={tool.status === 'M' ? 'font-bold text-black' : 'text-gray-400'}>M</span>
-                                      </div>
-                                  </div>
-                              ))}
-                          </div>
-                      </Section>
-                    )}
                     
                     <Section title="Verificaciones Previas">
                         <RadioCheck label="REUNIÓN DE INICIO" value={permit.generalInfo?.reunionInicio} readOnly />
