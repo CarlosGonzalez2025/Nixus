@@ -82,6 +82,17 @@ const epsList = ["SURA", "Sanitas", "Compensar", "Nueva EPS", "Salud Total", "Co
 const arlList = ["SURA", "Positiva", "Colmena", "AXA Colpatria", "Equidad Seguros", "Bolívar", "Alfa", "Otra"];
 const pensionFundsList = ["Colpensiones", "Porvenir", "Protección", "Colfondos", "Skandia", "Otro"];
 
+const workerRoles = [
+  "Trabajador autorizado",
+  "Ayudante de seguridad",
+  "Coordinador de TA",
+  "Supervisor de EC",
+  "Soldador",
+  "Operador de equipo para elevación de personas",
+  "Vigía",
+  "Otro"
+];
+
 
 export default function CreatePermitPage() {
   const { user } = useUser();
@@ -1847,8 +1858,13 @@ export default function CreatePermitPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="rol">Rol dentro del permiso *</Label>
-                <Input id="rol" value={currentWorker?.rol || ''} onChange={(e) => handleWorkerInputChange('rol', e.target.value)} />
+                  <Label htmlFor="rol">Rol dentro del permiso *</Label>
+                  <Select value={currentWorker?.rol || ''} onValueChange={(value) => handleWorkerInputChange('rol', value)}>
+                      <SelectTrigger id="rol"><SelectValue placeholder="Seleccione un rol..." /></SelectTrigger>
+                      <SelectContent>
+                          {workerRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                  <div>
