@@ -126,8 +126,8 @@ export default function CreatePermitPage() {
     isEmergencyExtension: false,
     validFrom: '',
     validUntil: '',
-    reunionInicio: 'na',
-    atsVerificado: 'na',
+    reunionInicio: 'na' as 'si' | 'no' | 'na',
+    atsVerificado: 'na' as 'si' | 'no' | 'na',
     tools: [] as Tool[],
   });
   const [newToolName, setNewToolName] = useState('');
@@ -664,94 +664,75 @@ export default function CreatePermitPage() {
  }, {} as {[key: string]: typeof atsEpp});
 
 
-  const handleRadioChange = (group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', id: string, value: string, anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | keyof AnexoIzaje) => {
-      let setState: (value: any) => void;
+  const handleRadioChange = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+      let setState: React.Dispatch<React.SetStateAction<any>>;
+      
+      const updateState = (prevState: any, value: string) => {
+          if (group === 'hazards') return {...prevState, [id]: value};
+          if (group === 'ppe') return {...prevState, [id]: value};
+          if (group === 'ppeSystems') return {...prevState, [id]: value};
+          if (group === 'emergency') return {...prevState, [id]: value};
+          if (group === 'anexoEnergias') return {...prevState, planeacion: { ...(prevState.planeacion || {}), [id]: value }};
+          if (group === 'anexoATS-peligros') return {...prevState, peligros: { ...(prevState.peligros || {}), [id]: value }};
+          if (group === 'anexoATS-epp') return {...prevState, epp: { ...(prevState.epp || {}), [id]: value }};
+          if (group === 'generalInfo') return {...prevState, [id]: value};
 
+          if (group === 'anexoAltura' && anexoSection) {
+              return { ...prevState, [anexoSection]: { ...(prevState[anexoSection] || {}), [id]: value } };
+          }
+          if (group === 'anexoConfinado') {
+              return { ...prevState, checklist: { ...(prevState.checklist || {}), [id]: value } };
+          }
+           if (group === 'anexoIzaje' && anexoSection) {
+              return { ...prevState, [anexoSection]: { ...(prevState[anexoSection] || {}), [id]: value } };
+          }
+          return prevState;
+      }
+      
       switch(group) {
-          case 'hazards': setHazardsData(prev => ({...prev, [id]: value})); return;
-          case 'ppe': setPpeData(prev => ({...prev, [id]: value})); return;
-          case 'ppeSystems': setPpeSystemsData(prev => ({...prev, [id]: value})); return;
-          case 'emergency': setEmergencyData(prev => ({...prev, [id]: value})); return;
-          case 'anexoEnergias': setAnexoEnergias(prev => ({...prev, planeacion: { ...prev.planeacion, [id]: value }})); return;
-          case 'anexoATS': 
-              setState = (v) => setAnexoATS(p => ({...p, ...v}));
-              break;
-          case 'anexoAltura': 
-              setState = setAnexoAltura;
-              break;
-          case 'anexoConfinado':
-              setState = (value) => setAnexoConfinado(prev => ({...prev, checklist: value}));
-              break;
-          case 'anexoIzaje':
-              setState = (value) => setAnexoIzaje(prev => ({...prev, aspectosRequeridos: value}));
-              break;
+          case 'hazards': setState = setHazardsData; break;
+          case 'ppe': setState = setPpeData; break;
+          case 'ppeSystems': setState = setPpeSystemsData; break;
+          case 'emergency': setState = setEmergencyData; break;
+          case 'anexoEnergias': setState = setAnexoEnergias; break;
+          case 'anexoATS-peligros': setState = setAnexoATS; break;
+          case 'anexoATS-epp': setState = setAnexoATS; break;
+          case 'anexoAltura': setState = setAnexoAltura; break;
+          case 'anexoConfinado': setState = setAnexoConfinado; break;
+          case 'anexoIzaje': setState = setAnexoIzaje; break;
+          case 'generalInfo': setState = setGeneralInfo; break;
           default: return;
       }
       
-      const handleChange = (val: string) => {
-          if (group === 'anexoATS') {
-              setState((prev: any) => ({
-                  ...prev,
-                  peligros: {
-                    ...(prev.peligros || {}),
-                    [id]: val
-                  }
-              }));
-          } else if ((group === 'anexoAltura' || group === 'anexoConfinado' || group === 'anexoIzaje') && anexoSection) {
-              setState((prev: any) => ({
-                  ...prev,
-                  [anexoSection]: {
-                      ...(prev as any)[anexoSection],
-                      [id]: val
-                  }
-              }));
-          } else {
-              setState((prev: any) => ({...prev, [id]: val}));
-          }
-      };
-      
-      handleChange(value);
+      return (value: 'si' | 'no' | 'na') => {
+        setState((prev: any) => updateState(prev, value));
+      }
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos' | 'epp') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
     let state: any = {};
-    let onValueChange = (value: string) => {};
+    let onValueChange: ((value: 'si' | 'no' | 'na') => void) | undefined;
     let defaultValue = 'na';
 
     switch(group) {
-        case 'hazards': state = hazardsData; onValueChange = (v) => setHazardsData(p => ({...p, [id]: v})); break;
-        case 'ppe': state = ppeData; onValueChange = (v) => setPpeData(p => ({...p, [id]: v})); break;
-        case 'ppeSystems': state = ppeSystemsData; onValueChange = (v) => setPpeSystemsData(p => ({...p, [id]: v})); break;
-        case 'emergency': state = emergencyData; onValueChange = (v) => setEmergencyData(p => ({...p, [id]: v})); break;
-        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = (v) => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [id]: v as 'si'|'no'|'na' }})); break;
-        case 'anexoATS': 
-            state = anexoSection === 'epp' ? anexoATS.epp || {} : anexoATS.peligros || {};
-            onValueChange = (v) => setAnexoATS(p => ({
-                ...p, 
-                [anexoSection as string]: { ...(p as any)[anexoSection as string], [id]: v as 'si'|'no'|'na' }
-            }));
-            defaultValue = 'no';
-            break;
-        case 'anexoAltura': 
-            state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {};
-            onValueChange = (v) => setAnexoAltura(p => ({...p, [anexoSection as string]: { ...((p as any)[anexoSection as string] || {}), [id]: v }}));
-            break;
-        case 'anexoConfinado':
-            state = anexoConfinado.checklist || {};
-            onValueChange = (v) => setAnexoConfinado(p => ({...p, checklist: { ...(p.checklist || {}), [id]: v }}));
-            defaultValue = 'no';
-            break;
-        case 'anexoIzaje':
-            state = anexoIzaje.aspectosRequeridos || {};
-            onValueChange = (v) => setAnexoIzaje(p => ({...p, aspectosRequeridos: { ...(p.aspectosRequeridos || {}), [id]: v }}));
-            break;
+        case 'hazards': state = hazardsData; onValueChange = handleRadioChange(id, group); break;
+        case 'ppe': state = ppeData; onValueChange = handleRadioChange(id, group); break;
+        case 'ppeSystems': state = ppeSystemsData; onValueChange = handleRadioChange(id, group); break;
+        case 'emergency': state = emergencyData; onValueChange = handleRadioChange(id, group); break;
+        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = handleRadioChange(id, group); break;
+        case 'anexoATS-peligros': state = anexoATS.peligros || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
+        case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
+        case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; onValueChange = handleRadioChange(id, group, anexoSection); break;
+        case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); defaultValue = 'no'; break;
+        case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos'); break;
+        case 'generalInfo': state = generalInfo; onValueChange = handleRadioChange(id, group); break;
     }
     
     return (
         <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
-            <RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`} className="mr-2">SI</Label>
-            <RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label>
-            <RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /> <Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`}>SI</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label></div>
         </RadioGroup>
     )
   }
@@ -1032,7 +1013,7 @@ export default function CreatePermitPage() {
                                     {peligros.map(peligro => (
                                         <div key={peligro.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                             <Label className="flex-1 text-sm">{peligro.label}</Label>
-                                            {renderRadioGroup(peligro.id, 'anexoATS', 'peligros')}
+                                            {renderRadioGroup(peligro.id, 'anexoATS-peligros')}
                                         </div>
                                     ))}
                                 </div>
@@ -1052,7 +1033,7 @@ export default function CreatePermitPage() {
                                     {epps.map(epp => (
                                         <div key={epp.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                             <Label className="flex-1 text-sm">{epp.label}</Label>
-                                            {renderRadioGroup(epp.id, 'anexoATS', 'epp')}
+                                            {renderRadioGroup(epp.id, 'anexoATS-epp')}
                                         </div>
                                     ))}
                                 </div>
@@ -1149,12 +1130,12 @@ export default function CreatePermitPage() {
                 </div>
               
               <div>
-                  <label className="font-bold text-gray-700">Causales para la suspensión del Permiso:</label>
+                  <label className="font-bold text-gray-700">Causales para la suspensión del Permiso: LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:</label>
                   <Input
                       value={generalInfo.suspensionCauses}
                       onChange={(e) => setGeneralInfo({...generalInfo, suspensionCauses: e.target.value})}
                       className="w-full mt-1"
-                      placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO..."
+                      placeholder="Indique otras causales si las hay..."
                   />
               </div>
 
@@ -1201,8 +1182,8 @@ export default function CreatePermitPage() {
                     <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
                       <span className="flex-1">{tool.name}</span>
                        <RadioGroup value={tool.status} onValueChange={(value: 'B' | 'M') => updateToolStatus(index, value)} className="flex">
-                          <RadioGroupItem value="B" id={`tool-${index}-b`} /> <Label htmlFor={`tool-${index}-b`} className="mr-2">B</Label>
-                          <RadioGroupItem value="M" id={`tool-${index}-m`} /> <Label htmlFor={`tool-${index}-m`}>M</Label>
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="B" id={`tool-${index}-b`} /><Label htmlFor={`tool-${index}-b`}>B</Label></div>
+                          <div className="flex items-center space-x-2"><RadioGroupItem value="M" id={`tool-${index}-m`} /><Label htmlFor={`tool-${index}-m`}>M</Label></div>
                       </RadioGroup>
                       <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                     </div>
@@ -1216,18 +1197,14 @@ export default function CreatePermitPage() {
 
               <div className="space-y-2">
                 <label className="font-bold text-gray-700">Verificaciones Previas</label>
-                 <RadioGroup value={generalInfo.reunionInicio} onValueChange={(value) => setGeneralInfo({...generalInfo, reunionInicio: value})} className="flex p-2 rounded-md bg-gray-50 items-center">
+                 <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                     <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
-                    <RadioGroupItem value="si" id="reunion-si" /> <Label htmlFor="reunion-si" className="mr-2">SI</Label>
-                    <RadioGroupItem value="no" id="reunion-no" /> <Label htmlFor="reunion-no" className="mr-2">NO</Label>
-                    <RadioGroupItem value="na" id="reunion-na" /> <Label htmlFor="reunion-na">NA</Label>
-                </RadioGroup>
-                 <RadioGroup value={generalInfo.atsVerificado} onValueChange={(value) => setGeneralInfo({...generalInfo, atsVerificado: value})} className="flex p-2 rounded-md bg-gray-50 items-center">
+                    {renderRadioGroup('reunionInicio', 'generalInfo')}
+                </div>
+                 <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                     <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
-                    <RadioGroupItem value="si" id="ats-si" /> <Label htmlFor="ats-si" className="mr-2">SI</Label>
-                    <RadioGroupItem value="no" id="ats-no" /> <Label htmlFor="ats-no" className="mr-2">NO</Label>
-                    <RadioGroupItem value="na" id="ats-na" /> <Label htmlFor="ats-na">NA</Label>
-                </RadioGroup>
+                    {renderRadioGroup('atsVerificado', 'generalInfo')}
+                </div>
               </div>
 
             </div>
@@ -1250,28 +1227,22 @@ export default function CreatePermitPage() {
                           </div>
                           <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                             <Label>B.- Coordinador TSA</Label>
-                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'|'na'}))} className="flex">
-                              <RadioGroupItem value="si" id="anexo-coord-si" /><Label htmlFor="anexo-coord-si" className="mr-2">SI</Label>
-                              <RadioGroupItem value="no" id="anexo-coord-no" /><Label htmlFor="anexo-coord-no" >NO</Label>
-                              <RadioGroupItem value="na" id="anexo-coord-na" /><Label htmlFor="anexo-coord-na" >NA</Label>
+                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'}))} className="flex">
+                              <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="anexo-coord-si" /><Label htmlFor="anexo-coord-si">SI</Label></div>
+                              <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="anexo-coord-no" /><Label htmlFor="anexo-coord-no" >NO</Label></div>
                             </RadioGroup>
                           </div>
                       </div>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                             <Label>C.- Auxiliar TSA</Label>
-                             <RadioGroup value={anexoAltura.auxiliarTSA || 'na'} onValueChange={v => setAnexoAltura(p => ({...p, auxiliarTSA: v as 'si'|'no'|'na'}))} className="flex">
-                              <RadioGroupItem value="si" id="anexo-aux-si" /><Label htmlFor="anexo-aux-si" className="mr-2">SI</Label>
-                              <RadioGroupItem value="no" id="anexo-aux-no" /><Label htmlFor="anexo-aux-no" className="mr-2">NO</Label>
-                              <RadioGroupItem value="na" id="anexo-aux-na" /><Label htmlFor="anexo-aux-na" >NA</Label>
-                            </RadioGroup>
+                             {renderRadioGroup('auxiliarTSA', 'anexoAltura')}
                           </div>
                            <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                             <Label>D.- Elaboración ATS y procedimientos</Label>
-                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'|'na'}))} className="flex">
-                              <RadioGroupItem value="si" id="anexo-ats-si" /><Label htmlFor="anexo-ats-si" className="mr-2">SI</Label>
-                              <RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no" className="mr-2">NO</Label>
-                              <RadioGroupItem value="na" id="anexo-ats-na" /><Label htmlFor="anexo-ats-na" >NA</Label>
+                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'}))} className="flex">
+                              <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="anexo-ats-si" /><Label htmlFor="anexo-ats-si">SI</Label></div>
+                              <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no">NO</Label></div>
                             </RadioGroup>
                           </div>
                       </div>
@@ -1561,11 +1532,7 @@ export default function CreatePermitPage() {
                        {anexoEnergiasPlaneacion.map(item => (
                           <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                               <Label className="flex-1 text-sm">{item.label}</Label>
-                              <RadioGroup value={(anexoEnergias.planeacion || {})[item.id] || 'no'} onValueChange={v => setAnexoEnergias(p => ({...p, planeacion: { ...p.planeacion, [item.id]: v as 'si'|'no'|'na' }}))} className="flex">
-                                  <RadioGroupItem value="si" id={`planeacion-${item.id}-si`} /> <Label htmlFor={`planeacion-${item.id}-si`} className="mr-2">SI</Label>
-                                  <RadioGroupItem value="no" id={`planeacion-${item.id}-no`} /> <Label htmlFor={`planeacion-${item.id}-no`} className="mr-2">NO</Label>
-                                  <RadioGroupItem value="na" id={`planeacion-${item.id}-na`} /> <Label htmlFor={`planeacion-${item.id}-na`}>NA</Label>
-                              </RadioGroup>
+                              {renderRadioGroup(item.id, 'anexoEnergias')}
                           </div>
                       ))}
                     </div>
