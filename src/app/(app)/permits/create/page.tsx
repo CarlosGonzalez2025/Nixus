@@ -115,6 +115,7 @@ export default function CreatePermitPage() {
     descripcionTarea: '',
     peligros: {},
     epp: {},
+    causalesSuspension: '',
   });
 
   // Step 2
@@ -575,6 +576,7 @@ export default function CreatePermitPage() {
     { label: "Peligros", condition: true },
     { label: "EPP", condition: true },
     { label: "Sistemas y Emergencia", condition: true },
+    { label: "Trabajadores", condition: true },
     { label: "Revisión", condition: true }
   ];
 
@@ -1045,52 +1047,13 @@ export default function CreatePermitPage() {
                         ))}
                     </div>
                 </div>
-                
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                      Ejecutores del Trabajo o Personal Involucrado
-                    </h2>
-                    <p className="text-muted-foreground text-sm">Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura...</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {workers.length > 0 ? (
-                      workers.map((worker, index) => (
-                        <div key={index} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
-                          <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <Avatar className="w-12 h-12">
-                              {worker.foto && <AvatarImage src={worker.foto} />}
-                              <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 text-center sm:text-left">
-                              <p className="font-bold text-lg text-gray-800">{worker.nombre}</p>
-                              <p className="text-sm text-gray-600">C.C. {worker.cedula} - {worker.rol}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-10 border-2 border-dashed rounded-xl">
-                          <Users size={48} className="mx-auto text-gray-300" />
-                          <p className="mt-4 font-semibold text-gray-600">No hay trabajadores agregados</p>
-                          <p className="text-sm text-gray-500">Haga clic en el botón de abajo para empezar a agregar.</p>
-                      </div>
-                    )}
-
-                    <Button onClick={openNewWorkerDialog} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
-                      <UserPlus size={24} className="mr-3" />
-                      <span className="font-bold">+ Agregar Trabajador</span>
-                    </Button>
-                  </div>
+                 <div>
+                  <Label className="font-bold text-gray-700">Causales para la suspensión del Permiso:</Label>
+                  <Textarea 
+                    value={anexoATS.causalesSuspension || ''} 
+                    onChange={(e) => setAnexoATS(p => ({...p, causalesSuspension: e.target.value}))} 
+                    placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:"
+                  />
                 </div>
             </div>
           )}
@@ -1666,6 +1629,55 @@ export default function CreatePermitPage() {
                     ))}
                     </div>
                 </div>
+            </div>
+          )}
+
+          {currentStepInfo.label === "Trabajadores" && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                  Ejecutores del Trabajo o Personal Involucrado
+                </h2>
+                <p className="text-muted-foreground text-sm">Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura...</p>
+              </div>
+
+              <div className="space-y-4">
+                {workers.length > 0 ? (
+                  workers.map((worker, index) => (
+                    <div key={index} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <Avatar className="w-12 h-12">
+                          {worker.foto && <AvatarImage src={worker.foto} />}
+                          <AvatarFallback>{getInitials(worker.nombre)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 text-center sm:text-left">
+                          <p className="font-bold text-lg text-gray-800">{worker.nombre}</p>
+                          <p className="text-sm text-gray-600">C.C. {worker.cedula} - {worker.rol}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 border-2 border-dashed rounded-xl">
+                      <Users size={48} className="mx-auto text-gray-300" />
+                      <p className="mt-4 font-semibold text-gray-600">No hay trabajadores agregados</p>
+                      <p className="text-sm text-gray-500">Haga clic en el botón de abajo para empezar a agregar.</p>
+                  </div>
+                )}
+
+                <Button onClick={openNewWorkerDialog} variant="outline" className="w-full border-2 border-dashed rounded-xl p-6 h-auto transition-all hover:shadow-lg border-primary text-primary bg-primary/10">
+                  <UserPlus size={24} className="mr-3" />
+                  <span className="font-bold">+ Agregar Trabajador</span>
+                </Button>
+              </div>
             </div>
           )}
           
