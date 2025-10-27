@@ -78,26 +78,19 @@ export type AnexoATS = {
 };
 
 export type AnexoAltura = {
-  alturaTrabajo: string;
-  coordinadorTSA: 'si' | 'no';
-  auxiliarTSA: 'si' | 'no' | 'na';
-  elaboracionATS: 'si' | 'no';
-  claridadEspacioLibre: string;
-  trabajoConEscaleras?: { [key: string]: 'si' | 'no' | 'na' };
-  trabajoConAndamios?: { [key: string]: 'si' | 'no' | 'na' };
-  trabajoConCanastilla?: { [key: string]: 'si' | 'no' | 'na' };
-  lineaDeVida?: { [key: string]: 'si' | 'no' | 'na' };
-  arnesCuerpoEntero?: { [key: string]: 'si' | 'no' | 'na' };
-  eslingas?: { [key: string]: 'si' | 'no' | 'na' };
-  anclajesMoviles?: { [key: string]: 'si' | 'no' | 'na' };
-  mosquetones?: { [key: string]: 'si' | 'no' | 'na' };
-  otros?: { cual1: string, cual2: string };
-  observaciones?: string;
-  coordinadorTrabajosAltura?: {
-    nombres: string;
-    cedula: string;
-    firmaApertura: string;
-  };
+  tipoEstructura: {
+    escaleraCuerpo: boolean;
+    escaleraDosCuerpos: boolean;
+    andamioTubular: boolean;
+    andamioColgante: boolean;
+    plataforma: boolean;
+    manLift: boolean;
+    otros: boolean;
+    otrosCual: string;
+  },
+  aspectosSeguridad: {
+    [key: string]: 'si' | 'no' | 'na';
+  }
 };
 
 export type MedicionAtmosferica = {

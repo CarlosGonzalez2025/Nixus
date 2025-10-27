@@ -637,85 +637,43 @@ export default function PermitDetailPage() {
     return types.map(key => workTypesMap[key] || key).join(', ');
   }
   
-    const anexoAlturaSections = {
-      trabajoConEscaleras: {
-          title: "TRABAJO CON ESCALERAS",
-          items: [
-              { id: 'escaleraAdecuada', label: 'A.- La escalera es adecuada para el trabajo a realizar (dieléctrica)' },
-              { id: 'inclinacionAdecuada', label: 'B.- La inclinación de la escalera es adecuada' },
-              { id: 'apoyoFirme', label: 'C.- Las superficies de apoyo de la escalera son firmes y regulares' },
-              { id: 'fijoParteSuperior', label: 'D.- Se fijó la escalera en la parte superior' },
-              { id: 'buenEstado', label: 'E.- La escalera se encuentra en buen estado y limpia' },
-              { id: 'conocenInstructivo', label: 'F.- Conocen los trabajadores el Instructivo trabajo seguro con escaleras' },
-              { id: 'requiereProteccion', label: 'G.- Se requiere uso de sistema de protección contra caídas' },
-              { id: 'otros', label: 'H.- Otros (Cual):' },
-          ]
-      },
-      trabajoConAndamios: {
-          title: "TRABAJO CON ANDAMIOS",
-          items: [
-              { id: 'terrenoFirme', label: 'A.- El terreno donde se apoya el andamio es firme' },
-              { id: 'bienNivelado', label: 'B.- El andamio se encuentra bien nivelado' },
-              { id: 'plataformasFijas', label: 'C.- Las plataformas de trabajo se encuentran fijas y en buen estado' },
-              { id: 'instalaronRodapies', label: 'D.- Se instalaron los rodadapiés' },
-              { id: 'barandasPerimetrales', label: 'E.- Se instalaron las barandas perimetrales en la plataforma de trabajo' },
-              { id: 'certificadoAndamio', label: 'F.- Se cuenta con certificado del andamio' },
-              { id: 'equiposAjustan', label: 'G.- Los equipos de protección se ajustan a los puntos de anclaje' },
-              { id: 'aseguraronPuntos', label: 'H.- Se aseguraron todos los puntos de conexión' },
-              { id: 'aseguroAndamio', label: 'I.- Se aseguró el andamio si es necesario a estructura fija' },
-              { id: 'utilizaronVientos', label: 'J. Se utilizaron vientos e u otro mecanismo para asegurar el andamio' },
-              { id: 'conocenInstructivoAndamios', label: 'K- Conocen los trabajadores el instructivo de trabajo seguro con andamios' },
-              { id: 'otros', label: 'L.- Otros (Cual):' },
-          ]
-      },
-      trabajoConCanastilla: {
-          title: "TRABAJO CON CANASTILLA",
-          items: [
-              { id: 'aptoParaTrabajo', label: 'A.- El equipo se encuentra apto para el trabajo.' },
-              { id: 'delimitadoIspector', label: 'B.- El área se encuentra delimitado y con inspector vial.' },
-          ]
-      },
-      lineaDeVida: {
-        title: "Línea de Vida",
-        items: [
-          { id: 'inspeccionada', label: 'A.- La línea de vida fue inspeccionada antes de su uso.' },
-          { id: 'compatible', label: 'B.- Es compatible con los demás componentes del sistema.' },
-          { id: 'instaladaCertificada', label: 'C.- La línea de vida fue instalada y certificada por personal calificado.' },
-        ]
-      },
-      arnesCuerpoEntero: {
-        title: "Arnés de Cuerpo Entero",
-        items: [
-            { id: 'inspeccionadoArnes', label: 'A.- Fue inspeccionado antes de su uso.' },
-            { id: 'ajustadoCorrectamente', label: 'B.- Está ajustado correctamente al cuerpo del trabajador.' },
-            { id: 'distribucionFuerza', label: 'C.- Distribuye la fuerza de detención de la caída.' },
-            { id: 'compatibleArnes', label: 'D.- Es compatible con los demás componentes del sistema.' },
-        ]
-      },
-      eslingas: {
-          title: "Eslingas con absorbedor de choque",
-          items: [
-              { id: 'inspeccionadaEslinga', label: 'A.- Fue inspeccionada antes de su uso.' },
-              { id: 'compatibleEslinga', label: 'B.- Es compatible con los demás componentes del sistema.' },
-              { id: 'puntoAnclajeSeguro', label: 'C.- Están conectadas a un punto de anclaje seguro.' },
-          ]
-      },
-      anclajesMoviles: {
-          title: "Anclajes Móviles",
-          items: [
-              { id: 'inspeccionadoAnclaje', label: 'A.- Fueron inspeccionados antes de su uso.' },
-              { id: 'compatiblesAnclaje', label: 'B.- Son compatibles con los demás componentes del sistema.' },
-              { id: 'instaladosCorrectamente', label: 'C.- Están instalados correctamente según las especificaciones del fabricante.' },
-          ]
-      },
-      mosquetones: {
-          title: "Mosquetones",
-          items: [
-              { id: 'inspeccionadosMosqueton', label: 'A.- Fueron inspeccionados antes de su uso.' },
-              { id: 'compatiblesMosqueton', label: 'B.- Son compatibles con los demás componentes del sistema.' },
-              { id: 'cerradosAsegurados', label: 'C.- Están cerrados y asegurados correctamente.' },
-          ]
-      }
+    const anexoAlturaEstructuras = [
+      { id: 'escaleraCuerpo', label: 'Escalera de un cuerpo' },
+      { id: 'escaleraDosCuerpos', label: 'Escalera de dos cuerpos o mas' },
+      { id: 'andamioTubular', label: 'Andamio Tubular Certificado' },
+      { id: 'andamioColgante', label: 'Andamio Colgante' },
+      { id: 'plataforma', label: 'Plataforma' },
+      { id: 'manLift', label: 'Man Lift o Camion Canasta' },
+      { id: 'otros', label: 'Otros' },
+    ];
+
+    const anexoAlturaAspectos = {
+      left: [
+        { id: 'afiliacionVigente', label: 'A. El personal ejecutante de la actividad tiene la afiliación vigente a seguridad social?' },
+        { id: 'procedimientoActividad', label: 'B. Se cuenta con el procedimiento de la actividad a ejecutar?' },
+        { id: 'medidasPrevencion', label: 'C. Se han determinado las medidas de prevención contra caídas?' },
+        { id: 'conocenMedidas', label: 'D. Todos los ejecutantes conocen las medidas de precaución establecidas en la evaluación de riesgos?' },
+        { id: 'entrenadosCertificados', label: 'E. Están los ejecutantes entrenados y se encuentran los certificados en sitio para realizar trabajos en altura?' },
+        { id: 'elementosProteccionCertificados', label: 'F. Están todos los elementos de protección contra caídas en buen estado y certificados?' },
+        { id: 'verificoAseguramiento', label: 'G. Se verifico el sistema de aseguramiento de la escalera, andamio o plataforma a una estructura fija' },
+        { id: 'verificoEstadoElementos', label: 'H. Se verifico el estado de: eslingas, arnes, casco, mosquetones, casco, y demas elementos necesarios para realizar el trabajo.' },
+        { id: 'puntosAnclajeCertificados', label: 'I. Los puntos de anclaje y demas elementos cumplen con la resistencia de 5000 lbs por persona y estan certificados?' },
+        { id: 'areaDelimitada', label: 'J. Esta delimitada y señalizada el area de trabajo' },
+        { id: 'personalCondicionesSalud', label: 'K. El personal que realiza el trabajo se encuentra en condiciones adecuadas de salud para la actividad?.' },
+      ],
+      right: [
+        { id: 'equiposAccesoBuenEstado', label: 'L. Se cuenta con todos los equipos y sistemas de acceso para trabjo en alturas en buen estado?' },
+        { id: 'espacioCaidaLibre', label: 'M. El espacio de caida libre es suficiente para evitar que la persona se golpee contra el nivel inferior.' },
+        { id: 'elementosEmergencia', label: 'N. Se cuenta con elementos para atencion de emergencias en el area y plan de emergencias para rescate en alturas?' },
+        { id: 'elementosProteccionSeleccionados', label: 'O. Están los elementos de protección personal seleccionados teniendo en cuenta los riesgos y requerimientos de la tarea?' },
+        { id: 'plataformaSoportaCarga', label: 'P. La plataforma o estructura soporta la carga de trabajo, es firme y se evita la caída de objetos o herramientas?' },
+        { id: 'supervisorConstante', label: 'Q. Existe un supervisor o acompañante constaste durante el trabajo' },
+        { id: 'andamiosCompletos', label: 'R. En caso de trabajos sobre andamios, estos estan completos y adecuadamente armados (rodapies, barandas, etc.)' },
+        { id: 'condicionesClimaticas', label: 'S. Las condiciones climaticas son adecuadas para realizar el trabajo' },
+        { id: 'metodoSubirHerramientas', label: 'T. El metodo de subir herramientas es seguro' },
+        { id: 'sistemasRestriccion', label: 'U. En caso de requerirse se cuenta con sistemas de restricción' },
+        { id: 'sistemasPosicionamiento', label: 'V. En caso de requerirse se cuenta con sistemas de posicionamiento' },
+      ]
     };
     
     const anexoConfinadoChecklist = {
@@ -968,42 +926,48 @@ export default function PermitDetailPage() {
                             <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 md:p-6 space-y-6">
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Field label="A.- Altura de trabajo:" value={permit.anexoAltura.alturaTrabajo} />
-                                <Field label="B.- Coordinador TSA" value={permit.anexoAltura.coordinadorTSA?.toUpperCase()} />
-                                <Field label="C.- Auxiliar TSA" value={permit.anexoAltura.auxiliarTSA?.toUpperCase()} />
-                                <Field label="D.- Elaboración ATS y procedimientos" value={permit.anexoAltura.elaboracionATS?.toUpperCase()} />
-                            </div>
-                            <Field label="Requerimiento de claridad o espacio libre de caída" value={permit.anexoAltura.claridadEspacioLibre} fullWidth/>
-                            
-                            {Object.entries(anexoAlturaSections).map(([sectionKey, sectionData]) => (
-                              <div key={sectionKey}>
-                                <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">{sectionData.title}</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                                  {sectionData.items.map(item => (
-                                    <RadioCheck 
-                                      key={item.id} 
-                                      label={item.label} 
-                                      value={(permit.anexoAltura as any)?.[sectionKey]?.[item.id]} 
-                                      readOnly
-                                    />
+                            <div className="p-4 border rounded-lg">
+                                <h3 className="font-bold text-primary mb-2">TIPO DE ESTRUCTURA O EQUIPO PARA TRABAJO EN ALTURAS</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  {anexoAlturaEstructuras.map(item => (
+                                      permit.anexoAltura?.tipoEstructura?.[item.id as keyof typeof permit.anexoAltura.tipoEstructura] && (
+                                        <div key={item.id} className="flex items-center space-x-2">
+                                          <Check className="h-4 w-4 text-primary" />
+                                          <span className="text-sm">{item.label}</span>
+                                        </div>
+                                      )
                                   ))}
                                 </div>
-                              </div>
-                            ))}
-
-                            <div className="mt-4">
-                              <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Coordinador de Trabajos en Altura</h4>
-                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                 <Field label="Nombres y Apellidos" value={permit.anexoAltura.coordinadorTrabajosAltura?.nombres} />
-                                 <Field label="Cédula" value={permit.anexoAltura.coordinadorTrabajosAltura?.cedula} />
-                                 <Field label="Firma Apertura" value={
-                                     permit.anexoAltura.coordinadorTrabajosAltura?.firmaApertura ? <Image src={permit.anexoAltura.coordinadorTrabajosAltura.firmaApertura} alt="Firma Coordinador" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
-                                 }/>
-                               </div>
+                                {permit.anexoAltura.tipoEstructura?.otros && permit.anexoAltura.tipoEstructura.otrosCual && (
+                                    <p className="text-sm mt-2"><b>Otros:</b> {permit.anexoAltura.tipoEstructura.otrosCual}</p>
+                                )}
                             </div>
-                            
-                            <Field label="Observaciones / Supervisión" value={permit.anexoAltura.observaciones} fullWidth/>
+
+                            <div className="p-4 border rounded-lg">
+                                <h3 className="font-bold text-primary mb-2">ASPECTOS DE SEGURIDAD PARA TRABAJO EN ALTURAS</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
+                                  <div className="space-y-1">
+                                    {anexoAlturaAspectos.left.map(item => (
+                                      <RadioCheck
+                                        key={item.id}
+                                        label={item.label}
+                                        value={permit.anexoAltura?.aspectosSeguridad?.[item.id]}
+                                        readOnly
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="space-y-1">
+                                    {anexoAlturaAspectos.right.map(item => (
+                                      <RadioCheck
+                                        key={item.id}
+                                        label={item.label}
+                                        value={permit.anexoAltura?.aspectosSeguridad?.[item.id]}
+                                        readOnly
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                            </div>
                         </CollapsibleContent>
                       </Collapsible>
                     )}

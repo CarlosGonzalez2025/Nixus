@@ -115,7 +115,7 @@ export default function CreatePermitPage() {
     descripcionTarea: '',
     peligros: {},
     epp: {},
-    causalesSuspension: '',
+    causalesSuspension: 'LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:',
   });
 
   // Step 2
@@ -138,7 +138,19 @@ export default function CreatePermitPage() {
   const [newToolName, setNewToolName] = useState('');
   
   // Anexo Altura
-  const [anexoAltura, setAnexoAltura] = useState<Partial<AnexoAltura>>({});
+  const [anexoAltura, setAnexoAltura] = useState<Partial<AnexoAltura>>({
+    tipoEstructura: {
+      escaleraCuerpo: false,
+      escaleraDosCuerpos: false,
+      andamioTubular: false,
+      andamioColgante: false,
+      plataforma: false,
+      manLift: false,
+      otros: false,
+      otrosCual: '',
+    },
+    aspectosSeguridad: {}
+  });
 
   // Anexo Confinado
   const [anexoConfinado, setAnexoConfinado] = useState<Partial<AnexoConfinado>>({
@@ -278,11 +290,6 @@ export default function CreatePermitPage() {
         setAnexoIzaje(prev => ({
             ...prev,
             liderIzaje: { ...(prev.liderIzaje!), firmaApertura: signatureDataUrl }
-        }))
-    } else if (signatureTarget === 'coordinadorAltura') {
-        setAnexoAltura(prev => ({
-            ...prev,
-            coordinadorTrabajosAltura: { ...(prev.coordinadorTrabajosAltura!), firmaApertura: signatureDataUrl }
         }))
     } else if (signatureTarget === 'medicion' && signatureContext?.medicionId) {
         setAnexoConfinado(prev => ({
@@ -675,7 +682,7 @@ export default function CreatePermitPage() {
  }, {} as {[key: string]: typeof atsEpp});
 
 
-  const handleRadioChange = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+  const handleRadioChange = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: 'aspectosSeguridad') => {
       let setState: React.Dispatch<React.SetStateAction<any>>;
       
       const updateState = (prevState: any, value: string) => {
@@ -694,8 +701,8 @@ export default function CreatePermitPage() {
           if (group === 'anexoConfinado') {
               return { ...prevState, checklist: { ...(prevState.checklist || {}), [id]: value } };
           }
-           if (group === 'anexoIzaje' && anexoSection) {
-              return { ...prevState, [anexoSection]: { ...(prevState[anexoSection] || {}), [id]: value } };
+           if (group === 'anexoIzaje') {
+              return { ...prevState, aspectosRequeridos: { ...(prevState.aspectosRequeridos || {}), [id]: value } };
           }
           return prevState;
       }
@@ -720,7 +727,7 @@ export default function CreatePermitPage() {
       }
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: keyof AnexoAltura | keyof AnexoConfinado | 'aspectosRequeridos') => {
+  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: 'aspectosSeguridad') => {
     let state: any = {};
     let onValueChange: ((value: 'si' | 'no' | 'na') => void) | undefined;
     let defaultValue = 'na';
@@ -735,7 +742,7 @@ export default function CreatePermitPage() {
         case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; onValueChange = handleRadioChange(id, group, anexoSection); break;
         case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos'); break;
+        case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos' as any); break;
         case 'generalInfo': state = generalInfo; onValueChange = handleRadioChange(id, group); break;
     }
     
@@ -762,85 +769,43 @@ export default function CreatePermitPage() {
       </div>
   )
 
-  const anexoAlturaSections = {
-      trabajoConEscaleras: {
-          title: "TRABAJO CON ESCALERAS",
-          items: [
-              { id: 'escaleraAdecuada', label: 'A.- La escalera es adecuada para el trabajo a realizar (dieléctrica)' },
-              { id: 'inclinacionAdecuada', label: 'B.- La inclinación de la escalera es adecuada' },
-              { id: 'apoyoFirme', label: 'C.- Las superficies de apoyo de la escalera son firmes y regulares' },
-              { id: 'fijoParteSuperior', label: 'D.- Se fijó la escalera en la parte superior' },
-              { id: 'buenEstado', label: 'E.- La escalera se encuentra en buen estado y limpia' },
-              { id: 'conocenInstructivo', label: 'F.- Conocen los trabajadores el Instructivo trabajo seguro con escaleras' },
-              { id: 'requiereProteccion', label: 'G.- Se requiere uso de sistema de protección contra caídas' },
-              { id: 'otros', label: 'H.- Otros (Cual):' },
-          ]
-      },
-      trabajoConAndamios: {
-          title: "TRABAJO CON ANDAMIOS",
-          items: [
-              { id: 'terrenoFirme', label: 'A.- El terreno donde se apoya el andamio es firme' },
-              { id: 'bienNivelado', label: 'B.- El andamio se encuentra bien nivelado' },
-              { id: 'plataformasFijas', label: 'C.- Las plataformas de trabajo se encuentran fijas y en buen estado' },
-              { id: 'instalaronRodapies', label: 'D.- Se instalaron los rodadapiés' },
-              { id: 'barandasPerimetrales', label: 'E.- Se instalaron las barandas perimetrales en la plataforma de trabajo' },
-              { id: 'certificadoAndamio', label: 'F.- Se cuenta con certificado del andamio' },
-              { id: 'equiposAjustan', label: 'G.- Los equipos de protección se ajustan a los puntos de anclaje' },
-              { id: 'aseguraronPuntos', label: 'H.- Se aseguraron todos los puntos de conexión' },
-              { id: 'aseguroAndamio', label: 'I.- Se aseguró el andamio si es necesario a estructura fija' },
-              { id: 'utilizaronVientos', label: 'J. Se utilizaron vientos e u otro mecanismo para asegurar el andamio' },
-              { id: 'conocenInstructivoAndamios', label: 'K- Conocen los trabajadores el instructivo de trabajo seguro con andamios' },
-              { id: 'otros', label: 'L.- Otros (Cual):' },
-          ]
-      },
-      trabajoConCanastilla: {
-          title: "TRABAJO CON CANASTILLA",
-          items: [
-              { id: 'aptoParaTrabajo', label: 'A.- El equipo se encuentra apto para el trabajo.' },
-              { id: 'delimitadoIspector', label: 'B.- El área se encuentra delimitado y con inspector vial.' },
-          ]
-      },
-      lineaDeVida: {
-        title: "Línea de Vida",
-        items: [
-          { id: 'inspeccionada', label: 'A.- La línea de vida fue inspeccionada antes de su uso.' },
-          { id: 'compatible', label: 'B.- Es compatible con los demás componentes del sistema.' },
-          { id: 'instaladaCertificada', label: 'C.- La línea de vida fue instalada y certificada por personal calificado.' },
-        ]
-      },
-      arnesCuerpoEntero: {
-        title: "Arnés de Cuerpo Entero",
-        items: [
-            { id: 'inspeccionadoArnes', label: 'A.- Fue inspeccionado antes de su uso.' },
-            { id: 'ajustadoCorrectamente', label: 'B.- Está ajustado correctamente al cuerpo del trabajador.' },
-            { id: 'distribucionFuerza', label: 'C.- Distribuye la fuerza de detención de la caída.' },
-            { id: 'compatibleArnes', label: 'D.- Es compatible con los demás componentes del sistema.' },
-        ]
-      },
-      eslingas: {
-          title: "Eslingas con absorbedor de choque",
-          items: [
-              { id: 'inspeccionadaEslinga', label: 'A.- Fue inspeccionada antes de su uso.' },
-              { id: 'compatibleEslinga', label: 'B.- Es compatible con los demás componentes del sistema.' },
-              { id: 'puntoAnclajeSeguro', label: 'C.- Están conectadas a un punto de anclaje seguro.' },
-          ]
-      },
-      anclajesMoviles: {
-          title: "Anclajes Móviles",
-          items: [
-              { id: 'inspeccionadoAnclaje', label: 'A.- Fueron inspeccionados antes de su uso.' },
-              { id: 'compatiblesAnclaje', label: 'B.- Son compatibles con los demás componentes del sistema.' },
-              { id: 'instaladosCorrectamente', label: 'C.- Están instalados correctamente según las especificaciones del fabricante.' },
-          ]
-      },
-      mosquetones: {
-          title: "Mosquetones",
-          items: [
-              { id: 'inspeccionadosMosqueton', label: 'A.- Fueron inspeccionados antes de su uso.' },
-              { id: 'compatiblesMosqueton', label: 'B.- Son compatibles con los demás componentes del sistema.' },
-              { id: 'cerradosAsegurados', label: 'C.- Están cerrados y asegurados correctamente.' },
-          ]
-      }
+  const anexoAlturaEstructuras = [
+    { id: 'escaleraCuerpo', label: 'Escalera de un cuerpo' },
+    { id: 'escaleraDosCuerpos', label: 'Escalera de dos cuerpos o mas' },
+    { id: 'andamioTubular', label: 'Andamio Tubular Certificado' },
+    { id: 'andamioColgante', label: 'Andamio Colgante' },
+    { id: 'plataforma', label: 'Plataforma' },
+    { id: 'manLift', label: 'Man Lift o Camion Canasta' },
+    { id: 'otros', label: 'Otros' },
+  ];
+
+  const anexoAlturaAspectos = {
+    left: [
+      { id: 'afiliacionVigente', label: 'A. El personal ejecutante de la actividad tiene la afiliación vigente a seguridad social?' },
+      { id: 'procedimientoActividad', label: 'B. Se cuenta con el procedimiento de la actividad a ejecutar?' },
+      { id: 'medidasPrevencion', label: 'C. Se han determinado las medidas de prevención contra caídas?' },
+      { id: 'conocenMedidas', label: 'D. Todos los ejecutantes conocen las medidas de precaución establecidas en la evaluación de riesgos?' },
+      { id: 'entrenadosCertificados', label: 'E. Están los ejecutantes entrenados y se encuentran los certificados en sitio para realizar trabajos en altura?' },
+      { id: 'elementosProteccionCertificados', label: 'F. Están todos los elementos de protección contra caídas en buen estado y certificados?' },
+      { id: 'verificoAseguramiento', label: 'G. Se verifico el sistema de aseguramiento de la escalera, andamio o plataforma a una estructura fija' },
+      { id: 'verificoEstadoElementos', label: 'H. Se verifico el estado de: eslingas, arnes, casco, mosquetones, casco, y demas elementos necesarios para realizar el trabajo.' },
+      { id: 'puntosAnclajeCertificados', label: 'I. Los puntos de anclaje y demas elementos cumplen con la resistencia de 5000 lbs por persona y estan certificados?' },
+      { id: 'areaDelimitada', label: 'J. Esta delimitada y señalizada el area de trabajo' },
+      { id: 'personalCondicionesSalud', label: 'K. El personal que realiza el trabajo se encuentra en condiciones adecuadas de salud para la actividad?.' },
+    ],
+    right: [
+      { id: 'equiposAccesoBuenEstado', label: 'L. Se cuenta con todos los equipos y sistemas de acceso para trabjo en alturas en buen estado?' },
+      { id: 'espacioCaidaLibre', label: 'M. El espacio de caida libre es suficiente para evitar que la persona se golpee contra el nivel inferior.' },
+      { id: 'elementosEmergencia', label: 'N. Se cuenta con elementos para atencion de emergencias en el area y plan de emergencias para rescate en alturas?' },
+      { id: 'elementosProteccionSeleccionados', label: 'O. Están los elementos de protección personal seleccionados teniendo en cuenta los riesgos y requerimientos de la tarea?' },
+      { id: 'plataformaSoportaCarga', label: 'P. La plataforma o estructura soporta la carga de trabajo, es firme y se evita la caída de objetos o herramientas?' },
+      { id: 'supervisorConstante', label: 'Q. Existe un supervisor o acompañante constaste durante el trabajo' },
+      { id: 'andamiosCompletos', label: 'R. En caso de trabajos sobre andamios, estos estan completos y adecuadamente armados (rodapies, barandas, etc.)' },
+      { id: 'condicionesClimaticas', label: 'S. Las condiciones climaticas son adecuadas para realizar el trabajo' },
+      { id: 'metodoSubirHerramientas', label: 'T. El metodo de subir herramientas es seguro' },
+      { id: 'sistemasRestriccion', label: 'U. En caso de requerirse se cuenta con sistemas de restricción' },
+      { id: 'sistemasPosicionamiento', label: 'V. En caso de requerirse se cuenta con sistemas de posicionamiento' },
+    ]
   };
   
   const anexoConfinadoChecklist = {
@@ -1101,8 +1066,9 @@ export default function CreatePermitPage() {
                     </div>
                 </div>
                  <div>
-                  <Label className="font-bold text-gray-700">Causales para la suspensión del Permiso:</Label>
+                  <Label htmlFor="causales" className="font-bold text-gray-700">Causales para la suspensión del Permiso:</Label>
                   <Textarea 
+                    id="causales"
                     value={anexoATS.causalesSuspension || ''} 
                     onChange={(e) => setAnexoATS(p => ({...p, causalesSuspension: e.target.value}))} 
                     placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:"
@@ -1255,84 +1221,62 @@ export default function CreatePermitPage() {
                       <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
                           ANEXO 1 - TRABAJOS EN ALTURA
                       </h2>
-                      <p className="text-muted-foreground text-sm">Complete toda la información requerida para trabajos en altura.</p>
+                      <p className="text-muted-foreground text-sm">Identificación de Peligros y Aspectos para Trabajo en Alturas.</p>
                   </div>
-
-                   <div className="p-4 border rounded-lg space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                              <Label>A.- Altura de trabajo:</Label>
-                              <Input value={anexoAltura.alturaTrabajo || ''} onChange={e => setAnexoAltura(prev => ({...prev, alturaTrabajo: e.target.value}))}/>
-                          </div>
-                          <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                            <Label>B.- Coordinador TSA</Label>
-                            <RadioGroup value={anexoAltura.coordinadorTSA || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, coordinadorTSA: v as 'si'|'no'}))} className="flex">
-                              <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="anexo-coord-si" /><Label htmlFor="anexo-coord-si">SI</Label></div>
-                              <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="anexo-coord-no" /><Label htmlFor="anexo-coord-no" >NO</Label></div>
-                            </RadioGroup>
-                          </div>
-                      </div>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                            <Label>C.- Auxiliar TSA</Label>
-                             {renderRadioGroup('auxiliarTSA', 'anexoAltura')}
-                          </div>
-                           <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                            <Label>D.- Elaboración ATS y procedimientos</Label>
-                            <RadioGroup value={anexoAltura.elaboracionATS || 'no'} onValueChange={v => setAnexoAltura(p => ({...p, elaboracionATS: v as 'si'|'no'}))} className="flex">
-                              <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="anexo-ats-si" /><Label htmlFor="anexo-ats-si">SI</Label></div>
-                              <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="anexo-ats-no" /><Label htmlFor="anexo-ats-no">NO</Label></div>
-                            </RadioGroup>
-                          </div>
-                      </div>
-                      <div>
-                          <Label>Especifique el requerimiento de claridad o espacio libre de caída: Distancia vertical requerida por un trabajador en caso de una caída, para evitar que este impacte contra el suelo o contra un obstáculo. El requerimiento de claridad dependerá principalmente de la configuración del sistema de detención de caídas utilizado.</Label>
-                          <Textarea value={anexoAltura.claridadEspacioLibre || ''} onChange={e => setAnexoAltura(prev => ({...prev, claridadEspacioLibre: e.target.value}))}/>
-                      </div>
-                  </div>
-                  
-                  {Object.entries(anexoAlturaSections).map(([sectionKey, sectionData]) => (
-                     <div key={sectionKey} className="p-4 border rounded-lg">
-                        <h4 className="font-bold mb-4 text-primary">{sectionData.title}</h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            {sectionData.items.map(item => (
-                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                                    <Label className="flex-1 text-sm">{item.label}</Label>
-                                    {renderRadioGroup(item.id, 'anexoAltura', sectionKey as keyof AnexoAltura)}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                  ))}
-
-                    <div className="p-4 border rounded-lg space-y-4">
-                        <h4 className="font-bold text-primary">Coordinador de Trabajos en Altura</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                            <div>
-                                <Label>Nombres y Apellidos</Label>
-                                <Input value={anexoAltura.coordinadorTrabajosAltura?.nombres || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, nombres: e.target.value}}))}/>
-                            </div>
-                            <div>
-                                <Label>Cédula</Label>
-                                <Input value={anexoAltura.coordinadorTrabajosAltura?.cedula || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, cedula: e.target.value}}))}/>
-                            </div>
-                        </div>
-                        <div className="text-center">
-                            <Label>Firma Apertura</Label>
-                            {anexoAltura.coordinadorTrabajosAltura?.firmaApertura ? (
-                            <Image src={anexoAltura.coordinadorTrabajosAltura.firmaApertura} alt="Firma Coordinador" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
-                            ) : (
-                            <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
-                            )}
-                            <Button size="sm" variant="link" onClick={() => openSignaturePad('coordinadorAltura')}>
-                            {anexoAltura.coordinadorTrabajosAltura?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
-                            </Button>
-                        </div>
-                    </div>
 
                   <div className="p-4 border rounded-lg">
-                      <h4 className="font-bold mb-4 text-primary">OBSERVACIONES / SUPERVISIÓN DEL TRABAJO EN ALTURAS</h4>
-                      <Textarea value={anexoAltura.observaciones || ''} onChange={e => setAnexoAltura(p => ({...p, observaciones: e.target.value}))} rows={4}/>
+                      <h3 className="font-bold text-primary mb-2">TIPO DE ESTRUCTURA O EQUIPO PARA TRABAJO EN ALTURAS</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Seleccione la o las estructuras necesarias para realizar el trabajo en alturas.</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {anexoAlturaEstructuras.map(item => (
+                           <div key={item.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`altura-est-${item.id}`}
+                              checked={(anexoAltura.tipoEstructura as any)?.[item.id]}
+                              onCheckedChange={(checked) => {
+                                setAnexoAltura(p => ({
+                                  ...p,
+                                  tipoEstructura: { ...p.tipoEstructura!, [item.id]: !!checked }
+                                }))
+                              }}
+                            />
+                            <Label htmlFor={`altura-est-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      {anexoAltura.tipoEstructura?.otros && (
+                        <div className="mt-4">
+                          <Label htmlFor="altura-est-otros-cual">Cuales?</Label>
+                          <Input
+                            id="altura-est-otros-cual"
+                            value={anexoAltura.tipoEstructura.otrosCual}
+                            onChange={e => setAnexoAltura(p => ({ ...p, tipoEstructura: { ...p.tipoEstructura!, otrosCual: e.target.value } }))}
+                          />
+                        </div>
+                      )}
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                     <h3 className="font-bold text-primary mb-2">ASPECTOS DE SEGURIDAD PARA TRABAJO EN ALTURAS</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Requerimientos de obligatorio cumplimiento.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                        <div className="space-y-2">
+                          {anexoAlturaAspectos.left.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                                <Label className="flex-1 text-sm">{item.label}</Label>
+                                {renderRadioGroup(item.id, 'anexoAltura', 'aspectosSeguridad')}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          {anexoAlturaAspectos.right.map(item => (
+                              <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                                  <Label className="flex-1 text-sm">{item.label}</Label>
+                                  {renderRadioGroup(item.id, 'anexoAltura', 'aspectosSeguridad')}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
                   </div>
               </div>
           )}
@@ -1511,7 +1455,7 @@ export default function CreatePermitPage() {
                        {[...anexoIzajeAspectos.left, ...anexoIzajeAspectos.right].map(item => (
                             <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
                                 <Label className="flex-1 text-sm">{item.label}</Label>
-                                {renderRadioGroup(item.id, 'anexoIzaje', 'aspectosRequeridos')}
+                                {renderRadioGroup(item.id, 'anexoIzaje', 'aspectosRequeridos' as any)}
                             </div>
                         ))}
                     </div>
