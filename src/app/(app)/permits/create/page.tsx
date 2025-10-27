@@ -1233,7 +1233,7 @@ export default function CreatePermitPage() {
                           </div>
                       </div>
                       <div>
-                          <Label>Especifique el requerimiento de claridad o espacio libre de caída:</Label>
+                          <Label>Especifique el requerimiento de claridad o espacio libre de caída: Distancia vertical requerida por un trabajador en caso de una caída, para evitar que este impacte contra el suelo o contra un obstáculo. El requerimiento de claridad dependerá principalmente de la configuración del sistema de detención de caídas utilizado.</Label>
                           <Textarea value={anexoAltura.claridadEspacioLibre || ''} onChange={e => setAnexoAltura(prev => ({...prev, claridadEspacioLibre: e.target.value}))}/>
                       </div>
                   </div>
