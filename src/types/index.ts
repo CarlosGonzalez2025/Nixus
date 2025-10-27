@@ -74,6 +74,7 @@ export type AnexoATS = {
   descripcionTarea: string;
   peligros: { [key: string]: 'si' | 'no' | 'na' };
   epp: { [key: string]: 'si' | 'no' | 'na' };
+  causalesSuspension: string;
 };
 
 export type AnexoAltura = {
@@ -82,17 +83,17 @@ export type AnexoAltura = {
   auxiliarTSA: 'si' | 'no' | 'na';
   elaboracionATS: 'si' | 'no';
   claridadEspacioLibre: string;
-  trabajoConEscaleras: { [key: string]: 'si' | 'no' | 'na' };
-  trabajoConAndamios: { [key: string]: 'si' | 'no' | 'na' };
-  trabajoConCanastilla: { [key: string]: 'si' | 'no' };
-  lineaDeVida: { [key: string]: 'si' | 'no' };
-  arnesCuerpoEntero: { [key: string]: 'si' | 'no' };
-  eslingas: { [key: string]: 'si' | 'no' };
-  anclajesMoviles: { [key: string]: 'si' | 'no' };
-  mosquetones: { [key: string]: 'si' | 'no' };
-  otros: { cual1: string, cual2: string };
-  observaciones: string;
-  coordinadorTrabajosAltura: {
+  trabajoConEscaleras?: { [key: string]: 'si' | 'no' | 'na' };
+  trabajoConAndamios?: { [key: string]: 'si' | 'no' | 'na' };
+  trabajoConCanastilla?: { [key: string]: 'si' | 'no' | 'na' };
+  lineaDeVida?: { [key: string]: 'si' | 'no' | 'na' };
+  arnesCuerpoEntero?: { [key: string]: 'si' | 'no' | 'na' };
+  eslingas?: { [key: string]: 'si' | 'no' | 'na' };
+  anclajesMoviles?: { [key: string]: 'si' | 'no' | 'na' };
+  mosquetones?: { [key: string]: 'si' | 'no' | 'na' };
+  otros?: { cual1: string, cual2: string };
+  observaciones?: string;
+  coordinadorTrabajosAltura?: {
     nombres: string;
     cedula: string;
     firmaApertura: string;
@@ -197,3 +198,5 @@ export type Permit = {
   anexoIzaje?: Partial<AnexoIzaje>;
   anexoEnergias?: Partial<AnexoEnergias>;
 };
+
+    

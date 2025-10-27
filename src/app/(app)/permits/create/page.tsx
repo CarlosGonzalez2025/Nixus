@@ -186,7 +186,7 @@ export default function CreatePermitPage() {
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
-  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | 'coordinadorAltura' | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
 
 
@@ -260,7 +260,7 @@ export default function CreatePermitPage() {
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
 
-  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion', context?: any) => {
+  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | 'coordinadorAltura', context?: any) => {
     setSignatureTarget(target);
     setSignatureContext(context);
     setIsSignaturePadOpen(true);
@@ -278,6 +278,11 @@ export default function CreatePermitPage() {
         setAnexoIzaje(prev => ({
             ...prev,
             liderIzaje: { ...(prev.liderIzaje!), firmaApertura: signatureDataUrl }
+        }))
+    } else if (signatureTarget === 'coordinadorAltura') {
+        setAnexoAltura(prev => ({
+            ...prev,
+            coordinadorTrabajosAltura: { ...(prev.coordinadorTrabajosAltura!), firmaApertura: signatureDataUrl }
         }))
     } else if (signatureTarget === 'medicion' && signatureContext?.medicionId) {
         setAnexoConfinado(prev => ({
@@ -787,6 +792,54 @@ export default function CreatePermitPage() {
               { id: 'conocenInstructivoAndamios', label: 'K- Conocen los trabajadores el instructivo de trabajo seguro con andamios' },
               { id: 'otros', label: 'L.- Otros (Cual):' },
           ]
+      },
+      trabajoConCanastilla: {
+          title: "TRABAJO CON CANASTILLA",
+          items: [
+              { id: 'aptoParaTrabajo', label: 'A.- El equipo se encuentra apto para el trabajo.' },
+              { id: 'delimitadoIspector', label: 'B.- El área se encuentra delimitado y con inspector vial.' },
+          ]
+      },
+      lineaDeVida: {
+        title: "Línea de Vida",
+        items: [
+          { id: 'inspeccionada', label: 'A.- La línea de vida fue inspeccionada antes de su uso.' },
+          { id: 'compatible', label: 'B.- Es compatible con los demás componentes del sistema.' },
+          { id: 'instaladaCertificada', label: 'C.- La línea de vida fue instalada y certificada por personal calificado.' },
+        ]
+      },
+      arnesCuerpoEntero: {
+        title: "Arnés de Cuerpo Entero",
+        items: [
+            { id: 'inspeccionadoArnes', label: 'A.- Fue inspeccionado antes de su uso.' },
+            { id: 'ajustadoCorrectamente', label: 'B.- Está ajustado correctamente al cuerpo del trabajador.' },
+            { id: 'distribucionFuerza', label: 'C.- Distribuye la fuerza de detención de la caída.' },
+            { id: 'compatibleArnes', label: 'D.- Es compatible con los demás componentes del sistema.' },
+        ]
+      },
+      eslingas: {
+          title: "Eslingas con absorbedor de choque",
+          items: [
+              { id: 'inspeccionadaEslinga', label: 'A.- Fue inspeccionada antes de su uso.' },
+              { id: 'compatibleEslinga', label: 'B.- Es compatible con los demás componentes del sistema.' },
+              { id: 'puntoAnclajeSeguro', label: 'C.- Están conectadas a un punto de anclaje seguro.' },
+          ]
+      },
+      anclajesMoviles: {
+          title: "Anclajes Móviles",
+          items: [
+              { id: 'inspeccionadoAnclaje', label: 'A.- Fueron inspeccionados antes de su uso.' },
+              { id: 'compatiblesAnclaje', label: 'B.- Son compatibles con los demás componentes del sistema.' },
+              { id: 'instaladosCorrectamente', label: 'C.- Están instalados correctamente según las especificaciones del fabricante.' },
+          ]
+      },
+      mosquetones: {
+          title: "Mosquetones",
+          items: [
+              { id: 'inspeccionadosMosqueton', label: 'A.- Fueron inspeccionados antes de su uso.' },
+              { id: 'compatiblesMosqueton', label: 'B.- Son compatibles con los demás componentes del sistema.' },
+              { id: 'cerradosAsegurados', label: 'C.- Están cerrados y asegurados correctamente.' },
+          ]
       }
   };
   
@@ -1252,6 +1305,31 @@ export default function CreatePermitPage() {
                     </div>
                   ))}
 
+                    <div className="p-4 border rounded-lg space-y-4">
+                        <h4 className="font-bold text-primary">Coordinador de Trabajos en Altura</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                            <div>
+                                <Label>Nombres y Apellidos</Label>
+                                <Input value={anexoAltura.coordinadorTrabajosAltura?.nombres || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, nombres: e.target.value}}))}/>
+                            </div>
+                            <div>
+                                <Label>Cédula</Label>
+                                <Input value={anexoAltura.coordinadorTrabajosAltura?.cedula || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, cedula: e.target.value}}))}/>
+                            </div>
+                        </div>
+                        <div className="text-center">
+                            <Label>Firma Apertura</Label>
+                            {anexoAltura.coordinadorTrabajosAltura?.firmaApertura ? (
+                            <Image src={anexoAltura.coordinadorTrabajosAltura.firmaApertura} alt="Firma Coordinador" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
+                            ) : (
+                            <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
+                            )}
+                            <Button size="sm" variant="link" onClick={() => openSignaturePad('coordinadorAltura')}>
+                            {anexoAltura.coordinadorTrabajosAltura?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
+                            </Button>
+                        </div>
+                    </div>
+
                   <div className="p-4 border rounded-lg">
                       <h4 className="font-bold mb-4 text-primary">OBSERVACIONES / SUPERVISIÓN DEL TRABAJO EN ALTURAS</h4>
                       <Textarea value={anexoAltura.observaciones || ''} onChange={e => setAnexoAltura(p => ({...p, observaciones: e.target.value}))} rows={4}/>
@@ -1658,9 +1736,23 @@ export default function CreatePermitPage() {
                           <Button variant="outline" size="icon" onClick={() => openEditWorkerDialog(worker, index)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="destructive" size="icon" onClick={() => removeWorker(index)}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon"><X className="h-4 w-4" /></Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta acción eliminará al trabajador de la lista.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => removeWorker(index)}>Eliminar</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </div>
@@ -1979,3 +2071,5 @@ export default function CreatePermitPage() {
     </>
   );
 }
+
+    
