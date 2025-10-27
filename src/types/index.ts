@@ -77,8 +77,15 @@ export type AnexoATS = {
   causalesSuspension: string;
 };
 
+export type ValidacionDiaria = {
+  fecha: string;
+  nombre: string;
+  firma: string;
+};
+
 export type AnexoAltura = {
   tipoEstructura: {
+    [key: string]: boolean | string;
     escaleraCuerpo: boolean;
     escaleraDosCuerpos: boolean;
     andamioTubular: boolean;
@@ -90,7 +97,45 @@ export type AnexoAltura = {
   },
   aspectosSeguridad: {
     [key: string]: 'si' | 'no' | 'na';
-  }
+  },
+  requerimientoClaridad: string;
+  precauciones: { [key: string]: boolean };
+  afectaciones: {
+    riesgoOtrasAreas: 'si' | 'no';
+    otrasAreasRiesgo: 'si' | 'no';
+    personalNotificado: 'si' | 'no' | 'na';
+    observaciones: string;
+  };
+  coordinadorTrabajosAltura: {
+    nombre: string;
+    cedula: string;
+    firma: string;
+  };
+  validacionDiaria: {
+    autoridad: ValidacionDiaria[];
+    responsable: ValidacionDiaria[];
+  };
+  cancelacion: {
+    seCancelo: 'si' | 'no';
+    razon: string;
+    nombre: string;
+    firma: string;
+    fecha: string;
+  };
+  cierre: {
+    seTermino: 'si' | 'no';
+    observaciones: string;
+    autoridad: {
+      fecha: string;
+      nombre: string;
+      firma: string;
+    };
+    responsable: {
+      fecha: string;
+      nombre: string;
+      firma: string;
+    };
+  };
 };
 
 export type MedicionAtmosferica = {

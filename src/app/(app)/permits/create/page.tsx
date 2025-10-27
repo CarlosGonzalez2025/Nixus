@@ -149,7 +149,37 @@ export default function CreatePermitPage() {
       otros: false,
       otrosCual: '',
     },
-    aspectosSeguridad: {}
+    aspectosSeguridad: {},
+    requerimientoClaridad: '',
+    precauciones: {},
+    afectaciones: {
+      riesgoOtrasAreas: 'no',
+      otrasAreasRiesgo: 'no',
+      personalNotificado: 'na',
+      observaciones: '',
+    },
+    coordinadorTrabajosAltura: {
+      nombre: '',
+      cedula: '',
+      firma: '',
+    },
+    validacionDiaria: {
+      autoridad: Array(7).fill({ fecha: '', nombre: '', firma: '' }),
+      responsable: Array(7).fill({ fecha: '', nombre: '', firma: '' }),
+    },
+    cancelacion: {
+      seCancelo: 'no',
+      razon: '',
+      nombre: '',
+      firma: '',
+      fecha: '',
+    },
+    cierre: {
+      seTermino: 'no',
+      observaciones: '',
+      autoridad: { fecha: '', nombre: '', firma: '' },
+      responsable: { fecha: '', nombre: '', firma: '' },
+    },
   });
 
   // Anexo Confinado
@@ -198,7 +228,7 @@ export default function CreatePermitPage() {
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
-  const [signatureTarget, setSignatureTarget] = useState<'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | 'coordinadorAltura' | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
 
 
@@ -272,38 +302,40 @@ export default function CreatePermitPage() {
     toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
   }
 
-  const openSignaturePad = (target: 'firmaApertura' | 'firmaCierre' | 'supervisorConfinado' | 'liderIzaje' | 'medicion' | 'coordinadorAltura', context?: any) => {
+  const openSignaturePad = (target: string, context?: any) => {
     setSignatureTarget(target);
     setSignatureContext(context);
     setIsSignaturePadOpen(true);
   };
 
   const handleSaveSignature = (signatureDataUrl: string) => {
-    if (signatureTarget === 'firmaApertura' || signatureTarget === 'firmaCierre') {
-        handleWorkerInputChange(signatureTarget, signatureDataUrl);
-    } else if (signatureTarget === 'supervisorConfinado') {
-        setAnexoConfinado(prev => ({
-            ...prev,
-            supervisor: { ...(prev.supervisor!), firmaApertura: signatureDataUrl }
-        }))
-    } else if (signatureTarget === 'liderIzaje') {
-        setAnexoIzaje(prev => ({
-            ...prev,
-            liderIzaje: { ...(prev.liderIzaje!), firmaApertura: signatureDataUrl }
-        }))
-    } else if (signatureTarget === 'medicion' && signatureContext?.medicionId) {
-        setAnexoConfinado(prev => ({
-            ...prev,
-            mediciones: (prev.mediciones || []).map(m =>
-                m.id === signatureContext.medicionId ? { ...m, firma: signatureDataUrl } : m
-            )
-        }));
-    }
-    
+    if (!signatureTarget) return;
+
+    const targets: { [key: string]: Function } = {
+        'worker.firmaApertura': () => handleWorkerInputChange('firmaApertura', signatureDataUrl),
+        'worker.firmaCierre': () => handleWorkerInputChange('firmaCierre', signatureDataUrl),
+        'anexoConfinado.supervisor': () => setAnexoConfinado(p => ({ ...p, supervisor: { ...(p.supervisor!), firmaApertura: signatureDataUrl }})),
+        'anexoIzaje.liderIzaje': () => setAnexoIzaje(p => ({ ...p, liderIzaje: { ...(p.liderIzaje!), firmaApertura: signatureDataUrl }})),
+        'anexoConfinado.medicion': () => {
+            if (signatureContext?.medicionId) {
+                setAnexoConfinado(p => ({ ...p, mediciones: (p.mediciones || []).map(m => m.id === signatureContext.medicionId ? { ...m, firma: signatureDataUrl } : m) }));
+            }
+        },
+        'anexoAltura.coordinador': () => setAnexoAltura(p => ({ ...p, coordinadorTrabajosAltura: { ...(p.coordinadorTrabajosAltura!), firma: signatureDataUrl }})),
+        'anexoAltura.validacion.autoridad': () => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, autoridad: p.validacionDiaria!.autoridad.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoAltura.validacion.responsable': () => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, responsable: p.validacionDiaria!.responsable.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoAltura.cancelacion': () => setAnexoAltura(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
+        'anexoAltura.cierre.autoridad': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad, firma: signatureDataUrl } }})),
+        'anexoAltura.cierre.responsable': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable, firma: signatureDataUrl } }})),
+    };
+
+    const action = targets[signatureTarget];
+    if (action) action();
+
     setIsSignaturePadOpen(false);
     setSignatureTarget(null);
     setSignatureContext(null);
-  };
+};
   
   const addTool = () => {
     if (newToolName.trim()) {
@@ -682,7 +714,7 @@ export default function CreatePermitPage() {
  }, {} as {[key: string]: typeof atsEpp});
 
 
-  const handleRadioChange = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: 'aspectosSeguridad') => {
+  const handleRadioChange = (id: string, group: string, anexoSection?: string) => {
       let setState: React.Dispatch<React.SetStateAction<any>>;
       
       const updateState = (prevState: any, value: string) => {
@@ -704,6 +736,9 @@ export default function CreatePermitPage() {
            if (group === 'anexoIzaje') {
               return { ...prevState, aspectosRequeridos: { ...(prevState.aspectosRequeridos || {}), [id]: value } };
           }
+           if (group === 'anexoAltura.afectaciones') {
+              return { ...prevState, afectaciones: { ...prevState.afectaciones, [id]: value } };
+          }
           return prevState;
       }
       
@@ -716,6 +751,7 @@ export default function CreatePermitPage() {
           case 'anexoATS-peligros': setState = setAnexoATS; break;
           case 'anexoATS-epp': setState = setAnexoATS; break;
           case 'anexoAltura': setState = setAnexoAltura; break;
+          case 'anexoAltura.afectaciones': setState = setAnexoAltura; break;
           case 'anexoConfinado': setState = setAnexoConfinado; break;
           case 'anexoIzaje': setState = setAnexoIzaje; break;
           case 'generalInfo': setState = setGeneralInfo; break;
@@ -727,7 +763,7 @@ export default function CreatePermitPage() {
       }
   }
 
-  const renderRadioGroup = (id: string, group: 'hazards' | 'ppe' | 'ppeSystems' | 'emergency' | 'anexoAltura' | 'anexoConfinado' | 'anexoIzaje' | 'anexoEnergias' | 'anexoATS-peligros' | 'anexoATS-epp' | 'generalInfo', anexoSection?: 'aspectosSeguridad') => {
+  const renderRadioGroup = (id: string, group: string, anexoSection?: string) => {
     let state: any = {};
     let onValueChange: ((value: 'si' | 'no' | 'na') => void) | undefined;
     let defaultValue = 'na';
@@ -741,6 +777,7 @@ export default function CreatePermitPage() {
         case 'anexoATS-peligros': state = anexoATS.peligros || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; onValueChange = handleRadioChange(id, group, anexoSection); break;
+        case 'anexoAltura.afectaciones': state = anexoAltura.afectaciones; onValueChange = handleRadioChange(id, group); break;
         case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); break;
         case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos' as any); break;
         case 'generalInfo': state = generalInfo; onValueChange = handleRadioChange(id, group); break;
@@ -807,6 +844,33 @@ export default function CreatePermitPage() {
       { id: 'sistemasPosicionamiento', label: 'V. En caso de requerirse se cuenta con sistemas de posicionamiento' },
     ]
   };
+
+  const anexoAlturaPrecauciones = [
+      { id: 'despresurizar', label: 'DESPRESURIZAR' },
+      { id: 'revisarEquipos', label: 'REVISAR EQUIPOS Y HERRAMIENTAS' },
+      { id: 'sistemaContencion', label: 'SISTEMA CONTENCION DERRAMES' },
+      { id: 'monitoreoAtmosferas', label: 'MONITOREO DE ATMOSFERAS' },
+      { id: 'aislamientoMecanico', label: 'AISLAMIENTO MECACNICO' },
+      { id: 'aislamientoProceso', label: 'AISLAMIENTO DE PROCESO' },
+      { id: 'aislamientoElectrico', label: 'AISLAMIENTO ELECTRICO' },
+      { id: 'bloqueoEtiquetado', label: 'BLOQUEO Y ETIQUETADO' },
+      { id: 'etiquetadoQuimicos', label: 'ETIQUETADO PRODUCTOS QUIMICOS' },
+      { id: 'senalizacion', label: 'SEÑALIZACION' },
+      { id: 'verificarChequeo', label: 'VERIFICAR LISTA DE CHEQUEO' },
+      { id: 'aterrizarEquipo', label: 'ATERRIZAR EQUIPO' },
+      { id: 'instalarLineasVida', label: 'INSTALAR LINEAS DE VIDA ADICIONALES' },
+      { id: 'drenar', label: 'DRENAR' },
+      { id: 'ventilar', label: 'VENTILAR' },
+      { id: 'equipoContraIncendio', label: 'EQUIPO CONTRA INCENDIO' },
+      { id: 'kitDerrames', label: 'KIT DERRAMES' },
+      { id: 'clasificacionResiduos', label: 'CLASIFICACION DE RESIDUOS' },
+      { id: 'planIzaje', label: 'PLAN DE IZAJE' },
+      { id: 'fichaSeguridad', label: 'FICHA DE SEGURIDAD' },
+      { id: 'cierreRecipientes', label: 'CIERRE DE RECIPIENTES SIN USO' },
+      { id: 'usoEppsEspeciales', label: 'USO DE EPPS ESPECIALES' },
+      { id: 'requiereVigia', label: 'REQUIERE VIGIA' },
+      { id: 'otroPrecaucion', label: 'OTRO, CUAL' },
+  ];
   
   const anexoConfinadoChecklist = {
       left: [
@@ -1216,69 +1280,246 @@ export default function CreatePermitPage() {
           )}
           
           {currentStepInfo.label === "Anexo Altura" && (
-              <div className="space-y-6">
-                   <div className="text-center mb-6">
-                      <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                          ANEXO 1 - TRABAJOS EN ALTURA
-                      </h2>
-                      <p className="text-muted-foreground text-sm">Identificación de Peligros y Aspectos para Trabajo en Alturas.</p>
-                  </div>
+            <div className="space-y-6">
+                 <div className="text-center mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        ANEXO 1 - TRABAJOS EN ALTURA
+                    </h2>
+                    <p className="text-muted-foreground text-sm">Identificación de Peligros y Aspectos para Trabajo en Alturas.</p>
+                </div>
 
-                  <div className="p-4 border rounded-lg">
-                      <h3 className="font-bold text-primary mb-2">TIPO DE ESTRUCTURA O EQUIPO PARA TRABAJO EN ALTURAS</h3>
-                      <p className="text-xs text-muted-foreground mb-4">Seleccione la o las estructuras necesarias para realizar el trabajo en alturas.</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {anexoAlturaEstructuras.map(item => (
-                           <div key={item.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`altura-est-${item.id}`}
-                              checked={(anexoAltura.tipoEstructura as any)?.[item.id]}
-                              onCheckedChange={(checked) => {
-                                setAnexoAltura(p => ({
-                                  ...p,
-                                  tipoEstructura: { ...p.tipoEstructura!, [item.id]: !!checked }
-                                }))
-                              }}
-                            />
-                            <Label htmlFor={`altura-est-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                <div className="p-4 border rounded-lg">
+                    <h3 className="font-bold text-primary mb-2">TIPO DE ESTRUCTURA O EQUIPO PARA TRABAJO EN ALTURAS</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Seleccione la o las estructuras necesarias para realizar el trabajo en alturas.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {anexoAlturaEstructuras.map(item => (
+                         <div key={item.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`altura-est-${item.id}`}
+                            checked={(anexoAltura.tipoEstructura as any)?.[item.id]}
+                            onCheckedChange={(checked) => {
+                              setAnexoAltura(p => ({
+                                ...p,
+                                tipoEstructura: { ...p.tipoEstructura!, [item.id]: !!checked }
+                              }))
+                            }}
+                          />
+                          <Label htmlFor={`altura-est-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                    {anexoAltura.tipoEstructura?.otros && (
+                      <div className="mt-4">
+                        <Label htmlFor="altura-est-otros-cual">Cuales?</Label>
+                        <Input
+                          id="altura-est-otros-cual"
+                          value={anexoAltura.tipoEstructura.otrosCual}
+                          onChange={e => setAnexoAltura(p => ({ ...p, tipoEstructura: { ...p.tipoEstructura!, otrosCual: e.target.value } }))}
+                        />
+                      </div>
+                    )}
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                   <h3 className="font-bold text-primary mb-2">ASPECTOS DE SEGURIDAD PARA TRABAJO EN ALTURAS</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Requerimientos de obligatorio cumplimiento.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                      <div className="space-y-2">
+                        {anexoAlturaAspectos.left.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                              <Label className="flex-1 text-sm">{item.label}</Label>
+                              {renderRadioGroup(item.id, 'anexoAltura', 'aspectosSeguridad')}
                           </div>
                         ))}
                       </div>
-                      {anexoAltura.tipoEstructura?.otros && (
-                        <div className="mt-4">
-                          <Label htmlFor="altura-est-otros-cual">Cuales?</Label>
-                          <Input
-                            id="altura-est-otros-cual"
-                            value={anexoAltura.tipoEstructura.otrosCual}
-                            onChange={e => setAnexoAltura(p => ({ ...p, tipoEstructura: { ...p.tipoEstructura!, otrosCual: e.target.value } }))}
-                          />
-                        </div>
-                      )}
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                     <h3 className="font-bold text-primary mb-2">ASPECTOS DE SEGURIDAD PARA TRABAJO EN ALTURAS</h3>
-                      <p className="text-xs text-muted-foreground mb-4">Requerimientos de obligatorio cumplimiento.</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                        <div className="space-y-2">
-                          {anexoAlturaAspectos.left.map(item => (
+                      <div className="space-y-2">
+                        {anexoAlturaAspectos.right.map(item => (
                             <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
                                 <Label className="flex-1 text-sm">{item.label}</Label>
                                 {renderRadioGroup(item.id, 'anexoAltura', 'aspectosSeguridad')}
                             </div>
                           ))}
-                        </div>
-                        <div className="space-y-2">
-                          {anexoAlturaAspectos.right.map(item => (
-                              <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
-                                  <Label className="flex-1 text-sm">{item.label}</Label>
-                                  {renderRadioGroup(item.id, 'anexoAltura', 'aspectosSeguridad')}
-                              </div>
-                            ))}
+                      </div>
+                    </div>
+                </div>
+                <div className="p-4 border rounded-lg">
+                    <Label htmlFor="requerimientoClaridad" className="font-bold text-primary mb-2">
+                        Especifique el requerimiento de claridad o espacio libre de caída:
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                        Distancia vertical requerida por un trabajador en caso de una caída, para evitar que este impacte contra el suelo o contra un obstáculo. El requerimiento de claridad dependerá principalmente de la configuración del sistema de detención de caídas utilizado.
+                    </p>
+                    <Input
+                        id="requerimientoClaridad"
+                        value={anexoAltura.requerimientoClaridad || ''}
+                        onChange={(e) => setAnexoAltura(p => ({ ...p, requerimientoClaridad: e.target.value }))}
+                        placeholder="Ej: 5.5 metros"
+                    />
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-bold text-primary mb-2">PRECAUCIONES Y CONTROLES ESPECÍFICOS</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Marque con una X cada uno de los items, SI cumple o NO el requisito, y marque con N/A si el requisito NO APLICA.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {anexoAlturaPrecauciones.map(item => (
+                      <div key={item.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`precaucion-${item.id}`}
+                          checked={anexoAltura.precauciones?.[item.id]}
+                          onCheckedChange={(checked) => setAnexoAltura(p => ({...p, precauciones: {...p.precauciones, [item.id]: !!checked}}))}
+                        />
+                        <Label htmlFor={`precaucion-${item.id}`} className="text-sm font-normal">{item.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-bold text-primary mb-2">AFECTACIONES</h3>
+                   <div className="space-y-3">
+                      <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                        <Label className="flex-1 text-sm">¿Este trabajo produce riesgos para otros trabajos en areas adyacentes?</Label>
+                        {renderRadioGroup('riesgoOtrasAreas', 'anexoAltura.afectaciones')}
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                        <Label className="flex-1 text-sm">¿Los otros trabajos en areas adyacentes producen riesgo a este trabajo?</Label>
+                        {renderRadioGroup('otrasAreasRiesgo', 'anexoAltura.afectaciones')}
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                        <Label className="flex-1 text-sm">¿El personal del area potencialmente afectado y los trabajadores fueron notificados del trabajo a realizar?</Label>
+                        {renderRadioGroup('personalNotificado', 'anexoAltura.afectaciones')}
+                      </div>
+                   </div>
+                   <div className="mt-4">
+                    <Label htmlFor="afectaciones-observaciones">OBSERVACIONES</Label>
+                    <Textarea id="afectaciones-observaciones" value={anexoAltura.afectaciones?.observaciones || ''} onChange={e => setAnexoAltura(p => ({...p, afectaciones: { ...p.afectaciones!, observaciones: e.target.value }}))} />
+                   </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Coordinador de Trabajos en Alturas</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                       <div>
+                            <Label>Nombre y Apellidos</Label>
+                            <Input value={anexoAltura.coordinadorTrabajosAltura?.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, nombre: e.target.value}}))}/>
+                       </div>
+                       <div>
+                            <Label>Cédula</Label>
+                            <Input value={anexoAltura.coordinadorTrabajosAltura?.cedula || ''} onChange={e => setAnexoAltura(p => ({...p, coordinadorTrabajosAltura: { ...p.coordinadorTrabajosAltura!, cedula: e.target.value}}))}/>
+                       </div>
+                    </div>
+                     <div className="text-center">
+                        <Label>Firma</Label>
+                        {anexoAltura.coordinadorTrabajosAltura?.firma ? (
+                          <Image src={anexoAltura.coordinadorTrabajosAltura.firma} alt="Firma Coordinador" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
+                        )}
+                        <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoAltura.coordinador')}>
+                          {anexoAltura.coordinadorTrabajosAltura?.firma ? 'Cambiar Firma' : 'Firmar'}
+                        </Button>
+                    </div>
+                </div>
+
+                 <div className="p-4 border rounded-lg space-y-4">
+                  <h3 className="font-bold text-primary mb-2">VALIDACIÓN</h3>
+                   <div className="space-y-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-700">Autoridad del Area o Responsable del area especifica.</h4>
+                      <div className="overflow-x-auto">
+                        <div className="grid grid-cols-8 gap-1 mt-2 text-center text-xs font-bold min-w-[800px]">
+                          <div>FECHA</div><div>DIA 1</div><div>DIA 2</div><div>DIA 3</div><div>DIA 4</div><div>DIA 5</div><div>DIA 6</div><div>DIA 7</div>
+                          <div>NOMBRE</div>
+                          {Array(7).fill(0).map((_, i) => <Input key={i} className="text-xs" value={anexoAltura.validacionDiaria?.autoridad[i]?.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, autoridad: p.validacionDiaria!.autoridad.map((v, idx) => idx === i ? {...v, nombre: e.target.value} : v) }}))} />)}
+                          <div>FIRMA</div>
+                          {Array(7).fill(0).map((_, i) => <Button key={i} size="sm" variant="outline" onClick={() => openSignaturePad('anexoAltura.validacion.autoridad', {index: i})}>{ anexoAltura.validacionDiaria?.autoridad[i]?.firma ? <Check size={16}/> : <Signature size={16}/>}</Button>)}
                         </div>
                       </div>
+                    </div>
+                     <div>
+                      <h4 className="font-semibold text-gray-700">Responsable del Trabajo/Ejecutor.</h4>
+                      <div className="overflow-x-auto">
+                        <div className="grid grid-cols-8 gap-1 mt-2 text-center text-xs font-bold min-w-[800px]">
+                          <div>FECHA</div><div>DIA 1</div><div>DIA 2</div><div>DIA 3</div><div>DIA 4</div><div>DIA 5</div><div>DIA 6</div><div>DIA 7</div>
+                          <div>NOMBRE</div>
+                          {Array(7).fill(0).map((_, i) => <Input key={i} className="text-xs" value={anexoAltura.validacionDiaria?.responsable[i]?.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, responsable: p.validacionDiaria!.responsable.map((v, idx) => idx === i ? {...v, nombre: e.target.value} : v) }}))} />)}
+                          <div>FIRMA</div>
+                          {Array(7).fill(0).map((_, i) => <Button key={i} size="sm" variant="outline" onClick={() => openSignaturePad('anexoAltura.validacion.responsable', {index: i})}>{ anexoAltura.validacionDiaria?.responsable[i]?.firma ? <Check size={16}/> : <Signature size={16}/>}</Button>)}
+                        </div>
+                      </div>
+                    </div>
+                   </div>
+                 </div>
+
+                 <div className="p-4 border rounded-lg space-y-4">
+                  <h3 className="font-bold text-primary mb-2">CANCELACIÓN DEL TRABAJO</h3>
+                  <div className="flex items-center gap-4">
+                    <Label>SE CANCELO EL TRABAJO</Label>
+                    <RadioGroup value={anexoAltura.cancelacion?.seCancelo || 'no'} onValueChange={(v) => setAnexoAltura(p => ({...p, cancelacion: {...p.cancelacion!, seCancelo: v as 'si' | 'no'}}))} className="flex">
+                       <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cancelo-si" /><Label htmlFor="cancelo-si">SI</Label></div>
+                       <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cancelo-no" /><Label htmlFor="cancelo-no">NO</Label></div>
+                    </RadioGroup>
                   </div>
-              </div>
+                  {anexoAltura.cancelacion?.seCancelo === 'si' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label>RAZON:</Label>
+                            <Input value={anexoAltura.cancelacion?.razon || ''} onChange={e => setAnexoAltura(p => ({...p, cancelacion: {...p.cancelacion!, razon: e.target.value}}))}/>
+                        </div>
+                         <div>
+                            <Label>FECHA:</Label>
+                            <Input type="date" value={anexoAltura.cancelacion?.fecha || ''} onChange={e => setAnexoAltura(p => ({...p, cancelacion: {...p.cancelacion!, fecha: e.target.value}}))}/>
+                        </div>
+                        <div>
+                            <Label>NOMBRE:</Label>
+                            <Input value={anexoAltura.cancelacion?.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, cancelacion: {...p.cancelacion!, nombre: e.target.value}}))}/>
+                        </div>
+                        <div className="text-center">
+                            <Label>FIRMA:</Label>
+                            {anexoAltura.cancelacion?.firma ? <Image src={anexoAltura.cancelacion.firma} alt="Firma Cancelación" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                            <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoAltura.cancelacion')}>Firmar</Button>
+                        </div>
+                    </div>
+                  )}
+                 </div>
+
+                 <div className="p-4 border rounded-lg space-y-4">
+                   <h3 className="font-bold text-primary mb-2">CIERRE DE PERMISO DE TRABAJO</h3>
+                    <div className="flex items-center gap-4">
+                      <Label>SE TERMINO EL TRABAJO</Label>
+                      <RadioGroup value={anexoAltura.cierre?.seTermino || 'no'} onValueChange={(v) => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, seTermino: v as 'si' | 'no'}}))} className="flex">
+                         <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="termino-si" /><Label htmlFor="termino-si">SI</Label></div>
+                         <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="termino-no" /><Label htmlFor="termino-no">NO</Label></div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label>OBSERVACIONES:</Label>
+                      <Textarea value={anexoAltura.cierre?.observaciones || ''} onChange={e => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, observaciones: e.target.value}}))}/>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-4 border rounded-lg space-y-2">
+                           <h4 className="font-semibold text-gray-700">AUTORIDAD DEL ÁREA O RESPONSABLE</h4>
+                           <Input placeholder="Nombre" value={anexoAltura.cierre?.autoridad.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, autoridad: {...p.cierre!.autoridad, nombre: e.target.value}}}))}/>
+                           <Input type="date" value={anexoAltura.cierre?.autoridad.fecha || ''} onChange={e => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, autoridad: {...p.cierre!.autoridad, fecha: e.target.value}}}))}/>
+                           <div className="text-center">
+                                <Label>Firma:</Label>
+                                {anexoAltura.cierre?.autoridad.firma ? <Image src={anexoAltura.cierre.autoridad.firma} alt="Firma Cierre Autoridad" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                                <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoAltura.cierre.autoridad')}>Firmar</Button>
+                           </div>
+                        </div>
+                         <div className="p-4 border rounded-lg space-y-2">
+                           <h4 className="font-semibold text-gray-700">RESPONSABLE DEL TRABAJO / EJECUTOR</h4>
+                           <Input placeholder="Nombre" value={anexoAltura.cierre?.responsable.nombre || ''} onChange={e => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, responsable: {...p.cierre!.responsable, nombre: e.target.value}}}))}/>
+                           <Input type="date" value={anexoAltura.cierre?.responsable.fecha || ''} onChange={e => setAnexoAltura(p => ({...p, cierre: {...p.cierre!, responsable: {...p.cierre!.responsable, fecha: e.target.value}}}))}/>
+                           <div className="text-center">
+                                <Label>Firma:</Label>
+                                {anexoAltura.cierre?.responsable.firma ? <Image src={anexoAltura.cierre.responsable.firma} alt="Firma Cierre Responsable" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                                <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoAltura.cierre.responsable')}>Firmar</Button>
+                           </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
           )}
 
           {currentStepInfo.label === "Anexo Confinado" && (
@@ -1347,7 +1588,7 @@ export default function CreatePermitPage() {
                                 <Input placeholder="Cl2" value={medicion.cl2} onChange={e => updateMedicion(medicion.id, 'cl2', e.target.value)} className="col-span-1" />
                                 <Input placeholder="CO2" value={medicion.co2} onChange={e => updateMedicion(medicion.id, 'co2', e.target.value)} className="col-span-1" />
                                 <div className="flex items-center gap-1 col-span-2 sm:col-span-2">
-                                     <Button size="sm" variant="outline" onClick={() => openSignaturePad('medicion', { medicionId: medicion.id })}>
+                                     <Button size="sm" variant="outline" onClick={() => openSignaturePad('anexoConfinado.medicion', { medicionId: medicion.id })}>
                                         {medicion.firma ? <Check size={16} /> : <Signature size={16}/>}
                                      </Button>
                                      <Button size="icon" variant="ghost" onClick={() => removeMedicion(medicion.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -1379,7 +1620,7 @@ export default function CreatePermitPage() {
                         ) : (
                           <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
                         )}
-                        <Button size="sm" variant="link" onClick={() => openSignaturePad('supervisorConfinado')}>
+                        <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.supervisor')}>
                           {anexoConfinado.supervisor?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
                         </Button>
                     </div>
@@ -1501,7 +1742,7 @@ export default function CreatePermitPage() {
                         ) : (
                           <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
                         )}
-                        <Button size="sm" variant="link" onClick={() => openSignaturePad('liderIzaje')}>
+                        <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoIzaje.liderIzaje')}>
                           {anexoIzaje.liderIzaje?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
                         </Button>
                     </div>
@@ -1972,7 +2213,7 @@ export default function CreatePermitPage() {
                     ) : (
                       <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
                     )}
-                    <Button size="sm" variant="link" onClick={() => openSignaturePad('firmaApertura')}>
+                    <Button size="sm" variant="link" onClick={() => openSignaturePad('worker.firmaApertura')}>
                       {currentWorker?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
                     </Button>
                   </div>
@@ -1983,7 +2224,7 @@ export default function CreatePermitPage() {
                     ) : (
                       <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
                     )}
-                    <Button size="sm" variant="link" onClick={() => openSignaturePad('firmaCierre')} disabled={!currentWorker?.firmaApertura}>
+                    <Button size="sm" variant="link" onClick={() => openSignaturePad('worker.firmaCierre')} disabled={!currentWorker?.firmaApertura}>
                        {currentWorker?.firmaCierre ? 'Cambiar Firma' : 'Firmar'}
                     </Button>
                   </div>
