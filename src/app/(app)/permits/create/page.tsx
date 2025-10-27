@@ -54,7 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -369,11 +369,12 @@ export default function CreatePermitPage() {
         'anexoConfinado.autoridadDelArea': () => setAnexoConfinado(p => ({...p, autoridadDelArea: {...p.autoridadDelArea, firma: signatureDataUrl}})),
         'anexoConfinado.responsableDelTrabajo': () => setAnexoConfinado(p => ({...p, responsableDelTrabajo: {...p.responsableDelTrabajo, firma: signatureDataUrl}})),
         'anexoConfinado.supervisorTrabajo': () => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo!, firma: signatureDataUrl}})),
-        'anexoConfinado.validacion.autoridad': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, autoridad: p.validacion!.autoridad.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
-        'anexoConfinado.validacion.responsable': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, responsable: p.validacion!.responsable.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoConfinado.validacion.autoridad': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, autoridad: (p.validacion?.autoridad || []).map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoConfinado.validacion.responsable': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, responsable: (p.validacion?.responsable || []).map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
         'anexoConfinado.cancelacion': () => setAnexoConfinado(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
-        'anexoConfinado.cierre.autoridad': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad, firma: signatureDataUrl } }})),
-        'anexoConfinado.cierre.responsable': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable, firma: signatureDataUrl } }})),
+        'anexoConfinado.cierre.autoridad': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...(p.cierre!.autoridad as AutorizacionPersona), firma: signatureDataUrl } }})),
+        'anexoConfinado.cierre.responsable': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...(p.cierre!.responsable as AutorizacionPersona), firma: signatureDataUrl } }})),
+        'anexoConfinado.pruebasPeriodicas': () => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebas: (p.pruebasGasesPeriodicas?.pruebas || []).map((prueba, i) => i === signatureContext.index ? {...prueba, firma: signatureDataUrl} : prueba)}})),
     };
 
     const action = targets[signatureTarget];
@@ -401,31 +402,22 @@ export default function CreatePermitPage() {
     setGeneralInfo(prev => ({...prev, tools: (prev.tools || []).filter((_, i) => i !== index)}));
   };
   
-  const addMedicion = () => {
-    const newMedicion: MedicionAtmosferica = {
-      id: `med_${Date.now()}`,
+  const addPruebaPeriodica = () => {
+    const newPrueba: PruebaGasesPeriodica = {
+      id: `prueba_${Date.now()}`,
       hora: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
-      o2: '', co: '', h2s: '', lel: '', cl2: '', co2: '', firma: ''
+      lel: '', o2: '', h2s: '', co: '', firma: '',
     };
-    setAnexoConfinado(prev => ({
-        ...prev,
-        mediciones: [...(prev.mediciones || []), newMedicion]
-    }));
-  };
+    setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebas: [...(p.pruebasGasesPeriodicas?.pruebas || []), newPrueba]}}))
+  }
 
-  const updateMedicion = (id: string, field: keyof Omit<MedicionAtmosferica, 'id' | 'firma'>, value: string) => {
-      setAnexoConfinado(prev => ({
-          ...prev,
-          mediciones: (prev.mediciones || []).map(m => m.id === id ? { ...m, [field]: value } : m)
-      }));
-  };
-  
-  const removeMedicion = (id: string) => {
-      setAnexoConfinado(prev => ({
-          ...prev,
-          mediciones: (prev.mediciones || []).filter(m => m.id !== id)
-      }));
-  };
+  const updatePruebaPeriodica = (id: string, field: keyof Omit<PruebaGasesPeriodica, 'id' | 'firma'>, value: string) => {
+    setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebas: (p.pruebasGasesPeriodicas?.pruebas || []).map(prueba => prueba.id === id ? {...prueba, [field]: value} : prueba)}}));
+  }
+
+  const removePruebaPeriodica = (id: string) => {
+    setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebas: (p.pruebasGasesPeriodicas?.pruebas || []).filter(prueba => prueba.id !== id)}}));
+  }
 
 
   const colors = {
@@ -1732,12 +1724,37 @@ export default function CreatePermitPage() {
                         <Label>Las pruebas de gases se deben realizar cada:</Label>
                         <Input className="w-48" placeholder="Ej: 15 minutos" value={anexoConfinado.pruebasGasesPeriodicas?.intervalo} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, intervalo: e.target.value}}))}/>
                     </div>
-                    {/* Tabla de pruebas periodicas aqui */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-sm mt-4">
+                            <thead>
+                                <tr className="text-left bg-gray-50">
+                                    <th className="p-2">Hora</th><th className="p-2">LEL(%)</th><th className="p-2">O2(%)</th><th className="p-2">H2S(PPM)</th><th className="p-2">CO(PPM)</th><th className="p-2">Firma</th><th className="p-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {anexoConfinado.pruebasGasesPeriodicas?.pruebas?.map((prueba, index) => (
+                                    <tr key={prueba.id}>
+                                        <td><Input type="time" value={prueba.hora} onChange={e => updatePruebaPeriodica(prueba.id, 'hora', e.target.value)} className="w-full"/></td>
+                                        <td><Input value={prueba.lel} onChange={e => updatePruebaPeriodica(prueba.id, 'lel', e.target.value)} /></td>
+                                        <td><Input value={prueba.o2} onChange={e => updatePruebaPeriodica(prueba.id, 'o2', e.target.value)} /></td>
+                                        <td><Input value={prueba.h2s} onChange={e => updatePruebaPeriodica(prueba.id, 'h2s', e.target.value)} /></td>
+                                        <td><Input value={prueba.co} onChange={e => updatePruebaPeriodica(prueba.id, 'co', e.target.value)} /></td>
+                                        <td><Button size="sm" variant="outline" onClick={() => openSignaturePad('anexoConfinado.pruebasPeriodicas', {index})}>{prueba.firma ? <Check/> : <Signature/>}</Button></td>
+                                        <td><Button size="icon" variant="ghost" onClick={() => removePruebaPeriodica(prueba.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                     <Button onClick={addPruebaPeriodica} variant="outline" size="sm"><Plus className="mr-2 h-4 w-4"/> Agregar Medición</Button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <Input placeholder="Prueba realizada por" value={anexoConfinado.pruebasGasesPeriodicas?.pruebaRealizadaPor} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebaRealizadaPor: e.target.value}}))} />
                         <Input placeholder="Serial Monitor de Atmosferas" value={anexoConfinado.pruebasGasesPeriodicas?.serialMonitor} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, serialMonitor: e.target.value}}))} />
                         <Input placeholder="Marca" value={anexoConfinado.pruebasGasesPeriodicas?.marca} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, marca: e.target.value}}))} />
-                        <Input type="date" value={anexoConfinado.pruebasGasesPeriodicas?.fechaCalibracion} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, fechaCalibracion: e.target.value}}))} />
+                        <div className="md:col-span-1">
+                            <Label>Fecha de Calibración</Label>
+                            <Input type="date" value={anexoConfinado.pruebasGasesPeriodicas?.fechaCalibracion} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, fechaCalibracion: e.target.value}}))} />
+                        </div>
                     </div>
                  </div>
                 
@@ -1784,17 +1801,88 @@ export default function CreatePermitPage() {
                   </div>
                 </div>
 
-                 <div className="p-4 border rounded-lg space-y-4">
+                <div className="p-4 border rounded-lg space-y-4">
                   <h3 className="font-bold text-primary mb-2">VALIDACIÓN</h3>
-                    {/* Validacion igual que en Anexo Altura */}
-                 </div>
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="font-semibold text-gray-700">Autoridad del Area o Responsable del area especifica.</h4>
+                        <div className="overflow-x-auto">
+                          <div className="grid grid-cols-8 gap-1 mt-2 text-center text-xs font-bold min-w-[800px]">
+                            <div>FECHA</div><div>DIA 1</div><div>DIA 2</div><div>DIA 3</div><div>DIA 4</div><div>DIA 5</div><div>DIA 6</div><div>DIA 7</div>
+                            <div>NOMBRE</div>
+                            {Array(7).fill(0).map((_, i) => <Input key={i} className="text-xs" value={anexoConfinado.validacion?.autoridad[i]?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, autoridad: (p.validacion?.autoridad || []).map((v, idx) => idx === i ? {...v, nombre: e.target.value} : v) }}))} />)}
+                            <div>FIRMA</div>
+                            {Array(7).fill(0).map((_, i) => <Button key={i} size="sm" variant="outline" onClick={() => openSignaturePad('anexoConfinado.validacion.autoridad', {index: i})}>{ anexoConfinado.validacion?.autoridad[i]?.firma ? <Check size={16}/> : <Signature size={16}/>}</Button>)}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-700">Responsable del Trabajo/Ejecutor.</h4>
+                        <div className="overflow-x-auto">
+                          <div className="grid grid-cols-8 gap-1 mt-2 text-center text-xs font-bold min-w-[800px]">
+                            <div>FECHA</div><div>DIA 1</div><div>DIA 2</div><div>DIA 3</div><div>DIA 4</div><div>DIA 5</div><div>DIA 6</div><div>DIA 7</div>
+                            <div>NOMBRE</div>
+                            {Array(7).fill(0).map((_, i) => <Input key={i} className="text-xs" value={anexoConfinado.validacion?.responsable[i]?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, responsable: (p.validacion?.responsable || []).map((v, idx) => idx === i ? {...v, nombre: e.target.value} : v) }}))} />)}
+                            <div>FIRMA</div>
+                            {Array(7).fill(0).map((_, i) => <Button key={i} size="sm" variant="outline" onClick={() => openSignaturePad('anexoConfinado.validacion.responsable', {index: i})}>{ anexoConfinado.validacion?.responsable[i]?.firma ? <Check size={16}/> : <Signature size={16}/>}</Button>)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
                 <div className="p-4 border rounded-lg space-y-4">
                   <h3 className="font-bold text-primary mb-2">CANCELACIÓN DEL TRABAJO</h3>
-                    {/* Cancelacion igual que en Anexo Altura */}
+                  <div className="flex items-center gap-4">
+                    <Label>SE CANCELO EL TRABAJO</Label>
+                    <RadioGroup value={anexoConfinado.cancelacion?.seCancelo || 'no'} onValueChange={(v) => setAnexoConfinado(p => ({...p, cancelacion: {...p.cancelacion!, seCancelo: v as 'si' | 'no'}}))} className="flex">
+                       <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cancelo-confinado-si" /><Label htmlFor="cancelo-confinado-si">SI</Label></div>
+                       <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cancelo-confinado-no" /><Label htmlFor="cancelo-confinado-no">NO</Label></div>
+                    </RadioGroup>
+                  </div>
+                  {anexoConfinado.cancelacion?.seCancelo === 'si' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><Label>RAZON:</Label><Input value={anexoConfinado.cancelacion?.razon || ''} onChange={e => setAnexoConfinado(p => ({...p, cancelacion: {...p.cancelacion!, razon: e.target.value}}))}/></div>
+                        <div><Label>FECHA:</Label><Input type="date" value={anexoConfinado.cancelacion?.fecha || ''} onChange={e => setAnexoConfinado(p => ({...p, cancelacion: {...p.cancelacion!, fecha: e.target.value}}))}/></div>
+                        <div><Label>NOMBRE:</Label><Input value={anexoConfinado.cancelacion?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, cancelacion: {...p.cancelacion!, nombre: e.target.value}}))}/></div>
+                        <div className="text-center"><Label>FIRMA:</Label>
+                            {anexoConfinado.cancelacion?.firma ? <Image src={anexoConfinado.cancelacion.firma} alt="Firma Cancelación" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                            <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.cancelacion')}>Firmar</Button>
+                        </div>
+                    </div>
+                  )}
                  </div>
-                <div className="p-4 border rounded-lg space-y-4">
+
+                 <div className="p-4 border rounded-lg space-y-4">
                    <h3 className="font-bold text-primary mb-2">CIERRE DE PERMISO DE TRABAJO</h3>
-                    {/* Cierre igual que en Anexo Altura */}
+                    <div className="flex items-center gap-4">
+                      <Label>SE TERMINO EL TRABAJO</Label>
+                      <RadioGroup value={anexoConfinado.cierre?.seTermino || 'no'} onValueChange={(v) => setAnexoConfinado(p => ({...p, cierre: {...p.cierre!, seTermino: v as 'si' | 'no'}}))} className="flex">
+                         <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="termino-confinado-si" /><Label htmlFor="termino-confinado-si">SI</Label></div>
+                         <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="termino-confinado-no" /><Label htmlFor="termino-confinado-no">NO</Label></div>
+                      </RadioGroup>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-4 border rounded-lg space-y-2">
+                           <h4 className="font-semibold text-gray-700">AUTORIDAD DEL ÁREA</h4>
+                           <Input placeholder="Nombre" value={anexoConfinado.cierre?.autoridad?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, cierre: {...p.cierre!, autoridad: {...p.cierre!.autoridad, nombre: e.target.value}}}))}/>
+                           <Input type="time" value={anexoConfinado.cierre?.autoridad?.hora || ''} onChange={e => setAnexoConfinado(p => ({...p, cierre: {...p.cierre!, autoridad: {...p.cierre!.autoridad, hora: e.target.value}}}))}/>
+                           <div className="text-center"><Label>Firma:</Label>
+                                {anexoConfinado.cierre?.autoridad?.firma ? <Image src={anexoConfinado.cierre.autoridad.firma} alt="Firma Cierre" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                                <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.cierre.autoridad')}>Firmar</Button>
+                           </div>
+                        </div>
+                         <div className="p-4 border rounded-lg space-y-2">
+                           <h4 className="font-semibold text-gray-700">RESPONSABLE DEL TRABAJO</h4>
+                           <Input placeholder="Nombre" value={anexoConfinado.cierre?.responsable?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, cierre: {...p.cierre!, responsable: {...p.cierre!.responsable, nombre: e.target.value}}}))}/>
+                           <Input type="time" value={anexoConfinado.cierre?.responsable?.hora || ''} onChange={e => setAnexoConfinado(p => ({...p, cierre: {...p.cierre!, responsable: {...p.cierre!.responsable, hora: e.target.value}}}))}/>
+                           <div className="text-center">
+                                <Label>Firma:</Label>
+                                {anexoConfinado.cierre?.responsable?.firma ? <Image src={anexoConfinado.cierre.responsable.firma} alt="Firma Cierre" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/> : <p className="text-xs text-muted-foreground mt-2">Pendiente</p>}
+                                <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.cierre.responsable')}>Firmar</Button>
+                           </div>
+                        </div>
+                    </div>
                  </div>
             </div>
           )}

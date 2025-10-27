@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -979,62 +979,52 @@ export default function PermitDetailPage() {
                                 <ChevronDown className="h-5 w-5 text-gray-500 group-data-[state=open]:rotate-180 transition-transform"/>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="p-4 md:p-6 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Field label="Tipo" value={`Tipo ${permit.anexoConfinado.tipo}`} />
-                                    <Field label="Grado de Peligro" value={`Grado ${permit.anexoConfinado.gradoPeligro}`} />
-                                </div>
+                                <Field label="Tipo" value={permit.anexoConfinado.procedimientoComunicacionCual} />
                                 
                                 <div>
                                     <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Lista de Verificación</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
                                         {[...anexoConfinadoChecklist.left, ...anexoConfinadoChecklist.right].map(item => (
-                                            <RadioCheck key={item.id} label={item.label} value={permit.anexoConfinado?.checklist?.[item.id]} readOnly />
+                                            <RadioCheck key={item.id} label={item.label} value={(permit.anexoConfinado?.identificacionPeligros as any)?.[item.id]} readOnly />
                                         ))}
                                     </div>
                                 </div>
                                 
                                 <div>
-                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Mediciones Atmosféricas</h4>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Mediciones Atmosféricas Iniciales</h4>
                                     <Table>
                                         <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Hora</TableHead>
-                                                <TableHead>O2</TableHead>
-                                                <TableHead>CO</TableHead>
-                                                <TableHead>H2S</TableHead>
-                                                <TableHead>LEL</TableHead>
-                                                <TableHead>Firma</TableHead>
-                                            </TableRow>
+                                            <TableRow><TableHead>Tipo</TableHead><TableHead>Resultado</TableHead><TableHead>Límites</TableHead></TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {permit.anexoConfinado.mediciones?.map(med => (
-                                                <TableRow key={med.id}>
-                                                    <TableCell>{med.hora}</TableCell>
-                                                    <TableCell>{med.o2}</TableCell>
-                                                    <TableCell>{med.co}</TableCell>
-                                                    <TableCell>{med.h2s}</TableCell>
-                                                    <TableCell>{med.lel}</TableCell>
-                                                    <TableCell>
-                                                        {med.firma ? <Image src={med.firma} alt="Firma" width={80} height={40} className="bg-white rounded" /> : 'Pendiente'}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
+                                          <TableRow><TableCell>LEL</TableCell><TableCell>{permit.anexoConfinado.resultadosPruebasGases?.lel}</TableCell><TableCell>0%</TableCell></TableRow>
+                                          <TableRow><TableCell>O2</TableCell><TableCell>{permit.anexoConfinado.resultadosPruebasGases?.o2}</TableCell><TableCell>19.5 - 22%</TableCell></TableRow>
+                                          <TableRow><TableCell>H2S</TableCell><TableCell>{permit.anexoConfinado.resultadosPruebasGases?.h2s}</TableCell><TableCell>0 - 10 PPM</TableCell></TableRow>
+                                          <TableRow><TableCell>CO</TableCell><TableCell>{permit.anexoConfinado.resultadosPruebasGases?.co}</TableCell><TableCell>0 - 25 PPM</TableCell></TableRow>
                                         </TableBody>
                                     </Table>
                                 </div>
-
+                                
                                 <div>
-                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Supervisor de Espacios Confinados</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <Field label="Nombres y Apellidos" value={permit.anexoConfinado.supervisor?.nombres} />
-                                        <Field label="Cédula" value={permit.anexoConfinado.supervisor?.cedula} />
-                                        <Field label="Firma Apertura" value={
-                                            permit.anexoConfinado.supervisor?.firmaApertura ? <Image src={permit.anexoConfinado.supervisor.firmaApertura} alt="Firma Supervisor" width={120} height={60} className="bg-white rounded border" /> : 'Pendiente'
-                                        }/>
-                                    </div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Pruebas Periódicas</h4>
+                                    <Table>
+                                      <TableHeader><TableRow><TableHead>Hora</TableHead><TableHead>LEL</TableHead><TableHead>O2</TableHead><TableHead>H2S</TableHead><TableHead>CO</TableHead><TableHead>Firma</TableHead></TableRow></TableHeader>
+                                      <TableBody>
+                                        {permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas?.map((p,i) => (
+                                          <TableRow key={i}><TableCell>{p.hora}</TableCell><TableCell>{p.lel}</TableCell><TableCell>{p.o2}</TableCell><TableCell>{p.h2s}</TableCell><TableCell>{p.co}</TableCell><TableCell>{p.firma && <Image src={p.firma} alt="firma" width={80} height={40}/>}</TableCell></TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="font-bold text-gray-700 text-xs mb-2 uppercase">Autorizaciones</h4>
+                                    <Field label="Autoridad del Área" value={permit.anexoConfinado.autoridadDelArea?.nombre} />
+                                    <Field label="Responsable del Trabajo" value={permit.anexoConfinado.responsableDelTrabajo?.nombre} />
+                                    <Field label="Supervisor de Trabajo" value={permit.anexoConfinado.supervisorTrabajo?.nombre} />
                                 </div>
 
-                                <Field label="Observaciones / Supervisión" value={permit.anexoConfinado.observaciones} fullWidth />
+                                <Field label="Observaciones / Supervisión" value={(permit.anexoConfinado as any).observaciones} fullWidth />
 
                             </CollapsibleContent>
                         </Collapsible>

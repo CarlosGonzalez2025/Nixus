@@ -156,15 +156,14 @@ export type SupervisorConfinado = {
 }
 
 export type PruebaGasesInicial = {
-  tipo: string;
-  lel: string;
-  o2: string;
-  h2s: string;
-  co: string;
-  otros: string;
-  serialMonitor: string;
-  horaPrueba: string;
-  firmaQuienRealiza: string;
+  lel?: string;
+  o2?: string;
+  h2s?: string;
+  co?: string;
+  otros?: string;
+  serialMonitor?: string;
+  horaPrueba?: string;
+  firmaQuienRealiza?: string;
 }
 
 export type PruebaGasesPeriodica = {
@@ -173,7 +172,8 @@ export type PruebaGasesPeriodica = {
   o2: string;
   h2s: string;
   co: string;
-  horaPrueba: string;
+  hora: string;
+  firma: string;
 }
 
 export type AutorizacionPersona = {
