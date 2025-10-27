@@ -1,5 +1,6 @@
 
 'use client';
+import * as React from 'react';
 import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
@@ -53,7 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -362,12 +363,12 @@ export default function CreatePermitPage() {
         'anexoAltura.validacion.autoridad': () => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, autoridad: p.validacionDiaria!.autoridad.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
         'anexoAltura.validacion.responsable': () => setAnexoAltura(p => ({...p, validacionDiaria: { ...p.validacionDiaria!, responsable: p.validacionDiaria!.responsable.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
         'anexoAltura.cancelacion': () => setAnexoAltura(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
-        'anexoAltura.cierre.autoridad': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad, firma: signatureDataUrl } }})),
-        'anexoAltura.cierre.responsable': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable, firma: signatureDataUrl } }})),
+        'anexoAltura.cierre.autoridad': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad as AutorizacionPersona, firma: signatureDataUrl } }})),
+        'anexoAltura.cierre.responsable': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable as AutorizacionPersona, firma: signatureDataUrl } }})),
         'anexoConfinado.resultadosPruebasGases': () => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, firmaQuienRealiza: signatureDataUrl}})),
         'anexoConfinado.autoridadDelArea': () => setAnexoConfinado(p => ({...p, autoridadDelArea: {...p.autoridadDelArea, firma: signatureDataUrl}})),
         'anexoConfinado.responsableDelTrabajo': () => setAnexoConfinado(p => ({...p, responsableDelTrabajo: {...p.responsableDelTrabajo, firma: signatureDataUrl}})),
-        'anexoConfinado.supervisorTrabajo': () => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo, firma: signatureDataUrl}})),
+        'anexoConfinado.supervisorTrabajo': () => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo!, firma: signatureDataUrl}})),
         'anexoConfinado.validacion.autoridad': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, autoridad: p.validacion!.autoridad.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
         'anexoConfinado.validacion.responsable': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, responsable: p.validacion!.responsable.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
         'anexoConfinado.cancelacion': () => setAnexoConfinado(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
@@ -2420,5 +2421,3 @@ export default function CreatePermitPage() {
     </>
   );
 }
-
-    
