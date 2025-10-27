@@ -153,8 +153,8 @@ export default function CreatePermitPage() {
     requerimientoClaridad: '',
     precauciones: {},
     afectaciones: {
-      riesgoOtrasAreas: 'no',
-      otrasAreasRiesgo: 'no',
+      riesgoOtrasAreas: 'na',
+      otrasAreasRiesgo: 'na',
       personalNotificado: 'na',
       observaciones: '',
     },
@@ -184,11 +184,48 @@ export default function CreatePermitPage() {
 
   // Anexo Confinado
   const [anexoConfinado, setAnexoConfinado] = useState<Partial<AnexoConfinado>>({
-    tipo: '1',
-    gradoPeligro: 'A',
-    checklist: {},
-    mediciones: [],
-    supervisor: { nombres: '', cedula: '', firmaApertura: '' }
+    informacionGeneral: {
+      emitidoPor: '',
+      areaTrabajo: '',
+      equipoAreaEspecifica: '',
+      responsable: '',
+      cargo: '',
+      compania: '',
+      emergenciaContacto: '',
+      emergenciaTelefono: '',
+    },
+    identificacionPeligros: {},
+    procedimientoComunicacionCual: '',
+    precauciones: {},
+    resultadosPruebasGases: {},
+    requerimientosEquipos: {},
+    pruebasGasesPeriodicas: {
+      intervalo: '',
+      pruebas: [],
+      pruebaRealizadaPor: '',
+      serialMonitor: '',
+      marca: '',
+      fechaCalibracion: '',
+    },
+    autoridadDelArea: {},
+    responsableDelTrabajo: {},
+    supervisorTrabajo: { nombre: '', cedula: '', firma: '', hora: '' },
+    validacion: {
+      autoridad: Array(7).fill({ fecha: '', nombre: '', firma: '' }),
+      responsable: Array(7).fill({ fecha: '', nombre: '', firma: '' }),
+    },
+    cancelacion: {
+      seCancelo: 'no',
+      razon: '',
+      nombre: '',
+      firma: '',
+      fecha: '',
+    },
+    cierre: {
+      seTermino: 'no',
+      autoridad: {},
+      responsable: {},
+    },
   });
 
   // Anexo Izaje
@@ -314,7 +351,7 @@ export default function CreatePermitPage() {
     const targets: { [key: string]: Function } = {
         'worker.firmaApertura': () => handleWorkerInputChange('firmaApertura', signatureDataUrl),
         'worker.firmaCierre': () => handleWorkerInputChange('firmaCierre', signatureDataUrl),
-        'anexoConfinado.supervisor': () => setAnexoConfinado(p => ({ ...p, supervisor: { ...(p.supervisor!), firmaApertura: signatureDataUrl }})),
+        'anexoConfinado.supervisor': () => setAnexoConfinado(p => ({ ...p, supervisorTrabajo: { ...(p.supervisorTrabajo!), firma: signatureDataUrl }})),
         'anexoIzaje.liderIzaje': () => setAnexoIzaje(p => ({ ...p, liderIzaje: { ...(p.liderIzaje!), firmaApertura: signatureDataUrl }})),
         'anexoConfinado.medicion': () => {
             if (signatureContext?.medicionId) {
@@ -327,6 +364,15 @@ export default function CreatePermitPage() {
         'anexoAltura.cancelacion': () => setAnexoAltura(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
         'anexoAltura.cierre.autoridad': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad, firma: signatureDataUrl } }})),
         'anexoAltura.cierre.responsable': () => setAnexoAltura(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable, firma: signatureDataUrl } }})),
+        'anexoConfinado.resultadosPruebasGases': () => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, firmaQuienRealiza: signatureDataUrl}})),
+        'anexoConfinado.autoridadDelArea': () => setAnexoConfinado(p => ({...p, autoridadDelArea: {...p.autoridadDelArea, firma: signatureDataUrl}})),
+        'anexoConfinado.responsableDelTrabajo': () => setAnexoConfinado(p => ({...p, responsableDelTrabajo: {...p.responsableDelTrabajo, firma: signatureDataUrl}})),
+        'anexoConfinado.supervisorTrabajo': () => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo, firma: signatureDataUrl}})),
+        'anexoConfinado.validacion.autoridad': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, autoridad: p.validacion!.autoridad.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoConfinado.validacion.responsable': () => setAnexoConfinado(p => ({...p, validacion: { ...p.validacion!, responsable: p.validacion!.responsable.map((v, i) => i === signatureContext.index ? {...v, firma: signatureDataUrl} : v) }})),
+        'anexoConfinado.cancelacion': () => setAnexoConfinado(p => ({ ...p, cancelacion: { ...(p.cancelacion!), firma: signatureDataUrl }})),
+        'anexoConfinado.cierre.autoridad': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), autoridad: { ...p.cierre!.autoridad, firma: signatureDataUrl } }})),
+        'anexoConfinado.cierre.responsable': () => setAnexoConfinado(p => ({ ...p, cierre: { ...(p.cierre!), responsable: { ...p.cierre!.responsable, firma: signatureDataUrl } }})),
     };
 
     const action = targets[signatureTarget];
@@ -730,8 +776,11 @@ export default function CreatePermitPage() {
           if (group === 'anexoAltura' && anexoSection) {
               return { ...prevState, [anexoSection]: { ...(prevState[anexoSection] || {}), [id]: value } };
           }
-          if (group === 'anexoConfinado') {
-              return { ...prevState, checklist: { ...(prevState.checklist || {}), [id]: value } };
+          if (group === 'anexoConfinado.identificacionPeligros') {
+              return { ...prevState, identificacionPeligros: { ...(prevState.identificacionPeligros || {}), [id]: value } };
+          }
+          if (group === 'anexoConfinado.requerimientosEquipos') {
+            return { ...prevState, requerimientosEquipos: { ...(prevState.requerimientosEquipos || {}), [id]: value } };
           }
            if (group === 'anexoIzaje') {
               return { ...prevState, aspectosRequeridos: { ...(prevState.aspectosRequeridos || {}), [id]: value } };
@@ -752,7 +801,8 @@ export default function CreatePermitPage() {
           case 'anexoATS-epp': setState = setAnexoATS; break;
           case 'anexoAltura': setState = setAnexoAltura; break;
           case 'anexoAltura.afectaciones': setState = setAnexoAltura; break;
-          case 'anexoConfinado': setState = setAnexoConfinado; break;
+          case 'anexoConfinado.identificacionPeligros': setState = setAnexoConfinado; break;
+          case 'anexoConfinado.requerimientosEquipos': setState = setAnexoConfinado; break;
           case 'anexoIzaje': setState = setAnexoIzaje; break;
           case 'generalInfo': setState = setGeneralInfo; break;
           default: return;
@@ -763,31 +813,37 @@ export default function CreatePermitPage() {
       }
   }
 
-  const renderRadioGroup = (id: string, group: string, anexoSection?: string) => {
+  const renderRadioGroup = (id: string, group: string, anexoSection?: string, options: ('si'|'no'|'na')[] = ['si', 'no', 'na']) => {
     let state: any = {};
     let onValueChange: ((value: 'si' | 'no' | 'na') => void) | undefined;
-    let defaultValue = 'na';
+    let defaultValue = options.includes('na') ? 'na' : 'no';
 
     switch(group) {
-        case 'hazards': state = hazardsData; onValueChange = handleRadioChange(id, group); break;
-        case 'ppe': state = ppeData; onValueChange = handleRadioChange(id, group); break;
-        case 'ppeSystems': state = ppeSystemsData; onValueChange = handleRadioChange(id, group); break;
-        case 'emergency': state = emergencyData; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoATS-peligros': state = anexoATS.peligros || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoATS-epp': state = anexoATS.epp || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; onValueChange = handleRadioChange(id, group, anexoSection); break;
-        case 'anexoAltura.afectaciones': state = anexoAltura.afectaciones; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoConfinado': state = anexoConfinado.checklist || {}; onValueChange = handleRadioChange(id, group); break;
-        case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; onValueChange = handleRadioChange(id, group, 'aspectosRequeridos' as any); break;
-        case 'generalInfo': state = generalInfo; onValueChange = handleRadioChange(id, group); break;
+        case 'hazards': state = hazardsData; break;
+        case 'ppe': state = ppeData; break;
+        case 'ppeSystems': state = ppeSystemsData; break;
+        case 'emergency': state = emergencyData; break;
+        case 'anexoEnergias': state = anexoEnergias.planeacion || {}; break;
+        case 'anexoATS-peligros': state = anexoATS.peligros || {}; break;
+        case 'anexoATS-epp': state = anexoATS.epp || {}; break;
+        case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; break;
+        case 'anexoAltura.afectaciones': state = anexoAltura.afectaciones; break;
+        case 'anexoConfinado.identificacionPeligros': state = anexoConfinado.identificacionPeligros || {}; break;
+        case 'anexoConfinado.requerimientosEquipos': state = anexoConfinado.requerimientosEquipos || {}; break;
+        case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; break;
+        case 'generalInfo': state = generalInfo; break;
     }
     
+    onValueChange = handleRadioChange(id, group, anexoSection);
+
     return (
         <RadioGroup value={state[id] || defaultValue} onValueChange={onValueChange} className="flex">
-            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id={`${group}-${anexoSection || ''}-${id}-si`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-si`}>SI</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id={`${group}-${anexoSection || ''}-${id}-no`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-no`}>NO</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="na" id={`${group}-${anexoSection || ''}-${id}-na`} /><Label htmlFor={`${group}-${anexoSection || ''}-${id}-na`}>NA</Label></div>
+            {options.map(opt => (
+                <div key={opt} className="flex items-center space-x-2">
+                    <RadioGroupItem value={opt} id={`${group}-${anexoSection || ''}-${id}-${opt}`} />
+                    <Label htmlFor={`${group}-${anexoSection || ''}-${id}-${opt}`}>{opt.toUpperCase()}</Label>
+                </div>
+            ))}
         </RadioGroup>
     )
   }
@@ -872,35 +928,68 @@ export default function CreatePermitPage() {
       { id: 'otroPrecaucion', label: 'OTRO, CUAL' },
   ];
   
-  const anexoConfinadoChecklist = {
-      left: [
-          { id: 'A', label: 'A.- Existen los medios seguros de acceso al sitio de trabajo' },
-          { id: 'B', label: 'B.- Se cuenta con vigía en la entrada al espacio' },
-          { id: 'C', label: 'C.- Se cuenta con los EPP acordes a la actividad' },
-          { id: 'D', label: 'D.- Se cuenta con un medio de comunicación entre los trabajadores y vigia' },
-          { id: 'E', label: 'E.- Se realizó el aislamiento necesario para el control de energías peligrosas y fluidos (Anexo 3)' },
-          { id: 'F', label: 'F.- Están calibrados los equipos de prueba atmosférica y se realizaron pruebas funcionales' },
-          { id: 'G', label: 'G.- El área se ha delimitado para prevenir el acceso de personal no autorizado' },
-          { id: 'H', label: 'H.- Se realizó la medición de la atmósfera (IPVS, combustible, explosiva, tóxica y inerte)' },
-          { id: 'I', label: 'I.- Están claras las condiciones para cancelar el permiso' },
-          { id: 'J', label: 'J.- Drenado y purgado' },
-          { id: 'K', label: 'K.- Los equipos de iluminación y comunicación son a prueba de explosión.' },
-          { id: 'L', label: 'L.- Esta disponible la ventilación forzada o mecánica' },
-          { id: 'M', label: 'M.- Se cuenta con señalización de peligro acorde al trabajo a realizar.' },
-          { id: 'N', label: 'N.- Los operarios del área conocen el uso del equipo autónomo' },
-          { id: 'Ñ', label: 'Ñ.- Certificado de aptitud médica y validación certificado de entrenamiento.' },
-          { id: 'O', label: 'O.- Están disponibles los aparatos de respiración autónoma' },
-          { id: 'P', label: 'P.- Monitoreo atmosférico permanente' },
-          { id: 'Q', label: 'Q.- Se recordó o acordó el código de señales para emergencia' },
-          { id: 'R', label: 'R.- Se aplicó bloqueo, etiquetó y candadeo (completar Anexo 3)' }
-      ],
-      right: [
-          { id: 'S', label: 'S.- Elaboración ATS y/o procedimientos de trabajo escritos' },
-          { id: 'T', label: 'T.- Procedimiento de rescate y equipos para atender la emergencia' },
-          { id: 'V', label: 'V.- Estan dsisponibles y se comunicaron las fichas de seguridad de los productos químicos' },
-          { id: 'W', label: 'W.- existe olor perceptible' }
-      ]
+  const anexoConfinadoPeligros = {
+    left: [
+        { id: 'A', label: 'A. ESTAN LAS FUENTES DE ENERGIA (ELECTRICA, MECANICA, HIDRAULICA, TERMICA) AISLADAS' },
+        { id: 'B', label: 'B. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCION ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?' },
+        { id: 'C', label: 'C. ESTÁN LOS EJECUTANTES ENTRENADOS?' },
+        { id: 'D', label: 'D. ESTAN BLOQUEADAS LAS ENTRADAS Y SALIDAS DE FLUJOS - SE INSTALARON AISLAMIENTOS (FLANGES, BRIDAS, OTROS)' },
+        { id: 'E', label: 'E. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO PARA PREVENIR EL INGRESO AL ESPACIO CONFINADO DE PERSONAL NO AUTORIZADO O AJENO A LA ACTIVIDAD' },
+        { id: 'F', label: 'F. SE TIENE EN SITIO UN MONITOR DE ATMOSFERAS PELIGROSAS, CALIBRADO' },
+        { id: 'G', label: 'G. SON A PRUEBA DE EXPLOSIÓN LOS EQUIPOS DE ILUMINACIÓN' },
+        { id: 'H', label: 'H. SON A PRUEBA DE EXPLOSION LOS EQUIPOS DE VENTILACION O SUMINISTRO DE AIRE FORZADO Y SUS CONEXIONES' },
+        { id: 'I', label: 'I. EN CASO DE QUE LOS EQUIPOS NO SEAN A PRUEBA DE EXPLOSIÓN SE TOMARON OTRAS MEDIDAS DE SEGURIDAD NECESARIA PARA EVITAR RIESGOS' },
+        { id: 'J', label: 'J. LOS EQUIPOS DE VENTILACION ESTAN DISPONIBLES Y SON SUFICIENTES' },
+    ],
+    right: [
+        { id: 'K', label: 'K. ESTAN DISPONIBLES, EN BUEN ESTADO, EQUIPOS DE RESPIRACION AUTONOMA (AUTOCONTENIDO) EN CASO DE EMERGENCIA' },
+        { id: 'L', label: 'L. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA' },
+        { id: 'M', label: 'M. SE CUENTA CON PLAN DE EMERGENCIA PARA RESCATE' },
+        { id: 'N', label: 'N. ESTAN DISPONIBLES LAS HOJAS DE SEGURIDAD DE PRODUCTOS QUIMICOS EN CASO DE USARSE' },
+        { id: 'O', label: 'O. SE HA VERIFICADO EL ESTADO DE CONEXIONES Y PUESTA A TIERRA DE EQUIPOS Y ELEMENTOS A USAR' },
+        { id: 'P', label: 'P. SE VERIFICA QUE PARA EL INGRESO A ESPACIOS CONFINADOS SE CUENTE CON UN VIGIA PERMANENTE EN EL AREA' },
+        { id: 'Q', label: 'Q. SE VERIFICO SI LOS ARNES, HERRAMIENTAS Y OTROS ELEMENTOS SE HAN SELECCIONADO ADECUADOS PARA LAS CONDICIONES Y ATMOSFERAS DEL LUGAR' },
+        { id: 'R', label: 'R. EL PERSONAL QUE REALIZARA LA ACTIVIDAD SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?' },
+        { id: 'S', label: 'S. ¿SE VERIFICO EL EQUIPO Y ELEMENTOS DE PROTECCION PERSONAL A UTILIZAR?' },
+        { id: 'T', label: 'T. ¿EXISTE ALGUNA CIRCUNSTANCIA O FACTOR QUE PUEDA MODIFICAR EL TRABAJO?' },
+        { id: 'U', label: 'U. ¿SE HA VERIFICADO QUE LOS EQUIPOS A USARSE SON INTRINSICAMENTE SEGUROS?' }
+    ]
   }
+
+  const anexoConfinadoPrecauciones = [
+    {id: 'despresurizar', label: 'DESPRESURIZAR'},
+    {id: 'revisarEquipos', label: 'REVISAR EQUIPOS Y HERRAMIENTAS'},
+    {id: 'monitoreoAtmosferas', label: 'MONITOREO DE ATMOSFERAS'},
+    {id: 'drenar', label: 'DRENAR Y VENTILAR'},
+    {id: 'aislamiento', label: 'AISLAMIENTO ATERRIZAR EQUIPO'},
+    {id: 'equipoContraIncendio', label: 'EQUIPO CONTRA INCENDIO'},
+    {id: 'instalarLineasVida', label: 'INSTALAR LINEAS DE VIDA ADICIONALES'},
+    {id: 'usoEpps', label: 'USO DE EPPS ESPECIALES'},
+    {id: 'hojaSeguridad', label: 'HOJA DE SEGURIDAD MSDS'},
+    {id: 'bloqueoEtiquetado', label: 'BLOQUEO Y ETIQUETADO'},
+    {id: 'rescateVigia', label: 'RESCATE VIGIA'},
+    {id: 'senalizacion', label: 'SEÑALIZACION'},
+    {id: 'clasificacionResiduos', label: 'CLASIFICACION DE RESIDUOS'},
+  ];
+
+  const anexoConfinadoRequerimientos = {
+    left: [
+      { id: 'arnes', label: 'ARNES DE SEGURIDAD, LINEAS DE VIDA PARA PERSONAS QUE INGRESAN Y SALEN' },
+      { id: 'equiposIzar', label: 'EQUIPOS PARA IZAR (CUERDAS, CABLES, ETC)' },
+      { id: 'equiposComunicacion', label: 'EQUIPOS DE COMUNICACIONES' },
+      { id: 'equiposAutonomos', label: 'EQUIPOS AUTONOMOS PARA PERSONAS DE ENTRADA Y SALIDA' },
+      { id: 'extintores', label: 'EXTINTORES' },
+      { id: 'ropaDotacion', label: 'ROPA Y DOTACION ESPECIAL DE PROTECCION' },
+    ],
+    right: [
+      { id: 'bloqueos', label: 'BLOQUEOS / AISLAMIENTOS / SALIDA' },
+      { id: 'lineasElectricas', label: 'LINEAS ELÉCTRICAS EXPUESTAS, OCULTAS ESTÁN CHEQUEADAS' },
+      { id: 'areaSegura', label: 'AREA SEGURA' },
+      { id: 'personalSeguridad', label: 'PRESONAL DE SEGURIDAD DE CIERRE?' },
+      { id: 'equipoRecuperacion', label: 'EQUIPO DE RECUPERACION DE EMERGENCIA' },
+      { id: 'iluminacion', label: 'ILUMINACION Y EQUIPOS A PRUEBA DE EXPLOSION' },
+    ]
+  };
 
   const anexoIzajeInfoGeneral = {
     accion: [
@@ -1530,107 +1619,182 @@ export default function CreatePermitPage() {
                     </h2>
                     <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
                 </div>
-
-                <div className="p-4 border rounded-lg space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label>Tipo de Espacio Confinado</Label>
-                            <Select value={anexoConfinado.tipo} onValueChange={v => setAnexoConfinado(p => ({...p, tipo: v as '1' | '2'}))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1">Tipo 1: Abierto con ventilación natural difícil</SelectItem>
-                                    <SelectItem value="2">Tipo 2: Cerrado con apertura pequeña</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label>Grado de Peligro</Label>
-                             <Select value={anexoConfinado.gradoPeligro} onValueChange={v => setAnexoConfinado(p => ({...p, gradoPeligro: v as 'A' | 'B' | 'C'}))}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="A">Grado A</SelectItem>
-                                    <SelectItem value="B">Grado B</SelectItem>
-                                    <SelectItem value="C">Grado C</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Lista de Verificación</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                        {anexoConfinadoChecklist.left.map(item => (
-                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                                <Label className="flex-1 text-sm">{item.label}</Label>
-                                {renderRadioGroup(item.id, 'anexoConfinado')}
-                            </div>
-                        ))}
-                         {anexoConfinadoChecklist.right.map(item => (
-                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                                <Label className="flex-1 text-sm">{item.label}</Label>
-                                {renderRadioGroup(item.id, 'anexoConfinado')}
-                            </div>
-                        ))}
-                    </div>
-                </div>
                 
                 <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Mediciones Atmosféricas</h4>
-                     <div className="space-y-2">
-                        {(anexoConfinado.mediciones || []).map((medicion, index) => (
-                           <div key={medicion.id} className="grid grid-cols-3 sm:grid-cols-9 gap-2 items-center p-2 border rounded-md">
-                                <Input placeholder="Hora" value={medicion.hora} onChange={e => updateMedicion(medicion.id, 'hora', e.target.value)} className="col-span-3 sm:col-span-1" />
-                                <Input placeholder="O2" value={medicion.o2} onChange={e => updateMedicion(medicion.id, 'o2', e.target.value)} className="col-span-1" />
-                                <Input placeholder="CO" value={medicion.co} onChange={e => updateMedicion(medicion.id, 'co', e.target.value)} className="col-span-1" />
-                                <Input placeholder="H2S" value={medicion.h2s} onChange={e => updateMedicion(medicion.id, 'h2s', e.target.value)} className="col-span-1" />
-                                <Input placeholder="LEL" value={medicion.lel} onChange={e => updateMedicion(medicion.id, 'lel', e.target.value)} className="col-span-1" />
-                                <Input placeholder="Cl2" value={medicion.cl2} onChange={e => updateMedicion(medicion.id, 'cl2', e.target.value)} className="col-span-1" />
-                                <Input placeholder="CO2" value={medicion.co2} onChange={e => updateMedicion(medicion.id, 'co2', e.target.value)} className="col-span-1" />
-                                <div className="flex items-center gap-1 col-span-2 sm:col-span-2">
-                                     <Button size="sm" variant="outline" onClick={() => openSignaturePad('anexoConfinado.medicion', { medicionId: medicion.id })}>
-                                        {medicion.firma ? <Check size={16} /> : <Signature size={16}/>}
-                                     </Button>
-                                     <Button size="icon" variant="ghost" onClick={() => removeMedicion(medicion.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <h3 className="font-bold text-primary mb-2">INFORMACIÓN GENERAL</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <Input placeholder="Emitido por" value={anexoConfinado.informacionGeneral?.emitidoPor} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, emitidoPor: e.target.value}}))} />
+                        <Input placeholder="Área de trabajo" value={anexoConfinado.informacionGeneral?.areaTrabajo} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, areaTrabajo: e.target.value}}))} />
+                        <Input placeholder="Equipo o área específica" value={anexoConfinado.informacionGeneral?.equipoAreaEspecifica} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, equipoAreaEspecifica: e.target.value}}))} />
+                        <Input placeholder="Responsable del trabajo/ejecutor" value={anexoConfinado.informacionGeneral?.responsable} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, responsable: e.target.value}}))} />
+                        <Input placeholder="Cargo" value={anexoConfinado.informacionGeneral?.cargo} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, cargo: e.target.value}}))} />
+                        <Input placeholder="Compañia" value={anexoConfinado.informacionGeneral?.compania} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, compania: e.target.value}}))} />
+                        <Input placeholder="En caso de emergencia contactar a" value={anexoConfinado.informacionGeneral?.emergenciaContacto} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, emergenciaContacto: e.target.value}}))} className="lg:col-span-2" />
+                        <Input placeholder="Teléfono" value={anexoConfinado.informacionGeneral?.emergenciaTelefono} onChange={e => setAnexoConfinado(p => ({...p, informacionGeneral: {...p.informacionGeneral!, emergenciaTelefono: e.target.value}}))} />
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-bold text-primary mb-2">IDENTIFICACIÓN DE PELIGROS Y ASPECTOS PARA ESPACIOS CONFINADOS</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                        <div className="space-y-2">
+                            {anexoConfinadoPeligros.left.map(item => (
+                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                                    <Label className="flex-1 text-sm">{item.label}</Label>
+                                    {renderRadioGroup(item.id, 'anexoConfinado.identificacionPeligros', undefined, ['si', 'no'])}
                                 </div>
-                           </div>
+                            ))}
+                        </div>
+                        <div className="space-y-2">
+                            {anexoConfinadoPeligros.right.map(item => (
+                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                                    <Label className="flex-1 text-sm">{item.label}</Label>
+                                    {renderRadioGroup(item.id, 'anexoConfinado.identificacionPeligros', undefined, ['si', 'no'])}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                     <div className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                        <Label className="flex-1 text-sm">SE CUENTA CON PROCEDIMIENTO DE COMUNICACIÓN</Label>
+                        <Input className="max-w-xs" placeholder="Cual?" value={anexoConfinado.procedimientoComunicacionCual} onChange={e => setAnexoConfinado(p => ({...p, procedimientoComunicacionCual: e.target.value}))}/>
+                    </div>
+                </div>
+                 <div className="p-4 border rounded-lg space-y-4">
+                  <h3 className="font-bold text-primary mb-2">PRECAUCIONES Y CONTROLES ESPECIFICOS DETERMINADOS POR AUTORIDAD DEL AREA, LIDER EJECUTANTE O HSE</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {anexoConfinadoPrecauciones.map(item => (
+                      <div key={item.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`precaucion-confinado-${item.id}`}
+                          checked={anexoConfinado.precauciones?.[item.id]}
+                          onCheckedChange={(checked) => setAnexoConfinado(p => ({...p, precauciones: {...p.precauciones, [item.id]: !!checked}}))}
+                        />
+                        <Label htmlFor={`precaucion-confinado-${item.id}`} className="text-sm font-normal">{item.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-bold text-primary mb-2">RESULTADOS DE PRUEBAS DE GASES DESPUES DE VERIFICAR AISLAMIENTOS Y VENTILACION</h3>
+                    <div className="overflow-x-auto">
+                        <div className="grid grid-cols-8 gap-2 items-center text-center text-xs min-w-[900px]">
+                            <Label className="font-bold">TIPO</Label> <Label className="font-bold">RESULTADO</Label> <Label className="font-bold">LIMITES PERMISIBLES</Label>
+                            <Label className="font-bold col-span-2">OTROS</Label> <Label className="font-bold">SERIAL MONITOR</Label> <Label className="font-bold">Hora Prueba</Label> <Label className="font-bold">FIRMA DE QUIEN REALIZA LA PRUEBA</Label>
+
+                            {['LEL', 'O2', 'H2S', 'CO'].map(gas => (
+                                <React.Fragment key={gas}>
+                                    <Label>{gas}</Label>
+                                    <Input value={(anexoConfinado.resultadosPruebasGases as any)?.[gas.toLowerCase()] || ''} onChange={e => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, [gas.toLowerCase()]: e.target.value}}))} />
+                                    <Label className="bg-gray-100 p-2 rounded-md h-10 flex items-center justify-center">
+                                        {gas === 'LEL' ? '0%' : gas === 'O2' ? '19.5 - 22%' : gas === 'H2S' ? '0 - 10 PPM' : '0 - 25 PPM'}
+                                    </Label>
+                                </React.Fragment>
+                            ))}
+                             <div className="col-start-4 col-span-2 row-start-2 row-span-4">
+                                <Textarea className="h-full" placeholder="Otros gases y resultados" value={anexoConfinado.resultadosPruebasGases?.otros || ''} onChange={e => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, otros: e.target.value}}))}/>
+                             </div>
+                             <div className="col-start-6 col-span-1 row-start-2 row-span-4">
+                                <Input className="h-full" placeholder="Serial" value={anexoConfinado.resultadosPruebasGases?.serialMonitor || ''} onChange={e => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, serialMonitor: e.target.value}}))}/>
+                             </div>
+                             <div className="col-start-7 col-span-1 row-start-2 row-span-4">
+                                <Input type="time" className="h-full" value={anexoConfinado.resultadosPruebasGases?.horaPrueba || ''} onChange={e => setAnexoConfinado(p => ({...p, resultadosPruebasGases: {...p.resultadosPruebasGases, horaPrueba: e.target.value}}))}/>
+                             </div>
+                             <div className="col-start-8 col-span-1 row-start-2 row-span-4 flex flex-col items-center justify-center gap-1">
+                                {anexoConfinado.resultadosPruebasGases?.firmaQuienRealiza ? <Image src={anexoConfinado.resultadosPruebasGases.firmaQuienRealiza} alt="Firma" width={80} height={40} /> : <Signature size={24} className="text-gray-400"/> }
+                                <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.resultadosPruebasGases')}>Firmar</Button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                 <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-bold text-primary mb-2">REQUERIMIENTOS Y EQUIPOS REVISADOS Y COMPLETADOS</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                       {anexoConfinadoRequerimientos.left.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                <Label className="flex-1 text-sm">{item.label}</Label>
+                                {renderRadioGroup(item.id, 'anexoConfinado.requerimientosEquipos', undefined, ['si', 'no'])}
+                            </div>
                         ))}
-                     </div>
-                     <Button onClick={addMedicion} variant="outline" className="w-full">
-                        <Plus className="mr-2" /> Añadir Medición
-                    </Button>
+                        {anexoConfinadoRequerimientos.right.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                <Label className="flex-1 text-sm">{item.label}</Label>
+                                {renderRadioGroup(item.id, 'anexoConfinado.requerimientosEquipos', undefined, ['si', 'no'])}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                  <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Supervisor de Espacios Confinados</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                       <div>
-                            <Label>Nombres y Apellidos</Label>
-                            <Input value={anexoConfinado.supervisor?.nombres || ''} onChange={e => setAnexoConfinado(p => ({...p, supervisor: { ...p.supervisor!, nombres: e.target.value}}))}/>
-                       </div>
-                       <div>
-                            <Label>Cédula</Label>
-                            <Input value={anexoConfinado.supervisor?.cedula || ''} onChange={e => setAnexoConfinado(p => ({...p, supervisor: { ...p.supervisor!, cedula: e.target.value}}))}/>
-                       </div>
+                    <h3 className="font-bold text-primary mb-2">PRUEBAS DE GASES PERIODICAS REQUERIDAS</h3>
+                    <div className="flex items-center gap-2">
+                        <Label>Las pruebas de gases se deben realizar cada:</Label>
+                        <Input className="w-48" placeholder="Ej: 15 minutos" value={anexoConfinado.pruebasGasesPeriodicas?.intervalo} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, intervalo: e.target.value}}))}/>
                     </div>
-                     <div className="text-center">
-                        <Label>Firma Apertura</Label>
-                        {anexoConfinado.supervisor?.firmaApertura ? (
-                          <Image src={anexoConfinado.supervisor.firmaApertura} alt="Firma Supervisor" width={150} height={75} className="mx-auto mt-2 bg-gray-100 rounded"/>
-                        ) : (
-                          <p className="text-xs text-muted-foreground mt-2">Pendiente</p>
-                        )}
-                        <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.supervisor')}>
-                          {anexoConfinado.supervisor?.firmaApertura ? 'Cambiar Firma' : 'Firmar'}
-                        </Button>
+                    {/* Tabla de pruebas periodicas aqui */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input placeholder="Prueba realizada por" value={anexoConfinado.pruebasGasesPeriodicas?.pruebaRealizadaPor} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, pruebaRealizadaPor: e.target.value}}))} />
+                        <Input placeholder="Serial Monitor de Atmosferas" value={anexoConfinado.pruebasGasesPeriodicas?.serialMonitor} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, serialMonitor: e.target.value}}))} />
+                        <Input placeholder="Marca" value={anexoConfinado.pruebasGasesPeriodicas?.marca} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, marca: e.target.value}}))} />
+                        <Input type="date" value={anexoConfinado.pruebasGasesPeriodicas?.fechaCalibracion} onChange={e => setAnexoConfinado(p => ({...p, pruebasGasesPeriodicas: {...p.pruebasGasesPeriodicas!, fechaCalibracion: e.target.value}}))} />
                     </div>
+                 </div>
+                
+                <div className="p-4 border rounded-lg space-y-6">
+                  <h3 className="font-bold text-primary mb-2">AUTORIZACION DEL PERMISO DE TRABAJO</h3>
+                  {/* Autoridad */}
+                  <div>
+                    <h4 className="font-semibold text-gray-700">AUTORIDAD DEL AREA</h4>
+                    <p className="text-xs text-muted-foreground">Al firmar como Autoridad del Area, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos complementarios.</p>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                        <Input placeholder="Nombre" value={anexoConfinado.autoridadDelArea?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, autoridadDelArea: {...p.autoridadDelArea!, nombre: e.target.value}}))}/>
+                        <Input type="time" value={anexoConfinado.autoridadDelArea?.hora || ''} onChange={e => setAnexoConfinado(p => ({...p, autoridadDelArea: {...p.autoridadDelArea!, hora: e.target.value}}))}/>
+                        <div className="flex items-center justify-center gap-2">
+                           {anexoConfinado.autoridadDelArea?.firma ? <Image src={anexoConfinado.autoridadDelArea.firma} alt="Firma" width={80} height={40}/> : <Signature size={24}/>}
+                           <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.autoridadDelArea')}>Firmar</Button>
+                        </div>
+                     </div>
+                  </div>
+                   {/* Responsable */}
+                  <div>
+                    <h4 className="font-semibold text-gray-700">RESPONSABLE DEL TRABAJO</h4>
+                    <p className="text-xs text-muted-foreground">Al firmar como Responsable del Trabajo / Ejecutor, Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asociados a este, dispongo de los recursos necesarios y tomare las medidas de seguridad.</p>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                        <Input placeholder="Nombre" value={anexoConfinado.responsableDelTrabajo?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, responsableDelTrabajo: {...p.responsableDelTrabajo!, nombre: e.target.value}}))}/>
+                        <Input type="time" value={anexoConfinado.responsableDelTrabajo?.hora || ''} onChange={e => setAnexoConfinado(p => ({...p, responsableDelTrabajo: {...p.responsableDelTrabajo!, hora: e.target.value}}))}/>
+                        <div className="flex items-center justify-center gap-2">
+                           {anexoConfinado.responsableDelTrabajo?.firma ? <Image src={anexoConfinado.responsableDelTrabajo.firma} alt="Firma" width={80} height={40}/> : <Signature size={24}/>}
+                           <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.responsableDelTrabajo')}>Firmar</Button>
+                        </div>
+                     </div>
+                  </div>
+                  {/* Supervisor */}
+                  <div>
+                    <h4 className="font-semibold text-gray-700">SUPERVISOR DE TRABAJO EN ESPACIOS CONFINADOS</h4>
+                    <p className="text-xs text-muted-foreground">Al firmar como Supervisor de trabajo en espacios confinados, Manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias.</p>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                        <Input placeholder="Nombre" value={anexoConfinado.supervisorTrabajo?.nombre || ''} onChange={e => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo!, nombre: e.target.value}}))}/>
+                        <Input type="time" value={anexoConfinado.supervisorTrabajo?.hora || ''} onChange={e => setAnexoConfinado(p => ({...p, supervisorTrabajo: {...p.supervisorTrabajo!, hora: e.target.value}}))}/>
+                        <div className="flex items-center justify-center gap-2">
+                           {anexoConfinado.supervisorTrabajo?.firma ? <Image src={anexoConfinado.supervisorTrabajo.firma} alt="Firma" width={80} height={40}/> : <Signature size={24}/>}
+                           <Button size="sm" variant="link" onClick={() => openSignaturePad('anexoConfinado.supervisorTrabajo')}>Firmar</Button>
+                        </div>
+                     </div>
+                  </div>
                 </div>
 
-                 <div className="p-4 border rounded-lg">
-                    <h4 className="font-bold text-primary">Observaciones / Supervisión</h4>
-                    <Textarea value={anexoConfinado.observaciones || ''} onChange={e => setAnexoConfinado(p => ({...p, observaciones: e.target.value}))} rows={4}/>
-                </div>
-
+                 <div className="p-4 border rounded-lg space-y-4">
+                  <h3 className="font-bold text-primary mb-2">VALIDACIÓN</h3>
+                    {/* Validacion igual que en Anexo Altura */}
+                 </div>
+                <div className="p-4 border rounded-lg space-y-4">
+                  <h3 className="font-bold text-primary mb-2">CANCELACIÓN DEL TRABAJO</h3>
+                    {/* Cancelacion igual que en Anexo Altura */}
+                 </div>
+                <div className="p-4 border rounded-lg space-y-4">
+                   <h3 className="font-bold text-primary mb-2">CIERRE DE PERMISO DE TRABAJO</h3>
+                    {/* Cierre igual que en Anexo Altura */}
+                 </div>
             </div>
           )}
 

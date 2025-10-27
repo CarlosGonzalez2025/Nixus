@@ -94,15 +94,13 @@ export type AnexoAltura = {
     manLift: boolean;
     otros: boolean;
     otrosCual: string;
-  },
-  aspectosSeguridad: {
-    [key: string]: 'si' | 'no' | 'na';
-  },
+  };
+  aspectosSeguridad: { [key: string]: 'si' | 'no' | 'na' };
   requerimientoClaridad: string;
   precauciones: { [key: string]: boolean };
   afectaciones: {
-    riesgoOtrasAreas: 'si' | 'no';
-    otrasAreasRiesgo: 'si' | 'no';
+    riesgoOtrasAreas: 'si' | 'no' | 'na';
+    otrasAreasRiesgo: 'si' | 'no' | 'na';
     personalNotificado: 'si' | 'no' | 'na';
     observaciones: string;
   };
@@ -151,18 +149,82 @@ export type MedicionAtmosferica = {
 };
 
 export type SupervisorConfinado = {
-    nombres: string;
+    nombre: string;
     cedula: string;
-    firmaApertura: string;
+    firma: string;
+    hora: string;
+}
+
+export type PruebaGasesInicial = {
+  tipo: string;
+  lel: string;
+  o2: string;
+  h2s: string;
+  co: string;
+  otros: string;
+  serialMonitor: string;
+  horaPrueba: string;
+  firmaQuienRealiza: string;
+}
+
+export type PruebaGasesPeriodica = {
+  id: string;
+  lel: string;
+  o2: string;
+  h2s: string;
+  co: string;
+  horaPrueba: string;
+}
+
+export type AutorizacionPersona = {
+  nombre: string;
+  firma: string;
+  hora: string;
 }
 
 export type AnexoConfinado = {
-    tipo: '1' | '2';
-    gradoPeligro: 'A' | 'B' | 'C';
-    checklist: { [key: string]: 'si' | 'no' | 'na' };
-    mediciones: MedicionAtmosferica[];
-    observaciones: string;
-    supervisor: SupervisorConfinado;
+  informacionGeneral: {
+    emitidoPor: string;
+    areaTrabajo: string;
+    equipoAreaEspecifica: string;
+    responsable: string;
+    cargo: string;
+    compania: string;
+    emergenciaContacto: string;
+    emergenciaTelefono: string;
+  };
+  identificacionPeligros: { [key: string]: 'si' | 'no' };
+  procedimientoComunicacionCual?: string;
+  precauciones: { [key: string]: boolean };
+  resultadosPruebasGases: Partial<PruebaGasesInicial>;
+  requerimientosEquipos: { [key: string]: 'si' | 'no' };
+  pruebasGasesPeriodicas: {
+    intervalo: string;
+    pruebas: PruebaGasesPeriodica[];
+    pruebaRealizadaPor: string;
+    serialMonitor: string;
+    marca: string;
+    fechaCalibracion: string;
+  };
+  autoridadDelArea: Partial<AutorizacionPersona>;
+  responsableDelTrabajo: Partial<AutorizacionPersona>;
+  supervisorTrabajo: Partial<SupervisorConfinado>;
+  validacion: {
+    autoridad: ValidacionDiaria[];
+    responsable: ValidacionDiaria[];
+  };
+  cancelacion: {
+    seCancelo: 'si' | 'no';
+    razon: string;
+    nombre: string;
+    firma: string;
+    fecha: string;
+  };
+  cierre: {
+    seTermino: 'si' | 'no';
+    autoridad: Partial<AutorizacionPersona>;
+    responsable: Partial<AutorizacionPersona>;
+  };
 };
 
 export type AnexoIzaje = {
