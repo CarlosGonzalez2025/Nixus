@@ -59,27 +59,70 @@ Un flujo de varios pasos que asegura la recopilación completa y precisa de la i
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto y Detalle de Módulos
 
-El código fuente está organizado de la siguiente manera para facilitar el mantenimiento y la escalabilidad:
+A continuación, se detalla la estructura del proyecto y el funcionamiento de cada componente clave.
 
 ```
 src/
-├── app/                  # Rutas principales de la aplicación (App Router)
-│   ├── (app)/            # Rutas protegidas que requieren autenticación
-│   │   ├── admin/        # Panel de administración
-│   │   ├── dashboard/    # Panel de control principal
-│   │   ├── permits/     # Creación y gestión de permisos
+├── app/
+│   ├── (app)/              # Rutas protegidas (requieren login)
+│   │   ├── admin/          # Módulo de Administración
+│   │   ├── dashboard/      # Panel de Control principal
+│   │   ├── permits/       # Creación y gestión de permisos
+│   │   │   ├── create/     # Asistente de creación de permisos
+│   │   │   └── [id]/       # Vista de detalle de un permiso
 │   │   └── ...
-│   ├── login/            # Página de inicio de sesión
+│   ├── login/              # Página de inicio de sesión
 │   └── ...
-├── components/           # Componentes de UI reutilizables (ShadCN)
-├── hooks/                # Hooks personalizados (useAuth, useUser, etc.)
-├── lib/                  # Librerías y utilidades (config Firebase, helpers)
-├── ai/                   # Lógica relacionada con Genkit (flujos y prompts)
-├── types/                # Definiciones de tipos de TypeScript para el proyecto
+├── components/             # Componentes de UI reutilizables
+├── hooks/                  # Hooks personalizados (useAuth, useUser)
+├── lib/                    # Librerías y utilidades (Firebase, helpers)
+├── ai/                     # Lógica de IA con Genkit
+├── types/                  # Definiciones de tipos de TypeScript
 └── ...
 ```
+
+### **Módulo 1: Autenticación y Sesión (`/login`, `hooks/useAuth.tsx`)**
+-   **Cómo funciona:** El usuario ingresa sus credenciales en la página de `/login`. El `hook/useAuth.tsx` utiliza la función `signInWithEmailAndPassword` de Firebase Authentication para validar al usuario. Si tiene éxito, Firebase establece una sesión en el navegador.
+-   **Gestión de Perfil (`hooks/useUser.tsx`):** Una vez autenticado, el sistema consulta la colección `users` en Firestore usando el ID de usuario. De allí obtiene información crucial como el **rol**, la empresa y el nombre completo. Este rol se utiliza en toda la aplicación para mostrar u ocultar funcionalidades (Control de Acceso Basado en Roles - RBAC).
+-   **Archivos Clave:**
+    -   `src/app/login/page.tsx`: Contiene la interfaz y la lógica del formulario de inicio de sesión.
+    -   `src/hooks/useAuth.tsx`: Centraliza la lógica de `login`, `logout` y monitorea el estado de autenticación.
+    -   `src/hooks/useUser.tsx`: Obtiene y provee los datos del perfil del usuario logueado desde Firestore.
+
+### **Módulo 2: Creación de Permisos (`/permits/create`)**
+-   **Cómo funciona:** Es un asistente de múltiples pasos que gestiona un estado complejo en el cliente. Cada paso recopila una parte de la información del permiso. La selección de "Tipo de Trabajo" en el paso 2 determina dinámicamente qué anexos (pasos adicionales) se mostrarán.
+-   **Lógica de Anexos:** Los formularios para `Altura`, `Espacios Confinados`, `Energías` y `Trabajo en Caliente` son componentes condicionales que solo se renderizan si el usuario selecciona el tipo de trabajo correspondiente.
+-   **Gestión de Trabajadores:** Permite agregar dinámicamente a los trabajadores involucrados, capturando sus datos y firma digital a través de un componente (`SignaturePad`).
+-   **Envío del Permiso (`permits/actions.ts`):** Al finalizar, toda la información recopilada se ensambla en un único objeto y se envía a la `Server Action` llamada `createPermit`. Esta función del lado del servidor se encarga de:
+    1.  Crear el documento del permiso en la colección `permits` de Firestore.
+    2.  Asignarle un número de permiso único.
+    3.  Establecer el estado inicial como `pendiente_revision`.
+    4.  **Disparar una notificación por WhatsApp** al supervisor a través de la integración con Twilio.
+-   **Archivos Clave:**
+    -   `src/app/(app)/permits/create/page.tsx`: El componente principal que orquesta todo el asistente de creación.
+    -   `src/app/(app)/permits/actions.ts`: Contiene la lógica del servidor para crear el permiso en la base de datos y enviar notificaciones.
+    -   `src/types/index.ts`: Define la estructura de datos completa de un `Permit` y todos sus `Anexos`.
+
+### **Módulo 3: Ciclo de Vida del Permiso (`/permits`, `/permits/[id]`)**
+-   **Listado de Permisos (`/permits`):** Esta página muestra todos los permisos en una tabla con pestañas para filtrar por estado (`Pendiente`, `Aprobado`, etc.). Utiliza `onSnapshot` de Firestore para escuchar cambios en tiempo real, por lo que la lista se actualiza automáticamente.
+-   **Detalle del Permiso (`/permits/[id]`):**
+    -   **Cómo funciona:** Es la vista más importante para la gestión. Muestra toda la información de un permiso, incluyendo todos los anexos y datos recopilados. También utiliza `onSnapshot` para que cualquier cambio (como una nueva firma) se refleje al instante.
+    -   **Firmas y Aprobaciones:** Los usuarios autorizados verán botones para firmar digitalmente. Al firmar, se invoca la `Server Action` `addSignatureAndNotify`, que actualiza el documento del permiso en Firestore y envía una notificación por WhatsApp.
+    -   **Cambio de Estado:** Botones como `Aprobar`, `Rechazar` o `Cerrar Permiso` son visibles según el rol del usuario y el estado actual del permiso. Estos botones llaman a la `Server Action` `updatePermitStatus`, que actualiza el estado en Firestore y notifica a los involucrados.
+-   **Archivos Clave:**
+    -   `src/app/(app)/permits/page.tsx`: La vista de lista y filtrado de permisos.
+    -   `src/app/(app)/permits/[id]/page.tsx`: La vista de detalle, centro de la interacción con el permiso.
+    -   `src/app/(app)/permits/actions.ts`: Contiene las `Server Actions` para firmar y cambiar el estado de un permiso.
+
+### **Módulo 4: Administración (`/admin/users`)**
+-   **Cómo funciona:** Es una sección protegida, accesible solo para usuarios con rol de `admin`. Muestra una tabla con todos los usuarios del sistema.
+-   **Lógica de Backend (Admin SDK):** Las acciones de crear, editar o cambiar el estado de un usuario se realizan a través de `Server Actions` que utilizan el **Firebase Admin SDK**. Esto es crucial para la seguridad, ya que permite realizar operaciones privilegiadas (como crear un usuario en Firebase Authentication o modificar el rol de otro usuario) desde un entorno seguro en el servidor, en lugar de hacerlo desde el cliente.
+-   **Archivos Clave:**
+    -   `src/app/(app)/admin/users/page.tsx`: La interfaz del panel de administración.
+    -   `src/app/(app)/admin/users/actions.ts`: Las `Server Actions` que interactúan con el Admin SDK para gestionar usuarios.
+    -   `src/lib/firebase-admin.ts`: Configuración e inicialización del Firebase Admin SDK.
 
 ---
 
