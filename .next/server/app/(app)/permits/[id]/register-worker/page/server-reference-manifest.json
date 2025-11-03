@@ -1,0 +1,16 @@
+{
+  "node": {
+    "60d74deb3b89c05ec6c0c56315e435524482a12a73": {
+      "workers": {
+        "app/(app)/permits/[id]/register-worker/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/register-worker/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/[id]/register-worker/page": "action-browser"
+      }
+    }
+  },
+  "edge": {}
+}
