@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { addListItem, removeListItem } from './actions';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, DocumentData } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   Table,
@@ -33,56 +33,43 @@ import {
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
-export default function ListsPage() {
-  const { user: adminUser, loading: adminLoading } = useUser();
-  const router = useRouter();
+type ListName = 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
+type ListCardProps = {
+  listName: ListName;
+  title: string;
+  description: string;
+};
+
+const ListCard = ({ listName, title, description }: ListCardProps) => {
   const { toast } = useToast();
-  
-  const [areas, setAreas] = useState<string[]>([]);
-  const [loadingLists, setLoadingLists] = useState(true);
+  const [items, setItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newItem, setNewItem] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!adminLoading && adminUser?.role !== 'admin') {
+    const docRef = doc(db, 'dynamic_lists', listName);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setItems(docSnap.data().items?.sort() || []);
+      } else {
+        setItems([]);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error(`Error fetching ${listName}:`, error);
+      const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'get' });
+      errorEmitter.emit('permission-error', permissionError);
       toast({
         variant: 'destructive',
-        title: 'Acceso Denegado',
-        description: 'No tiene permisos para acceder a esta página.',
+        title: 'Error de Carga',
+        description: `No se pudo cargar la lista de ${title}. Permisos insuficientes.`,
       });
-      router.replace('/dashboard');
-      return;
-    }
+      setLoading(false);
+    });
 
-    if(adminUser?.role === 'admin') {
-      const docRef = doc(db, 'dynamic_lists', 'areas');
-      const unsubscribe = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setAreas(docSnap.data().items || []);
-        } else {
-          setAreas([]);
-        }
-        setLoadingLists(false);
-      }, (error) => {
-        console.error("Error fetching list:", error);
-        
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-
-        toast({
-          variant: 'destructive',
-          title: 'Error de Carga',
-          description: 'No se pudo cargar la lista de áreas. Permisos insuficientes.',
-        });
-        setLoadingLists(false);
-      });
-
-      return () => unsubscribe();
-    }
-  }, [adminUser, adminLoading, router, toast]);
+    return () => unsubscribe();
+  }, [listName, title, toast]);
 
   const handleAddItem = async () => {
     if (!newItem.trim()) {
@@ -90,9 +77,9 @@ export default function ListsPage() {
       return;
     }
     setIsSubmitting(true);
-    const result = await addListItem('areas', newItem);
+    const result = await addListItem(listName, newItem);
     if (result.success) {
-      toast({ title: 'Elemento Agregado', description: `"${newItem}" ha sido añadido a la lista.` });
+      toast({ title: 'Elemento Agregado', description: `"${newItem}" ha sido añadido a ${title}.` });
       setNewItem('');
     } else {
       toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -101,15 +88,109 @@ export default function ListsPage() {
   };
 
   const handleRemoveItem = async (item: string) => {
-    const result = await removeListItem('areas', item);
+    const result = await removeListItem(listName, item);
     if (result.success) {
-      toast({ title: 'Elemento Eliminado', description: `"${item}" ha sido eliminado de la lista.` });
+      toast({ title: 'Elemento Eliminado', description: `"${item}" ha sido eliminado de ${title}.` });
     } else {
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     }
   };
 
-  if (adminLoading || adminUser?.role !== 'admin') {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <List />
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-2 mb-4">
+          <Input 
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            placeholder={`Nuevo elemento para ${title}`}
+            disabled={isSubmitting}
+          />
+          <Button onClick={handleAddItem} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus />}
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre del Elemento</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.length > 0 ? items.map(item => (
+                <TableRow key={item}>
+                  <TableCell className="font-medium">{item}</TableCell>
+                  <TableCell className="text-right">
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción no se puede deshacer. Se eliminará permanentemente "{item}" de la lista.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRemoveItem(item)} className="bg-destructive hover:bg-destructive/90">
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={2} className="h-24 text-center">
+                    No hay elementos en la lista.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+
+export default function ListsPage() {
+  const { user: adminUser, loading: adminLoading } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (!adminLoading && adminUser?.role !== 'admin') {
+      toast({
+        variant: 'destructive',
+        title: 'Acceso Denegado',
+        description: 'No tiene permisos para acceder a esta página.',
+      });
+      router.replace('/dashboard');
+    }
+  }, [adminUser, adminLoading, router, toast]);
+
+  if (adminLoading || !adminUser || adminUser.role !== 'admin') {
     return (
      <div className="flex h-screen items-center justify-center">
        <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -128,81 +209,33 @@ export default function ListsPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <List />
-            Lista de Áreas / Equipos
-          </CardTitle>
-          <CardDescription>
-            Estos elementos aparecerán en el campo "Área o equipo específico" al crear un permiso.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 mb-4">
-            <Input 
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Nombre de la nueva área o equipo"
-              disabled={isSubmitting}
-            />
-            <Button onClick={handleAddItem} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus />}
-            </Button>
-          </div>
-
-          {loadingLists ? (
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre del Área/Equipo</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {areas.length > 0 ? areas.map(item => (
-                  <TableRow key={item}>
-                    <TableCell className="font-medium">{item}</TableCell>
-                    <TableCell className="text-right">
-                       <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Se eliminará permanentemente "{item}" de la lista.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleRemoveItem(item)} className="bg-destructive hover:bg-destructive/90">
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                )) : (
-                  <TableRow>
-                    <TableCell colSpan={2} className="h-24 text-center">
-                      No hay elementos en la lista.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <ListCard 
+          listName="areas"
+          title="Áreas / Equipos"
+          description='Elementos para el campo "Área o equipo específico" al crear un permiso.'
+        />
+        <ListCard 
+          listName="plantas"
+          title="Plantas"
+          description='Opciones para el campo "Planta" al crear un permiso.'
+        />
+         <ListCard 
+          listName="procesos"
+          title="Procesos"
+          description='Opciones para el campo "Proceso" al crear un permiso.'
+        />
+        <ListCard 
+          listName="contratos"
+          title="Contratos"
+          description='Opciones para el campo "Contrato" al crear un permiso.'
+        />
+        <ListCard 
+          listName="empresas"
+          title="Empresas"
+          description='Opciones para el campo "Empresa" al crear un permiso.'
+        />
+      </div>
     </div>
   );
 }

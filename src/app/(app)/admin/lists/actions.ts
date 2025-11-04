@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 
-type ListName = 'areas' | 'plantas' | 'procesos'; // Add more list names as needed
+type ListName = 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
 
 /**
  * Adds a new item to a specified list in Firestore.

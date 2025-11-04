@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from '../actions';
@@ -53,7 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones, JustificacionATS } from '@/types';
+import type { Permit, ExternalWorker, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones, JustificacionATS } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -108,7 +108,13 @@ export default function CreatePermitPage() {
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
   // Dynamic lists from Firestore
-  const [areasList, setAreasList] = useState<string[]>([]);
+  const [dynamicLists, setDynamicLists] = useState({
+    areas: [] as string[],
+    plantas: [] as string[],
+    procesos: [] as string[],
+    contratos: [] as string[],
+    empresas: [] as string[],
+  });
   const [loadingLists, setLoadingLists] = useState(true);
 
   // Step 1 - General Info
@@ -292,26 +298,37 @@ export default function CreatePermitPage() {
   const [signatureContext, setSignatureContext] = useState<any>(null);
 
   useEffect(() => {
+    if (user && !generalInfo.nombreSolicitante) {
+      setGeneralInfo(prev => ({ ...prev, nombreSolicitante: user.displayName || '' }));
+    }
+  }, [user, generalInfo.nombreSolicitante]);
+
+  useEffect(() => {
     setLoadingLists(true);
-    const docRef = doc(db, 'dynamic_lists', 'areas');
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setAreasList(docSnap.data().items || []);
-      } else {
-        setAreasList([]);
-      }
-      setLoadingLists(false);
-    }, (error) => {
-      console.error("Error fetching dynamic lists:", error);
-      toast({
-        variant: "destructive",
-        title: "Error de Carga",
-        description: "No se pudieron cargar las listas dinámicas.",
+    const listNames = ['areas', 'plantas', 'procesos', 'contratos', 'empresas'];
+    const unsubscribers = listNames.map(listName => {
+      const docRef = doc(db, 'dynamic_lists', listName);
+      return onSnapshot(docRef, (docSnap) => {
+        setDynamicLists(prev => ({
+          ...prev,
+          [listName]: docSnap.exists() ? docSnap.data().items?.sort() || [] : []
+        }));
+      }, (error) => {
+        console.error(`Error fetching ${listName}:`, error);
+        toast({
+          variant: "destructive",
+          title: "Error de Carga",
+          description: `No se pudo cargar la lista para ${listName}.`,
+        });
       });
-      setLoadingLists(false);
     });
 
-    return () => unsubscribe();
+    Promise.all(listNames.map(listName => new Promise(resolve => {
+      const docRef = doc(db, 'dynamic_lists', listName);
+      onSnapshot(docRef, () => resolve(true), () => resolve(false));
+    }))).then(() => setLoadingLists(false));
+
+    return () => unsubscribers.forEach(unsub => unsub());
   }, [toast]);
 
 
@@ -1155,6 +1172,26 @@ export default function CreatePermitPage() {
     { id: 'usoEPP', label: 'Uso de EPP especifico para trabajos con circuitos energizados (aplica durante aplicación de 5 reglas de oro) (Botas dieléctricas, casco dieléctrico, guantes dieléctricos, careta protección arco eléctrico, overol ignifugo, tapete dieléctrico y demás requeridos los EPP se deben seleccionar de acuerdo al nivel de tensión del sistema y estudio de arco eléctrico, NFPA 70 E), los cuales deben ser certificados, ser inspeccionados y verificados antes de su uso y contar con ensayo de rigidez / aislamiento dieléctrico (Guantes mínimo 2 veces al año; tapetes, pértigas, escaleras, vehículos mínimo una vez al año).' },
   ];
 
+  const renderDynamicSelect = useCallback((listKey: keyof typeof dynamicLists, fieldKey: keyof PermitGeneralInfo, label: string, required: boolean) => (
+    <div>
+        <Label className={`font-bold text-gray-700 ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}>{label}</Label>
+        <Select
+            value={(generalInfo as any)[fieldKey] || ''}
+            onValueChange={(value) => setGeneralInfo(p => ({ ...p, [fieldKey]: value }))}
+            disabled={loadingLists}
+        >
+            <SelectTrigger>
+                <SelectValue placeholder={loadingLists ? "Cargando..." : `Seleccione una opción...`} />
+            </SelectTrigger>
+            <SelectContent>
+                {dynamicLists[listKey].map((item) => (
+                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    </div>
+  ), [generalInfo, dynamicLists, loadingLists]);
+
 
   return (
     <>
@@ -1238,42 +1275,14 @@ export default function CreatePermitPage() {
               </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label className="font-bold text-gray-700">Área o equipo específico *</Label>
-                        <Select
-                          value={generalInfo.areaEspecifica || ''}
-                          onValueChange={(value) => setGeneralInfo(p => ({...p, areaEspecifica: value}))}
-                          disabled={loadingLists}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={loadingLists ? "Cargando áreas..." : "Seleccione un área..."} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {areasList.map((area) => (
-                              <SelectItem key={area} value={area}>{area}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                    </div>
+                    {renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true)}
+                    {renderDynamicSelect('plantas', 'planta', 'Planta', true)}
+                    {renderDynamicSelect('procesos', 'proceso', 'Proceso', false)}
+                    {renderDynamicSelect('contratos', 'contrato', 'Contrato', false)}
+                    {renderDynamicSelect('empresas', 'empresa', 'Empresa', false)}
                      <div>
-                        <Label className="font-bold text-gray-700">Planta *</Label>
-                        <Input value={generalInfo.planta || ''} onChange={(e) => setGeneralInfo(p => ({...p, planta: e.target.value}))} placeholder="Ej: Faca"/>
-                    </div>
-                     <div>
-                        <Label>Proceso</Label>
-                        <Input value={generalInfo.proceso} onChange={e => setGeneralInfo(p => ({...p, proceso: e.target.value}))} placeholder="Ej: Mantenimiento"/>
-                    </div>
-                     <div>
-                        <Label>Contrato</Label>
-                        <Input value={generalInfo.contrato} onChange={e => setGeneralInfo(p => ({...p, contrato: e.target.value}))} placeholder="Ej: C-123"/>
-                    </div>
-                     <div>
-                        <Label>Empresa</Label>
-                        <Input value={generalInfo.empresa} onChange={e => setGeneralInfo(p => ({...p, empresa: e.target.value}))} placeholder="Ej: NIXUS"/>
-                    </div>
-                     <div>
-                        <Label className="font-bold text-gray-700">Nombre del solicitante *</Label>
-                        <Input value={generalInfo.nombreSolicitante} onChange={e => setGeneralInfo(p => ({...p, nombreSolicitante: e.target.value}))} placeholder="Nombre del solicitante"/>
+                        <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Nombre del solicitante</Label>
+                        <Input value={generalInfo.nombreSolicitante || ''} readOnly disabled/>
                     </div>
                 </div>
 

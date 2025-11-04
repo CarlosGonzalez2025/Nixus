@@ -2390,9 +2390,25 @@ body {
   left: 50%;
 }
 
+.after\:ml-0\.5:after {
+  content: var(--tw-content);
+  margin-left: .125rem;
+}
+
 .after\:w-\[2px\]:after {
   content: var(--tw-content);
   width: 2px;
+}
+
+.after\:text-red-500:after {
+  content: var(--tw-content);
+  --tw-text-opacity: 1;
+  color: rgb(239 68 68 / var(--tw-text-opacity, 1));
+}
+
+.after\:content-\[\"\*\"\]:after, .after\:content-\[\'\*\'\]:after {
+  --tw-content: "*";
+  content: var(--tw-content);
 }
 
 .focus-within\:relative:focus-within {
