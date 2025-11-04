@@ -244,6 +244,39 @@ export type AnexoEnergias = {
   observaciones?: string;
 };
 
+export type AnexoIzaje = {
+  emergencia?: {
+    contacto: string;
+    telefono: string;
+  };
+  informacionGeneral: {
+    accion: { [key: string]: boolean };
+    pesoCarga: { [key: string]: boolean };
+    equipoUtilizar: { [key: string]: boolean };
+    capacidadEquipo: string;
+  };
+  aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
+  precauciones: { [key: string]: boolean };
+  autoridadArea?: Partial<AutorizacionPersona>;
+  responsableTrabajo?: Partial<AutorizacionPersona>;
+  validacion?: {
+    autoridad: ValidacionDiaria[];
+    responsable: ValidacionDiaria[];
+  };
+  cancelacion?: {
+    seCancelo: 'si' | 'no';
+    razon: string;
+    nombre: string;
+    firma: string;
+    fecha: string;
+  };
+  cierre?: {
+    seTermino: 'si' | 'no';
+    observaciones: string;
+    autoridad?: Partial<AutorizacionPersona>;
+    responsable?: Partial<AutorizacionPersona>;
+  };
+};
 
 export type AnexoCaliente = {
   distanciaSeguridad: 'si' | 'no' | 'na';
@@ -255,22 +288,6 @@ export type AnexoCaliente = {
   personalCapacitado: 'si' | 'no' | 'na';
   listasChequeo: 'si' | 'no' | 'na';
   otro: string;
-};
-
-export type AnexoIzaje = {
-    informacionGeneral: {
-        accion: { [key: string]: boolean };
-        pesoCarga: { [key: string]: boolean };
-        equipoUtilizar: { [key: string]: string };
-    };
-    aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
-    precauciones: { [key: string]: boolean };
-    observaciones: string;
-    liderIzaje: {
-        nombre: string;
-        cedula: string;
-        firmaApertura: string;
-    };
 };
 
 export type AnexoExcavaciones = {

@@ -58,6 +58,7 @@ import { AtsStep } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
 import { AnexoConfinadoStep } from './components/AnexoConfinadoStep';
 import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
+import { AnexoIzajeStep } from './components/AnexoIzajeStep';
 
 
 const workerRoles = [
@@ -301,6 +302,8 @@ function CreatePermitWizard() {
         return <AnexoConfinadoStep />;
       case "Anexo Energías":
         return <AnexoEnergiaStep />;
+      case "Anexo Izaje":
+        return <AnexoIzajeStep />;
       // Add other cases as you create the components
       default:
         return (
