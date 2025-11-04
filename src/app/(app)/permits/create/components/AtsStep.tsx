@@ -32,7 +32,7 @@ const hazardCategories = {
   FÍSICOS: [
     { id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación', control: 'Uso de reflectores y/o lámparas en áreas con iluminación deficiente y en trabajo nocturno. Informar al dueño de área ausencia o daño de iluminación artificial. Usar gafas claras todo el tiempo en caso de luz deficiente. Permanecer únicamente en el sitio autorizado de trabajo.' },
     { id: 'exceso_iluminacion', label: 'Exceso de iluminación', control: 'En trabajos en el exterior, uso de gafas oscuras en caso de exceso de iluminación; evitar cambios bruscos de iluminación (deslumbramientos)' },
-    { id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)', control: 'Usar de manera permanente protección auditiva tipo copa o de inserción y no retirarlo durante toda la tarea.' },
+    { id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo)', control: 'Usar de manera permanente protección auditiva tipo copa o de inserción y no retirarlo durante toda la tarea.' },
     { id: 'contacto_superficies_calientes', label: 'Contacto superficies calientes', control: 'Usar de manera permanente guantes de protección, uso de ropa manga larga, identificar con señalización o superficies calientes' },
     { id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura', control: 'Utilizar yelmo de soldar o la pantalla de mano siempre que se suelde, no mira nunca directamente al arco voltaico, no pique el cordón de soldadura sin protección ocular' },
   ],
@@ -130,10 +130,11 @@ const justificacionOptions = [
     { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
 ];
 
+
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
 
   const toggleSection = (sectionId: string) => {
     setOpenSections(prev => ({
