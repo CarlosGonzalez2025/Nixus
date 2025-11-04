@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -91,24 +92,17 @@ export type AutorizacionPersona = {
   firma: string;
   hora: string;
   cedula?: string;
+  fecha?: string;
 }
 
 export type AnexoAltura = {
   emergencia?: {
     contacto: string;
     telefono: string;
-  },
+  };
   alturaAproximada?: string;
   tipoEstructura: {
     [key: string]: boolean | string;
-    escaleraCuerpo: boolean;
-    escaleraDosCuerpos: boolean;
-    andamioTubular: boolean;
-    andamioColgante: boolean;
-    plataforma: boolean;
-    manLift: boolean;
-    otros: boolean;
-    otrosCual: string;
   };
   aspectosSeguridad: { [key: string]: 'si' | 'no' | 'na' };
   precauciones: { [key: string]: 'si' | 'no' | 'na' | string };
@@ -397,7 +391,7 @@ export type Permit = {
   workType?: string[];
   trabajoAlturas?: boolean;
   espaciosConfinados?: boolean;
-  controlEnergias?: boolean;
+  controlEnergia?: boolean;
   izajeCargas?: boolean;
   trabajoCaliente?: boolean;
   excavaciones?: boolean;
@@ -426,3 +420,5 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
+
+    

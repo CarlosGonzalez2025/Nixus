@@ -1073,13 +1073,12 @@ export default function PermitDetailPage() {
                 </Section>
 
             </div>
+             <footer className="text-center text-xs text-gray-400 py-4 mt-8">
+                <p>Código: DN-FR-SST-016</p>
+                <p>Versión: 04</p>
+            </footer>
         </main>
         
-        {/* Footer */}
-        <footer className="text-center text-xs text-gray-400 py-4">
-          SGTC Móvil - Sistema de Gestión de Tareas Críticas
-        </footer>
-
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
             <DialogContent>
                 <DialogHeader><DialogTitle>Registrar Firma</DialogTitle></DialogHeader>
@@ -1089,3 +1088,5 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
+    
