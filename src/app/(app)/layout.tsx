@@ -31,6 +31,7 @@ import {
   Shield,
   MessageSquare,
   BookOpen,
+  List,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -180,6 +181,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     >
                       <Users />
                       <span>Gestión de Usuarios</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => router.push('/admin/lists')}
+                      isActive={pathname === '/admin/lists'}
+                      tooltip="Gestión de Listas"
+                    >
+                      <List />
+                      <span>Gestión de Listas</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                </SidebarGroup>

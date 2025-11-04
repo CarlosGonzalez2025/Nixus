@@ -245,11 +245,272 @@ async function sendWhatsAppNotification(messageBody) {
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(sendWhatsAppNotification, "404a027530e420f9fbb2c5107917245e9154185b25", null);
 }}),
-"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)": (() => {{
+"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
 
-throw new Error("An error occurred while generating the chunk item [project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\n\nCaused by:\n- CJS module can't be async.\n\nDebug info:\n- An error occurred while generating the chunk item [project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\n- Execution of EcmascriptChunkItemContent::new failed\n- CJS module can't be async.");
+var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_context__;
+__turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
+/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","7873b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
+    "addSignatureAndNotify": (()=>addSignatureAndNotify),
+    "createPermit": (()=>createPermit),
+    "updatePermitStatus": (()=>updatePermitStatus)
+});
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$app$2d$render$2f$encryption$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/app-render/encryption.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase-admin.ts [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/cache.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__ = __turbopack_context__.i("[externals]/firebase-admin/firestore [external] (firebase-admin/firestore, esm_import)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/notifications.ts [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$dotenv$2f$lib$2f$main$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/dotenv/lib/main.js [app-rsc] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/action-validate.js [app-rsc] (ecmascript)");
+var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
+    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__,
+    __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__
+]);
+([__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__] = __turbopack_async_dependencies__.then ? (await __turbopack_async_dependencies__)() : __turbopack_async_dependencies__);
+;
+;
+;
+;
+;
+;
+;
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$dotenv$2f$lib$2f$main$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["config"])();
+const workTypesMap = {
+    'alturas': 'Trabajo en Alturas',
+    'confinado': 'Espacios Confinados',
+    'energia': 'Control de Energías',
+    'izaje': 'Izaje de Cargas',
+    'caliente': 'Trabajo en Caliente',
+    'excavacion': 'Excavaciones',
+    'general': 'Trabajo General'
+};
+const getWorkTypesString = (permit)=>{
+    const selectedTypes = [];
+    if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
+    if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
+    if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+    if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
+    if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
+    if (permit.excavaciones) selectedTypes.push('Excavaciones');
+    if (selectedTypes.length === 0) {
+        if (permit.trabajoGeneral) return 'Trabajo General';
+        // Fallback for old data structure
+        if (permit.workType && Array.isArray(permit.workType)) {
+            return permit.workType.map((key)=>workTypesMap[key] || key).join(', ');
+        }
+        return 'Trabajo General';
+    }
+    return selectedTypes.join(', ');
+};
+const getStatusText = (status)=>{
+    const statusText = {
+        'borrador': 'Borrador',
+        'pendiente_revision': 'Pendiente de Revisión',
+        'aprobado': 'Aprobado',
+        'en_ejecucion': 'En Ejecución',
+        'suspendido': 'Suspendido',
+        'cerrado': 'Cerrado',
+        'rechazado': 'Rechazado'
+    };
+    return statusText[status] || status;
+};
+const signatureRoles = {
+    solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
+    autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+    mantenimiento: 'PERSONAL DE MANTENIMIENTO',
+    sst: 'AREA SST (si aplica)',
+    lider_tarea: 'Líder de la Tarea',
+    ejecutante: 'Ejecutante del Trabajo',
+    lider_sst: 'Líder SST',
+    admin: 'Administrador'
+};
+async function createPermit(data) {
+    if (!data.userId) {
+        return {
+            success: false,
+            error: 'User not authenticated'
+        };
+    }
+    const { userId, userDisplayName, userEmail, userPhotoURL, ...permitData } = data;
+    const initialApprovals = {
+        solicitante: {
+            status: 'pendiente'
+        },
+        autorizante: {
+            status: 'pendiente'
+        },
+        mantenimiento: {
+            status: 'pendiente'
+        },
+        sst: {
+            status: 'pendiente'
+        }
+    };
+    const permitPayload = {
+        ...permitData,
+        status: 'pendiente_revision',
+        createdBy: userId,
+        createdAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
+        user: {
+            displayName: userDisplayName,
+            email: userEmail,
+            photoURL: userPhotoURL
+        },
+        approvals: initialApprovals,
+        closure: {}
+    };
+    try {
+        const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(permitPayload);
+        const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
+        await docRef.update({
+            number: permitNumber
+        });
+        console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
+        const workTypesText = getWorkTypesString(permitPayload);
+        const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${docRef.id}`;
+        const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
+Se ha creado una nueva solicitud de permiso de trabajo.
 
-}}),
+📄 *Número:* ${permitNumber}
+👤 *Solicitante:* ${userDisplayName || 'N/A'}
+🛠️ *Tipo de Trabajo:* ${workTypesText}
+
+Por favor, revise la solicitud para su aprobación en el siguiente enlace:
+${permitUrl}`;
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendWhatsAppNotification"])(messageBody);
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/dashboard');
+        return {
+            success: true,
+            permitId: docRef.id,
+            permitNumber
+        };
+    } catch (error) {
+        console.error("❌ [Action] Error al crear permiso:", error);
+        return {
+            success: false,
+            error: error.message || 'Could not create permit. Please try again.'
+        };
+    }
+}
+async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user) {
+    if (!permitId || !role || !signatureDataUrl || !user) {
+        return {
+            success: false,
+            error: 'Faltan parámetros para guardar la firma.'
+        };
+    }
+    try {
+        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
+        const signaturePath = `approvals.${role}.${signatureType}`;
+        const statusPath = `approvals.${role}.status`;
+        const userIdPath = `approvals.${role}.userId`;
+        const userNamePath = `approvals.${role}.userName`;
+        const signedAtPath = `approvals.${role}.signedAt`;
+        const updateData = {
+            [signaturePath]: signatureDataUrl,
+            [`${userNamePath}`]: user.displayName,
+            [`${userIdPath}`]: user.uid
+        };
+        if (signatureType === 'firmaApertura') {
+            updateData[statusPath] = 'aprobado';
+            updateData[signedAtPath] = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
+        }
+        await docRef.update(updateData);
+        // Fetch permit for notification
+        const permitDoc = await docRef.get();
+        const permitData = permitDoc.data();
+        const signatureRoleName = signatureRoles[role] || role;
+        const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${permitId}`;
+        const messageBody = `*Notificación de Firma - SGPT* 🖋️
+El permiso *${permitData.number || permitId}* ha sido firmado.
+
+👤 *Quién firmó:* ${user.displayName || 'N/A'}
+✨ *Rol:* ${signatureRoleName}
+✍️ *Tipo de firma:* ${signatureType === 'firmaApertura' ? 'Apertura' : 'Cierre'}
+
+Puede ver los detalles aquí:
+${permitUrl}`;
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendWhatsAppNotification"])(messageBody);
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
+        return {
+            success: true
+        };
+    } catch (error) {
+        console.error("❌ Error al guardar firma y notificar:", error);
+        return {
+            success: false,
+            error: error.message || 'No se pudo guardar la firma.'
+        };
+    }
+}
+async function updatePermitStatus(permitId, status, reason, closureData) {
+    if (!permitId) {
+        return {
+            success: false,
+            error: 'Permit ID is required.'
+        };
+    }
+    try {
+        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
+        const updateData = {
+            status
+        };
+        if (status === 'rechazado' && reason) {
+            updateData.rejectionReason = reason;
+        }
+        if (status === 'cerrado') {
+            updateData.closure = {
+                ...closureData || {},
+                fechaCierre: new Date().toISOString().split('T')[0]
+            };
+        }
+        await docRef.update(updateData);
+        // Fetch permit for notification
+        const permitDoc = await docRef.get();
+        const permitData = permitDoc.data();
+        const statusText = getStatusText(status);
+        const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${permitId}`;
+        let messageBody = `*Actualización de Estado - SGPT* 🔄
+El estado del permiso *${permitData.number || permitId}* ha cambiado.
+
+*Nuevo Estado:* ${statusText}
+
+Puede ver los detalles aquí:
+${permitUrl}`;
+        if (status === 'rechazado' && reason) {
+            messageBody += `\n\n*Motivo del rechazo:* ${reason}`;
+        }
+        await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendWhatsAppNotification"])(messageBody);
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/dashboard');
+        return {
+            success: true
+        };
+    } catch (error) {
+        console.error("❌ Error updating permit status:", error);
+        return {
+            success: false,
+            error: error.message || 'Could not update permit status.'
+        };
+    }
+}
+;
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
+    createPermit,
+    addSignatureAndNotify,
+    updatePermitStatus
+]);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(createPermit, "401402f01c0118016efe5c5d736d335e2f6d150079", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addSignatureAndNotify, "7c15bdb6ac388e78a59299d5091891127d63de7bc6", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updatePermitStatus, "7873b9c7850e737568a6f6f7a4e17cda15a8f18e15", null);
+__turbopack_async_result__();
+} catch(e) { __turbopack_async_result__(e); } }, false);}),
 "[externals]/perf_hooks [external] (perf_hooks, cjs)": (function(__turbopack_context__) {
 
 var { g: global, __dirname, m: module, e: exports } = __turbopack_context__;
@@ -597,15 +858,16 @@ const __TURBOPACK__default__export__ = (0, __TURBOPACK__imported__module__$5b$pr
     throw new Error("Attempted to call the default export of [project]/src/app/(app)/permits/create/page.tsx from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.");
 }, "[project]/src/app/(app)/permits/create/page.tsx", "default");
 }}),
-"[project]/src/app/(app)/permits/create/page.tsx [app-rsc] (ecmascript)": (function(__turbopack_context__) {
+"[project]/src/app/(app)/permits/create/page.tsx [app-rsc] (ecmascript)": ((__turbopack_context__) => {
+"use strict";
 
-var { g: global, __dirname, m: module, e: exports } = __turbopack_context__;
+var { g: global, __dirname } = __turbopack_context__;
 {
-const e = new Error(`Could not parse module '[project]/src/app/(app)/permits/create/page.tsx'
-
-Unexpected eof`);
-e.code = 'MODULE_UNPARSEABLE';
-throw e;}}),
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$page$2e$tsx__$28$client__reference$2f$proxy$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/page.tsx (client reference/proxy) <module evaluation>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$page$2e$tsx__$28$client__reference$2f$proxy$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/page.tsx (client reference/proxy)");
+;
+__turbopack_context__.n(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$page$2e$tsx__$28$client__reference$2f$proxy$29$__);
+}}),
 "[project]/src/app/(app)/permits/create/page.tsx [app-rsc] (ecmascript, Next.js server component)": ((__turbopack_context__) => {
 
 var { g: global, __dirname } = __turbopack_context__;

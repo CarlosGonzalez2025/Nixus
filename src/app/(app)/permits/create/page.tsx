@@ -1,7 +1,6 @@
-
 'use client';
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from '../actions';
@@ -54,7 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones, JustificacionATS } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -64,18 +63,20 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
 
 const workTypes: {[key: string]: string} = {
-  'alturas': 'Trabajo en Alturas',
-  'confinado': 'Espacios Confinados',
-  'energia': 'Control de Energías',
-  'izaje': 'Izaje de Cargas',
-  'caliente': 'Trabajo en Caliente',
-  'excavacion': 'Excavaciones',
-  'general': 'Trabajo General'
+  alturas: 'Trabajo en Alturas',
+  confinado: 'Espacios Confinados',
+  energia: 'Control de Energías',
+  izaje: 'Izaje de Cargas',
+  caliente: 'Trabajo en Caliente',
+  excavacion: 'Excavaciones',
+  general: 'Trabajo General'
 }
 
 const epsList = ["SURA", "Sanitas", "Compensar", "Nueva EPS", "Salud Total", "Coomeva", "Famisanar", "Aliansalud", "Mutual SER", "Cajacopi", "Otra"];
@@ -106,6 +107,9 @@ export default function CreatePermitPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
+  // Dynamic lists from Firestore
+  const [areasList, setAreasList] = useState<string[]>([]);
+  const [loadingLists, setLoadingLists] = useState(true);
 
   // Step 1 - General Info
   const [generalInfo, setGeneralInfo] = useState<Partial<PermitGeneralInfo>>({
@@ -146,6 +150,7 @@ export default function CreatePermitPage() {
     peligros: {},
     epp: {},
     causalesSuspension: 'LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:',
+    justificacion: {},
   });
   
   // Step 3 - Annexes
@@ -267,6 +272,8 @@ export default function CreatePermitPage() {
     listasChequeo: 'na',
     otro: ''
   });
+  const [anexoExcavaciones, setAnexoExcavaciones] = useState<Partial<AnexoExcavaciones>>({});
+
 
   // Step 4 - Peligros, EPP
   const [hazardsData, setHazardsData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
@@ -283,6 +290,29 @@ export default function CreatePermitPage() {
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
+
+  useEffect(() => {
+    setLoadingLists(true);
+    const docRef = doc(db, 'dynamic_lists', 'areas');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAreasList(docSnap.data().items || []);
+      } else {
+        setAreasList([]);
+      }
+      setLoadingLists(false);
+    }, (error) => {
+      console.error("Error fetching dynamic lists:", error);
+      toast({
+        variant: "destructive",
+        title: "Error de Carga",
+        description: "No se pudieron cargar las listas dinámicas.",
+      });
+      setLoadingLists(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
 
 
   const handleWorkTypeChange = (workTypeKey: keyof typeof selectedWorkTypes) => {
@@ -614,6 +644,7 @@ export default function CreatePermitPage() {
         anexoIzaje: selectedWorkTypes.izaje ? anexoIzaje : undefined,
         anexoEnergias: selectedWorkTypes.energia ? anexoEnergias : undefined,
         anexoCaliente: selectedWorkTypes.caliente ? anexoCaliente : undefined,
+        anexoExcavaciones: selectedWorkTypes.excavacion ? anexoExcavaciones : undefined,
       };
 
       const result = await createPermit({
@@ -653,7 +684,7 @@ export default function CreatePermitPage() {
     { label: "Anexo Energías", condition: selectedWorkTypes.energia},
     { label: "Anexo Caliente", condition: selectedWorkTypes.caliente},
     { label: "Anexo Izaje", condition: selectedWorkTypes.izaje},
-    // { label: "Anexo Excavaciones", condition: selectedWorkTypes.excavacion},
+    { label: "Anexo Excavaciones", condition: selectedWorkTypes.excavacion},
     { label: "Verificación Peligros", condition: true },
     { label: "EPP y Emergencias", condition: true },
     { label: "Trabajadores", condition: true },
@@ -787,6 +818,9 @@ export default function CreatePermitPage() {
           if(group === 'anexoCaliente'){
             return {...prevState, [id]: value}
           }
+          if(group === 'anexoExcavaciones'){
+            return {...prevState, [id]: value}
+          }
           return prevState;
       }
       
@@ -806,6 +840,7 @@ export default function CreatePermitPage() {
           case 'anexoConfinado.requerimientosEquipos': setState = setAnexoConfinado; break;
           case 'anexoIzaje': setState = setAnexoIzaje; break;
           case 'anexoCaliente': setState = setAnexoCaliente; break;
+          case 'anexoExcavaciones': setState = setAnexoExcavaciones; break;
           case 'generalInfo': setState = setGeneralInfo; break;
           default: return;
       }
@@ -836,6 +871,7 @@ export default function CreatePermitPage() {
         case 'anexoConfinado.requerimientosEquipos': state = anexoConfinado.requerimientosEquipos || {}; break;
         case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; break;
         case 'anexoCaliente': state = anexoCaliente; break;
+        case 'anexoExcavaciones': state = anexoExcavaciones; break;
         case 'generalInfo': state = generalInfo; break;
     }
     
@@ -1204,7 +1240,20 @@ export default function CreatePermitPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <Label className="font-bold text-gray-700">Área o equipo específico *</Label>
-                        <Input value={generalInfo.areaEspecifica || ''} onChange={(e) => setGeneralInfo(p => ({...p, areaEspecifica: e.target.value}))} placeholder="Ej: Caldera 2"/>
+                        <Select
+                          value={generalInfo.areaEspecifica || ''}
+                          onValueChange={(value) => setGeneralInfo(p => ({...p, areaEspecifica: value}))}
+                          disabled={loadingLists}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={loadingLists ? "Cargando áreas..." : "Seleccione un área..."} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {areasList.map((area) => (
+                              <SelectItem key={area} value={area}>{area}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                     </div>
                      <div>
                         <Label className="font-bold text-gray-700">Planta *</Label>
@@ -2159,6 +2208,19 @@ export default function CreatePermitPage() {
                         </Button>
                     </div>
                 </div>
+            </div>
+          )}
+          
+          {currentStepInfo.label === "Anexo Excavaciones" && (
+            <div className="space-y-6">
+               <div className="text-center mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                      ANEXO 5 - EXCAVACIONES
+                  </h2>
+                  <p className="text-muted-foreground text-sm">Complete la información para trabajos de excavación.</p>
+              </div>
+              {/* Contenido del anexo de excavaciones aquí */}
+              <p className="text-center text-muted-foreground py-10">... Contenido del Anexo de Excavaciones en construcción ...</p>
             </div>
           )}
 
