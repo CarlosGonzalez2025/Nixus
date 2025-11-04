@@ -207,7 +207,7 @@ export function AtsStep() {
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
                   <span className="font-semibold">{category}</span>
-                  <ChevronDown className={`h-5 w-5 transition-transform data-[state=open]:rotate-180`} />
+                  <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-4">
@@ -279,7 +279,7 @@ export function AtsStep() {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si`}>SI</Label>
+                    <Label htmlFor="bioseguridad-si">SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
