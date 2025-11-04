@@ -17,6 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { SignaturePad } from '@/components/ui/signature-pad';
 
 const anexoAlturaEstructuras = [
   { id: 'escaleraCuerpo', label: 'Escalera de un cuerpo' },
@@ -84,6 +91,8 @@ const anexoAlturaPrecauciones = [
 export function AnexoAlturaStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, anexoAltura } = state;
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
+  const [signingTarget, setSigningTarget] = React.useState<{ section: string; field: string; index?: number } | null>(null);
 
   const handleFieldChange = (section: keyof typeof anexoAltura, field: string, value: any) => {
     dispatch({
@@ -129,13 +138,34 @@ export function AnexoAlturaStep() {
   };
 
   React.useEffect(() => {
-    // Initialize validacionDiaria with 7 days if not present
     if (!anexoAltura.validacion?.autoridad || anexoAltura.validacion.autoridad.length < 7) {
       const autoridad = Array(7).fill(0).map((_, i) => anexoAltura.validacion?.autoridad?.[i] || { dia: i + 1, nombre: '', firma: '', fecha: '' });
       const responsable = Array(7).fill(0).map((_, i) => anexoAltura.validacion?.responsable?.[i] || { dia: i + 1, nombre: '', firma: '', fecha: '' });
       dispatch({ type: 'UPDATE_ANEXO_ALTURA', payload: { validacion: { autoridad, responsable } } });
     }
   }, [anexoAltura.validacion, dispatch]);
+
+  const openSignatureDialog = (section: string, field: string, index?: number) => {
+    setSigningTarget({ section, field, index });
+    setIsSignatureDialogOpen(true);
+  };
+
+  const handleSaveSignature = (signature: string) => {
+    if (!signingTarget) return;
+
+    const { section, field, index } = signingTarget;
+
+    if (index !== undefined) {
+      const list = [...(anexoAltura[section as keyof typeof anexoAltura] as any)[field]];
+      list[index] = { ...list[index], firma: signature };
+      handleFieldChange(section as keyof typeof anexoAltura, field, list);
+    } else {
+      handleNestedFieldChange(section as keyof typeof anexoAltura, field, 'firma', signature);
+    }
+
+    setIsSignatureDialogOpen(false);
+    setSigningTarget(null);
+  };
 
   const RadioGroupField = ({ id, label, value, onChange }: { id: string; label: string; value: 'si' | 'no' | 'na'; onChange: (value: 'si' | 'no' | 'na') => void; }) => (
     <div className="flex justify-between items-center p-3 border rounded-md bg-white">
@@ -149,6 +179,7 @@ export function AnexoAlturaStep() {
   );
 
   return (
+    <>
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
@@ -249,7 +280,8 @@ export function AnexoAlturaStep() {
                     <Input placeholder="Nombre Completo" value={anexoAltura.autoridadArea?.nombre || ''} onChange={(e) => handleNestedFieldChange('autoridadArea', '', 'nombre', e.target.value)} />
                     <Input type="time" placeholder="Hora" value={anexoAltura.autoridadArea?.hora || ''} onChange={(e) => handleNestedFieldChange('autoridadArea', '', 'hora', e.target.value)} />
                 </div>
-                 <Button variant="outline" className="w-full mt-4"><Signature className="mr-2"/>Firmar</Button>
+                 <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('autoridadArea', 'firma')}><Signature className="mr-2"/>Firmar</Button>
+                 {anexoAltura.autoridadArea?.firma && <img src={anexoAltura.autoridadArea.firma} alt="Firma" className="mt-2 border rounded-md" />}
             </div>
             {/* Responsable del Trabajo */}
             <div className="p-4 border rounded-lg">
@@ -259,7 +291,8 @@ export function AnexoAlturaStep() {
                     <Input placeholder="Nombre Completo" value={anexoAltura.responsableTrabajo?.nombre || ''} onChange={(e) => handleNestedFieldChange('responsableTrabajo', '', 'nombre', e.target.value)} />
                     <Input type="time" placeholder="Hora" value={anexoAltura.responsableTrabajo?.hora || ''} onChange={(e) => handleNestedFieldChange('responsableTrabajo', '', 'hora', e.target.value)} />
                 </div>
-                <Button variant="outline" className="w-full mt-4"><Signature className="mr-2"/>Firmar</Button>
+                <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('responsableTrabajo', 'firma')}><Signature className="mr-2"/>Firmar</Button>
+                {anexoAltura.responsableTrabajo?.firma && <img src={anexoAltura.responsableTrabajo.firma} alt="Firma" className="mt-2 border rounded-md" />}
             </div>
              {/* Coordinador */}
             <div className="p-4 border rounded-lg">
@@ -269,7 +302,8 @@ export function AnexoAlturaStep() {
                     <Input placeholder="Nombre Completo" value={anexoAltura.coordinadorTrabajosAltura?.nombre || ''} onChange={(e) => handleNestedFieldChange('coordinadorTrabajosAltura', '', 'nombre', e.target.value)} />
                     <Input type="time" placeholder="Hora" value={anexoAltura.coordinadorTrabajosAltura?.hora || ''} onChange={(e) => handleNestedFieldChange('coordinadorTrabajosAltura', '', 'hora', e.target.value)} />
                 </div>
-                 <Button variant="outline" className="w-full mt-4"><Signature className="mr-2"/>Firmar</Button>
+                 <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('coordinadorTrabajosAltura', 'firma')}><Signature className="mr-2"/>Firmar</Button>
+                 {anexoAltura.coordinadorTrabajosAltura?.firma && <img src={anexoAltura.coordinadorTrabajosAltura.firma} alt="Firma" className="mt-2 border rounded-md" />}
             </div>
         </div>
         
@@ -287,7 +321,7 @@ export function AnexoAlturaStep() {
                                 <TableRow key={i}>
                                     <TableCell>{i + 1}</TableCell>
                                     <TableCell><Input value={v.nombre} onChange={(e) => handleListChange('validacion', 'autoridad', i, 'nombre', e.target.value)} className="h-8"/></TableCell>
-                                    <TableCell><Button variant="ghost" size="icon"><Signature className="h-4 w-4"/></Button></TableCell>
+                                    <TableCell><Button variant="ghost" size="icon" onClick={() => openSignatureDialog('validacion', 'autoridad', i)}><Signature className="h-4 w-4"/></Button></TableCell>
                                     <TableCell><Input type="date" value={v.fecha} onChange={(e) => handleListChange('validacion', 'autoridad', i, 'fecha', e.target.value)} className="h-8"/></TableCell>
                                 </TableRow>
                             ))}
@@ -304,7 +338,7 @@ export function AnexoAlturaStep() {
                                 <TableRow key={i}>
                                     <TableCell>{i + 1}</TableCell>
                                     <TableCell><Input value={v.nombre} onChange={(e) => handleListChange('validacion', 'responsable', i, 'nombre', e.target.value)} className="h-8"/></TableCell>
-                                    <TableCell><Button variant="ghost" size="icon"><Signature className="h-4 w-4"/></Button></TableCell>
+                                    <TableCell><Button variant="ghost" size="icon" onClick={() => openSignatureDialog('validacion', 'responsable', i)}><Signature className="h-4 w-4"/></Button></TableCell>
                                     <TableCell><Input type="date" value={v.fecha} onChange={(e) => handleListChange('validacion', 'responsable', i, 'fecha', e.target.value)} className="h-8"/></TableCell>
                                 </TableRow>
                             ))}
@@ -324,7 +358,8 @@ export function AnexoAlturaStep() {
                         <Textarea placeholder="Razón de la cancelación" value={anexoAltura.cancelacion.razon || ''} onChange={(e) => handleNestedFieldChange('cancelacion', '', 'razon', e.target.value)} />
                         <Input placeholder="Nombre de quien cancela" value={anexoAltura.cancelacion.nombre || ''} onChange={(e) => handleNestedFieldChange('cancelacion', '', 'nombre', e.target.value)} />
                          <Input type="date" value={anexoAltura.cancelacion.fecha || ''} onChange={(e) => handleNestedFieldChange('cancelacion', '', 'fecha', e.target.value)} />
-                        <Button variant="outline" className="w-full"><Signature className="mr-2"/>Firmar Cancelación</Button>
+                        <Button variant="outline" className="w-full" onClick={() => openSignatureDialog('cancelacion', 'firma')}><Signature className="mr-2"/>Firmar Cancelación</Button>
+                        {anexoAltura.cancelacion?.firma && <img src={anexoAltura.cancelacion.firma} alt="Firma" className="mt-2 border rounded-md" />}
                     </div>
                 )}
             </div>
@@ -338,13 +373,15 @@ export function AnexoAlturaStep() {
                             <p className="text-xs font-bold">Autoridad del Área</p>
                             <Input placeholder="Nombre" value={anexoAltura.cierre.autoridad?.nombre || ''} onChange={(e) => handleNestedFieldChange('cierre', 'autoridad', 'nombre', e.target.value)} />
                              <Input type="date" className="mt-2" value={anexoAltura.cierre.autoridad?.fecha || ''} onChange={(e) => handleNestedFieldChange('cierre', 'autoridad', 'fecha', e.target.value)} />
-                            <Button variant="outline" size="sm" className="w-full mt-2"><Signature className="mr-2"/>Firmar Cierre</Button>
+                            <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre', 'autoridad')}><Signature className="mr-2"/>Firmar Cierre</Button>
+                            {anexoAltura.cierre.autoridad?.firma && <img src={anexoAltura.cierre.autoridad.firma} alt="Firma" className="mt-2 border rounded-md" />}
                         </div>
                         <div className="p-3 border rounded-md">
                             <p className="text-xs font-bold">Responsable del Trabajo</p>
                             <Input placeholder="Nombre" value={anexoAltura.cierre.responsable?.nombre || ''} onChange={(e) => handleNestedFieldChange('cierre', 'responsable', 'nombre', e.target.value)} />
                             <Input type="date" className="mt-2" value={anexoAltura.cierre.responsable?.fecha || ''} onChange={(e) => handleNestedFieldChange('cierre', 'responsable', 'fecha', e.target.value)} />
-                            <Button variant="outline" size="sm" className="w-full mt-2"><Signature className="mr-2"/>Firmar Cierre</Button>
+                            <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre', 'responsable')}><Signature className="mr-2"/>Firmar Cierre</Button>
+                            {anexoAltura.cierre.responsable?.firma && <img src={anexoAltura.cierre.responsable.firma} alt="Firma" className="mt-2 border rounded-md" />}
                         </div>
                     </div>
                 )}
@@ -352,5 +389,14 @@ export function AnexoAlturaStep() {
         </div>
 
     </div>
+    <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Registrar Firma</DialogTitle>
+        </DialogHeader>
+        <SignaturePad onSave={handleSaveSignature} />
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }
