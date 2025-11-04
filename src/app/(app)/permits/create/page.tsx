@@ -63,6 +63,7 @@ import { AnexoExcavacionesStep } from './components/AnexoExcavacionesStep';
 import { VerificacionPeligrosStep } from './components/VerificacionPeligrosStep';
 import { EppEmergenciasStep } from './components/EppEmergenciasStep';
 import { WorkersStep } from './components/WorkersStep';
+import { ReviewStep } from './components/ReviewStep';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -272,11 +273,10 @@ function CreatePermitWizard() {
 
   const baseSteps = [
     { label: "Info General", condition: true },
-    { label: "ATS y Peligros", condition: true },
+    { label: "ATS", condition: true },
     { label: "Anexo Altura", condition: formData.selectedWorkTypes.alturas},
     { label: "Anexo Confinado", condition: formData.selectedWorkTypes.confinado},
     { label: "Anexo Energías", condition: formData.selectedWorkTypes.energia},
-    { label: "Anexo Caliente", condition: formData.selectedWorkTypes.caliente},
     { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
     { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
     { label: "Verificación Peligros", condition: true },
@@ -307,7 +307,7 @@ function CreatePermitWizard() {
     switch (currentStepLabel) {
       case "Info General":
         return <GeneralInfoStep />;
-      case "ATS y Peligros":
+      case "ATS":
         return <AtsStep anexoATS={formData.anexoATS} onUpdateATS={handleUpdateATS} />;
       case "Anexo Altura":
         return <AnexoAlturaStep />;
@@ -330,7 +330,8 @@ function CreatePermitWizard() {
                   onEditWorker={openEditWorkerDialog}
                   onRemoveWorker={removeWorker}
                />;
-      // Add other cases as you create the components
+      case "Revisión":
+        return <ReviewStep />;
       default:
         return (
           <div className="text-center p-8">

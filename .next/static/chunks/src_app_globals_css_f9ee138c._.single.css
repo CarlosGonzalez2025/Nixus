@@ -1072,6 +1072,10 @@ body {
   resize: both;
 }
 
+.list-disc {
+  list-style-type: disc;
+}
+
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
@@ -1446,6 +1450,11 @@ body {
   border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
 }
 
+.border-blue-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
+}
+
 .border-l-transparent {
   border-left-color: #0000;
 }
@@ -1795,6 +1804,10 @@ body {
 
 .pt-4 {
   padding-top: 1rem;
+}
+
+.pl-5 {
+  padding-left: 1.25rem;
 }
 
 .text-left {
