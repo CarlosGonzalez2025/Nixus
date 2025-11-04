@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { usePermitForm } from '../form-context';
 import { Label } from '@/components/ui/label';
 import {
   Collapsible,
@@ -14,6 +13,26 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+
+// Interfaces para tipado
+interface PeligroAdicional {
+  peligro: string;
+  descripcion: string;
+}
+
+interface AnexoATS {
+  peligros?: { [key: string]: 'si' | 'no' };
+  peligrosAdicionales?: PeligroAdicional[];
+  epp?: { [key: string]: boolean | string };
+  justificacion?: { [key: string]: boolean };
+  protocolosBioseguridad?: 'si' | 'no';
+}
+
+// Props del componente
+interface AtsStepProps {
+  anexoATS: AnexoATS;
+  onUpdateATS: (updates: Partial<AnexoATS>) => void;
+}
 
 const hazardCategories = {
   LOCATIVOS: [
@@ -124,44 +143,38 @@ const justificacionOptions = [
     { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
 ];
 
-export function AtsStep() {
-  const { state, dispatch } = usePermitForm();
-  const { anexoATS } = state;
+export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
 
   const handlePeligroChange = (id: string, value: 'si' | 'no') => {
-    dispatch({
-      type: 'UPDATE_ATS',
-      payload: { peligros: { ...anexoATS.peligros, [id]: value } },
+    onUpdateATS({ 
+      peligros: { ...anexoATS.peligros, [id]: value } 
     });
   };
   
   const handleEppChange = (id: string, value: boolean | string) => {
-    dispatch({
-        type: 'UPDATE_ATS',
-        payload: { epp: { ...anexoATS.epp, [id]: value } },
+    onUpdateATS({ 
+      epp: { ...anexoATS.epp, [id]: value } 
     });
   };
 
   const handleJustificacionChange = (id: string, value: boolean) => {
-    dispatch({
-        type: 'UPDATE_ATS',
-        payload: { justificacion: { ...anexoATS.justificacion, [id]: value } },
+    onUpdateATS({ 
+      justificacion: { ...anexoATS.justificacion, [id]: value } 
     });
   };
   
   const handleProtocoloChange = (value: 'si' | 'no') => {
-    dispatch({
-        type: 'UPDATE_ATS',
-        payload: { protocolosBioseguridad: value },
+    onUpdateATS({ 
+      protocolosBioseguridad: value 
     });
   };
 
   const handleAddOtroPeligro = () => {
     if (newPeligro.trim() && newPeligroDesc.trim()) {
         const newPeligros = [...(anexoATS.peligrosAdicionales || []), { peligro: newPeligro, descripcion: newPeligroDesc }];
-        dispatch({ type: 'UPDATE_ATS', payload: { peligrosAdicionales: newPeligros } });
+        onUpdateATS({ peligrosAdicionales: newPeligros });
         setNewPeligro('');
         setNewPeligroDesc('');
     }
@@ -169,16 +182,16 @@ export function AtsStep() {
 
   const handleRemoveOtroPeligro = (index: number) => {
     const newPeligros = (anexoATS.peligrosAdicionales || []).filter((_, i) => i !== index);
-    dispatch({ type: 'UPDATE_ATS', payload: { peligrosAdicionales: newPeligros } });
+    onUpdateATS({ peligrosAdicionales: newPeligros });
   };
 
   const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
     <Collapsible defaultOpen={defaultOpen}>
-      <CollapsibleTrigger className="w-full">
-        <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
           <h3 className="text-lg font-bold text-gray-700">{title}</h3>
           <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-        </div>
+        </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
         {children}

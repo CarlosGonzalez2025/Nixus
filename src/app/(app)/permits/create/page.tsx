@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { createPermit } from '../actions';
@@ -283,13 +283,17 @@ function CreatePermitWizard() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
   
+  const handleUpdateATS = useCallback((updates: Partial<AnexoATS>) => {
+    dispatch({ type: 'UPDATE_ATS', payload: updates });
+  }, [dispatch]);
+
   const renderStepContent = () => {
     const currentStepLabel = steps[step - 1]?.label;
     switch (currentStepLabel) {
       case "Info General":
         return <GeneralInfoStep />;
       case "ATS y Peligros":
-        return <AtsStep />;
+        return <AtsStep anexoATS={formData.anexoATS} onUpdateATS={handleUpdateATS} />;
       case "Anexo Altura":
         return <AnexoAlturaStep />;
       case "Anexo Confinado":
@@ -376,7 +380,7 @@ function CreatePermitWizard() {
       </div>
       
       <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
-        <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
+        <div key={step} className="bg-white rounded-xl shadow-xl p-6 md:p-8">
           {renderStepContent()}
         </div>
 
@@ -483,3 +487,5 @@ export default function CreatePermitPage() {
     </PermitFormProvider>
   );
 }
+
+    

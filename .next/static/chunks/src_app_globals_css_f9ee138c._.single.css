@@ -832,6 +832,10 @@ body {
   max-height: 60vh;
 }
 
+.max-h-20 {
+  max-height: 5rem;
+}
+
 .min-h-0 {
   min-height: 0;
 }
