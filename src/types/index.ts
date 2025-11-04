@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -66,6 +65,10 @@ export type PermitClosure = {
   horaCierre: string;
 }
 
+export type JustificacionATS = {
+    [key: string]: boolean;
+}
+
 export type AnexoATS = {
   area: string;
   solicitante: string;
@@ -75,6 +78,7 @@ export type AnexoATS = {
   peligros: { [key: string]: 'si' | 'no' | 'na' };
   epp: { [key: string]: 'si' | 'no' | 'na' };
   causalesSuspension: string;
+  justificacion: JustificacionATS;
 };
 
 export type ValidacionDiaria = {
@@ -249,14 +253,34 @@ export type AnexoEnergias = {
   observaciones: string;
 };
 
+export type AnexoIzaje = {
+    informacionGeneral: {
+        accion: { [key: string]: boolean };
+        pesoCarga: { [key: string]: boolean };
+        equipoUtilizar: { [key: string]: string };
+    };
+    aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
+    precauciones: { [key: string]: boolean };
+    observaciones: string;
+    liderIzaje: {
+        nombre: string;
+        cedula: string;
+        firmaApertura: string;
+    };
+};
+
+export type AnexoExcavaciones = {
+    // Definir campos específicos para excavaciones
+};
+
 export type PermitGeneralInfo = {
-    areaEspecifica: string,
-    planta: string,
-    proceso: string,
-    contrato: string,
-    empresa: string,
-    nombreSolicitante: string,
-    fechaCreacion: string,
+    areaEspecifica: string;
+    planta: string;
+    proceso: string;
+    contrato: string;
+    empresa: string;
+    nombreSolicitante: string;
+    fechaCreacion: string;
     validFrom: string;
     validUntil: string;
     workDescription: string;
@@ -272,6 +296,15 @@ export type PermitGeneralInfo = {
     }
 }
 
+export type SelectedWorkTypes = {
+  alturas: boolean;
+  confinado: boolean;
+  energia: boolean;
+  izaje: boolean;
+  caliente: boolean;
+  excavacion: boolean;
+  general: boolean;
+}
 
 export type Permit = {
   id: string;
@@ -286,7 +319,11 @@ export type Permit = {
     photoURL?: string | null;
   };
   
-  // New structure
+  generalInfo: Partial<PermitGeneralInfo>;
+  selectedWorkTypes: SelectedWorkTypes;
+
+  // Old structure (for compatibility) - can be removed later
+  workType?: string[];
   trabajoAlturas?: boolean;
   espaciosConfinados?: boolean;
   controlEnergia?: boolean;
@@ -295,10 +332,7 @@ export type Permit = {
   excavaciones?: boolean;
   trabajoGeneral?: boolean;
 
-  // Old structure (for compatibility)
-  workType?: string[];
 
-  generalInfo?: Partial<PermitGeneralInfo>;
   hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
   ppe?: { [key:string]: string };
   ppeSystems?: { [key: string]: string };
@@ -315,4 +349,7 @@ export type Permit = {
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoIzaje?: Partial<AnexoIzaje>;
-  
+  anexoEnergias?: Partial<AnexoEnergias>;
+  anexoCaliente?: Partial<AnexoCaliente>;
+  anexoExcavaciones?: Partial<AnexoExcavaciones>;
+}
