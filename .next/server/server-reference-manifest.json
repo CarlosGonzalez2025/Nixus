@@ -21,6 +21,28 @@
       "layer": {
         "app/(app)/permits/create/page": "action-browser"
       }
+    },
+    "6040d4c4fa848a1987d52a337ad58660f94a06df10": {
+      "workers": {
+        "app/(app)/admin/lists/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/admin/lists/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/admin/lists/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/admin/lists/page": "action-browser"
+      }
+    },
+    "602f82969f60f9d40de41f2b03e493d261336deb66": {
+      "workers": {
+        "app/(app)/admin/lists/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/admin/lists/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/admin/lists/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/admin/lists/page": "action-browser"
+      }
     }
   },
   "edge": {},

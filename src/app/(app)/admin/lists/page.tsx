@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -29,6 +30,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 export default function ListsPage() {
   const { user: adminUser, loading: adminLoading } = useUser();
@@ -62,10 +65,17 @@ export default function ListsPage() {
         setLoadingLists(false);
       }, (error) => {
         console.error("Error fetching list:", error);
+        
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+
         toast({
           variant: 'destructive',
           title: 'Error de Carga',
-          description: 'No se pudo cargar la lista de áreas.',
+          description: 'No se pudo cargar la lista de áreas. Permisos insuficientes.',
         });
         setLoadingLists(false);
       });
