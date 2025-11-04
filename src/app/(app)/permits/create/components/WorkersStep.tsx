@@ -23,7 +23,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
           Gestión de Trabajadores
         </h2>
         <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
-          FIRMAS: (1) Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura...
+          FIRMAS: (1) Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura, asumiendo el compromiso de cumplir con las orientaciones de seguridad contenidas en este documento, utilizar los equipos de protección personal y ejecutar solamente los servicios o actividades cubiertos por esta autorización. Así mismo manifiesto mi buen estado de salud para el desarrollo de las actividades. (2) Se verifican certificados de aptitud médica para Trabajos en alturas y espacios confinados; según aplique, con fecha de expedición inferior a un año. (3) Se verifican competencia - entrenamiento para TSA, TEC, trabajo en caliente, energías peligrosas, operación de equipo o maquinaria, trabajos con energía eléctrica; según aplique. (4) Se verifican el estado de afiliación al sistema de seguridad social (EPS, ARL, Fondo de Pensiones). (5) Para espacios confinados aplican lo siguientes ROLES: Trabajador Entrante, Vigía, Supervisor.
         </p>
       </div>
 
