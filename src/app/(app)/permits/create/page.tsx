@@ -2593,3 +2593,8 @@ export default function CreatePermitPage() {
           </DialogHeader>
           <SignaturePad onSave={handleSaveSignature} />
         </DialogContent>
+      </Dialog>
+    </div>
+    </>
+  );
+}

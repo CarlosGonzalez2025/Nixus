@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoCaliente, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -20,12 +20,21 @@ const workTypesMap: {[key: string]: string} = {
 };
 
 const getWorkTypesString = (permit: Partial<Permit>): string => {
-  const selectedTypes = Object.entries(workTypesMap)
-    .filter(([key]) => (permit as any)[key] === true)
-    .map(([, name]) => name);
-
+  const selectedTypes: string[] = [];
+  if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
+  if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
+  if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+  if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
+  if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
+  if (permit.excavaciones) selectedTypes.push('Excavaciones');
+  
   if (selectedTypes.length === 0) {
-    return workTypesMap['general'];
+    if (permit.trabajoGeneral) return 'Trabajo General';
+    // Fallback for old data structure
+    if (permit.workType && Array.isArray(permit.workType)) {
+      return permit.workType.map(key => workTypesMap[key] || key).join(', ');
+    }
+    return 'Trabajo General';
   }
   return selectedTypes.join(', ');
 };
@@ -245,4 +254,7 @@ ${permitUrl}`;
         console.error("❌ Error updating permit status:", error);
         return {
             success: false,
-            error: error.message || 'Could not
+            error: error.message || 'Could not update permit status.'
+        };
+    }
+}
