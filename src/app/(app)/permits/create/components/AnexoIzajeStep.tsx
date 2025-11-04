@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import type { AutorizacionPersona, ValidacionDiaria } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
 
 const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
@@ -110,7 +111,7 @@ export function AnexoIzajeStep() {
     const { state, dispatch } = usePermitForm();
     const { generalInfo, anexoIzaje } = state;
     const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
-    const [signingTarget, setSigningTarget] = React.useState<{ section: 'autoridadArea' | 'responsableTrabajo' | 'validacion.autoridad' | 'validacion.responsable' | 'cancelacion' | 'cierre.autoridad' | 'cierre.responsable'; field?: string; index?: number } | null>(null);
+    const [signingTarget, setSigningTarget] = React.useState<{ section: string; field?: string; index?: number } | null>(null);
 
     const handleUpdate = (payload: any) => {
         dispatch({ type: 'UPDATE_ANEXO_IZAJE', payload });
@@ -119,9 +120,19 @@ export function AnexoIzajeStep() {
     const handleNestedChange = (section: keyof typeof anexoIzaje, field: string, value: any) => {
         handleUpdate({ [section]: { ...(anexoIzaje as any)[section], [field]: value } });
     };
+    
+    const handleDeepNestedChange = (section: keyof typeof anexoIzaje.informacionGeneral, subSection: string, field: string, value: any) => {
+        handleNestedChange('informacionGeneral', section as any, { ...((anexoIzaje.informacionGeneral as any)[section] || {}), [field]: value });
+    };
+    
+    const handleDeepestNestedChange = (section: string, subSection: string, field: string, value: any) => {
+        const mainSection = anexoIzaje[section as keyof typeof anexoIzaje] as any;
+        const sub = mainSection?.[subSection] || {};
 
-    const handleDeepNestedChange = (section: keyof typeof anexoIzaje.informacionGeneral, field: string, value: any) => {
-        handleNestedChange('informacionGeneral', section, { ...(anexoIzaje.informacionGeneral as any)[section], [field]: value });
+        handleNestedChange(section as keyof typeof anexoIzaje, subSection, {
+            ...sub,
+            [field]: value,
+        });
     };
 
     const handleListChange = (section: 'validacion', list: 'autoridad' | 'responsable', index: number, field: keyof ValidacionDiaria, value: string) => {
@@ -148,17 +159,15 @@ export function AnexoIzajeStep() {
     const handleSaveSignature = (signature: string) => {
         if (!signingTarget) return;
         const { section, field, index } = signingTarget;
-
-        if (section === 'validacion.autoridad' || section === 'validacion.responsable') {
+    
+        if (section.startsWith('validacion.')) {
             const [valSection, list] = section.split('.');
             handleListChange(valSection as 'validacion', list as 'autoridad' | 'responsable', index!, 'firma', signature);
+        } else if (section.startsWith('cierre.')) {
+            const [cierreSection, subSection] = section.split('.');
+            handleDeepestNestedChange('cierre', subSection, 'firma', signature);
         } else {
-             const [main, sub] = section.split('.');
-             if(sub) {
-                 handleNestedChange(main as any, sub, { ...((anexoIzaje as any)[main] || {})[sub], firma: signature });
-             } else {
-                handleNestedChange(section as any, 'firma', signature);
-             }
+             handleNestedChange(section as any, 'firma', signature);
         }
         
         setIsSignatureDialogOpen(false);
@@ -188,7 +197,7 @@ export function AnexoIzajeStep() {
                         <Label className="font-semibold">Acción a Realizar</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md">
                             {accionRealizarOptions.map(o => (
-                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`accion-${o.id}`} checked={anexoIzaje.informacionGeneral?.accion[o.id]} onCheckedChange={(c) => handleDeepNestedChange('accion', o.id, !!c)} /><Label htmlFor={`accion-${o.id}`}>{o.label}</Label></div>
+                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`accion-${o.id}`} checked={anexoIzaje.informacionGeneral?.accion?.[o.id]} onCheckedChange={(c) => handleDeepNestedChange('accion', o.id, !!c)} /><Label htmlFor={`accion-${o.id}`}>{o.label}</Label></div>
                             ))}
                         </div>
                     </div>
@@ -196,7 +205,7 @@ export function AnexoIzajeStep() {
                         <Label className="font-semibold">Peso de la Carga</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md">
                              {pesoCargaOptions.map(o => (
-                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`peso-${o.id}`} checked={anexoIzaje.informacionGeneral?.pesoCarga[o.id]} onCheckedChange={(c) => handleDeepNestedChange('pesoCarga', o.id, !!c)} /><Label htmlFor={`peso-${o.id}`}>{o.label}</Label></div>
+                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`peso-${o.id}`} checked={anexoIzaje.informacionGeneral?.pesoCarga?.[o.id]} onCheckedChange={(c) => handleDeepNestedChange('pesoCarga', o.id, !!c)} /><Label htmlFor={`peso-${o.id}`}>{o.label}</Label></div>
                             ))}
                         </div>
                     </div>
@@ -204,7 +213,7 @@ export function AnexoIzajeStep() {
                         <Label className="font-semibold">Equipo a Utilizar</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md">
                              {equipoUtilizarOptions.map(o => (
-                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`equipo-${o.id}`} checked={anexoIzaje.informacionGeneral?.equipoUtilizar[o.id]} onCheckedChange={(c) => handleDeepNestedChange('equipoUtilizar', o.id, !!c)} /><Label htmlFor={`equipo-${o.id}`}>{o.label}</Label></div>
+                                <div key={o.id} className="flex items-center gap-2"><Checkbox id={`equipo-${o.id}`} checked={anexoIzaje.informacionGeneral?.equipoUtilizar?.[o.id]} onCheckedChange={(c) => handleDeepNestedChange('equipoUtilizar', o.id, !!c)} /><Label htmlFor={`equipo-${o.id}`}>{o.label}</Label></div>
                             ))}
                         </div>
                     </div>
@@ -235,7 +244,7 @@ export function AnexoIzajeStep() {
                  <div className="space-y-6">
                     <div className="p-4 border rounded-lg">
                         <p className="text-sm font-semibold mb-2">Autoridad del Área</p>
-                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Autoridad del Área, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos complementarios."</p>
+                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Autoridad del Area, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos complementarios."</p>
                         <div className="grid grid-cols-2 gap-4">
                             <Input placeholder="Nombre Completo" value={anexoIzaje.autoridadArea?.nombre || ''} onChange={(e) => handleNestedChange('autoridadArea', 'nombre', e.target.value)} />
                             <Input type="time" placeholder="Hora" value={anexoIzaje.autoridadArea?.hora || ''} onChange={(e) => handleNestedChange('autoridadArea', 'hora', e.target.value)} />
@@ -245,7 +254,7 @@ export function AnexoIzajeStep() {
                     </div>
                     <div className="p-4 border rounded-lg">
                         <p className="text-sm font-semibold mb-2">Responsable del Trabajo</p>
-                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Responsable del Trabajo / Ejecutor, Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asosciados a este, dispongo de los recursos necesarios y tomare las medidas de seguridad."</p>
+                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Responsable del Trabajo / Ejecutor, Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asosciados a este, dispongo de los recursos necesarios y  tomare las medidas de seguridad."</p>
                         <div className="grid grid-cols-2 gap-4">
                              <Input placeholder="Nombre Completo" value={anexoIzaje.responsableTrabajo?.nombre || ''} onChange={(e) => handleNestedChange('responsableTrabajo', 'nombre', e.target.value)} />
                              <Input type="time" placeholder="Hora" value={anexoIzaje.responsableTrabajo?.hora || ''} onChange={(e) => handleNestedChange('responsableTrabajo', 'hora', e.target.value)} />
@@ -290,6 +299,50 @@ export function AnexoIzajeStep() {
                                 ))}
                             </TableBody>
                          </Table>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div className="space-y-4 p-4 border rounded-lg">
+                        <h3 className="font-semibold">Cancelación del Trabajo</h3>
+                        <RadioGroup value={anexoIzaje.cancelacion?.seCancelo || 'no'} onValueChange={(v) => handleNestedChange('cancelacion', 'seCancelo', v)} className="flex gap-4">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cancel-si" /><Label htmlFor="cancel-si">SI</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cancel-no" /><Label htmlFor="cancel-no">NO</Label></div>
+                        </RadioGroup>
+                        {anexoIzaje.cancelacion?.seCancelo === 'si' && (
+                            <div className="space-y-3">
+                                <Textarea placeholder="Razón de la cancelación" value={anexoIzaje.cancelacion.razon || ''} onChange={(e) => handleNestedChange('cancelacion', 'razon', e.target.value)} />
+                                <Input placeholder="Nombre de quien cancela" value={anexoIzaje.cancelacion.nombre || ''} onChange={(e) => handleNestedChange('cancelacion', 'nombre', e.target.value)} />
+                                <Input type="date" value={anexoIzaje.cancelacion.fecha || ''} onChange={(e) => handleNestedChange('cancelacion', 'fecha', e.target.value)} />
+                                <Button variant="outline" className="w-full" onClick={() => openSignatureDialog('cancelacion')}><Signature className="mr-2"/>Firmar Cancelación</Button>
+                                {anexoIzaje.cancelacion?.firma && <img src={anexoIzaje.cancelacion.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
+                            </div>
+                        )}
+                    </div>
+                     <div className="space-y-4 p-4 border rounded-lg">
+                        <h3 className="font-semibold">Cierre del Permiso</h3>
+                         <RadioGroup value={anexoIzaje.cierre?.seTermino || 'no'} onValueChange={(v) => handleNestedChange('cierre', 'seTermino', v)} className="flex gap-4">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cierre-si" /><Label htmlFor="cierre-si">SI</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cierre-no" /><Label htmlFor="cierre-no">NO</Label></div>
+                        </RadioGroup>
+                        {anexoIzaje.cierre?.seTermino === 'si' && (
+                            <div className="space-y-3">
+                                <Textarea placeholder="Observaciones de cierre" value={anexoIzaje.cierre.observaciones || ''} onChange={(e) => handleNestedChange('cierre', 'observaciones', e.target.value)} />
+                                <div className="p-3 border rounded-md">
+                                    <p className="text-xs font-bold">Autoridad del Área</p>
+                                    <Input placeholder="Nombre" value={anexoIzaje.cierre.autoridad?.nombre || ''} onChange={(e) => handleDeepestNestedChange('cierre', 'autoridad', 'nombre', e.target.value)} />
+                                    <Input type="date" className="mt-2" value={anexoIzaje.cierre.autoridad?.fecha || ''} onChange={(e) => handleDeepestNestedChange('cierre', 'autoridad', 'fecha', e.target.value)} />
+                                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre.autoridad')}><Signature className="mr-2"/>Firmar Cierre</Button>
+                                    {anexoIzaje.cierre.autoridad?.firma && <img src={anexoIzaje.cierre.autoridad.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
+                                </div>
+                                <div className="p-3 border rounded-md">
+                                    <p className="text-xs font-bold">Responsable del Trabajo</p>
+                                    <Input placeholder="Nombre" value={anexoIzaje.cierre.responsable?.nombre || ''} onChange={(e) => handleDeepestNestedChange('cierre', 'responsable', 'nombre', e.target.value)} />
+                                    <Input type="date" className="mt-2" value={anexoIzaje.cierre.responsable?.fecha || ''} onChange={(e) => handleDeepestNestedChange('cierre', 'responsable', 'fecha', e.target.value)} />
+                                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre.responsable')}><Signature className="mr-2"/>Firmar Cierre</Button>
+                                    {anexoIzaje.cierre.responsable?.firma && <img src={anexoIzaje.cierre.responsable.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
              </SectionWrapper>
