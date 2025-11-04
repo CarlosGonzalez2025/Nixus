@@ -113,7 +113,7 @@ const eppOptions = {
     ],
     'Otro': [
         { id: 'otro_epp', label: 'Otro:', type: 'text' },
-    ],
+    ]
 };
 
 const justificacionOptions = [
