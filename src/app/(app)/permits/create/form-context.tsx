@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
-import type { Permit, ExternalWorker, AnexoATS } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
@@ -14,6 +14,7 @@ type FormAction =
   | { type: 'UPDATE_GENERAL_INFO'; payload: Partial<FormState['generalInfo']> }
   | { type: 'UPDATE_WORK_TYPES'; payload: { type: keyof FormState['selectedWorkTypes'], value: boolean } }
   | { type: 'UPDATE_ATS'; payload: Partial<FormState['anexoATS']> }
+  | { type: 'UPDATE_ANEXO_ALTURA'; payload: Partial<FormState['anexoAltura']> }
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
@@ -55,6 +56,57 @@ const initialState: FormState = {
     justificacion: {},
     protocolosBioseguridad: 'no'
   },
+  anexoAltura: {
+    tipoEstructura: {
+        escaleraCuerpo: false,
+        escaleraDosCuerpos: false,
+        andamioTubular: false,
+        andamioColgante: false,
+        plataforma: false,
+        manLift: false,
+        otros: false,
+        otrosCual: '',
+    },
+    aspectosSeguridad: {},
+    requerimientoClaridad: '',
+    precauciones: {},
+    afectaciones: {
+        riesgoOtrasAreas: 'na',
+        otrasAreasRiesgo: 'na',
+        personalNotificado: 'na',
+        observaciones: '',
+    },
+    coordinadorTrabajosAltura: {
+        nombre: '',
+        cedula: '',
+        firma: '',
+    },
+    validacion: {
+        autoridad: [],
+        responsable: [],
+    },
+    cancelacion: {
+        seCancelo: 'no',
+        razon: '',
+        nombre: '',
+        firma: '',
+        fecha: '',
+    },
+    cierre: {
+        seTermino: 'no',
+        observaciones: '',
+        autoridad: {
+            fecha: '',
+            nombre: '',
+            firma: '',
+        },
+        responsable: {
+            fecha: '',
+            nombre: '',
+            firma: '',
+        },
+    },
+  },
   workers: [],
 };
 
@@ -75,6 +127,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
         return {
             ...state,
             anexoATS: { ...state.anexoATS, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_ALTURA':
+        return {
+            ...state,
+            anexoAltura: { ...state.anexoAltura, ...action.payload },
         }
     case 'SET_WORKERS':
         return {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -285,7 +284,7 @@ export function AtsStep() {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si`}>SI</Label>
+                    <Label htmlFor="bioseguridad-si">SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
@@ -364,5 +363,3 @@ export function AtsStep() {
     </div>
   );
 }
-
-    

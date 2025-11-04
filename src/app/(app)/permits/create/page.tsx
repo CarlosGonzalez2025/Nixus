@@ -55,6 +55,7 @@ import Image from 'next/image';
 import { PermitFormProvider, usePermitForm } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
 import { AtsStep } from './components/AtsStep';
+import { AnexoAlturaStep } from './components/AnexoAlturaStep';
 
 
 const workerRoles = [
@@ -280,6 +281,26 @@ function CreatePermitWizard() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
+  
+  const renderStepContent = () => {
+    const currentStepLabel = steps[step - 1]?.label;
+    switch (currentStepLabel) {
+      case "Info General":
+        return <GeneralInfoStep />;
+      case "ATS y Peligros":
+        return <AtsStep />;
+      case "Anexo Altura":
+        return <AnexoAlturaStep />;
+      // Add other cases as you create the components
+      default:
+        return (
+          <div className="text-center p-8">
+            <h3 className="text-xl font-bold">Paso en Construcción</h3>
+            <p className="text-muted-foreground">{currentStepLabel}</p>
+          </div>
+        );
+    }
+  };
 
   return (
     <>
@@ -353,76 +374,7 @@ function CreatePermitWizard() {
       
       <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
         <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
-          {currentStepInfo.label === "Info General" && <GeneralInfoStep />}
-          {currentStepInfo.label === "ATS y Peligros" && <AtsStep />}
-
-          {/* ... otros pasos del formulario irán aquí ... */}
-
-          {currentStepInfo.label === "Revisión" && (
-             <div className="space-y-8">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Revisión Final y Envío
-                </h2>
-                <p className="text-muted-foreground text-sm">Verifique toda la información antes de enviar</p>
-              </div>
-                <div className="border-2 border-gray-200 rounded-xl p-6">
-                   <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
-                    <Wand2 size={24} />
-                    Análisis de Riesgo con IA
-                  </h3>
-                   <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <Button
-                        type="button"
-                        onClick={handleAssessRisk}
-                        disabled={isAssessing}
-                        variant="outline"
-                      >
-                        {isAssessing ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Wand2 className="mr-2 h-4 w-4" />
-                        )}
-                        Evaluar Riesgo con IA
-                      </Button>
-                      {recommendations &&
-                        <p className="flex-1 text-sm text-muted-foreground p-4 bg-muted rounded-md">{recommendations}</p>
-                      }
-                      {isAssessing && <p className="flex-1 text-sm text-muted-foreground">Analizando...</p>}
-                   </div>
-                 </div>
-
-                 <div className="border-2 border-gray-200 rounded-xl p-6">
-                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2" style={{ color: colors.dark }}>
-                        <Signature size={24} />
-                        Autorizaciones
-                    </h3>
-                    <p className='text-xs text-muted-foreground mb-4'>He tenido conocimiento de la actividad que se realizará en mi área a cargo, valido las recomendaciones descritas en el cuerpo del PERMISO DE TRABAJO Y ATS, realicé inspección de seguridad del área donde se realizará el trabajo (incluir áreas o actividades vecinas), Alerté sobre los riesgos específicos del lugar donde se realizará el trabajo. Se garantizar que las recomendaciones de SST descritas y consignadas serán cumplidas. Verifiqué las buenas condiciones de los equipos y herramientas que serán utilizados. Me aseguré que las personas implicadas están calificadas para la ejecución del servicio y conocen las reglas de seguridad aplicables al trabajo, los procedimientos, normas, políticas aplicables, el plan de emergencias.</p>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
-                            <div>
-                                <p className="font-bold text-gray-700">QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)</p>
-                                <p className="text-sm text-gray-600">{user?.displayName}</p>
-                            </div>
-                            <div className="text-right">
-                               <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente de Firma</p>
-                            </div>
-                        </div>
-                         <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border">
-                            <div>
-                                <p className="font-bold text-gray-700">QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)</p>
-                                <p className="text-sm text-muted-foreground">Pendiente</p>
-                            </div>
-                            <div className="text-right">
-                               <p className="font-semibold text-sm text-yellow-600 flex items-center gap-2"><Clock size={16}/> Pendiente</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-          )}
-
+          {renderStepContent()}
         </div>
 
         {/* Navigation Buttons */}
