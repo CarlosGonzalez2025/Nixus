@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
-import { Signature, Trash2, Plus } from 'lucide-react';
+import { Signature, Trash2, Plus, ChevronDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,6 +25,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
 
 const identificacionPeligros = [
   { id: 'fuentesEnergiaAisladas', label: 'A. ESTAN LAS FUENTES DE ENERGIA (ELECTRICA, MECANICA, HIDRAULICA, TERMICA NEUMATICA) AISLADAS' },
@@ -51,6 +58,16 @@ const identificacionPeligros = [
   { id: 'equiposIntrinsecamenteSeguros', label: 'SE HA VERIFICADO QUE LOS EQUIPOS A USARSE SON INTRINSICAMENTE SEGUROS' },
   { id: 'procedimientoComunicacion', label: 'SE CUENTA CON PROCEDMIENTO DE COMUNICACIÓN CUAL ?' }
 ];
+
+const peligroSections: { title: string, items: string[] }[] = [
+    { title: "Aislamiento y Preparación del Área", items: ['fuentesEnergiaAisladas', 'entradasSalidasFlujoBloqueadas', 'areaDelimitada'] },
+    { title: "Personal y Entrenamiento", items: ['ejecutantesConocenMedidas', 'ejecutantesEntrenados', 'personalSaludable', 'vigiaPermanente'] },
+    { title: "Equipos y Monitoreo", items: ['monitorAtmosferasCalibrado', 'equiposIluminacionExplosion', 'equiposVentilacionExplosion', 'medidasSeguridadEquiposNoExplosion', 'equiposVentilacionSuficientes', 'chequeoVentilacionMecanica', 'chequeoVentilacionNatural', 'equiposIntrinsecamenteSeguros'] },
+    { title: "Emergencias y Rescate", items: ['equiposRespiracionAutonoma', 'elementosAtencionEmergencias', 'planEmergenciaRescate'] },
+    { title: "Materiales y Herramientas", items: ['hojasSeguridadDisponibles', 'verificadoConexionesPuestaTierra', 'herramientasAdecuadas', 'verificadoEpp'] },
+    { title: "Condiciones Adicionales", items: ['circunstanciaModificadora', 'procedimientoComunicacion'] }
+];
+
 
 const precaucionesControles = [
     { id: 'despresurizar', label: 'DESPRESURIZAR' },
@@ -199,17 +216,45 @@ export function AnexoConfinadoStep() {
       </div>
 
       {/* Identificación de Peligros */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Identificación de Peligros y Aspectos</h3>
-        {identificacionPeligros.map(item => (
-            <div key={item.id} className="space-y-2">
-                <RadioGroupField id={`peligro-${item.id}`} label={item.label} value={(anexoConfinado?.identificacionPeligros as any)?.[item.id] || 'na'} onChange={(value) => handleNestedFieldChange('identificacionPeligros', item.id, value)} />
-                {item.id === 'procedimientoComunicacion' && anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && (
-                    <Input className="ml-8" placeholder="Cuál procedimiento de comunicación?" value={anexoConfinado?.procedimientoComunicacionCual || ''} onChange={(e) => handleFieldChange('procedimientoComunicacionCual', e.target.value)} />
-                )}
+        <div className="space-y-4">
+            <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Identificación de Peligros y Aspectos</h3>
+            <div className="space-y-2">
+                {peligroSections.map((section) => (
+                    <Collapsible key={section.title}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
+                                <span className="font-semibold text-gray-700">{section.title}</span>
+                                <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-3">
+                            {section.items.map(itemId => {
+                                const item = identificacionPeligros.find(p => p.id === itemId);
+                                if (!item) return null;
+                                return (
+                                    <div key={item.id} className="space-y-2">
+                                        <RadioGroupField
+                                            id={`peligro-${item.id}`}
+                                            label={item.label}
+                                            value={(anexoConfinado?.identificacionPeligros as any)?.[item.id] || 'na'}
+                                            onChange={(value) => handleNestedFieldChange('identificacionPeligros', item.id, value)}
+                                        />
+                                        {item.id === 'procedimientoComunicacion' && anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && (
+                                            <Input
+                                                className="ml-8 w-[calc(100%-2rem)]"
+                                                placeholder="Cuál procedimiento de comunicación?"
+                                                value={anexoConfinado?.procedimientoComunicacionCual || ''}
+                                                onChange={(e) => handleFieldChange('procedimientoComunicacionCual', e.target.value)}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </CollapsibleContent>
+                    </Collapsible>
+                ))}
             </div>
-        ))}
-      </div>
+        </div>
       
       {/* Precauciones y Controles */}
       <div className="space-y-4">
