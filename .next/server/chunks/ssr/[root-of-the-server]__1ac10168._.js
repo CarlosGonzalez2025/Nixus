@@ -250,13 +250,9 @@ async function sendWhatsAppNotification(messageBody) {
 
 var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_context__;
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
-/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","60319495ff79b3d68f46484d47b850b772acb92317":"updatePermitData","6044c6e2c8ff873e7e6f9064830b738eea3357b21c":"addWorkerToPermit","605b676f916b25092bdb91a57ed59b9a21e218cc8f":"removeWorkerFromPermit","7873b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","78a8fb1a5bbb0529792f4ce5739ca8e2e88e9d13d9":"addDailyValidation","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
-    "addDailyValidation": (()=>addDailyValidation),
+/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","7873b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
     "addSignatureAndNotify": (()=>addSignatureAndNotify),
-    "addWorkerToPermit": (()=>addWorkerToPermit),
     "createPermit": (()=>createPermit),
-    "removeWorkerFromPermit": (()=>removeWorkerFromPermit),
-    "updatePermitData": (()=>updatePermitData),
     "updatePermitStatus": (()=>updatePermitStatus)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
@@ -280,17 +276,8 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 ;
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$dotenv$2f$lib$2f$main$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["config"])();
-// Mapeo actualizado de tipos de trabajo según documentación
 const workTypesMap = {
-    'trabajoAlturas': 'Trabajo en Alturas',
-    'espaciosConfinados': 'Espacios Confinados',
-    'controlEnergia': 'Control de Energías',
-    'izajeCargas': 'Izaje de Cargas',
-    'trabajoCaliente': 'Trabajo en Caliente',
-    'excavaciones': 'Excavaciones',
-    'trabajoGeneral': 'Trabajo General',
-    // Mantener compatibilidad con nomenclatura anterior
-    'altura': 'Trabajo en Alturas',
+    'alturas': 'Trabajo en Alturas',
     'confinado': 'Espacios Confinados',
     'energia': 'Control de Energías',
     'izaje': 'Izaje de Cargas',
@@ -299,20 +286,22 @@ const workTypesMap = {
     'general': 'Trabajo General'
 };
 const getWorkTypesString = (permit)=>{
-    // Priorizar los nuevos campos booleanos
-    const workTypes = [];
-    if (permit.trabajoAlturas) workTypes.push('Trabajo en Alturas');
-    if (permit.espaciosConfinados) workTypes.push('Espacios Confinados');
-    if (permit.controlEnergia) workTypes.push('Control de Energías');
-    if (permit.izajeCargas) workTypes.push('Izaje de Cargas');
-    if (permit.trabajoCaliente) workTypes.push('Trabajo en Caliente');
-    if (permit.excavaciones) workTypes.push('Excavaciones');
-    if (permit.trabajoGeneral) workTypes.push('Trabajo General');
-    // Fallback al campo workType si existe (compatibilidad)
-    if (workTypes.length === 0 && permit.workType && Array.isArray(permit.workType)) {
-        return permit.workType.map((key)=>workTypesMap[key] || key).join(', ');
+    const selectedTypes = [];
+    if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
+    if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
+    if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+    if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
+    if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
+    if (permit.excavaciones) selectedTypes.push('Excavaciones');
+    if (selectedTypes.length === 0) {
+        if (permit.trabajoGeneral) return 'Trabajo General';
+        // Fallback for old data structure
+        if (permit.workType && Array.isArray(permit.workType)) {
+            return permit.workType.map((key)=>workTypesMap[key] || key).join(', ');
+        }
+        return 'Trabajo General';
     }
-    return workTypes.length > 0 ? workTypes.join(', ') : 'Trabajo General';
+    return selectedTypes.join(', ');
 };
 const getStatusText = (status)=>{
     const statusText = {
@@ -358,13 +347,11 @@ async function createPermit(data) {
             status: 'pendiente'
         }
     };
-    // Preparar el payload del permiso con la nueva estructura
     const permitPayload = {
         ...permitData,
         status: 'pendiente_revision',
         createdBy: userId,
         createdAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
-        fechaCreacion: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
         user: {
             displayName: userDisplayName,
             email: userEmail,
@@ -373,46 +360,13 @@ async function createPermit(data) {
         approvals: initialApprovals,
         closure: {}
     };
-    // Convertir fechas a Timestamp si existen
-    if (permitData.fechaInicio) {
-        permitPayload.fechaInicio = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
-    }
-    if (permitData.fechaFin) {
-        permitPayload.fechaFin = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
-    }
-    // Solo incluir anexos si los tipos de trabajo correspondientes están seleccionados
-    if (permitData.trabajoAlturas && permitData.anexoAlturas) {
-        permitPayload.anexoAlturas = permitData.anexoAlturas;
-    }
-    if (permitData.espaciosConfinados && permitData.anexoConfinado) {
-        permitPayload.anexoConfinado = permitData.anexoConfinado;
-    }
-    if (permitData.controlEnergia && permitData.anexoEnergias) {
-        permitPayload.anexoEnergias = permitData.anexoEnergias;
-    }
-    if (permitData.izajeCargas && permitData.anexoIzaje) {
-        permitPayload.anexoIzaje = permitData.anexoIzaje;
-    }
-    if (permitData.excavaciones && permitData.anexoExcavaciones) {
-        permitPayload.anexoExcavaciones = permitData.anexoExcavaciones;
-    }
-    // Mantener compatibilidad con anexoATS si existe
-    if (permitData.anexoATS) {
-        permitPayload.anexoATS = permitData.anexoATS;
-    }
-    // Mantener compatibilidad con workType para sistemas legacy
-    if (permitData.workType && permitData.workType.length > 0) {
-        permitPayload.workType = permitData.workType;
-    }
     try {
         const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(permitPayload);
         const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
         await docRef.update({
-            number: permitNumber,
-            numeroPermiso: permitNumber
+            number: permitNumber
         });
         console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
-        // Obtener tipos de trabajo para la notificación
         const workTypesText = getWorkTypesString(permitPayload);
         const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${docRef.id}`;
@@ -421,10 +375,7 @@ Se ha creado una nueva solicitud de permiso de trabajo.
 
 📄 *Número:* ${permitNumber}
 👤 *Solicitante:* ${userDisplayName || 'N/A'}
-📍 *Área:* ${permitData.areaEspecifica || 'N/A'}
-🏭 *Planta:* ${permitData.planta || 'N/A'}
 🛠️ *Tipo de Trabajo:* ${workTypesText}
-📝 *Descripción:* ${permitData.descripcionTarea?.substring(0, 100) || 'N/A'}${permitData.descripcionTarea && permitData.descripcionTarea.length > 100 ? '...' : ''}
 
 Por favor, revise la solicitud para su aprobación en el siguiente enlace:
 ${permitUrl}`;
@@ -474,15 +425,12 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         const signatureRoleName = signatureRoles[role] || role;
         const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
-        const workTypesText = getWorkTypesString(permitData);
         const messageBody = `*Notificación de Firma - SGPT* 🖋️
-El permiso *${permitData.number || permitData.numeroPermiso || permitId}* ha sido firmado.
+El permiso *${permitData.number || permitId}* ha sido firmado.
 
 👤 *Quién firmó:* ${user.displayName || 'N/A'}
 ✨ *Rol:* ${signatureRoleName}
 ✍️ *Tipo de firma:* ${signatureType === 'firmaApertura' ? 'Apertura' : 'Cierre'}
-📍 *Área:* ${permitData.areaEspecifica || 'N/A'}
-🛠️ *Tipo de Trabajo:* ${workTypesText}
 
 Puede ver los detalles aquí:
 ${permitUrl}`;
@@ -517,7 +465,7 @@ async function updatePermitStatus(permitId, status, reason, closureData) {
         if (status === 'cerrado') {
             updateData.closure = {
                 ...closureData || {},
-                fechaCierre: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
+                fechaCierre: new Date().toISOString().split('T')[0]
             };
         }
         await docRef.update(updateData);
@@ -525,30 +473,17 @@ async function updatePermitStatus(permitId, status, reason, closureData) {
         const permitDoc = await docRef.get();
         const permitData = permitDoc.data();
         const statusText = getStatusText(status);
-        const workTypesText = getWorkTypesString(permitData);
         const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
         let messageBody = `*Actualización de Estado - SGPT* 🔄
-El estado del permiso *${permitData.number || permitData.numeroPermiso || permitId}* ha cambiado.
+El estado del permiso *${permitData.number || permitId}* ha cambiado.
 
 *Nuevo Estado:* ${statusText}
-📍 *Área:* ${permitData.areaEspecifica || 'N/A'}
-🏭 *Planta:* ${permitData.planta || 'N/A'}
-🛠️ *Tipo de Trabajo:* ${workTypesText}
 
 Puede ver los detalles aquí:
 ${permitUrl}`;
         if (status === 'rechazado' && reason) {
             messageBody += `\n\n*Motivo del rechazo:* ${reason}`;
-        }
-        if (status === 'cerrado' && closureData) {
-            messageBody += `\n\n*Información de cierre:*`;
-            if (closureData.areaDespejada) {
-                messageBody += `\n• Área despejada: ${closureData.areaDespejada}`;
-            }
-            if (closureData.informoResponsable) {
-                messageBody += `\n• Informó al responsable: ${closureData.informoResponsable}`;
-            }
         }
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendWhatsAppNotification"])(messageBody);
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
@@ -565,143 +500,15 @@ ${permitUrl}`;
         };
     }
 }
-async function updatePermitData(permitId, updateData) {
-    if (!permitId) {
-        return {
-            success: false,
-            error: 'Permit ID is required.'
-        };
-    }
-    try {
-        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
-        // Limpiar datos undefined
-        const cleanData = Object.fromEntries(Object.entries(updateData).filter(([_, v])=>v !== undefined));
-        await docRef.update(cleanData);
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
-        return {
-            success: true
-        };
-    } catch (error) {
-        console.error("❌ Error updating permit data:", error);
-        return {
-            success: false,
-            error: error.message || 'Could not update permit data.'
-        };
-    }
-}
-async function addDailyValidation(permitId, anexoType, validationType, validationData) {
-    if (!permitId || !anexoType || !validationType) {
-        return {
-            success: false,
-            error: 'Faltan parámetros requeridos.'
-        };
-    }
-    try {
-        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
-        const permitDoc = await docRef.get();
-        const permitData = permitDoc.data();
-        if (!permitData[anexoType]) {
-            return {
-                success: false,
-                error: `El anexo ${anexoType} no existe en este permiso.`
-            };
-        }
-        const anexo = permitData[anexoType];
-        if (!anexo.validacionDiaria) {
-            anexo.validacionDiaria = [];
-        }
-        // Agregar la validación
-        anexo.validacionDiaria.push(validationData);
-        await docRef.update({
-            [anexoType]: anexo
-        });
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
-        return {
-            success: true
-        };
-    } catch (error) {
-        console.error("❌ Error adding daily validation:", error);
-        return {
-            success: false,
-            error: error.message || 'No se pudo agregar la validación diaria.'
-        };
-    }
-}
-async function addWorkerToPermit(permitId, worker) {
-    if (!permitId || !worker) {
-        return {
-            success: false,
-            error: 'Faltan parámetros requeridos.'
-        };
-    }
-    try {
-        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
-        await docRef.update({
-            workers: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].arrayUnion(worker)
-        });
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
-        return {
-            success: true
-        };
-    } catch (error) {
-        console.error("❌ Error adding worker:", error);
-        return {
-            success: false,
-            error: error.message || 'No se pudo agregar el trabajador.'
-        };
-    }
-}
-async function removeWorkerFromPermit(permitId, workerCedula) {
-    if (!permitId || !workerCedula) {
-        return {
-            success: false,
-            error: 'Faltan parámetros requeridos.'
-        };
-    }
-    try {
-        const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
-        const permitDoc = await docRef.get();
-        const permitData = permitDoc.data();
-        if (!permitData.workers) {
-            return {
-                success: false,
-                error: 'No hay trabajadores en este permiso.'
-            };
-        }
-        const updatedWorkers = permitData.workers.filter((w)=>w.cedula !== workerCedula);
-        await docRef.update({
-            workers: updatedWorkers
-        });
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
-        return {
-            success: true
-        };
-    } catch (error) {
-        console.error("❌ Error removing worker:", error);
-        return {
-            success: false,
-            error: error.message || 'No se pudo eliminar el trabajador.'
-        };
-    }
-}
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
     createPermit,
     addSignatureAndNotify,
-    updatePermitStatus,
-    updatePermitData,
-    addDailyValidation,
-    addWorkerToPermit,
-    removeWorkerFromPermit
+    updatePermitStatus
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(createPermit, "401402f01c0118016efe5c5d736d335e2f6d150079", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addSignatureAndNotify, "7c15bdb6ac388e78a59299d5091891127d63de7bc6", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updatePermitStatus, "7873b9c7850e737568a6f6f7a4e17cda15a8f18e15", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updatePermitData, "60319495ff79b3d68f46484d47b850b772acb92317", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addDailyValidation, "78a8fb1a5bbb0529792f4ce5739ca8e2e88e9d13d9", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addWorkerToPermit, "6044c6e2c8ff873e7e6f9064830b738eea3357b21c", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(removeWorkerFromPermit, "605b676f916b25092bdb91a57ed59b9a21e218cc8f", null);
 __turbopack_async_result__();
 } catch(e) { __turbopack_async_result__(e); } }, false);}),
 "[project]/.next-internal/server/app/(app)/permits/create/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript) <locals>": ((__turbopack_context__) => {
