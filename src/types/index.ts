@@ -70,15 +70,12 @@ export type JustificacionATS = {
 }
 
 export type AnexoATS = {
-  area: string;
-  solicitante: string;
-  fechaInicio: string;
-  fechaTerminacion: string;
-  descripcionTarea: string;
-  peligros: { [key: string]: 'si' | 'no' | 'na' };
-  epp: { [key: string]: 'si' | 'no' | 'na' };
-  causalesSuspension: string;
-  justificacion: JustificacionATS;
+  peligros?: { [key: string]: 'si' | 'no' };
+  controles?: { [key: string]: 'si' | 'no' | 'na' };
+  epp?: { [key: string]: boolean | string };
+  justificacion?: { [key: string]: boolean };
+  protocolosBioseguridad?: 'si' | 'no';
+  peligrosAdicionales?: { peligro: string, descripcion: string }[];
 };
 
 export type ValidacionDiaria = {

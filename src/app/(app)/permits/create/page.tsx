@@ -54,6 +54,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { PermitFormProvider, usePermitForm } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
+import { AtsStep } from './components/AtsStep';
 
 
 const workerRoles = [
@@ -353,6 +354,7 @@ function CreatePermitWizard() {
       <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
         <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
           {currentStepInfo.label === "Info General" && <GeneralInfoStep />}
+          {currentStepInfo.label === "ATS y Peligros" && <AtsStep />}
 
           {/* ... otros pasos del formulario irán aquí ... */}
 

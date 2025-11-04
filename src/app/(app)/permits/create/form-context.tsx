@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
-import type { Permit, ExternalWorker } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
@@ -13,6 +13,7 @@ interface FormState extends PermitFormData {}
 type FormAction =
   | { type: 'UPDATE_GENERAL_INFO'; payload: Partial<FormState['generalInfo']> }
   | { type: 'UPDATE_WORK_TYPES'; payload: { type: keyof FormState['selectedWorkTypes'], value: boolean } }
+  | { type: 'UPDATE_ATS'; payload: Partial<FormState['anexoATS']> }
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
@@ -47,6 +48,13 @@ const initialState: FormState = {
     excavacion: false,
     general: false,
   },
+  anexoATS: {
+    peligros: {},
+    controles: {},
+    epp: {},
+    justificacion: {},
+    protocolosBioseguridad: 'no'
+  },
   workers: [],
 };
 
@@ -62,6 +70,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
         return {
             ...state,
             selectedWorkTypes: { ...state.selectedWorkTypes, [action.payload.type]: action.payload.value }
+        }
+    case 'UPDATE_ATS':
+        return {
+            ...state,
+            anexoATS: { ...state.anexoATS, ...action.payload },
         }
     case 'SET_WORKERS':
         return {
