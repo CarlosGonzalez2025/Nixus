@@ -324,6 +324,16 @@ export type AnexoExcavaciones = {
   };
 };
 
+export type VerificacionPeligros = {
+  fisicos?: { [key: string]: 'si' | 'no' | 'na' };
+  quimicos?: { [key: string]: 'si' | 'no' | 'na' };
+  seguridad?: { [key: string]: 'si' | 'no' | 'na' };
+  locativos?: { [key: string]: 'si' | 'no' | 'na' };
+  biologicoAmbiental?: { [key: string]: 'si' | 'no' | 'na' };
+  biomecanicos?: { [key: string]: 'si' | 'no' | 'na' };
+  psicosocial?: { [key: string]: 'si' | 'no' | 'na' };
+};
+
 export type PermitGeneralInfo = {
     areaEspecifica: string;
     planta: string;
@@ -403,4 +413,5 @@ export type Permit = {
   anexoIzaje?: Partial<AnexoIzaje>;
   anexoCaliente?: Partial<AnexoCaliente>;
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
+  verificacionPeligros?: Partial<VerificacionPeligros>;
 }
