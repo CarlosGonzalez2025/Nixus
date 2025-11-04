@@ -291,7 +291,37 @@ export type AnexoCaliente = {
 };
 
 export type AnexoExcavaciones = {
-    // Definir campos específicos para excavaciones
+  emergencia?: {
+    contacto: string;
+    telefono: string;
+  };
+  informacionGeneral: {
+    dimensiones: string;
+    profundidad: string;
+    ancho: string;
+    largo: string;
+  };
+  aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
+  precauciones: { [key: string]: boolean };
+  autoridadArea?: Partial<AutorizacionPersona>;
+  responsableTrabajo?: Partial<AutorizacionPersona>;
+  validacion?: {
+    autoridad: ValidacionDiaria[];
+    responsable: ValidacionDiaria[];
+  };
+  cancelacion?: {
+    seCancelo: 'si' | 'no';
+    razon: string;
+    nombre: string;
+    firma: string;
+    fecha: string;
+  };
+  cierre?: {
+    seTermino: 'si' | 'no';
+    observaciones: string;
+    autoridad?: Partial<AutorizacionPersona>;
+    responsable?: Partial<AutorizacionPersona>;
+  };
 };
 
 export type PermitGeneralInfo = {

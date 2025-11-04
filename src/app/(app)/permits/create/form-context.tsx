@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
-import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
@@ -18,6 +18,7 @@ type FormAction =
   | { type: 'UPDATE_ANEXO_CONFINADO'; payload: Partial<FormState['anexoConfinado']> }
   | { type: 'UPDATE_ANEXO_ENERGIA'; payload: Partial<FormState['anexoEnergias']> }
   | { type: 'UPDATE_ANEXO_IZAJE'; payload: Partial<FormState['anexoIzaje']> }
+  | { type: 'UPDATE_ANEXO_EXCAVACIONES'; payload: Partial<FormState['anexoExcavaciones']> }
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
@@ -122,6 +123,16 @@ const initialState: FormState = {
     aspectosRequeridos: {},
     precauciones: {},
   },
+  anexoExcavaciones: {
+    informacionGeneral: {
+      dimensiones: '',
+      profundidad: '',
+      ancho: '',
+      largo: '',
+    },
+    aspectosRequeridos: {},
+    precauciones: {},
+  },
   workers: [],
 };
 
@@ -162,6 +173,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
         return {
             ...state,
             anexoIzaje: { ...state.anexoIzaje, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_EXCAVACIONES':
+        return {
+            ...state,
+            anexoExcavaciones: { ...state.anexoExcavaciones, ...action.payload },
         }
     case 'SET_WORKERS':
         return {

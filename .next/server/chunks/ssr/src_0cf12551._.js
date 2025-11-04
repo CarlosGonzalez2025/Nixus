@@ -8808,7 +8808,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$t
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/signature-pad.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/textarea.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/image.js [app-ssr] (ecmascript)");
 'use client';
+;
 ;
 ;
 ;
@@ -8840,25 +8842,25 @@ const SectionWrapper = ({ title, children, defaultOpen = false })=>{
                             children: title
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 23,
+                            lineNumber: 25,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                             className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 24,
+                            lineNumber: 26,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 22,
+                    lineNumber: 24,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 21,
+                lineNumber: 23,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -8866,13 +8868,13 @@ const SectionWrapper = ({ title, children, defaultOpen = false })=>{
                 children: children
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 27,
+                lineNumber: 29,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-        lineNumber: 20,
+        lineNumber: 22,
         columnNumber: 5
     }, this);
 };
@@ -8885,7 +8887,7 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                 children: label
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 36,
+                lineNumber: 38,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -8902,62 +8904,12 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                                 id: `${id}-si`
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 38,
+                                lineNumber: 40,
                                 columnNumber: 58
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
                                 htmlFor: `${id}-si`,
                                 children: "SI"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 38,
-                                columnNumber: 103
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 38,
-                        columnNumber: 13
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center space-x-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
-                                value: "no",
-                                id: `${id}-no`
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 39,
-                                columnNumber: 58
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                htmlFor: `${id}-no`,
-                                children: "NO"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 39,
-                                columnNumber: 103
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 39,
-                        columnNumber: 13
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center space-x-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
-                                value: "na",
-                                id: `${id}-na`
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 40,
-                                columnNumber: 58
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
-                                htmlFor: `${id}-na`,
-                                children: "N/A"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
                                 lineNumber: 40,
@@ -8968,17 +8920,67 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
                         lineNumber: 40,
                         columnNumber: 13
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center space-x-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
+                                value: "no",
+                                id: `${id}-no`
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                lineNumber: 41,
+                                columnNumber: 58
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
+                                htmlFor: `${id}-no`,
+                                children: "NO"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                lineNumber: 41,
+                                columnNumber: 103
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                        lineNumber: 41,
+                        columnNumber: 13
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center space-x-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
+                                value: "na",
+                                id: `${id}-na`
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                lineNumber: 42,
+                                columnNumber: 58
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
+                                htmlFor: `${id}-na`,
+                                children: "N/A"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                lineNumber: 42,
+                                columnNumber: 103
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                        lineNumber: 42,
+                        columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 37,
+                lineNumber: 39,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-        lineNumber: 35,
+        lineNumber: 37,
         columnNumber: 5
     }, this);
 const accionRealizarOptions = [
@@ -9210,33 +9212,25 @@ function AnexoIzajeStep() {
             }
         });
     };
-    const handleDeepNestedChange = (section, subSection, field, value)=>{
-        handleNestedChange('informacionGeneral', section, {
-            ...anexoIzaje.informacionGeneral[section] || {},
-            [field]: value
-        });
-    };
-    const handleDeepestNestedChange = (section, subSection, field, value)=>{
-        const mainSection = anexoIzaje[section];
-        const sub = mainSection?.[subSection] || {};
+    const handleCheckboxGroupChange = (section, subSection, field, value)=>{
+        const currentSubSection = anexoIzaje[section]?.[subSection] || {};
         handleNestedChange(section, subSection, {
-            ...sub,
+            ...currentSubSection,
             [field]: value
         });
     };
     const handleListChange = (section, list, index, field, value)=>{
-        const currentList = anexoIzaje[section]?.[list] || [];
-        const newList = [
-            ...currentList
+        const currentList = [
+            ...anexoIzaje[section]?.[list] || []
         ];
-        newList[index] = {
-            ...newList[index],
+        currentList[index] = {
+            ...currentList[index],
             [field]: value
         };
-        handleNestedChange(section, list, newList);
+        handleNestedChange(section, list, currentList);
     };
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (!anexoIzaje.validacion) {
+        if (!anexoIzaje.validacion || !anexoIzaje.validacion.autoridad || anexoIzaje.validacion.autoridad.length === 0) {
             const authorityValidation = Array(7).fill(0).map((_, i)=>({
                     dia: i + 1,
                     nombre: '',
@@ -9249,8 +9243,12 @@ function AnexoIzajeStep() {
                     firma: '',
                     fecha: ''
                 }));
-            handleNestedChange('validacion', 'autoridad', authorityValidation);
-            handleNestedChange('validacion', 'responsable', responsibleValidation);
+            handleUpdate({
+                validacion: {
+                    autoridad: authorityValidation,
+                    responsable: responsibleValidation
+                }
+            });
         }
     }, [
         anexoIzaje.validacion
@@ -9271,7 +9269,12 @@ function AnexoIzajeStep() {
             handleListChange(valSection, list, index, 'firma', signature);
         } else if (section.startsWith('cierre.')) {
             const [cierreSection, subSection] = section.split('.');
-            handleDeepestNestedChange('cierre', subSection, 'firma', signature);
+            handleNestedChange('cierre', subSection, {
+                ...anexoIzaje.cierre?.[subSection] || {},
+                firma: signature
+            });
+        } else if (section === 'cancelacion') {
+            handleNestedChange('cancelacion', 'firma', signature);
         } else {
             handleNestedChange(section, 'firma', signature);
         }
@@ -9288,7 +9291,7 @@ function AnexoIzajeStep() {
                         children: "Anexo de Izaje de Cargas"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 179,
+                        lineNumber: 172,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9296,13 +9299,13 @@ function AnexoIzajeStep() {
                         children: "Complete la información requerida para el izaje de cargas."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 180,
+                        lineNumber: 173,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 178,
+                lineNumber: 171,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9318,7 +9321,7 @@ function AnexoIzajeStep() {
                                         children: "Emitido por:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 185,
+                                        lineNumber: 178,
                                         columnNumber: 26
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9327,13 +9330,13 @@ function AnexoIzajeStep() {
                                         disabled: true
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 185,
+                                        lineNumber: 178,
                                         columnNumber: 53
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 185,
+                                lineNumber: 178,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9342,7 +9345,7 @@ function AnexoIzajeStep() {
                                         children: "Área de Trabajo:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 186,
+                                        lineNumber: 179,
                                         columnNumber: 26
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9351,19 +9354,19 @@ function AnexoIzajeStep() {
                                         disabled: true
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 186,
+                                        lineNumber: 179,
                                         columnNumber: 57
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 186,
+                                lineNumber: 179,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 184,
+                        lineNumber: 177,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9375,7 +9378,7 @@ function AnexoIzajeStep() {
                                         children: "En caso de emergencia contactar a:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 189,
+                                        lineNumber: 182,
                                         columnNumber: 26
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9383,13 +9386,13 @@ function AnexoIzajeStep() {
                                         onChange: (e)=>handleNestedChange('emergencia', 'contacto', e.target.value)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 189,
+                                        lineNumber: 182,
                                         columnNumber: 75
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 189,
+                                lineNumber: 182,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9398,7 +9401,7 @@ function AnexoIzajeStep() {
                                         children: "Teléfono:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 190,
+                                        lineNumber: 183,
                                         columnNumber: 26
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9406,25 +9409,25 @@ function AnexoIzajeStep() {
                                         onChange: (e)=>handleNestedChange('emergencia', 'telefono', e.target.value)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 190,
+                                        lineNumber: 183,
                                         columnNumber: 50
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 190,
+                                lineNumber: 183,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 188,
+                        lineNumber: 181,
                         columnNumber: 18
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 183,
+                lineNumber: 176,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9439,7 +9442,7 @@ function AnexoIzajeStep() {
                                     children: "Acción a Realizar"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 197,
+                                    lineNumber: 190,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9449,11 +9452,11 @@ function AnexoIzajeStep() {
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Checkbox"], {
                                                     id: `accion-${o.id}`,
-                                                    checked: anexoIzaje.informacionGeneral?.accion?.[o.id],
-                                                    onCheckedChange: (c)=>handleDeepNestedChange('accion', o.id, !!c)
+                                                    checked: anexoIzaje.informacionGeneral?.accion?.[o.id] || false,
+                                                    onCheckedChange: (c)=>handleCheckboxGroupChange('informacionGeneral', 'accion', o.id, !!c)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 200,
+                                                    lineNumber: 193,
                                                     columnNumber: 85
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -9461,24 +9464,24 @@ function AnexoIzajeStep() {
                                                     children: o.label
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 200,
-                                                    columnNumber: 244
+                                                    lineNumber: 193,
+                                                    columnNumber: 278
                                                 }, this)
                                             ]
                                         }, o.id, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 200,
+                                            lineNumber: 193,
                                             columnNumber: 33
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 198,
+                                    lineNumber: 191,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 196,
+                            lineNumber: 189,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9488,7 +9491,7 @@ function AnexoIzajeStep() {
                                     children: "Peso de la Carga"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 205,
+                                    lineNumber: 198,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9498,11 +9501,11 @@ function AnexoIzajeStep() {
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Checkbox"], {
                                                     id: `peso-${o.id}`,
-                                                    checked: anexoIzaje.informacionGeneral?.pesoCarga?.[o.id],
-                                                    onCheckedChange: (c)=>handleDeepNestedChange('pesoCarga', o.id, !!c)
+                                                    checked: anexoIzaje.informacionGeneral?.pesoCarga?.[o.id] || false,
+                                                    onCheckedChange: (c)=>handleCheckboxGroupChange('informacionGeneral', 'pesoCarga', o.id, !!c)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 208,
+                                                    lineNumber: 201,
                                                     columnNumber: 85
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -9510,24 +9513,24 @@ function AnexoIzajeStep() {
                                                     children: o.label
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 208,
-                                                    columnNumber: 248
+                                                    lineNumber: 201,
+                                                    columnNumber: 282
                                                 }, this)
                                             ]
                                         }, o.id, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 208,
+                                            lineNumber: 201,
                                             columnNumber: 33
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 206,
+                                    lineNumber: 199,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 204,
+                            lineNumber: 197,
                             columnNumber: 22
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9537,7 +9540,7 @@ function AnexoIzajeStep() {
                                     children: "Equipo a Utilizar"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 213,
+                                    lineNumber: 206,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9547,11 +9550,11 @@ function AnexoIzajeStep() {
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Checkbox"], {
                                                     id: `equipo-${o.id}`,
-                                                    checked: anexoIzaje.informacionGeneral?.equipoUtilizar?.[o.id],
-                                                    onCheckedChange: (c)=>handleDeepNestedChange('equipoUtilizar', o.id, !!c)
+                                                    checked: anexoIzaje.informacionGeneral?.equipoUtilizar?.[o.id] || false,
+                                                    onCheckedChange: (c)=>handleCheckboxGroupChange('informacionGeneral', 'equipoUtilizar', o.id, !!c)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 216,
+                                                    lineNumber: 209,
                                                     columnNumber: 85
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -9559,24 +9562,24 @@ function AnexoIzajeStep() {
                                                     children: o.label
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 216,
-                                                    columnNumber: 260
+                                                    lineNumber: 209,
+                                                    columnNumber: 294
                                                 }, this)
                                             ]
                                         }, o.id, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 216,
+                                            lineNumber: 209,
                                             columnNumber: 33
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 214,
+                                    lineNumber: 207,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 212,
+                            lineNumber: 205,
                             columnNumber: 22
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9587,33 +9590,33 @@ function AnexoIzajeStep() {
                                     children: "Capacidad del Equipo"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 221,
+                                    lineNumber: 214,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                     id: "capacidadEquipo",
-                                    value: anexoIzaje.informacionGeneral?.capacidadEquipo,
+                                    value: anexoIzaje.informacionGeneral?.capacidadEquipo || '',
                                     onChange: (e)=>handleNestedChange('informacionGeneral', 'capacidadEquipo', e.target.value)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 222,
+                                    lineNumber: 215,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 220,
+                            lineNumber: 213,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 195,
+                    lineNumber: 188,
                     columnNumber: 18
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 194,
+                lineNumber: 187,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9623,21 +9626,21 @@ function AnexoIzajeStep() {
                     children: aspectosRequeridos.map((a)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                             id: `aspecto-${a.id}`,
                             label: a.label,
-                            value: anexoIzaje.aspectosRequeridos?.[a.id],
+                            value: anexoIzaje.aspectosRequeridos?.[a.id] || 'na',
                             onChange: (v)=>handleNestedChange('aspectosRequeridos', a.id, v)
                         }, a.id, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 230,
+                            lineNumber: 223,
                             columnNumber: 25
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 228,
+                    lineNumber: 221,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 227,
+                lineNumber: 220,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9649,11 +9652,11 @@ function AnexoIzajeStep() {
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Checkbox"], {
                                     id: `preca-${p.id}`,
-                                    checked: anexoIzaje.precauciones?.[p.id],
+                                    checked: anexoIzaje.precauciones?.[p.id] || false,
                                     onCheckedChange: (c)=>handleNestedChange('precauciones', p.id, !!c)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 238,
+                                    lineNumber: 231,
                                     columnNumber: 77
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -9661,23 +9664,23 @@ function AnexoIzajeStep() {
                                     children: p.label
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 238,
-                                    columnNumber: 223
+                                    lineNumber: 231,
+                                    columnNumber: 232
                                 }, this)
                             ]
                         }, p.id, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 238,
+                            lineNumber: 231,
                             columnNumber: 25
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 236,
+                    lineNumber: 229,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 235,
+                lineNumber: 228,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9693,15 +9696,15 @@ function AnexoIzajeStep() {
                                     children: "Autoridad del Área"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 246,
+                                    lineNumber: 239,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                     className: "text-xs text-muted-foreground mb-4",
-                                    children: '"Al firmar como Autoridad del Area, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos complementarios."'
+                                    children: '"Al firmar como Autoridad del Area, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos  complementarios."'
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 247,
+                                    lineNumber: 240,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9713,7 +9716,7 @@ function AnexoIzajeStep() {
                                             onChange: (e)=>handleNestedChange('autoridadArea', 'nombre', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 249,
+                                            lineNumber: 242,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9723,13 +9726,13 @@ function AnexoIzajeStep() {
                                             onChange: (e)=>handleNestedChange('autoridadArea', 'hora', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 250,
+                                            lineNumber: 243,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 248,
+                                    lineNumber: 241,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -9741,14 +9744,14 @@ function AnexoIzajeStep() {
                                             className: "mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 252,
+                                            lineNumber: 245,
                                             columnNumber: 128
                                         }, this),
                                         "Firmar"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 252,
+                                    lineNumber: 245,
                                     columnNumber: 25
                                 }, this),
                                 anexoIzaje.autoridadArea?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -9757,13 +9760,13 @@ function AnexoIzajeStep() {
                                     className: "mt-2 border rounded-md max-h-20"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 253,
+                                    lineNumber: 246,
                                     columnNumber: 61
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 245,
+                            lineNumber: 238,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9774,7 +9777,7 @@ function AnexoIzajeStep() {
                                     children: "Responsable del Trabajo"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 256,
+                                    lineNumber: 249,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9782,7 +9785,7 @@ function AnexoIzajeStep() {
                                     children: '"Al firmar como Responsable del Trabajo / Ejecutor, Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asosciados a este, dispongo de los recursos necesarios y  tomare las medidas de seguridad."'
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 257,
+                                    lineNumber: 250,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9794,7 +9797,7 @@ function AnexoIzajeStep() {
                                             onChange: (e)=>handleNestedChange('responsableTrabajo', 'nombre', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 259,
+                                            lineNumber: 252,
                                             columnNumber: 30
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9804,13 +9807,13 @@ function AnexoIzajeStep() {
                                             onChange: (e)=>handleNestedChange('responsableTrabajo', 'hora', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 260,
+                                            lineNumber: 253,
                                             columnNumber: 30
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 258,
+                                    lineNumber: 251,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -9822,14 +9825,14 @@ function AnexoIzajeStep() {
                                             className: "mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                            lineNumber: 262,
+                                            lineNumber: 255,
                                             columnNumber: 133
                                         }, this),
                                         "Firmar"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 262,
+                                    lineNumber: 255,
                                     columnNumber: 25
                                 }, this),
                                 anexoIzaje.responsableTrabajo?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -9838,24 +9841,24 @@ function AnexoIzajeStep() {
                                     className: "mt-2 border rounded-md max-h-20"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                    lineNumber: 263,
+                                    lineNumber: 256,
                                     columnNumber: 66
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 255,
+                            lineNumber: 248,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 244,
+                    lineNumber: 237,
                     columnNumber: 18
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 243,
+                lineNumber: 236,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -9872,7 +9875,7 @@ function AnexoIzajeStep() {
                                         children: "Autoridad del Área"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 263,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9880,7 +9883,7 @@ function AnexoIzajeStep() {
                                         children: "Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 271,
+                                        lineNumber: 264,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
@@ -9892,39 +9895,39 @@ function AnexoIzajeStep() {
                                                             children: "Día"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 273,
+                                                            lineNumber: 266,
                                                             columnNumber: 52
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Nombre"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 273,
+                                                            lineNumber: 266,
                                                             columnNumber: 78
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Firma"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 273,
+                                                            lineNumber: 266,
                                                             columnNumber: 107
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Fecha"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 273,
+                                                            lineNumber: 266,
                                                             columnNumber: 135
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 273,
+                                                    lineNumber: 266,
                                                     columnNumber: 42
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 273,
+                                                lineNumber: 266,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -9934,7 +9937,7 @@ function AnexoIzajeStep() {
                                                                 children: i + 1
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 277,
+                                                                lineNumber: 270,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -9944,16 +9947,26 @@ function AnexoIzajeStep() {
                                                                     className: "h-8"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 278,
+                                                                    lineNumber: 271,
                                                                     columnNumber: 52
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 278,
+                                                                lineNumber: 271,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
-                                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                children: v.firma ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                                                    src: v.firma,
+                                                                    alt: "Firma",
+                                                                    width: 60,
+                                                                    height: 30,
+                                                                    className: "border rounded"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                                                    lineNumber: 274,
+                                                                    columnNumber: 49
+                                                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                                                     variant: "ghost",
                                                                     size: "icon",
                                                                     onClick: ()=>openSignatureDialog('validacion.autoridad', undefined, i),
@@ -9961,17 +9974,17 @@ function AnexoIzajeStep() {
                                                                         className: "h-4 w-4"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                        lineNumber: 279,
-                                                                        columnNumber: 162
+                                                                        lineNumber: 276,
+                                                                        columnNumber: 159
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 279,
-                                                                    columnNumber: 52
+                                                                    lineNumber: 276,
+                                                                    columnNumber: 49
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 279,
+                                                                lineNumber: 272,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -9982,35 +9995,35 @@ function AnexoIzajeStep() {
                                                                     className: "h-8"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 280,
+                                                                    lineNumber: 279,
                                                                     columnNumber: 52
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 280,
+                                                                lineNumber: 279,
                                                                 columnNumber: 41
                                                             }, this)
                                                         ]
                                                     }, i, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 276,
+                                                        lineNumber: 269,
                                                         columnNumber: 37
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 274,
+                                                lineNumber: 267,
                                                 columnNumber: 29
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 272,
+                                        lineNumber: 265,
                                         columnNumber: 26
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 269,
+                                lineNumber: 262,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10021,7 +10034,7 @@ function AnexoIzajeStep() {
                                         children: "Responsable del Trabajo/Ejecutor"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 287,
+                                        lineNumber: 286,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -10029,7 +10042,7 @@ function AnexoIzajeStep() {
                                         children: "Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 288,
+                                        lineNumber: 287,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
@@ -10041,39 +10054,39 @@ function AnexoIzajeStep() {
                                                             children: "Día"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 290,
+                                                            lineNumber: 289,
                                                             columnNumber: 52
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Nombre"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 290,
+                                                            lineNumber: 289,
                                                             columnNumber: 78
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Firma"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 290,
+                                                            lineNumber: 289,
                                                             columnNumber: 107
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                             children: "Fecha"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                            lineNumber: 290,
+                                                            lineNumber: 289,
                                                             columnNumber: 135
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                    lineNumber: 290,
+                                                    lineNumber: 289,
                                                     columnNumber: 42
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 290,
+                                                lineNumber: 289,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -10083,7 +10096,7 @@ function AnexoIzajeStep() {
                                                                 children: i + 1
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 294,
+                                                                lineNumber: 293,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -10093,16 +10106,26 @@ function AnexoIzajeStep() {
                                                                     className: "h-8"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 295,
+                                                                    lineNumber: 294,
                                                                     columnNumber: 52
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 295,
+                                                                lineNumber: 294,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
-                                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                children: v.firma ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
+                                                                    src: v.firma,
+                                                                    alt: "Firma",
+                                                                    width: 60,
+                                                                    height: 30,
+                                                                    className: "border rounded"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
+                                                                    lineNumber: 297,
+                                                                    columnNumber: 49
+                                                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                                                     variant: "ghost",
                                                                     size: "icon",
                                                                     onClick: ()=>openSignatureDialog('validacion.responsable', undefined, i),
@@ -10110,17 +10133,17 @@ function AnexoIzajeStep() {
                                                                         className: "h-4 w-4"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                        lineNumber: 296,
-                                                                        columnNumber: 164
+                                                                        lineNumber: 299,
+                                                                        columnNumber: 161
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 296,
-                                                                    columnNumber: 52
+                                                                    lineNumber: 299,
+                                                                    columnNumber: 49
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 296,
+                                                                lineNumber: 295,
                                                                 columnNumber: 41
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -10131,41 +10154,41 @@ function AnexoIzajeStep() {
                                                                     className: "h-8"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                    lineNumber: 297,
+                                                                    lineNumber: 302,
                                                                     columnNumber: 52
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 297,
+                                                                lineNumber: 302,
                                                                 columnNumber: 41
                                                             }, this)
                                                         ]
                                                     }, i, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 293,
+                                                        lineNumber: 292,
                                                         columnNumber: 37
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 291,
+                                                lineNumber: 290,
                                                 columnNumber: 29
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 289,
+                                        lineNumber: 288,
                                         columnNumber: 26
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 286,
+                                lineNumber: 285,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 268,
+                        lineNumber: 261,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10179,7 +10202,7 @@ function AnexoIzajeStep() {
                                         children: "Cancelación del Trabajo"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 306,
+                                        lineNumber: 311,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -10195,7 +10218,7 @@ function AnexoIzajeStep() {
                                                         id: "cancel-si"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 308,
+                                                        lineNumber: 313,
                                                         columnNumber: 74
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -10203,13 +10226,13 @@ function AnexoIzajeStep() {
                                                         children: "SI"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 308,
+                                                        lineNumber: 313,
                                                         columnNumber: 118
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 308,
+                                                lineNumber: 313,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10220,7 +10243,7 @@ function AnexoIzajeStep() {
                                                         id: "cancel-no"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 309,
+                                                        lineNumber: 314,
                                                         columnNumber: 74
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -10228,19 +10251,19 @@ function AnexoIzajeStep() {
                                                         children: "NO"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 309,
+                                                        lineNumber: 314,
                                                         columnNumber: 118
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 309,
+                                                lineNumber: 314,
                                                 columnNumber: 29
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 307,
+                                        lineNumber: 312,
                                         columnNumber: 25
                                     }, this),
                                     anexoIzaje.cancelacion?.seCancelo === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10252,7 +10275,7 @@ function AnexoIzajeStep() {
                                                 onChange: (e)=>handleNestedChange('cancelacion', 'razon', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 313,
+                                                lineNumber: 318,
                                                 columnNumber: 33
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10261,7 +10284,7 @@ function AnexoIzajeStep() {
                                                 onChange: (e)=>handleNestedChange('cancelacion', 'nombre', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 314,
+                                                lineNumber: 319,
                                                 columnNumber: 33
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10270,7 +10293,7 @@ function AnexoIzajeStep() {
                                                 onChange: (e)=>handleNestedChange('cancelacion', 'fecha', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 315,
+                                                lineNumber: 320,
                                                 columnNumber: 33
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10282,14 +10305,14 @@ function AnexoIzajeStep() {
                                                         className: "mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 316,
+                                                        lineNumber: 321,
                                                         columnNumber: 129
                                                     }, this),
                                                     "Firmar Cancelación"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 316,
+                                                lineNumber: 321,
                                                 columnNumber: 33
                                             }, this),
                                             anexoIzaje.cancelacion?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -10298,19 +10321,19 @@ function AnexoIzajeStep() {
                                                 className: "mt-2 border rounded-md max-h-20"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 317,
+                                                lineNumber: 322,
                                                 columnNumber: 67
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 312,
+                                        lineNumber: 317,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 305,
+                                lineNumber: 310,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10321,7 +10344,7 @@ function AnexoIzajeStep() {
                                         children: "Cierre del Permiso"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 322,
+                                        lineNumber: 327,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -10337,7 +10360,7 @@ function AnexoIzajeStep() {
                                                         id: "cierre-si"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 324,
+                                                        lineNumber: 329,
                                                         columnNumber: 74
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -10345,13 +10368,13 @@ function AnexoIzajeStep() {
                                                         children: "SI"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 324,
+                                                        lineNumber: 329,
                                                         columnNumber: 118
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 324,
+                                                lineNumber: 329,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10362,7 +10385,7 @@ function AnexoIzajeStep() {
                                                         id: "cierre-no"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 325,
+                                                        lineNumber: 330,
                                                         columnNumber: 74
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -10370,19 +10393,19 @@ function AnexoIzajeStep() {
                                                         children: "NO"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 325,
+                                                        lineNumber: 330,
                                                         columnNumber: 118
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 325,
+                                                lineNumber: 330,
                                                 columnNumber: 29
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 323,
+                                        lineNumber: 328,
                                         columnNumber: 26
                                     }, this),
                                     anexoIzaje.cierre?.seTermino === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10394,7 +10417,7 @@ function AnexoIzajeStep() {
                                                 onChange: (e)=>handleNestedChange('cierre', 'observaciones', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 329,
+                                                lineNumber: 334,
                                                 columnNumber: 33
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10405,26 +10428,32 @@ function AnexoIzajeStep() {
                                                         children: "Autoridad del Área"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 331,
+                                                        lineNumber: 336,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                         placeholder: "Nombre",
                                                         value: anexoIzaje.cierre.autoridad?.nombre || '',
-                                                        onChange: (e)=>handleDeepestNestedChange('cierre', 'autoridad', 'nombre', e.target.value)
+                                                        onChange: (e)=>handleNestedChange('cierre', 'autoridad', {
+                                                                ...anexoIzaje.cierre.autoridad,
+                                                                nombre: e.target.value
+                                                            })
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 332,
+                                                        lineNumber: 337,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                         type: "date",
                                                         className: "mt-2",
                                                         value: anexoIzaje.cierre.autoridad?.fecha || '',
-                                                        onChange: (e)=>handleDeepestNestedChange('cierre', 'autoridad', 'fecha', e.target.value)
+                                                        onChange: (e)=>handleNestedChange('cierre', 'autoridad', {
+                                                                ...anexoIzaje.cierre.autoridad,
+                                                                fecha: e.target.value
+                                                            })
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 333,
+                                                        lineNumber: 338,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10437,14 +10466,14 @@ function AnexoIzajeStep() {
                                                                 className: "mr-2"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 334,
+                                                                lineNumber: 339,
                                                                 columnNumber: 153
                                                             }, this),
                                                             "Firmar Cierre"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 334,
+                                                        lineNumber: 339,
                                                         columnNumber: 37
                                                     }, this),
                                                     anexoIzaje.cierre.autoridad?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -10453,13 +10482,13 @@ function AnexoIzajeStep() {
                                                         className: "mt-2 border rounded-md max-h-20"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 335,
+                                                        lineNumber: 340,
                                                         columnNumber: 76
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 330,
+                                                lineNumber: 335,
                                                 columnNumber: 33
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10470,26 +10499,32 @@ function AnexoIzajeStep() {
                                                         children: "Responsable del Trabajo"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 338,
+                                                        lineNumber: 343,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                         placeholder: "Nombre",
                                                         value: anexoIzaje.cierre.responsable?.nombre || '',
-                                                        onChange: (e)=>handleDeepestNestedChange('cierre', 'responsable', 'nombre', e.target.value)
+                                                        onChange: (e)=>handleNestedChange('cierre', 'responsable', {
+                                                                ...anexoIzaje.cierre.responsable,
+                                                                nombre: e.target.value
+                                                            })
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 339,
+                                                        lineNumber: 344,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                         type: "date",
                                                         className: "mt-2",
                                                         value: anexoIzaje.cierre.responsable?.fecha || '',
-                                                        onChange: (e)=>handleDeepestNestedChange('cierre', 'responsable', 'fecha', e.target.value)
+                                                        onChange: (e)=>handleNestedChange('cierre', 'responsable', {
+                                                                ...anexoIzaje.cierre.responsable,
+                                                                fecha: e.target.value
+                                                            })
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 340,
+                                                        lineNumber: 345,
                                                         columnNumber: 37
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10502,14 +10537,14 @@ function AnexoIzajeStep() {
                                                                 className: "mr-2"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                                lineNumber: 341,
+                                                                lineNumber: 346,
                                                                 columnNumber: 155
                                                             }, this),
                                                             "Firmar Cierre"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 341,
+                                                        lineNumber: 346,
                                                         columnNumber: 37
                                                     }, this),
                                                     anexoIzaje.cierre.responsable?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -10518,37 +10553,37 @@ function AnexoIzajeStep() {
                                                         className: "mt-2 border rounded-md max-h-20"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                        lineNumber: 342,
+                                                        lineNumber: 347,
                                                         columnNumber: 78
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                                lineNumber: 337,
+                                                lineNumber: 342,
                                                 columnNumber: 33
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                        lineNumber: 328,
+                                        lineNumber: 333,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 321,
+                                lineNumber: 326,
                                 columnNumber: 22
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                        lineNumber: 304,
+                        lineNumber: 309,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 267,
+                lineNumber: 260,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -10561,36 +10596,36 @@ function AnexoIzajeStep() {
                                 children: "Registrar Firma"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                                lineNumber: 352,
+                                lineNumber: 357,
                                 columnNumber: 35
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 352,
+                            lineNumber: 357,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SignaturePad"], {
                             onSave: handleSaveSignature
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                            lineNumber: 353,
+                            lineNumber: 358,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                    lineNumber: 351,
+                    lineNumber: 356,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-                lineNumber: 350,
+                lineNumber: 355,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx",
-        lineNumber: 177,
+        lineNumber: 170,
         columnNumber: 9
     }, this);
 }
