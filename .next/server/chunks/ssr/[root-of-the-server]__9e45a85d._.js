@@ -277,7 +277,7 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$dotenv$2f$lib$2f$main$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["config"])();
 const workTypesMap = {
-    'altura': 'Trabajo en Alturas',
+    'alturas': 'Trabajo en Alturas',
     'confinado': 'Espacios Confinados',
     'energia': 'Control de Energías',
     'izaje': 'Izaje de Cargas',
@@ -285,9 +285,23 @@ const workTypesMap = {
     'excavacion': 'Excavaciones',
     'general': 'Trabajo General'
 };
-const getWorkTypesString = (types)=>{
-    if (!Array.isArray(types) || types.length === 0) return workTypesMap['general'];
-    return types.map((key)=>workTypesMap[key] || key).join(', ');
+const getWorkTypesString = (permit)=>{
+    const selectedTypes = [];
+    if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
+    if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
+    if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+    if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
+    if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
+    if (permit.excavaciones) selectedTypes.push('Excavaciones');
+    if (selectedTypes.length === 0) {
+        if (permit.trabajoGeneral) return 'Trabajo General';
+        // Fallback for old data structure
+        if (permit.workType && Array.isArray(permit.workType)) {
+            return permit.workType.map((key)=>workTypesMap[key] || key).join(', ');
+        }
+        return 'Trabajo General';
+    }
+    return selectedTypes.join(', ');
 };
 const getStatusText = (status)=>{
     const statusText = {
@@ -335,9 +349,6 @@ async function createPermit(data) {
     };
     const permitPayload = {
         ...permitData,
-        workType: permitData.workType && permitData.workType.length > 0 ? permitData.workType : [
-            'general'
-        ],
         status: 'pendiente_revision',
         createdBy: userId,
         createdAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
@@ -349,11 +360,6 @@ async function createPermit(data) {
         approvals: initialApprovals,
         closure: {}
     };
-    if (permitData.anexoATS) permitPayload.anexoATS = permitData.anexoATS;
-    if (permitData.anexoAltura) permitPayload.anexoAltura = permitData.anexoAltura;
-    if (permitData.anexoConfinado) permitPayload.anexoConfinado = permitData.anexoConfinado;
-    if (permitData.anexoIzaje) permitPayload.anexoIzaje = permitData.anexoIzaje;
-    if (permitData.anexoEnergias) permitPayload.anexoEnergias = permitData.anexoEnergias;
     try {
         const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(permitPayload);
         const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
@@ -361,9 +367,7 @@ async function createPermit(data) {
             number: permitNumber
         });
         console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
-        const workTypesText = getWorkTypesString(permitPayload.workType || [
-            'general'
-        ]);
+        const workTypesText = getWorkTypesString(permitPayload);
         const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${docRef.id}`;
         const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
