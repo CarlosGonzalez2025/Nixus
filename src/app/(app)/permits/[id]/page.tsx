@@ -668,4 +668,340 @@ export default function PermitDetailPage() {
         { id: 'medidasPrevencion', label: 'C. Se han determinado las medidas de prevención contra caídas?' },
         { id: 'conocenMedidas', label: 'D. Todos los ejecutantes conocen las medidas de precaución establecidas en la evaluación de riesgos?' },
         { id: 'entrenadosCertificados', label: 'E. Están los ejecutantes entrenados y se encuentran los certificados en sitio para realizar trabajos en altura?' },
-        { id
+        { id: 'elementosProteccionCertificados', label: 'F. Están todos los elementos de protección contra caídas en buen estado y certificados?' },
+        { id: 'sistemaAseguramientoVerificado', label: 'G. Se verifico el sistema de aseguramiento de la escalera , andamio o plataforma a una estructura fija' },
+        { id: 'estadoElementosVerificado', label: 'H. Se verifico el estado de: eslingas, arnes, casco, mosquetones, casco, y demas elementos necesarios para realizar el trabajo.' },
+        { id: 'puntosAnclajeCertificados', label: 'I. Los puntos de anclaje y demas elementos cumplen con la resistencia de 5000 lbs por persona y estan certificados?' },
+        { id: 'areaDelimitada', label: 'J. Esta delimitada y señalizada el area de trabajo' },
+        { id: 'personalSaludable', label: 'K. El personal que realiza el trabajo se encuentra en condiciones adecuadas de salud para la actividad?.' },
+      ],
+      right: [
+        { id: 'equiposAccesoBuenEstado', label: 'L. Se cuenta con todos los equipos y sistemas de acceso para trabjo en alturas en buen estado?' },
+        { id: 'espacioCaidaLibreSuficiente', label: 'M. El espacio de caida libre es suficiente para evitar que la persona se golpee contra el nivel inferior.' },
+        { id: 'equiposEmergenciaDisponibles', label: 'N. Se cuenta con elementos para atencion de emergencias en el area y plan de emergencias para rescate en alturas?' },
+        { id: 'eppSeleccionadosCorrectamente', label: 'O. Están los elementos de protección personal seleccionados teniendo en cuenta los riesgos y requerimientos de la tarea?' },
+        { id: 'plataformaSoportaCarga', label: 'P.La plataforma o estructura soporta la carga de trabajo, es firme y se evita la caída de objetos o herramientas?' },
+        { id: 'supervisorConstante', label: 'Q.Existe un supervisor o acompañante constaste durante el trabajo' },
+        { id: 'andamiosCompletos', label: 'R. En caso de trabajos sobre andamios, estos estan completos y adecuadamente armados (rodapies, barandas, etc.)' },
+        { id: 'condicionesClimaticasAdecuadas', label: 'S.Las condiciones climaticas son adecuadas para realizar el trabajo' },
+        { id: 'metodoSubirHerramientasSeguro', label: 'T.El metodo de subir herramientas es seguro' },
+        { id: 'sistemasRestriccion', label: 'U. En caso de requerirse se cuenta con sistemas de restricción' },
+        { id: 'sistemasPosicionamiento', label: 'V. En caso de requerirse se cuenta con sistemas de posicionamiento' },
+      ]
+    };
+  
+    return (
+      <div className="flex flex-1 flex-col bg-gray-50/50">
+        
+        {/* Header con acciones */}
+        <div ref={headerRef} className="bg-white p-4 md:p-6 shadow-md sticky top-0 z-10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+             <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2">
+                <ArrowLeft />
+                <span className="hidden sm:inline">Volver a la Lista</span>
+             </Button>
+             
+             <div className="flex items-center gap-2 rounded-lg p-2" style={{ backgroundColor: statusInfo.bgColor }}>
+                <statusInfo.icon className="h-6 w-6" style={{ color: statusInfo.color }} />
+                <span className="font-bold text-sm" style={{ color: statusInfo.color }}>{statusInfo.text}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
+                 <Button variant="outline" onClick={handleExportToPDF}><FileDown className="mr-2"/>Exportar a PDF</Button>
+                {canChangeStatus('aprobado') && (
+                     <Button style={{backgroundColor: '#28a745'}} onClick={() => handleChangeStatus('aprobado')} disabled={isStatusChanging}>
+                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <CheckCircle className="mr-2"/>} Aprobar
+                     </Button>
+                 )}
+                 {canChangeStatus('rechazado') && (
+                    <AlertDialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive"><XCircle className="mr-2"/>Rechazar</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Rechazar Permiso</AlertDialogTitle></AlertDialogHeader>
+                            <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Escriba el motivo del rechazo..."/>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', rejectionReason)} disabled={!rejectionReason || isStatusChanging}>
+                                {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Rechazar
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                 )}
+                 {canChangeStatus('en_ejecucion') && (
+                      <Button style={{backgroundColor: '#6f42c1'}} onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}>
+                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <PlayCircle className="mr-2"/>} Iniciar Ejecución
+                     </Button>
+                 )}
+                 {canChangeStatus('suspendido') && (
+                      <Button variant="destructive" style={{backgroundColor: '#fd7e14'}} onClick={() => handleChangeStatus('suspendido')} disabled={isStatusChanging}>
+                         {isStatusChanging ? <Loader2 className="animate-spin" /> : <PauseCircle className="mr-2"/>} Suspender
+                     </Button>
+                 )}
+                 {canChangeStatus('cerrado') && (
+                     <AlertDialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button style={{backgroundColor: '#007bff'}}><Lock className="mr-2"/>Cerrar Permiso</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Cerrar Permiso de Trabajo</AlertDialogTitle></AlertDialogHeader>
+                            <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+                                <h4 className="font-semibold text-sm">Verificación de Cierre:</h4>
+                                <RadioCheck label="Se ha diligenciado el informe de culminación de trabajo?" value={permit.closure.informeCulminacion} onValueChange={(val) => handleClosureFieldChange('informeCulminacion', val)} />
+                                <RadioCheck label="Se ha dejado el área en condiciones seguras y ordenadas?" value={permit.closure.areaDespejada} onValueChange={(val) => handleClosureFieldChange('areaDespejada', val)} />
+                                <RadioCheck label="Se ha realizado la disposición de residuos?" value={permit.closure.evidenciaParticulas} onValueChange={(val) => handleClosureFieldChange('evidenciaParticulas', val)} />
+                                <RadioCheck label="Se retiraron los sistemas de bloqueo y aseguramiento de energías?" value={permit.closure.dispositivosRetirados} onValueChange={(val) => handleClosureFieldChange('dispositivosRetirados', val)} />
+                                <RadioCheck label="Continúa la labor?" value={permit.closure.continuaLabor} onValueChange={(val) => handleClosureFieldChange('continuaLabor', val)} />
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}>
+                                    {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Confirmar Cierre
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                     </AlertDialog>
+                 )}
+            </div>
+          </div>
+        </div>
+
+        <main ref={contentRef} className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg space-y-8">
+                
+                {/* Cabecera del Permiso */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 items-start pb-6 border-b">
+                    <div className="col-span-2 lg:col-span-1 flex items-center justify-center">
+                        <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={150} height={75} />
+                    </div>
+                    <div className="col-span-2 lg:col-span-3 text-center">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800">FORMATO DE PERMISO DE TRABAJO</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 text-left">
+                            <Field label="Código" value="SST-FOR-12" />
+                            <Field label="Versión" value="4" />
+                            <Field label="Fecha Vigencia" value="23-01-2023" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sección de Información General */}
+                <Section title="Información General">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                        <Field label="Número de Permiso" value={<span className="font-bold text-primary">{permit.number || permit.id.substring(0,8)}</span>} />
+                        <Field label="Solicitante" value={permit.user?.displayName} />
+                        <Field label="Fecha Creación" value={permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy HH:mm') : 'N/A'} />
+                        <Field label="Área Específica" value={permit.generalInfo?.areaEspecifica} />
+                        <Field label="Planta" value={permit.generalInfo?.planta} />
+                        <Field label="Proceso" value={permit.generalInfo?.proceso} />
+                        <Field label="Empresa" value={permit.generalInfo?.empresa} />
+                        <Field label="Contrato" value={permit.generalInfo?.contrato} />
+                        <Field label="Validez Desde" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yyyy HH:mm') : 'N/A'} />
+                        <Field label="Validez Hasta" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yyyy HH:mm') : 'N/A'} />
+                         <div className="md:col-span-2 lg:col-span-3">
+                            <Field label="Tipos de Trabajo" value={<span className="font-semibold text-primary">{getWorkTypesString(permit)}</span>} />
+                        </div>
+                        <div className="md:col-span-2 lg:col-span-3">
+                           <Field label="Descripción de la Tarea" value={<p className="text-sm whitespace-pre-wrap">{permit.generalInfo?.workDescription}</p>} />
+                        </div>
+                    </div>
+                </Section>
+                
+                 {/* Sección de ATS */}
+                {permit.anexoATS && (
+                    <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-gray-700 flex items-center gap-2"><FileText /> Análisis de Trabajo Seguro (ATS)</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+                            <Section title="1. Identificación de Peligros, Riesgos y Controles">
+                                <div className="space-y-4">
+                                {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
+                                    <div key={seccion}>
+                                        <h4 className="font-semibold text-gray-600 mb-2">{seccion}</h4>
+                                        <div className="pl-4 space-y-1">
+                                            {peligros.map(peligro => (
+                                                <div key={peligro.id} className="flex items-center gap-2 text-xs">
+                                                     {(permit.anexoATS?.peligros as any)?.[peligro.id] === 'si' 
+                                                         ? <CheckCircle className="h-4 w-4 text-green-500" />
+                                                         : <XCircle className="h-4 w-4 text-red-500" />
+                                                     }
+                                                    <span>{peligro.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                </div>
+                            </Section>
+                             <Section title="2. EPP Requeridos" className="mt-6">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {Object.entries(ppe).flatMap(([category, items]) => 
+                                        items.map(item => (permit.anexoATS?.epp as any)?.[item.id] && (
+                                            <div key={item.id} className="flex items-center gap-2 text-xs">
+                                                <Check className="h-4 w-4 text-green-500" />
+                                                <span>{item.label} {(permit.anexoATS?.epp as any)?.[`${item.id}_spec`]}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </Section>
+                             <Section title="3. Justificación de Uso" className="mt-6">
+                                 {Object.keys(permit.anexoATS.justificacion || {}).map(key => (
+                                    <div key={key} className="flex items-center gap-2 text-xs">
+                                        <Check className="h-4 w-4 text-green-500" />
+                                        <span>{key.replace(/_/g, ' ')}</span>
+                                    </div>
+                                 ))}
+                            </Section>
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
+
+
+                {/* Sección de Anexo Altura */}
+                {permit.trabajoAlturas && permit.anexoAltura && (
+                    <Collapsible defaultOpen>
+                       <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-blue-700 flex items-center gap-2"><AlertTriangle /> Anexo de Trabajo en Alturas</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-blue-100">
+                           <Section title="Estructura y Aspectos de Seguridad">
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                                 {anexoAlturaEstructuras.map(e => (permit.anexoAltura?.tipoEstructura as any)?.[e.id] && (
+                                     <div key={e.id} className="flex items-center gap-2 text-xs">
+                                         <CheckCircle className="h-4 w-4 text-green-500" />
+                                         <span>{e.label} {(e.id === 'otros' && (permit.anexoAltura.tipoEstructura as any).otrosCual) ? `: ${(permit.anexoAltura.tipoEstructura as any).otrosCual}` : ''}</span>
+                                     </div>
+                                 ))}
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                               {anexoAlturaAspectos.left.map(aspect => (
+                                 <RadioCheck key={aspect.id} label={aspect.label} value={(permit.anexoAltura?.aspectosSeguridad as any)?.[aspect.id]} readOnly />
+                               ))}
+                               {anexoAlturaAspectos.right.map(aspect => (
+                                 <RadioCheck key={aspect.id} label={aspect.label} value={(permit.anexoAltura?.aspectosSeguridad as any)?.[aspect.id]} readOnly />
+                               ))}
+                             </div>
+                           </Section>
+                           
+                           {/* Add more sections for Altura as needed */}
+                       </CollapsibleContent>
+                   </Collapsible>
+                )}
+                
+                {/* Sección de Anexo Confinado */}
+                {permit.espaciosConfinados && permit.anexoConfinado && (
+                   <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-purple-700 flex items-center gap-2"><Siren /> Anexo de Espacios Confinados</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-purple-100">
+                          {/* Add Confinado sections here */}
+                       </CollapsibleContent>
+                   </Collapsible>
+                )}
+
+
+                {/* Sección de Personal */}
+                <Section title="Personal Autorizado y Externo">
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Cédula</TableHead>
+                                <TableHead>Rol</TableHead>
+                                <TableHead>Firma Apertura</TableHead>
+                                <TableHead>Firma Cierre</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {permit.workers?.map((worker, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{worker.nombre}</TableCell>
+                                    <TableCell>{worker.cedula}</TableCell>
+                                    <TableCell><Badge variant="secondary">{worker.rol}</Badge></TableCell>
+                                    <TableCell>
+                                        {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma" width={100} height={50} className="border rounded" /> : 'Pendiente'}
+                                    </TableCell>
+                                     <TableCell>
+                                        {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma" width={100} height={50} className="border rounded" /> : 'Pendiente'}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                     </Table>
+                </Section>
+
+                 {/* Sección de Firmas de Aprobación */}
+                <Section title="Aprobaciones del Permiso">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
+                            const approval = permit.approvals?.[role];
+                            return (
+                                <Card key={role} className="flex flex-col">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-grow flex flex-col justify-between gap-4">
+                                        <div className="flex-grow">
+                                            {approval?.status === 'aprobado' ? (
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2 text-green-600">
+                                                        <CheckCircle className="h-5 w-5" />
+                                                        <span className="font-bold text-sm">Aprobado</span>
+                                                    </div>
+                                                    <p className="text-xs">
+                                                        Por: <span className="font-semibold">{approval.userName}</span>
+                                                    </p>
+                                                    <p className="text-xs">
+                                                        Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}
+                                                    </p>
+                                                    {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 text-yellow-600">
+                                                    <Clock className="h-5 w-5" />
+                                                    <span className="font-bold text-sm">Pendiente de Firma</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                         {canSign(role, 'firmaApertura') && (
+                                            <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={isSigning}>
+                                                {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar como {signatureRoles[role]}
+                                            </Button>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                </Section>
+
+            </div>
+        </main>
+        
+        {/* Footer */}
+        <footer ref={footerRef} className="text-center text-xs text-gray-400 py-4">
+          SGTC Móvil - Sistema de Gestión de Tareas Críticas
+        </footer>
+
+        <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Registrar Firma</DialogTitle></DialogHeader>
+                <SignaturePad onSave={handleSaveSignature} isSaving={isSigning} />
+            </DialogContent>
+        </Dialog>
+      </div>
+  );
+}

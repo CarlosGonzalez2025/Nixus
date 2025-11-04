@@ -79,12 +79,25 @@ export type AnexoATS = {
 };
 
 export type ValidacionDiaria = {
+  dia: number;
   fecha: string;
   nombre: string;
   firma: string;
 };
 
+export type AutorizacionPersona = {
+  nombre: string;
+  firma: string;
+  hora: string;
+  cedula?: string;
+}
+
 export type AnexoAltura = {
+  emergencia?: {
+    contacto: string;
+    telefono: string;
+  },
+  alturaAproximada?: string;
   tipoEstructura: {
     [key: string]: boolean | string;
     escaleraCuerpo: boolean;
@@ -97,64 +110,34 @@ export type AnexoAltura = {
     otrosCual: string;
   };
   aspectosSeguridad: { [key: string]: 'si' | 'no' | 'na' };
-  requerimientoClaridad: string;
-  precauciones: { [key: string]: boolean };
+  precauciones: { [key: string]: 'si' | 'no' | 'na' | string };
   afectaciones: {
     riesgoOtrasAreas: 'si' | 'no' | 'na';
     otrasAreasRiesgo: 'si' | 'no' | 'na';
     personalNotificado: 'si' | 'no' | 'na';
     observaciones: string;
   };
-  coordinadorTrabajosAltura: {
-    nombre: string;
-    cedula: string;
-    firma: string;
-  };
-  validacionDiaria: {
+  autoridadArea?: Partial<AutorizacionPersona>;
+  responsableTrabajo?: Partial<AutorizacionPersona>;
+  coordinadorTrabajosAltura?: Partial<AutorizacionPersona>;
+  validacion?: {
     autoridad: ValidacionDiaria[];
     responsable: ValidacionDiaria[];
   };
-  cancelacion: {
+  cancelacion?: {
     seCancelo: 'si' | 'no';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
-  cierre: {
+  cierre?: {
     seTermino: 'si' | 'no';
     observaciones: string;
-    autoridad: {
-      fecha: string;
-      nombre: string;
-      firma: string;
-    };
-    responsable: {
-      fecha: string;
-      nombre: string;
-      firma: string;
-    };
+    autoridad?: Partial<AutorizacionPersona>;
+    responsable?: Partial<AutorizacionPersona>;
   };
 };
-
-export type MedicionAtmosferica = {
-    id: string;
-    hora: string;
-    o2: string;
-    co: string;
-    h2s: string;
-    lel: string;
-    cl2: string;
-    co2: string;
-    firma: string;
-};
-
-export type SupervisorConfinado = {
-    nombre: string;
-    cedula: string;
-    firma: string;
-    hora: string;
-}
 
 export type PruebaGasesInicial = {
   lel?: string;
@@ -164,6 +147,7 @@ export type PruebaGasesInicial = {
   otros?: string;
   serialMonitor?: string;
   horaPrueba?: string;
+  nombreQuienRealiza?: string;
   firmaQuienRealiza?: string;
 }
 
@@ -177,29 +161,24 @@ export type PruebaGasesPeriodica = {
   firma: string;
 }
 
-export type AutorizacionPersona = {
-  nombre: string;
-  firma: string;
-  hora: string;
+export type SupervisorConfinado = {
+    nombre: string;
+    cedula: string;
+    firma: string;
+    hora: string;
 }
 
 export type AnexoConfinado = {
-  informacionGeneral: {
-    emitidoPor: string;
-    areaTrabajo: string;
-    equipoAreaEspecifica: string;
-    responsable: string;
-    cargo: string;
-    compania: string;
-    emergenciaContacto: string;
-    emergenciaTelefono: string;
+  emergencia?: {
+    contacto: string;
+    telefono: string;
   };
-  identificacionPeligros: { [key: string]: 'si' | 'no' };
+  identificacionPeligros?: { [key: string]: 'si' | 'no' | 'na' };
   procedimientoComunicacionCual?: string;
-  precauciones: { [key: string]: boolean };
-  resultadosPruebasGases: Partial<PruebaGasesInicial>;
-  requerimientosEquipos: { [key: string]: 'si' | 'no' };
-  pruebasGasesPeriodicas: {
+  precauciones?: { [key: string]: 'si' | 'no' | 'na' };
+  resultadosPruebasGases?: Partial<PruebaGasesInicial>;
+  requerimientosEquipos?: { [key: string]: 'si' | 'no' | 'na' };
+  pruebasGasesPeriodicas?: {
     intervalo: string;
     pruebas: PruebaGasesPeriodica[];
     pruebaRealizadaPor: string;
@@ -207,24 +186,25 @@ export type AnexoConfinado = {
     marca: string;
     fechaCalibracion: string;
   };
-  autoridadDelArea: Partial<AutorizacionPersona>;
-  responsableDelTrabajo: Partial<AutorizacionPersona>;
-  supervisorTrabajo: Partial<SupervisorConfinado>;
-  validacion: {
+  autoridadDelArea?: Partial<AutorizacionPersona>;
+  responsableDelTrabajo?: Partial<AutorizacionPersona>;
+  supervisorTrabajo?: Partial<SupervisorConfinado>;
+  validacion?: {
     autoridad: ValidacionDiaria[];
     responsable: ValidacionDiaria[];
   };
-  cancelacion: {
+  cancelacion?: {
     seCancelo: 'si' | 'no';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
-  cierre: {
+  cierre?: {
     seTermino: 'si' | 'no';
-    autoridad: Partial<AutorizacionPersona>;
-    responsable: Partial<AutorizacionPersona>;
+    observaciones: string;
+    autoridad?: Partial<AutorizacionPersona>;
+    responsable?: Partial<AutorizacionPersona>;
   };
 };
 

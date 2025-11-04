@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
-import type { Permit, ExternalWorker, AnexoATS, AnexoAltura } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
@@ -15,6 +15,7 @@ type FormAction =
   | { type: 'UPDATE_WORK_TYPES'; payload: { type: keyof FormState['selectedWorkTypes'], value: boolean } }
   | { type: 'UPDATE_ATS'; payload: Partial<FormState['anexoATS']> }
   | { type: 'UPDATE_ANEXO_ALTURA'; payload: Partial<FormState['anexoAltura']> }
+  | { type: 'UPDATE_ANEXO_CONFINADO'; payload: Partial<FormState['anexoConfinado']> }
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
@@ -68,7 +69,6 @@ const initialState: FormState = {
         otrosCual: '',
     },
     aspectosSeguridad: {},
-    requerimientoClaridad: '',
     precauciones: {},
     afectaciones: {
         riesgoOtrasAreas: 'na',
@@ -76,35 +76,23 @@ const initialState: FormState = {
         personalNotificado: 'na',
         observaciones: '',
     },
-    coordinadorTrabajosAltura: {
-        nombre: '',
-        cedula: '',
-        firma: '',
+  },
+  anexoConfinado: {
+    identificacionPeligros: {},
+    precauciones: {},
+    resultadosPruebasGases: {},
+    requerimientosEquipos: {},
+    pruebasGasesPeriodicas: {
+      intervalo: '',
+      pruebas: [],
+      pruebaRealizadaPor: '',
+      serialMonitor: '',
+      marca: '',
+      fechaCalibracion: '',
     },
     validacion: {
         autoridad: [],
         responsable: [],
-    },
-    cancelacion: {
-        seCancelo: 'no',
-        razon: '',
-        nombre: '',
-        firma: '',
-        fecha: '',
-    },
-    cierre: {
-        seTermino: 'no',
-        observaciones: '',
-        autoridad: {
-            fecha: '',
-            nombre: '',
-            firma: '',
-        },
-        responsable: {
-            fecha: '',
-            nombre: '',
-            firma: '',
-        },
     },
   },
   workers: [],
@@ -132,6 +120,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
         return {
             ...state,
             anexoAltura: { ...state.anexoAltura, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_CONFINADO':
+        return {
+            ...state,
+            anexoConfinado: { ...state.anexoConfinado, ...action.payload },
         }
     case 'SET_WORKERS':
         return {

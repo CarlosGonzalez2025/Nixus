@@ -56,6 +56,7 @@ import { PermitFormProvider, usePermitForm } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
 import { AtsStep } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
+import { AnexoConfinadoStep } from './components/AnexoConfinadoStep';
 
 
 const workerRoles = [
@@ -291,6 +292,8 @@ function CreatePermitWizard() {
         return <AtsStep />;
       case "Anexo Altura":
         return <AnexoAlturaStep />;
+      case "Anexo Confinado":
+        return <AnexoConfinadoStep />;
       // Add other cases as you create the components
       default:
         return (
