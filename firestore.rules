@@ -41,6 +41,15 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // --- Colección de Listas Dinámicas (dynamic_lists) ---
+    match /dynamic_lists/{listName} {
+      // Cualquier usuario autenticado puede leer las listas (para los desplegables).
+      allow read: if request.auth != null;
+
+      // Solo los administradores pueden crear, actualizar o eliminar listas.
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // --- Colección de Prueba (test) ---
     match /test/{docId} {
       // Cualquiera puede leer, pero solo usuarios autenticados pueden escribir.
