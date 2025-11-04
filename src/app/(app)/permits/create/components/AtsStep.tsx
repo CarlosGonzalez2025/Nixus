@@ -21,6 +21,41 @@ interface AtsStepProps {
   onUpdateATS: (updates: Partial<AnexoATS>) => void;
 }
 
+// Hook personalizado para debounce
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Hook para input con estado local y debounce
+function useLocalInput(initialValue: string, onUpdate: (value: string) => void, delay: number = 300) {
+  const [localValue, setLocalValue] = React.useState(initialValue);
+  const debouncedValue = useDebounce(localValue, delay);
+
+  React.useEffect(() => {
+    if (debouncedValue !== initialValue) {
+      onUpdate(debouncedValue);
+    }
+  }, [debouncedValue, onUpdate]);
+
+  React.useEffect(() => {
+    setLocalValue(initialValue);
+  }, [initialValue]);
+
+  return [localValue, setLocalValue] as const;
+}
+
 const hazardCategories = {
   LOCATIVOS: [
     { id: 'superficies_irregulares', label: 'Superficies irregulares', control: 'Uso de botas de seguridad con suela antideslizante. Controlar escapes, derrames o goteras sobre los sitios de desplazamiento. Limpiar de inmediato cualquier líquido que se derrame en el piso. Caminar con precaución. No cargar piezas o equipos que limiten la vista. Respetar la señalización. Transitar con precaución verificando rutas de tránsito; no pasar donde haya presencia de materiales u obstáculos; mantener el área ordenada.' },
@@ -76,7 +111,7 @@ const eppOptions = {
     ],
     'Protección Corporal': [
         { id: 'traje_tyvek', label: 'Traje tyvek', type: 'boolean' },
-        { id: 'chaleco_reflectivo', label: 'Chaleco reflectivo', type: 'boolean' },
+        { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
         { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
         { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
         { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
@@ -130,17 +165,234 @@ const justificacionOptions = [
     { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
 ];
 
-export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
-  // Estado controlado para TODAS las secciones
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
-    peligros: true, // Sección 1 abierta por defecto
-    bioseguridad: false,
-    epp: false,
-    justificacion: false
-  });
-  
+// Componente para input de texto con estado local y debounce
+const DebouncedTextInput = React.memo(({ 
+  id, 
+  value, 
+  onChange, 
+  placeholder,
+  className = "h-8 text-xs ml-6"
+}: { 
+  id: string; 
+  value: string; 
+  onChange: (value: string) => void; 
+  placeholder: string;
+  className?: string;
+}) => {
+  const updateValue = React.useCallback((newValue: string) => {
+    onChange(newValue);
+  }, [onChange]);
+
+  const [localValue, setLocalValue] = useLocalInput(value || '', updateValue, 500);
+
+  return (
+    <Input 
+      id={id}
+      className={className}
+      placeholder={placeholder}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      autoComplete="off"
+      type="text"
+    />
+  );
+});
+
+DebouncedTextInput.displayName = 'DebouncedTextInput';
+
+// Componente optimizado para items de EPP con debounce
+const EppItem = React.memo(({ 
+  item, 
+  checked, 
+  textValue, 
+  onCheckedChange, 
+  onTextChange 
+}: { 
+  item: { id: string; label: string; type: string };
+  checked: boolean;
+  textValue: string;
+  onCheckedChange: (checked: boolean) => void;
+  onTextChange: (value: string) => void;
+}) => {
+  const handleCheckedChange = React.useCallback((checkedValue: boolean) => {
+    onCheckedChange(checkedValue);
+  }, [onCheckedChange]);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id={item.id} 
+          checked={checked} 
+          onCheckedChange={handleCheckedChange}
+        />
+        <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
+      </div>
+      {item.type === 'text' && checked && (
+        <DebouncedTextInput
+          id={`${item.id}_spec`}
+          value={textValue}
+          onChange={onTextChange}
+          placeholder="Especificar..."
+        />
+      )}
+    </div>
+  );
+});
+
+EppItem.displayName = 'EppItem';
+
+// Componente optimizado para categorías de EPP
+const EppCategory = React.memo(({ 
+  category, 
+  items, 
+  eppData, 
+  onEppChange 
+}: { 
+  category: string;
+  items: Array<{ id: string; label: string; type: string }>;
+  eppData: any;
+  onEppChange: (id: string, value: boolean | string) => void;
+}) => {
+  return (
+    <div className="space-y-3">
+      <h4 className="font-semibold text-md text-gray-700">{category}</h4>
+      <div className="space-y-2 p-3 border rounded-md">
+        {items.map(item => (
+          <EppItem
+            key={item.id}
+            item={item}
+            checked={!!eppData?.[item.id]}
+            textValue={typeof eppData?.[`${item.id}_spec`] === 'string' ? (eppData[`${item.id}_spec`] as string) : ''}
+            onCheckedChange={(checked) => {
+              if (item.type === 'boolean') {
+                onEppChange(item.id, checked);
+              } else if (item.type === 'text') {
+                if (checked) {
+                  onEppChange(item.id, true);
+                } else {
+                  onEppChange(item.id, false);
+                  onEppChange(`${item.id}_spec`, '');
+                }
+              }
+            }}
+            onTextChange={(value) => onEppChange(`${item.id}_spec`, value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+EppCategory.displayName = 'EppCategory';
+
+// Componente optimizado para "Otros Peligros"
+const OtrosPeligrosSection = React.memo(({ 
+  peligrosAdicionales, 
+  onUpdatePeligros 
+}: { 
+  peligrosAdicionales: Array<{peligro: string, descripcion: string}> | undefined,
+  onUpdatePeligros: (peligros: Array<{peligro: string, descripcion: string}>) => void 
+}) => {
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
+
+  const handleAddPeligro = React.useCallback(() => {
+    if (newPeligro.trim() && newPeligroDesc.trim()) {
+      const newPeligros = [...(peligrosAdicionales || []), { 
+        peligro: newPeligro.trim(), 
+        descripcion: newPeligroDesc.trim() 
+      }];
+      onUpdatePeligros(newPeligros);
+      setNewPeligro('');
+      setNewPeligroDesc('');
+    }
+  }, [newPeligro, newPeligroDesc, peligrosAdicionales, onUpdatePeligros]);
+
+  const handleRemovePeligro = React.useCallback((index: number) => {
+    const newPeligros = (peligrosAdicionales || []).filter((_, i) => i !== index);
+    onUpdatePeligros(newPeligros);
+  }, [peligrosAdicionales, onUpdatePeligros]);
+
+  return (
+    <div className="mt-6">
+      <h4 className="font-semibold text-lg text-gray-700 mb-2">Otros Peligros</h4>
+      <div className="p-4 border rounded-lg space-y-4">
+        {/* Lista de peligros existentes */}
+        {peligrosAdicionales?.map((item, index) => (
+          <div key={`peligro-${index}`} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md">
+            <div className="flex-1">
+              <p className="font-bold">{item.peligro}</p>
+              <p className="text-sm text-muted-foreground">{item.descripcion}</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => handleRemovePeligro(index)}
+              type="button"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ))}
+        
+        {/* Formulario para nuevo peligro */}
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="nuevo-peligro-nombre">Nombre del nuevo peligro</Label>
+            <Input 
+              id="nuevo-peligro-nombre"
+              value={newPeligro} 
+              onChange={(e) => setNewPeligro(e.target.value)} 
+              placeholder="Escriba el nombre del peligro..."
+              autoComplete="off"
+              type="text"
+            />
+          </div>
+          <div>
+            <Label htmlFor="nuevo-peligro-desc">Descripción y control del peligro</Label>
+            <Textarea 
+              id="nuevo-peligro-desc"
+              value={newPeligroDesc} 
+              onChange={(e) => setNewPeligroDesc(e.target.value)} 
+              placeholder="Escriba la descripción y medidas de control..."
+              autoComplete="off"
+              rows={3}
+            />
+          </div>
+          <Button 
+            onClick={handleAddPeligro} 
+            size="sm" 
+            type="button"
+            disabled={!newPeligro.trim() || !newPeligroDesc.trim()}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Agregar Peligro
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+OtrosPeligrosSection.displayName = 'OtrosPeligrosSection';
+
+export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
+  // Estado controlado mejorado - inicializar TODAS las categorías
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>(() => {
+    const initialState: Record<string, boolean> = {
+      peligros: true, // Sección 1 abierta por defecto
+      bioseguridad: false,
+      epp: false,
+      justificacion: false
+    };
+    
+    // Agregar todas las categorías de peligros al estado
+    Object.keys(hazardCategories).forEach(category => {
+      initialState[category] = false;
+    });
+    
+    return initialState;
+  });
 
   const toggleSection = (sectionId: string) => {
     setOpenSections(prev => ({
@@ -149,46 +401,37 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     }));
   };
 
-  const handlePeligroChange = (id: string, value: 'si' | 'no') => {
+  const handlePeligroChange = React.useCallback((id: string, value: 'si' | 'no') => {
     onUpdateATS({ 
       peligros: { ...anexoATS.peligros, [id]: value } 
     });
-  };
+  }, [anexoATS.peligros, onUpdateATS]);
   
-  const handleEppChange = (id: string, value: boolean | string) => {
+  const handleEppChange = React.useCallback((id: string, value: boolean | string) => {
     onUpdateATS({ 
       epp: { ...anexoATS.epp, [id]: value } 
     });
-  };
+  }, [anexoATS.epp, onUpdateATS]);
 
-  const handleJustificacionChange = (id: string, value: boolean) => {
+  const handleJustificacionChange = React.useCallback((id: string, value: boolean) => {
     onUpdateATS({ 
       justificacion: { ...anexoATS.justificacion, [id]: value } 
     });
-  };
+  }, [anexoATS.justificacion, onUpdateATS]);
   
-  const handleProtocoloChange = (value: 'si' | 'no') => {
+  const handleProtocoloChange = React.useCallback((value: 'si' | 'no') => {
     onUpdateATS({ 
       protocolosBioseguridad: value 
     });
-  };
+  }, [onUpdateATS]);
 
-  const handleAddOtroPeligro = () => {
-    if (newPeligro.trim() && newPeligroDesc.trim()) {
-        const newPeligros = [...(anexoATS.peligrosAdicionales || []), { peligro: newPeligro, descripcion: newPeligroDesc }];
-        onUpdateATS({ peligrosAdicionales: newPeligros });
-        setNewPeligro('');
-        setNewPeligroDesc('');
-    }
-  };
-
-  const handleRemoveOtroPeligro = (index: number) => {
-    const newPeligros = (anexoATS.peligrosAdicionales || []).filter((_, i) => i !== index);
-    onUpdateATS({ peligrosAdicionales: newPeligros });
-  };
+  // Handler optimizado para peligros adicionales
+  const handleUpdatePeligrosAdicionales = React.useCallback((peligros: Array<{peligro: string, descripcion: string}>) => {
+    onUpdateATS({ peligrosAdicionales: peligros });
+  }, [onUpdateATS]);
 
   // SectionWrapper con estado controlado
-  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string }> = ({ title, children, sectionId }) => (
+  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string }> = React.memo(({ title, children, sectionId }) => (
     <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
       <CollapsibleTrigger asChild>
         <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
@@ -200,7 +443,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         {children}
       </CollapsibleContent>
     </Collapsible>
-  );
+  ));
 
   return (
     <div className="space-y-8">
@@ -260,29 +503,12 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
             </Collapsible>
           ))}
         </div>
-        <div className="mt-6">
-            <h4 className="font-semibold text-lg text-gray-700 mb-2">Otros Peligros</h4>
-            <div className="p-4 border rounded-lg space-y-4">
-            {anexoATS.peligrosAdicionales?.map((item, index) => (
-                <div key={index} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md">
-                    <div className="flex-1">
-                        <p className="font-bold">{item.peligro}</p>
-                        <p className="text-sm text-muted-foreground">{item.descripcion}</p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveOtroPeligro(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                </div>
-            ))}
-            <div className="space-y-2">
-                <Input value={newPeligro} onChange={(e) => setNewPeligro(e.target.value)} placeholder="Nombre del nuevo peligro"/>
-                <Textarea value={newPeligroDesc} onChange={(e) => setNewPeligroDesc(e.target.value)} placeholder="Descripción y control del peligro"/>
-            </div>
-            <Button onClick={handleAddOtroPeligro} size="sm">
-                <Plus className="mr-2 h-4 w-4" /> Agregar Peligro
-            </Button>
-            </div>
-        </div>
+        
+        {/* Sección de Otros Peligros optimizada */}
+        <OtrosPeligrosSection 
+          peligrosAdicionales={anexoATS.peligrosAdicionales}
+          onUpdatePeligros={handleUpdatePeligrosAdicionales}
+        />
       </SectionWrapper>
 
       <SectionWrapper title="2. ¿Protocolos de bioseguridad?" sectionId="bioseguridad">
@@ -308,42 +534,13 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
       <SectionWrapper title="3. EPP Requeridos" sectionId="epp">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {Object.entries(eppOptions).map(([category, items]) => (
-                <div key={category} className="space-y-3">
-                    <h4 className="font-semibold text-md text-gray-700">{category}</h4>
-                    <div className="space-y-2 p-3 border rounded-md">
-                        {items.map(item => (
-                             <div key={item.id} className="flex flex-col gap-1">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox 
-                                        id={item.id} 
-                                        checked={!!anexoATS.epp?.[item.id]} 
-                                        onCheckedChange={(checked) => {
-                                            if (item.type === 'boolean') {
-                                                handleEppChange(item.id, !!checked);
-                                            } else if (item.type === 'text') {
-                                                if (checked) {
-                                                    handleEppChange(item.id, true);
-                                                } else {
-                                                    handleEppChange(item.id, false);
-                                                    handleEppChange(`${item.id}_spec`, '');
-                                                }
-                                            }
-                                        }}
-                                    />
-                                    <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
-                                </div>
-                                {item.type === 'text' && anexoATS.epp?.[item.id] && (
-                                     <Input 
-                                        className="h-8 text-xs ml-6"
-                                        placeholder="Especificar..."
-                                        value={typeof anexoATS.epp?.[`${item.id}_spec`] === 'string' ? (anexoATS.epp[`${item.id}_spec`] as string) : ''}
-                                        onChange={(e) => handleEppChange(`${item.id}_spec`, e.target.value)}
-                                     />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+              <EppCategory
+                key={category}
+                category={category}
+                items={items}
+                eppData={anexoATS.epp}
+                onEppChange={handleEppChange}
+              />
             ))}
          </div>
       </SectionWrapper>
@@ -366,3 +563,6 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     </div>
   );
 }
+
+// Exportar con React.memo para optimización
+export default React.memo(AtsStep);

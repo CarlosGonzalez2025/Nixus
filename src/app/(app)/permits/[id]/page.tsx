@@ -52,7 +52,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
@@ -174,10 +174,6 @@ export default function PermitDetailPage() {
   const { user: currentUser, loading: userLoading } = useUser();
   const permitId = Array.isArray(params.id) ? params.id[0] : params.id;
   
-  const headerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
-
   const [permit, setPermit] = useState<Permit | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -230,12 +226,8 @@ export default function PermitDetailPage() {
     return () => unsubscribe();
   }, [permitId]);
   
-  const handleExportToPDF = async () => {
-    const header = headerRef.current;
-    const content = contentRef.current;
-    const footer = footerRef.current;
-
-    if (!header || !content || !footer) return;
+ const handleExportToPDF = async () => {
+    if (!permit) return;
 
     toast({
         title: 'Generando PDF...',
@@ -243,72 +235,164 @@ export default function PermitDetailPage() {
     });
 
     try {
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const margin = 10; // 10mm margin
+        const doc = new jsPDF();
+        let yPos = 20;
+        const pageHeight = doc.internal.pageSize.height;
+        const margin = 15;
 
-        // 1. Render Header
-        const headerCanvas = await html2canvas(header, { scale: 2, useCORS: true });
-        const headerImgData = headerCanvas.toDataURL('image/png');
-        const headerHeight = (headerCanvas.height * (pdfWidth - 2 * margin)) / headerCanvas.width;
-
-        // 2. Render Footer
-        const footerCanvas = await html2canvas(footer, { scale: 2, useCORS: true });
-        const footerImgData = footerCanvas.toDataURL('image/png');
-        const footerHeight = (footerCanvas.height * (pdfWidth - 2 * margin)) / footerCanvas.width;
-
-        // 3. Render Content
-        const contentCanvas = await html2canvas(content, { scale: 2, useCORS: true, windowWidth: content.scrollWidth, windowHeight: content.scrollHeight });
-        const contentImgData = contentCanvas.toDataURL('image/png');
-        const contentImgHeight = (contentCanvas.height * (pdfWidth - 2 * margin)) / contentCanvas.width;
-        
-        const contentPrintableHeight = pdfHeight - headerHeight - footerHeight - (2 * margin);
-        let contentPosition = 0;
-        let pageCount = 0;
-
-        while (contentPosition < contentImgHeight) {
-            if (pageCount > 0) {
-                pdf.addPage();
+        // Función para añadir nueva página si es necesario
+        const checkPageBreak = (height: number) => {
+            if (yPos + height > pageHeight - margin) {
+                doc.addPage();
+                yPos = margin;
             }
-            
-            // Add header to each page
-            pdf.addImage(headerImgData, 'PNG', margin, margin, pdfWidth - 2 * margin, headerHeight);
+        };
 
-            // Add content slice for the current page
-            const pageContentHeight = Math.min(contentPrintableHeight, contentImgHeight - contentPosition);
-            pdf.addImage(
-                contentImgData,
-                'PNG',
-                margin, // x
-                margin + headerHeight, // y
-                pdfWidth - 2 * margin, // width
-                contentImgHeight, // height
-                undefined,
-                'FAST',
-                0, // rotation
-                0, // x on canvas
-                contentPosition * (contentCanvas.width / (pdfWidth - 2 * margin)), // y on canvas
-                contentCanvas.width, // width on canvas
-                pageContentHeight * (contentCanvas.width / (pdfWidth - 2 * margin)) // height on canvas
-            );
-            
-            contentPosition += pageContentHeight;
+        // --- ENCABEZADO ---
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('FORMATO DE PERMISO DE TRABAJO', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+        yPos += 10;
 
-            // Add footer to each page
-            pdf.addImage(footerImgData, 'PNG', margin, pdfHeight - footerHeight - margin, pdfWidth - 2 * margin, footerHeight);
-            
-            pageCount++;
-        }
+        autoTable(doc, {
+            body: [
+                ['Código', 'SST-FOR-12', 'Versión', '4', 'Fecha Vigencia', '23-01-2023'],
+            ],
+            startY: yPos,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 1 },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 10;
         
-        pdf.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
+        // --- INFORMACIÓN GENERAL ---
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INFORMACIÓN GENERAL', margin, yPos);
+        yPos += 5;
+        
+        const generalInfoData = [
+            ['Número de Permiso', permit.number || permit.id.substring(0,8)],
+            ['Solicitante', permit.user?.displayName || 'N/A'],
+            ['Fecha Creación', permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy HH:mm') : 'N/A'],
+            ['Área Específica', permit.generalInfo?.areaEspecifica || 'N/A'],
+            ['Planta', permit.generalInfo?.planta || 'N/A'],
+            ['Proceso', permit.generalInfo?.proceso || 'N/A'],
+            ['Empresa', permit.generalInfo?.empresa || 'N/A'],
+            ['Contrato', permit.generalInfo?.contrato || 'N/A'],
+            ['Validez Desde', permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yyyy HH:mm') : 'N/A'],
+            ['Validez Hasta', permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yyyy HH:mm') : 'N/A'],
+            ['Tipos de Trabajo', getWorkTypesString(permit) || 'N/A'],
+        ];
 
+        autoTable(doc, {
+            head: [['Campo', 'Valor']],
+            body: generalInfoData,
+            startY: yPos,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 160, 133] },
+            didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+        
+        checkPageBreak(20);
+        doc.text('Descripción de la Tarea:', margin, yPos);
+        yPos += 5;
+        doc.setFont('helvetica', 'normal');
+        const descLines = doc.splitTextToSize(permit.generalInfo?.workDescription || 'N/A', 180);
+        doc.text(descLines, margin, yPos);
+        yPos += descLines.length * 4 + 5;
+
+
+        // --- PERSONAL AUTORIZADO ---
+        if (permit.workers && permit.workers.length > 0) {
+            checkPageBreak(30);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PERSONAL AUTORIZADO Y EXTERNO', margin, yPos);
+            yPos += 5;
+
+            const workersBody = permit.workers.map(w => [w.nombre, w.cedula, w.rol]);
+            
+            autoTable(doc, {
+                head: [['Nombre', 'Cédula', 'Rol']],
+                body: workersBody,
+                startY: yPos,
+                theme: 'grid',
+                headStyles: { fillColor: [22, 160, 133] },
+                didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 10;
+        }
+
+        // --- FIRMAS DE APROBACIÓN ---
+         checkPageBreak(60);
+         doc.setFont('helvetica', 'bold');
+         doc.text('APROBACIONES DEL PERMISO', margin, yPos);
+         yPos += 8;
+
+         let xPos = margin;
+         const signatureWidth = 40;
+         const signatureHeight = 20;
+         const cardWidth = (doc.internal.pageSize.width - (margin * 3)) / 2;
+
+         for (const role of Object.keys(signatureRoles) as SignatureRole[]) {
+             const approval = permit.approvals?.[role];
+
+             doc.setFillColor(248, 249, 250);
+             doc.roundedRect(xPos, yPos, cardWidth, 45, 3, 3, 'FD');
+             
+             let innerY = yPos + 7;
+
+             doc.setFont('helvetica', 'bold');
+             doc.setFontSize(8);
+             doc.text(signatureRoles[role], xPos + 5, innerY, { maxWidth: cardWidth - 10 });
+             innerY += 8;
+
+             doc.setFont('helvetica', 'normal');
+             doc.setFontSize(9);
+             if (approval?.status === 'aprobado') {
+                 doc.setTextColor(40, 167, 69);
+                 doc.text('APROBADO', xPos + 5, innerY);
+                 doc.setTextColor(0, 0, 0);
+                 innerY += 5;
+                 doc.text(`Por: ${approval.userName || 'N/A'}`, xPos + 5, innerY);
+                 innerY += 5;
+                 doc.text(`Fecha: ${approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}`, xPos + 5, innerY);
+                 innerY += 5;
+
+                 if (approval.firmaApertura) {
+                    try {
+                        doc.addImage(approval.firmaApertura, 'PNG', xPos + 5, innerY, signatureWidth, signatureHeight);
+                    } catch (e) {
+                        doc.text('[Firma no válida]', xPos + 5, innerY + 10);
+                    }
+                 }
+
+             } else {
+                 doc.setTextColor(255, 193, 7);
+                 doc.text('PENDIENTE DE FIRMA', xPos + 5, innerY);
+                 doc.setTextColor(0, 0, 0);
+             }
+
+             // Mover a la siguiente posición
+             if (xPos + cardWidth + margin < doc.internal.pageSize.width - margin) {
+                 xPos += cardWidth + margin;
+             } else {
+                 xPos = margin;
+                 yPos += 55; // Siguiente fila
+                 checkPageBreak(55);
+             }
+         }
+         yPos = Math.max(yPos, (doc as any).lastAutoTable.finalY + 10);
+
+        doc.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
+        
         toast({
             title: 'PDF Generado Exitosamente',
             description: 'El documento se ha descargado.',
         });
 
     } catch (error: any) {
+        console.error("PDF Generation Error: ", error);
         toast({
             variant: 'destructive',
             title: 'Error al Generar PDF',
@@ -694,7 +778,7 @@ export default function PermitDetailPage() {
       <div className="flex flex-1 flex-col bg-gray-50/50">
         
         {/* Header con acciones */}
-        <div ref={headerRef} className="bg-white p-4 md:p-6 shadow-md sticky top-0 z-10">
+        <div className="bg-white p-4 md:p-6 shadow-md sticky top-0 z-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
              <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2">
                 <ArrowLeft />
@@ -768,7 +852,7 @@ export default function PermitDetailPage() {
           </div>
         </div>
 
-        <main ref={contentRef} className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg space-y-8">
                 
                 {/* Cabecera del Permiso */}
@@ -992,7 +1076,7 @@ export default function PermitDetailPage() {
         </main>
         
         {/* Footer */}
-        <footer ref={footerRef} className="text-center text-xs text-gray-400 py-4">
+        <footer className="text-center text-xs text-gray-400 py-4">
           SGTC Móvil - Sistema de Gestión de Tareas Críticas
         </footer>
 
