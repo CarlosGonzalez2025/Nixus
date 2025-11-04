@@ -130,9 +130,15 @@ const justificacionOptions = [
     { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
 ];
 
-
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
+  // Estado controlado para TODAS las secciones
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
+    peligros: true, // Sección 1 abierta por defecto
+    bioseguridad: false,
+    epp: false,
+    justificacion: false
+  });
+  
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
 
@@ -181,8 +187,9 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     onUpdateATS({ peligrosAdicionales: newPeligros });
   };
 
-  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
-    <Collapsible defaultOpen={defaultOpen}>
+  // SectionWrapper con estado controlado
+  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string }> = ({ title, children, sectionId }) => (
+    <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
       <CollapsibleTrigger asChild>
         <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
           <h3 className="text-lg font-bold text-gray-700">{title}</h3>
@@ -206,7 +213,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         </p>
       </div>
 
-      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles" defaultOpen>
+      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles" sectionId="peligros">
         <p className="text-xs text-muted-foreground mb-4">
           Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.
         </p>
@@ -278,7 +285,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         </div>
       </SectionWrapper>
 
-      <SectionWrapper title="2. ¿Protocolos de bioseguridad?">
+      <SectionWrapper title="2. ¿Protocolos de bioseguridad?" sectionId="bioseguridad">
         <div className="p-4 border rounded-lg flex items-center justify-between">
             <p className="text-sm text-muted-foreground flex-1 pr-4">Respetar distanciamiento social de 2m, uso de tapabocas permanente cubriendo nariz y boca, asegurar punto de lavado de manos y desinfección de superficies, herramientas y equipos. Reporte diarios de condiciones de salud, reporte y aislamiento preventivo en caso de nexo epidemiológico o contagio con COVID -19. Cumplimiento de Protocolos de Bioseguridad establecidos y disposiciones legales vigentes.</p>
              <RadioGroup
@@ -288,17 +295,17 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si`}>SI</Label>
+                    <Label htmlFor="bioseguridad-si">SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
-                    <Label htmlFor="bioseguridad-no`}>NO</Label>
+                    <Label htmlFor="bioseguridad-no">NO</Label>
                 </div>
             </RadioGroup>
         </div>
        </SectionWrapper>
 
-      <SectionWrapper title="3. EPP Requeridos">
+      <SectionWrapper title="3. EPP Requeridos" sectionId="epp">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {Object.entries(eppOptions).map(([category, items]) => (
                 <div key={category} className="space-y-3">
@@ -341,7 +348,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
          </div>
       </SectionWrapper>
       
-      <SectionWrapper title="4. Justificación para el uso del ATS">
+      <SectionWrapper title="4. Justificación para el uso del ATS" sectionId="justificacion">
         <div className="space-y-3 p-4 border rounded-lg">
             {justificacionOptions.map(option => (
                 <div key={option.id} className="flex items-center space-x-3">

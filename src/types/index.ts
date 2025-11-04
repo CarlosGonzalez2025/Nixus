@@ -208,6 +208,43 @@ export type AnexoConfinado = {
   };
 };
 
+export type AnexoEnergias = {
+  emergencia?: {
+    contacto: string;
+    telefono: string;
+  };
+  trabajosEnCaliente?: {
+    [key: string]: 'si' | 'no' | 'na' | string;
+  };
+  energiasPeligrosas?: {
+    [key: string]: boolean | string;
+  };
+  procedimientoLOTO?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+  trabajosConEnergiaElectrica?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+  tensionExpuesta?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+  planeacion?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+  metodoTrabajo?: {
+    sinTension: boolean;
+    conTension: boolean;
+  };
+  trabajoConTension?: {
+    [key: string]: boolean | 'si' | 'no' | 'na';
+  };
+  trabajoSinTension?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+  observaciones?: string;
+};
+
+
 export type AnexoCaliente = {
   distanciaSeguridad: 'si' | 'no' | 'na';
   medicionAtmosfera: 'si' | 'no' | 'na';
@@ -218,16 +255,6 @@ export type AnexoCaliente = {
   personalCapacitado: 'si' | 'no' | 'na';
   listasChequeo: 'si' | 'no' | 'na';
   otro: string;
-};
-
-export type AnexoEnergias = {
-  tensionExpuesta: 'muy_baja' | 'baja' | 'media' | 'alta' | 'extra_alta';
-  planeacion: { [key: string]: 'si' | 'no' };
-  metodoTrabajo: 'sin_tension' | 'con_tension';
-  energiasPeligrosas: { [key: string]: boolean };
-  procedimientoLOTO: { [key: string]: 'si' | 'no' | 'na' };
-  trabajoSinTension: { [key: string]: 'si' | 'no' | 'na' };
-  observaciones: string;
 };
 
 export type AnexoIzaje = {
@@ -303,7 +330,7 @@ export type Permit = {
   workType?: string[];
   trabajoAlturas?: boolean;
   espaciosConfinados?: boolean;
-  controlEnergia?: boolean;
+  controlEnergias?: boolean;
   izajeCargas?: boolean;
   trabajoCaliente?: boolean;
   excavaciones?: boolean;
@@ -325,8 +352,8 @@ export type Permit = {
   anexoATS?: Partial<AnexoATS>;
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
-  anexoIzaje?: Partial<AnexoIzaje>;
   anexoEnergias?: Partial<AnexoEnergias>;
+  anexoIzaje?: Partial<AnexoIzaje>;
   anexoCaliente?: Partial<AnexoCaliente>;
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
 }
