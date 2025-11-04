@@ -4635,6 +4635,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/form-context.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/textarea.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/radio-group.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/signature.js [app-ssr] (ecmascript) <export default as Signature>");
@@ -4646,6 +4647,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$d
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/signature-pad.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/collapsible.tsx [app-ssr] (ecmascript)");
 'use client';
+;
 ;
 ;
 ;
@@ -5119,12 +5121,23 @@ function AnexoConfinadoStep() {
     const handleSaveSignature = (signature)=>{
         if (!signingTarget) return;
         const { section, field, index } = signingTarget;
-        if (section === 'resultadosPruebasGases') {
+        if (section === 'resultadosPruebasGases' && field === 'firmaQuienRealiza') {
             handleNestedFieldChange('resultadosPruebasGases', 'firmaQuienRealiza', signature);
-        } else if (section === 'pruebasGasesPeriodicas' && index !== undefined) {
+        } else if (section === 'pruebasGasesPeriodicas' && field === 'pruebas' && index !== undefined) {
             handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'firma', signature);
+        } else if (section === 'validacion' && (field === 'autoridad' || field === 'responsable') && index !== undefined) {
+            handleListChange('validacion', field, index, 'firma', signature);
+        } else if (section === 'cancelacion' && field === 'firma') {
+            handleNestedFieldChange('cancelacion', 'firma', signature);
+        } else if (section === 'cierre' && (field === 'autoridad' || field === 'responsable')) {
+            const currentCierreData = anexoConfinado['cierre'] || {};
+            const currentSignatureData = currentCierreData[field] || {};
+            handleNestedFieldChange('cierre', field, {
+                ...currentSignatureData,
+                firma: signature
+            });
         } else {
-            handleNestedFieldChange(section, field, signature);
+            handleNestedFieldChange(section, 'firma', signature);
         }
         setIsSignatureDialogOpen(false);
         setSigningTarget(null);
@@ -5142,25 +5155,25 @@ function AnexoConfinadoStep() {
                                 children: title
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 190,
+                                lineNumber: 198,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                 className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 191,
+                                lineNumber: 199,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 189,
+                        lineNumber: 197,
                         columnNumber: 9
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                    lineNumber: 188,
+                    lineNumber: 196,
                     columnNumber: 7
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -5168,13 +5181,13 @@ function AnexoConfinadoStep() {
                     children: children
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                    lineNumber: 194,
+                    lineNumber: 202,
                     columnNumber: 7
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-            lineNumber: 187,
+            lineNumber: 195,
             columnNumber: 5
         }, this);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -5190,7 +5203,7 @@ function AnexoConfinadoStep() {
                                 children: "Anexo de Espacios Confinados"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 204,
+                                lineNumber: 212,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5198,13 +5211,13 @@ function AnexoConfinadoStep() {
                                 children: "Complete la información requerida para trabajos en espacios confinados."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 207,
+                                lineNumber: 215,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 203,
+                        lineNumber: 211,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -5220,7 +5233,7 @@ function AnexoConfinadoStep() {
                                                 children: "Emitido por:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 214,
+                                                lineNumber: 222,
                                                 columnNumber: 16
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5229,13 +5242,13 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 214,
+                                                lineNumber: 222,
                                                 columnNumber: 43
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 214,
+                                        lineNumber: 222,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5244,7 +5257,7 @@ function AnexoConfinadoStep() {
                                                 children: "Área de Trabajo:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 215,
+                                                lineNumber: 223,
                                                 columnNumber: 16
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5253,13 +5266,13 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 215,
+                                                lineNumber: 223,
                                                 columnNumber: 47
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 215,
+                                        lineNumber: 223,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5268,7 +5281,7 @@ function AnexoConfinadoStep() {
                                                 children: "Equipo o Área Específica:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 216,
+                                                lineNumber: 224,
                                                 columnNumber: 16
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5277,19 +5290,19 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 216,
+                                                lineNumber: 224,
                                                 columnNumber: 56
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 216,
+                                        lineNumber: 224,
                                         columnNumber: 11
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 213,
+                                lineNumber: 221,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5301,7 +5314,7 @@ function AnexoConfinadoStep() {
                                                 children: "Responsable (Nombre):"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 219,
+                                                lineNumber: 227,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5310,13 +5323,13 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 219,
+                                                lineNumber: 227,
                                                 columnNumber: 54
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 219,
+                                        lineNumber: 227,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5325,7 +5338,7 @@ function AnexoConfinadoStep() {
                                                 children: "Cargo:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 220,
+                                                lineNumber: 228,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5334,13 +5347,13 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 220,
+                                                lineNumber: 228,
                                                 columnNumber: 39
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 220,
+                                        lineNumber: 228,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5349,7 +5362,7 @@ function AnexoConfinadoStep() {
                                                 children: "Compañía:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 221,
+                                                lineNumber: 229,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5358,19 +5371,19 @@ function AnexoConfinadoStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 221,
+                                                lineNumber: 229,
                                                 columnNumber: 42
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 221,
+                                        lineNumber: 229,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 218,
+                                lineNumber: 226,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5382,7 +5395,7 @@ function AnexoConfinadoStep() {
                                                 children: "En caso de emergencia contactar a:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 224,
+                                                lineNumber: 232,
                                                 columnNumber: 16
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5390,13 +5403,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('emergencia', 'contacto', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 224,
+                                                lineNumber: 232,
                                                 columnNumber: 65
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 224,
+                                        lineNumber: 232,
                                         columnNumber: 11
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5405,7 +5418,7 @@ function AnexoConfinadoStep() {
                                                 children: "Teléfono:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 225,
+                                                lineNumber: 233,
                                                 columnNumber: 16
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5413,25 +5426,25 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('emergencia', 'telefono', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 225,
+                                                lineNumber: 233,
                                                 columnNumber: 40
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 225,
+                                        lineNumber: 233,
                                         columnNumber: 11
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 223,
+                                lineNumber: 231,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 212,
+                        lineNumber: 220,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -5451,25 +5464,25 @@ function AnexoConfinadoStep() {
                                                         children: section.title
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 235,
+                                                        lineNumber: 243,
                                                         columnNumber: 29
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                                         className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 236,
+                                                        lineNumber: 244,
                                                         columnNumber: 29
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 234,
+                                                lineNumber: 242,
                                                 columnNumber: 25
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 233,
+                                            lineNumber: 241,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -5487,7 +5500,7 @@ function AnexoConfinadoStep() {
                                                             onChange: (value)=>handleNestedFieldChange('identificacionPeligros', item.id, value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 245,
+                                                            lineNumber: 253,
                                                             columnNumber: 37
                                                         }, this),
                                                         item.id === 'procedimientoComunicacion' && anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5497,35 +5510,35 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleFieldChange('procedimientoComunicacionCual', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 252,
+                                                            lineNumber: 260,
                                                             columnNumber: 41
                                                         }, this)
                                                     ]
                                                 }, item.id, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 244,
+                                                    lineNumber: 252,
                                                     columnNumber: 33
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 239,
+                                            lineNumber: 247,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, section.title, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 232,
+                                    lineNumber: 240,
                                     columnNumber: 17
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 230,
+                            lineNumber: 238,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 229,
+                        lineNumber: 237,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -5539,17 +5552,17 @@ function AnexoConfinadoStep() {
                                     onChange: (value)=>handleNestedFieldChange('precauciones', item.id, value)
                                 }, item.id, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 271,
+                                    lineNumber: 279,
                                     columnNumber: 17
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 269,
+                            lineNumber: 277,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 268,
+                        lineNumber: 276,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -5563,7 +5576,7 @@ function AnexoConfinadoStep() {
                                             children: "LEL (0%)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 278,
+                                            lineNumber: 286,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5571,13 +5584,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'lel', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 278,
+                                            lineNumber: 286,
                                             columnNumber: 41
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 278,
+                                    lineNumber: 286,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5586,7 +5599,7 @@ function AnexoConfinadoStep() {
                                             children: "O2 (19.5-22%)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 279,
+                                            lineNumber: 287,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5594,13 +5607,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'o2', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 279,
+                                            lineNumber: 287,
                                             columnNumber: 46
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 279,
+                                    lineNumber: 287,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5609,7 +5622,7 @@ function AnexoConfinadoStep() {
                                             children: "H2S (0-10 PPM)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 280,
+                                            lineNumber: 288,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5617,13 +5630,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'h2s', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 280,
+                                            lineNumber: 288,
                                             columnNumber: 47
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 280,
+                                    lineNumber: 288,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5632,7 +5645,7 @@ function AnexoConfinadoStep() {
                                             children: "CO (0-25 PPM)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 281,
+                                            lineNumber: 289,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5640,13 +5653,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'co', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 281,
+                                            lineNumber: 289,
                                             columnNumber: 46
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 281,
+                                    lineNumber: 289,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5656,7 +5669,7 @@ function AnexoConfinadoStep() {
                                             children: "Otros"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 282,
+                                            lineNumber: 290,
                                             columnNumber: 41
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5664,13 +5677,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'otros', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 282,
+                                            lineNumber: 290,
                                             columnNumber: 61
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 282,
+                                    lineNumber: 290,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5679,7 +5692,7 @@ function AnexoConfinadoStep() {
                                             children: "Serial Monitor"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 283,
+                                            lineNumber: 291,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5687,13 +5700,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'serialMonitor', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 283,
+                                            lineNumber: 291,
                                             columnNumber: 47
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 283,
+                                    lineNumber: 291,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5702,7 +5715,7 @@ function AnexoConfinadoStep() {
                                             children: "Hora Prueba"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 284,
+                                            lineNumber: 292,
                                             columnNumber: 18
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5711,13 +5724,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'horaPrueba', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 284,
+                                            lineNumber: 292,
                                             columnNumber: 44
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 284,
+                                    lineNumber: 292,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5727,7 +5740,7 @@ function AnexoConfinadoStep() {
                                             children: "Nombre de quien realiza"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 285,
+                                            lineNumber: 293,
                                             columnNumber: 44
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5735,13 +5748,13 @@ function AnexoConfinadoStep() {
                                             onChange: (e)=>handleNestedFieldChange('resultadosPruebasGases', 'nombreQuienRealiza', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 285,
+                                            lineNumber: 293,
                                             columnNumber: 82
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 285,
+                                    lineNumber: 293,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5756,14 +5769,14 @@ function AnexoConfinadoStep() {
                                                     className: "mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 287,
+                                                    lineNumber: 295,
                                                     columnNumber: 145
                                                 }, this),
                                                 "Firmar"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 287,
+                                            lineNumber: 295,
                                             columnNumber: 17
                                         }, this),
                                         anexoConfinado?.resultadosPruebasGases?.firmaQuienRealiza && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -5772,24 +5785,24 @@ function AnexoConfinadoStep() {
                                             className: "mt-2 border rounded-md"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 288,
+                                            lineNumber: 296,
                                             columnNumber: 79
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 286,
+                                    lineNumber: 294,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 277,
+                            lineNumber: 285,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 276,
+                        lineNumber: 284,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -5802,7 +5815,7 @@ function AnexoConfinadoStep() {
                                     onChange: (value)=>handleNestedFieldChange('requerimientosEquipos', item.id, value)
                                 }, item.id, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                    lineNumber: 295,
+                                    lineNumber: 303,
                                     columnNumber: 13
                                 }, this)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5812,7 +5825,7 @@ function AnexoConfinadoStep() {
                                         children: "Las pruebas de gases se deben realizar cada:"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 298,
+                                        lineNumber: 306,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5821,23 +5834,23 @@ function AnexoConfinadoStep() {
                                         placeholder: "Ej: 30 minutos"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 299,
+                                        lineNumber: 307,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 297,
+                                lineNumber: 305,
                                 columnNumber: 10
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 293,
+                        lineNumber: 301,
                         columnNumber: 8
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
-                        title: "Pruebas de Gases Periódicas",
+                        title: "Pruebas de Gases Periódicas Requeridas",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "grid grid-cols-1 md:grid-cols-3 gap-4",
@@ -5848,7 +5861,7 @@ function AnexoConfinadoStep() {
                                                 children: "Prueba realizada por:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 305,
+                                                lineNumber: 313,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5856,13 +5869,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('pruebasGasesPeriodicas', 'pruebaRealizadaPor', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 305,
+                                                lineNumber: 313,
                                                 columnNumber: 55
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 305,
+                                        lineNumber: 313,
                                         columnNumber: 14
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5871,7 +5884,7 @@ function AnexoConfinadoStep() {
                                                 children: "Serial Monitor:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 306,
+                                                lineNumber: 314,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5879,13 +5892,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('pruebasGasesPeriodicas', 'serialMonitor', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 306,
+                                                lineNumber: 314,
                                                 columnNumber: 49
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 306,
+                                        lineNumber: 314,
                                         columnNumber: 14
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5894,7 +5907,7 @@ function AnexoConfinadoStep() {
                                                 children: "Marca:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 307,
+                                                lineNumber: 315,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5902,13 +5915,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('pruebasGasesPeriodicas', 'marca', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 307,
+                                                lineNumber: 315,
                                                 columnNumber: 40
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 307,
+                                        lineNumber: 315,
                                         columnNumber: 14
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5917,7 +5930,7 @@ function AnexoConfinadoStep() {
                                                 children: "Fecha y Hora Calibración:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 308,
+                                                lineNumber: 316,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -5926,19 +5939,19 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('pruebasGasesPeriodicas', 'fechaCalibracion', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 308,
+                                                lineNumber: 316,
                                                 columnNumber: 59
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 308,
+                                        lineNumber: 316,
                                         columnNumber: 14
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 304,
+                                lineNumber: 312,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
@@ -5951,58 +5964,58 @@ function AnexoConfinadoStep() {
                                                     children: "Hora"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                     children: "LEL"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 44
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                     children: "O2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 70
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                     children: "H2S"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 95
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                     children: "CO"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 121
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                     children: "Firma"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 146
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {}, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                    lineNumber: 314,
+                                                    lineNumber: 322,
                                                     columnNumber: 174
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                            lineNumber: 313,
+                                            lineNumber: 321,
                                             columnNumber: 15
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 312,
+                                        lineNumber: 320,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -6016,12 +6029,12 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'hora', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 320,
+                                                            lineNumber: 328,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 320,
+                                                        lineNumber: 328,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6031,12 +6044,12 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'lel', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 321,
+                                                            lineNumber: 329,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 321,
+                                                        lineNumber: 329,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6046,12 +6059,12 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'o2', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 322,
+                                                            lineNumber: 330,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 322,
+                                                        lineNumber: 330,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6061,12 +6074,12 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'h2s', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 323,
+                                                            lineNumber: 331,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 323,
+                                                        lineNumber: 331,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6076,12 +6089,12 @@ function AnexoConfinadoStep() {
                                                             onChange: (e)=>handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'co', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 324,
+                                                            lineNumber: 332,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 324,
+                                                        lineNumber: 332,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6093,17 +6106,17 @@ function AnexoConfinadoStep() {
                                                                 className: "h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                                lineNumber: 325,
+                                                                lineNumber: 333,
                                                                 columnNumber: 148
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 325,
+                                                            lineNumber: 333,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 325,
+                                                        lineNumber: 333,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -6115,34 +6128,34 @@ function AnexoConfinadoStep() {
                                                                 className: "h-4 w-4 text-destructive"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                                lineNumber: 326,
+                                                                lineNumber: 334,
                                                                 columnNumber: 143
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                            lineNumber: 326,
+                                                            lineNumber: 334,
                                                             columnNumber: 32
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                        lineNumber: 326,
+                                                        lineNumber: 334,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, prueba.id, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 319,
+                                                lineNumber: 327,
                                                 columnNumber: 17
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 317,
+                                        lineNumber: 325,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 311,
+                                lineNumber: 319,
                                 columnNumber: 11
                             }, this),
                             (anexoConfinado?.pruebasGasesPeriodicas?.pruebas?.length || 0) < 4 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -6156,20 +6169,20 @@ function AnexoConfinadoStep() {
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 332,
+                                        lineNumber: 340,
                                         columnNumber: 143
                                     }, this),
                                     "Agregar Prueba"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 332,
+                                lineNumber: 340,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 303,
+                        lineNumber: 311,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -6183,7 +6196,7 @@ function AnexoConfinadoStep() {
                                         children: "Autoridad del Área"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 338,
+                                        lineNumber: 346,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6191,7 +6204,7 @@ function AnexoConfinadoStep() {
                                         children: '"Al firmar como Autoridad del Área..."'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 339,
+                                        lineNumber: 347,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6203,7 +6216,7 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('autoridadDelArea', 'nombre', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 341,
+                                                lineNumber: 349,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -6213,13 +6226,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('autoridadDelArea', 'hora', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 342,
+                                                lineNumber: 350,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 340,
+                                        lineNumber: 348,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -6231,14 +6244,14 @@ function AnexoConfinadoStep() {
                                                 className: "mr-2"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 344,
+                                                lineNumber: 352,
                                                 columnNumber: 128
                                             }, this),
                                             "Firmar"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 344,
+                                        lineNumber: 352,
                                         columnNumber: 13
                                     }, this),
                                     anexoConfinado?.autoridadDelArea?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -6247,13 +6260,13 @@ function AnexoConfinadoStep() {
                                         className: "mt-2 border rounded-md"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 345,
+                                        lineNumber: 353,
                                         columnNumber: 57
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 337,
+                                lineNumber: 345,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6264,7 +6277,7 @@ function AnexoConfinadoStep() {
                                         children: "Responsable del Trabajo"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 348,
+                                        lineNumber: 356,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6272,7 +6285,7 @@ function AnexoConfinadoStep() {
                                         children: '"Al firmar como Responsable del Trabajo..."'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 349,
+                                        lineNumber: 357,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6284,7 +6297,7 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('responsableDelTrabajo', 'nombre', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 351,
+                                                lineNumber: 359,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -6294,13 +6307,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('responsableDelTrabajo', 'hora', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 352,
+                                                lineNumber: 360,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 350,
+                                        lineNumber: 358,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -6312,14 +6325,14 @@ function AnexoConfinadoStep() {
                                                 className: "mr-2"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 354,
+                                                lineNumber: 362,
                                                 columnNumber: 133
                                             }, this),
                                             "Firmar"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 354,
+                                        lineNumber: 362,
                                         columnNumber: 13
                                     }, this),
                                     anexoConfinado?.responsableDelTrabajo?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -6328,13 +6341,13 @@ function AnexoConfinadoStep() {
                                         className: "mt-2 border rounded-md"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 355,
+                                        lineNumber: 363,
                                         columnNumber: 62
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 347,
+                                lineNumber: 355,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6345,7 +6358,7 @@ function AnexoConfinadoStep() {
                                         children: "Supervisor de Trabajo en Espacios Confinados"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 358,
+                                        lineNumber: 366,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6353,7 +6366,7 @@ function AnexoConfinadoStep() {
                                         children: '"Al firmar como Supervisor..."'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 359,
+                                        lineNumber: 367,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6365,7 +6378,7 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('supervisorTrabajo', 'nombre', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 361,
+                                                lineNumber: 369,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -6375,13 +6388,13 @@ function AnexoConfinadoStep() {
                                                 onChange: (e)=>handleNestedFieldChange('supervisorTrabajo', 'hora', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 362,
+                                                lineNumber: 370,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 360,
+                                        lineNumber: 368,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -6393,14 +6406,14 @@ function AnexoConfinadoStep() {
                                                 className: "mr-2"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                                lineNumber: 364,
+                                                lineNumber: 372,
                                                 columnNumber: 129
                                             }, this),
                                             "Firmar"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 364,
+                                        lineNumber: 372,
                                         columnNumber: 13
                                     }, this),
                                     anexoConfinado?.supervisorTrabajo?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -6409,40 +6422,628 @@ function AnexoConfinadoStep() {
                                         className: "mt-2 border rounded-md"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                        lineNumber: 365,
+                                        lineNumber: 373,
                                         columnNumber: 58
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 357,
+                                lineNumber: 365,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 336,
+                        lineNumber: 344,
                         columnNumber: 8
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
                         title: "Validación y Cierre",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-muted-foreground text-sm",
-                            children: "Esta sección está en construcción."
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 371,
-                            columnNumber: 10
-                        }, this)
-                    }, void 0, false, {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "p-4 border rounded-lg space-y-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
+                                                className: "font-semibold",
+                                                children: "Autoridad del Área"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 380,
+                                                columnNumber: 21
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                className: "text-xs text-muted-foreground",
+                                                children: "Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas."
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 381,
+                                                columnNumber: 21
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHeader"], {
+                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
+                                                            children: [
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Día"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 383,
+                                                                    columnNumber: 48
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Nombre"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 383,
+                                                                    columnNumber: 74
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Firma"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 383,
+                                                                    columnNumber: 103
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Fecha"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 383,
+                                                                    columnNumber: 131
+                                                                }, this)
+                                                            ]
+                                                        }, void 0, true, {
+                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                            lineNumber: 383,
+                                                            columnNumber: 38
+                                                        }, this)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 383,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
+                                                        children: anexoConfinado.validacion?.autoridad.map((v, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: i + 1
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 387,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                            value: v.nombre,
+                                                                            onChange: (e)=>handleListChange('validacion', 'autoridad', i, 'nombre', e.target.value),
+                                                                            className: "h-8"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 388,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 388,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                            variant: "ghost",
+                                                                            size: "icon",
+                                                                            onClick: ()=>openSignatureDialog('validacion', 'autoridad', i),
+                                                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
+                                                                                className: "h-4 w-4"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                                lineNumber: 389,
+                                                                                columnNumber: 150
+                                                                            }, this)
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 389,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 389,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                            type: "date",
+                                                                            value: v.fecha,
+                                                                            onChange: (e)=>handleListChange('validacion', 'autoridad', i, 'fecha', e.target.value),
+                                                                            className: "h-8"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 390,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 390,
+                                                                        columnNumber: 37
+                                                                    }, this)
+                                                                ]
+                                                            }, i, true, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 386,
+                                                                columnNumber: 33
+                                                            }, this))
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 384,
+                                                        columnNumber: 25
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 382,
+                                                columnNumber: 21
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                        lineNumber: 379,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "p-4 border rounded-lg space-y-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
+                                                className: "font-semibold",
+                                                children: "Responsable del Trabajo/Ejecutor"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 397,
+                                                columnNumber: 21
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                className: "text-xs text-muted-foreground",
+                                                children: "Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas."
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 398,
+                                                columnNumber: 22
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHeader"], {
+                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
+                                                            children: [
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Día"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 400,
+                                                                    columnNumber: 48
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Nombre"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 400,
+                                                                    columnNumber: 74
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Firma"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 400,
+                                                                    columnNumber: 103
+                                                                }, this),
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
+                                                                    children: "Fecha"
+                                                                }, void 0, false, {
+                                                                    fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                    lineNumber: 400,
+                                                                    columnNumber: 131
+                                                                }, this)
+                                                            ]
+                                                        }, void 0, true, {
+                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                            lineNumber: 400,
+                                                            columnNumber: 38
+                                                        }, this)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 400,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
+                                                        children: anexoConfinado.validacion?.responsable.map((v, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableRow"], {
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: i + 1
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 404,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                            value: v.nombre,
+                                                                            onChange: (e)=>handleListChange('validacion', 'responsable', i, 'nombre', e.target.value),
+                                                                            className: "h-8"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 405,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 405,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                            variant: "ghost",
+                                                                            size: "icon",
+                                                                            onClick: ()=>openSignatureDialog('validacion', 'responsable', i),
+                                                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
+                                                                                className: "h-4 w-4"
+                                                                            }, void 0, false, {
+                                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                                lineNumber: 406,
+                                                                                columnNumber: 152
+                                                                            }, this)
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 406,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 406,
+                                                                        columnNumber: 37
+                                                                    }, this),
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
+                                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                            type: "date",
+                                                                            value: v.fecha,
+                                                                            onChange: (e)=>handleListChange('validacion', 'responsable', i, 'fecha', e.target.value),
+                                                                            className: "h-8"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                            lineNumber: 407,
+                                                                            columnNumber: 48
+                                                                        }, this)
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 407,
+                                                                        columnNumber: 37
+                                                                    }, this)
+                                                                ]
+                                                            }, i, true, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 403,
+                                                                columnNumber: 33
+                                                            }, this))
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 401,
+                                                        columnNumber: 25
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 399,
+                                                columnNumber: 21
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                        lineNumber: 396,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                lineNumber: 378,
+                                columnNumber: 10
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "grid grid-cols-1 md:grid-cols-2 gap-6 mt-6",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "space-y-4 p-4 border rounded-lg",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                                className: "font-semibold",
+                                                children: "Cancelación del Trabajo"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 416,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
+                                                id: "cancelacion-si-no",
+                                                label: "¿Se canceló el trabajo?",
+                                                value: anexoConfinado.cancelacion?.seCancelo || 'no',
+                                                onChange: (value)=>handleNestedFieldChange('cancelacion', 'seCancelo', value)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 417,
+                                                columnNumber: 19
+                                            }, this),
+                                            anexoConfinado.cancelacion?.seCancelo === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "space-y-3",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
+                                                        placeholder: "Razón de la cancelación",
+                                                        value: anexoConfinado.cancelacion.razon || '',
+                                                        onChange: (e)=>handleNestedFieldChange('cancelacion', 'razon', e.target.value)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 420,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                        placeholder: "Nombre de quien cancela",
+                                                        value: anexoConfinado.cancelacion.nombre || '',
+                                                        onChange: (e)=>handleNestedFieldChange('cancelacion', 'nombre', e.target.value)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 421,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                        type: "date",
+                                                        value: anexoConfinado.cancelacion.fecha || '',
+                                                        onChange: (e)=>handleNestedFieldChange('cancelacion', 'fecha', e.target.value)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 422,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                        variant: "outline",
+                                                        className: "w-full",
+                                                        onClick: ()=>openSignatureDialog('cancelacion', 'firma'),
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
+                                                                className: "mr-2"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 423,
+                                                                columnNumber: 132
+                                                            }, this),
+                                                            "Firmar Cancelación"
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 423,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    anexoConfinado.cancelacion?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
+                                                        src: anexoConfinado.cancelacion.firma,
+                                                        alt: "Firma",
+                                                        className: "mt-2 border rounded-md"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 424,
+                                                        columnNumber: 65
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 419,
+                                                columnNumber: 23
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                        lineNumber: 415,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "space-y-4 p-4 border rounded-lg",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                                className: "font-semibold",
+                                                children: "Cierre del Permiso"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 429,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
+                                                id: "cierre-si-no",
+                                                label: "¿Se terminó el trabajo?",
+                                                value: anexoConfinado.cierre?.seTermino || 'no',
+                                                onChange: (value)=>handleNestedFieldChange('cierre', 'seTermino', value)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 430,
+                                                columnNumber: 19
+                                            }, this),
+                                            anexoConfinado.cierre?.seTermino === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "space-y-3",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
+                                                        placeholder: "Observaciones de cierre",
+                                                        value: anexoConfinado.cierre.observaciones || '',
+                                                        onChange: (e)=>handleNestedFieldChange('cierre', 'observaciones', e.target.value)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 433,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                        className: "p-3 border rounded-md",
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                                className: "text-xs font-bold",
+                                                                children: "Autoridad del Área"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 435,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                placeholder: "Nombre",
+                                                                value: anexoConfinado.cierre.autoridad?.nombre || '',
+                                                                onChange: (e)=>handleNestedFieldChange('cierre', 'autoridad', {
+                                                                        ...anexoConfinado.cierre.autoridad,
+                                                                        nombre: e.target.value
+                                                                    })
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 436,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                type: "date",
+                                                                className: "mt-2",
+                                                                value: anexoConfinado.cierre.autoridad?.fecha || '',
+                                                                onChange: (e)=>handleNestedFieldChange('cierre', 'autoridad', {
+                                                                        ...anexoConfinado.cierre.autoridad,
+                                                                        fecha: e.target.value
+                                                                    })
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 437,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                variant: "outline",
+                                                                size: "sm",
+                                                                className: "w-full mt-2",
+                                                                onClick: ()=>openSignatureDialog('cierre', 'autoridad'),
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
+                                                                        className: "mr-2"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 438,
+                                                                        columnNumber: 150
+                                                                    }, this),
+                                                                    "Firmar Cierre"
+                                                                ]
+                                                            }, void 0, true, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 438,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            anexoConfinado.cierre.autoridad?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
+                                                                src: anexoConfinado.cierre.autoridad.firma,
+                                                                alt: "Firma",
+                                                                className: "mt-2 border rounded-md"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 439,
+                                                                columnNumber: 74
+                                                            }, this)
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 434,
+                                                        columnNumber: 27
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                        className: "p-3 border rounded-md",
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                                className: "text-xs font-bold",
+                                                                children: "Responsable del Trabajo"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 442,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                placeholder: "Nombre",
+                                                                value: anexoConfinado.cierre.responsable?.nombre || '',
+                                                                onChange: (e)=>handleNestedFieldChange('cierre', 'responsable', {
+                                                                        ...anexoConfinado.cierre.responsable,
+                                                                        nombre: e.target.value
+                                                                    })
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 443,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                                type: "date",
+                                                                className: "mt-2",
+                                                                value: anexoConfinado.cierre.responsable?.fecha || '',
+                                                                onChange: (e)=>handleNestedFieldChange('cierre', 'responsable', {
+                                                                        ...anexoConfinado.cierre.responsable,
+                                                                        fecha: e.target.value
+                                                                    })
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 444,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                                                variant: "outline",
+                                                                size: "sm",
+                                                                className: "w-full mt-2",
+                                                                onClick: ()=>openSignatureDialog('cierre', 'responsable'),
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
+                                                                        className: "mr-2"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                        lineNumber: 445,
+                                                                        columnNumber: 152
+                                                                    }, this),
+                                                                    "Firmar Cierre"
+                                                                ]
+                                                            }, void 0, true, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 445,
+                                                                columnNumber: 31
+                                                            }, this),
+                                                            anexoConfinado.cierre.responsable?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
+                                                                src: anexoConfinado.cierre.responsable.firma,
+                                                                alt: "Firma",
+                                                                className: "mt-2 border rounded-md"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                                lineNumber: 446,
+                                                                columnNumber: 76
+                                                            }, this)
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                        lineNumber: 441,
+                                                        columnNumber: 27
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                                lineNumber: 432,
+                                                columnNumber: 23
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                        lineNumber: 428,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
+                                lineNumber: 414,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                        lineNumber: 369,
+                        lineNumber: 377,
                         columnNumber: 7
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                lineNumber: 202,
+                lineNumber: 210,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -6455,30 +7056,30 @@ function AnexoConfinadoStep() {
                                 children: "Registrar Firma"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                                lineNumber: 378,
+                                lineNumber: 458,
                                 columnNumber: 11
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 377,
+                            lineNumber: 457,
                             columnNumber: 9
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SignaturePad"], {
                             onSave: handleSaveSignature
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                            lineNumber: 380,
+                            lineNumber: 460,
                             columnNumber: 9
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                    lineNumber: 376,
+                    lineNumber: 456,
                     columnNumber: 7
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx",
-                lineNumber: 375,
+                lineNumber: 455,
                 columnNumber: 5
             }, this)
         ]

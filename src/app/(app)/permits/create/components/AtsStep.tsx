@@ -127,7 +127,6 @@ const justificacionOptions = [
 export function AtsStep() {
   const { state, dispatch } = usePermitForm();
   const { anexoATS } = state;
-  const [openCategories, setOpenCategories] = React.useState<string[]>([]);
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
 
@@ -173,13 +172,19 @@ export function AtsStep() {
     dispatch({ type: 'UPDATE_ATS', payload: { peligrosAdicionales: newPeligros } });
   };
 
-  const toggleCategory = (category: string) => {
-    setOpenCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
+  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
+    <Collapsible defaultOpen={defaultOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
+          <h3 className="text-lg font-bold text-gray-700">{title}</h3>
+          <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 
   return (
     <div className="space-y-8">
@@ -192,21 +197,17 @@ export function AtsStep() {
         </p>
       </div>
 
-      {/* Identificación de Peligros */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">
-          1. Identificación de Peligros, Riesgos y Controles
-        </h3>
-        <p className="text-xs text-muted-foreground">
+      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles" defaultOpen>
+        <p className="text-xs text-muted-foreground mb-4">
           Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.
         </p>
         <div className="space-y-2">
           {Object.entries(hazardCategories).map(([category, hazards]) => (
-            <Collapsible key={category} open={openCategories.includes(category)} onOpenChange={() => toggleCategory(category)}>
+            <Collapsible key={category}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
                   <span className="font-semibold">{category}</span>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${openCategories.includes(category) ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-5 w-5 transition-transform data-[state=open]:rotate-180`} />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-4">
@@ -243,10 +244,7 @@ export function AtsStep() {
             </Collapsible>
           ))}
         </div>
-      </div>
-
-       {/* Otros Peligros */}
-        <div>
+        <div className="mt-6">
             <h4 className="font-semibold text-lg text-gray-700 mb-2">Otros Peligros</h4>
             <div className="p-4 border rounded-lg space-y-4">
             {anexoATS.peligrosAdicionales?.map((item, index) => (
@@ -269,12 +267,9 @@ export function AtsStep() {
             </Button>
             </div>
         </div>
+      </SectionWrapper>
 
-      {/* Protocolos de Bioseguridad */}
-       <div>
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">
-          2. ¿Protocolos de bioseguridad?
-        </h3>
+      <SectionWrapper title="2. ¿Protocolos de bioseguridad?">
         <div className="p-4 border rounded-lg flex items-center justify-between">
             <p className="text-sm text-muted-foreground flex-1 pr-4">Respetar distanciamiento social de 2m, uso de tapabocas permanente cubriendo nariz y boca, asegurar punto de lavado de manos y desinfección de superficies, herramientas y equipos. Reporte diarios de condiciones de salud, reporte y aislamiento preventivo en caso de nexo epidemiológico o contagio con COVID -19. Cumplimiento de Protocolos de Bioseguridad establecidos y disposiciones legales vigentes.</p>
              <RadioGroup
@@ -284,7 +279,7 @@ export function AtsStep() {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si">SI</Label>
+                    <Label htmlFor="bioseguridad-si`}>SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
@@ -292,13 +287,9 @@ export function AtsStep() {
                 </div>
             </RadioGroup>
         </div>
-       </div>
+       </SectionWrapper>
 
-      {/* EPP Requeridos */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">
-          3. EPP Requeridos
-        </h3>
+      <SectionWrapper title="3. EPP Requeridos">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {Object.entries(eppOptions).map(([category, items]) => (
                 <div key={category} className="space-y-3">
@@ -339,26 +330,22 @@ export function AtsStep() {
                 </div>
             ))}
          </div>
-      </div>
+      </SectionWrapper>
       
-        {/* Justificación ATS */}
-        <div>
-            <h3 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">
-            4. Justificación para el uso del ATS
-            </h3>
-            <div className="space-y-3 p-4 border rounded-lg">
-                {justificacionOptions.map(option => (
-                    <div key={option.id} className="flex items-center space-x-3">
-                        <Checkbox
-                            id={option.id}
-                            checked={!!anexoATS.justificacion?.[option.id]}
-                            onCheckedChange={(checked) => handleJustificacionChange(option.id, !!checked)}
-                        />
-                        <Label htmlFor={option.id} className="text-sm font-normal">{option.label}</Label>
-                    </div>
-                ))}
-            </div>
+      <SectionWrapper title="4. Justificación para el uso del ATS">
+        <div className="space-y-3 p-4 border rounded-lg">
+            {justificacionOptions.map(option => (
+                <div key={option.id} className="flex items-center space-x-3">
+                    <Checkbox
+                        id={option.id}
+                        checked={!!anexoATS.justificacion?.[option.id]}
+                        onCheckedChange={(checked) => handleJustificacionChange(option.id, !!checked)}
+                    />
+                    <Label htmlFor={option.id} className="text-sm font-normal">{option.label}</Label>
+                </div>
+            ))}
         </div>
+      </SectionWrapper>
 
     </div>
   );
