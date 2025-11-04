@@ -49,7 +49,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { Permit, ExternalWorker, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones, JustificacionATS } from '@/types';
+import type { Permit, ExternalWorker, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones, JustificacionATS, EppEmergencias } from '@/types';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { PermitFormProvider, usePermitForm } from './form-context';
@@ -61,6 +61,7 @@ import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
 import { AnexoIzajeStep } from './components/AnexoIzajeStep';
 import { AnexoExcavacionesStep } from './components/AnexoExcavacionesStep';
 import { VerificacionPeligrosStep } from './components/VerificacionPeligrosStep';
+import { EppEmergenciasStep } from './components/EppEmergenciasStep';
 
 
 const workerRoles = [
@@ -291,6 +292,11 @@ function CreatePermitWizard() {
     dispatch({ type: 'UPDATE_ATS', payload: updates });
   }, [dispatch]);
 
+  const handleUpdateEppEmergencias = useCallback((updates: Partial<EppEmergencias>) => {
+    dispatch({ type: 'UPDATE_EPP_EMERGENCIAS', payload: updates });
+  }, [dispatch]);
+
+
   const renderStepContent = () => {
     const currentStepLabel = steps[step - 1]?.label;
     switch (currentStepLabel) {
@@ -310,6 +316,8 @@ function CreatePermitWizard() {
         return <AnexoExcavacionesStep />;
       case "Verificación Peligros":
         return <VerificacionPeligrosStep />;
+      case "EPP y Emergencias":
+        return <EppEmergenciasStep eppEmergencias={formData.eppEmergencias as EppEmergencias} onUpdate={handleUpdateEppEmergencias} />;
       // Add other cases as you create the components
       default:
         return (

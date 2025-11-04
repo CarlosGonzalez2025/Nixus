@@ -334,6 +334,15 @@ export type VerificacionPeligros = {
   psicosocial?: { [key: string]: 'si' | 'no' | 'na' };
 };
 
+export type EppEmergencias = {
+  epp?: {
+    [key: string]: 'si' | 'no' | 'na' | string;
+  };
+  emergencias?: {
+    [key: string]: 'si' | 'no' | 'na';
+  };
+};
+
 export type PermitGeneralInfo = {
     areaEspecifica: string;
     planta: string;
@@ -414,4 +423,5 @@ export type Permit = {
   anexoCaliente?: Partial<AnexoCaliente>;
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
   verificacionPeligros?: Partial<VerificacionPeligros>;
+  eppEmergencias?: Partial<EppEmergencias>;
 }
