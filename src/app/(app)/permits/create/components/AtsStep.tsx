@@ -58,59 +58,63 @@ const hazardCategories = {
   AMBIENTALES: [
       { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
       { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
-      { id: 'mezcla_concreto', label: 'Mezcla de concerto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
-      { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiquen la generación al medio ambiente' },
+      { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
+      { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
   ],
 };
 
 const eppOptions = {
+    'Equipos Especiales': [
+        { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
+        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+    ],
     'Protección Corporal': [
-        { id: 'ropa_trabajo', label: 'Ropa de trabajo', type: 'text' },
-        { id: 'overol_ignifugo', label: 'Overol Ignífugo, Categoría:', type: 'text' },
-        { id: 'proteccion_soldador', label: 'Proteccion cuerpo para soldador y/o', type: 'boolean' },
+        { id: 'traje_tyvek', label: 'Traje tyvek', type: 'boolean' },
+        { id: 'chaleco_reflectivo', label: 'Chaleco reflectivo', type: 'boolean' },
+        { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
+        { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
+        { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
+        { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
+        { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
+        { id: 'polainas', label: 'Polainas', type: 'boolean' },
     ],
-    'Protección Respiratoria': [
-        { id: 'proteccion_respiratoria', label: 'Proteccion respiratoria', type: 'text' },
-        { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
-    ],
-    'Protección para la Cabeza': [
-        { id: 'casco', label: 'Casco Tipo__ Clase__ SIN__ CON__ Barbuquejo', type: 'boolean' },
-        { id: 'chavo_tela_carnaza', label: 'Chavo en tela o carnaza', type: 'boolean' },
-    ],
-    'Protección para Pies y Piernas': [
-        { id: 'botas_seguridad_dielectrica', label: 'Botas de seguridad + dielectrica', type: 'boolean' },
-        { id: 'proteccion_metatarso', label: 'Proteccion metatarso', type: 'boolean' },
-    ],
-    'Protección Visual y Facial': [
-        { id: 'monogafas_gafas', label: 'Monogafas / Gafas', type: 'boolean' },
-        { id: 'careta_soldador', label: 'Careta de soldador', type: 'boolean' },
-        { id: 'gafas_oxicorte', label: 'Gafas de oxicorte', type: 'boolean' },
-        { id: 'careta_proteccion_total', label: 'Careta de proteccion total', type: 'boolean' },
-    ],
-    'Protección Auditiva': [
-        { id: 'proteccion_auditiva_insercion', label: 'Proteccion auditiva Inserción', type: 'boolean' },
-        { id: 'proteccion_auditiva_copa', label: 'Proteccion auditiva copa', type: 'boolean' },
-    ],
-    'Protección para Manos': [
-        { id: 'guantes_anticorte', label: 'Guantes anti corte', type: 'boolean' },
-        { id: 'guantes_quimicos', label: 'Guantes sustancias químicas', type: 'boolean' },
-        { id: 'guantes_temperatura', label: 'Guantes temperatura', type: 'text' },
+    'Protección para Pies': [
+        { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
+        { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
+        { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
     ],
     'Protección Contra Caídas': [
-        { id: 'arnes', label: 'Arnés, Tipo:', type: 'text' },
-        { id: 'mosqueton', label: 'Mosquetón', type: 'text' },
-        { id: 'eslinga', label: 'Eslinga, Tipo:', type: 'text' },
-        { id: 'linea_vida', label: 'Línea de vida, Tipo:', type: 'text' },
-        { id: 'punto_anclaje', label: 'Punto de anclaje (Cual):', type: 'boolean' },
+        { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
+        { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
+        { id: 'arnes', label: 'Arnés', type: 'boolean' },
+        { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
     ],
-    'Señalización y Barreras': [
-        { id: 'senalizacion', label: 'Señalización', type: 'boolean' },
-        { id: 'barandas', label: 'Barandas', type: 'boolean' },
-        { id: 'delimitacion_perimetral', label: 'Delimitación Perimetral', type: 'boolean' },
-        { id: 'control_acceso', label: 'Control de acceso', type: 'boolean' },
+    'Protección para la Cabeza': [
+        { id: 'casco_seguridad', label: 'Casco de seguridad Tipo/Clase/Barbuquejo', type: 'text' },
     ],
+    'Protección para Manos': [
+        { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
+        { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
+        { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
+        { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
+    ],
+    'Protección Respiratoria': [
+        { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+        { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
+    ],
+    'Protección Auditiva': [
+        { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
+    ],
+    'Protección Visual y Facial': [
+        { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
+        { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
+        { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
+        { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
+    ],
+    'Otro': [
+        { id: 'otro_epp', label: 'Otro:', type: 'text' },
+    ]
 };
-
 
 const justificacionOptions = [
     { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
@@ -131,13 +135,6 @@ export function AtsStep() {
     dispatch({
       type: 'UPDATE_ATS',
       payload: { peligros: { ...anexoATS.peligros, [id]: value } },
-    });
-  };
-
-  const handleControlChange = (id: string, value: 'si' | 'no' | 'na') => {
-    dispatch({
-        type: 'UPDATE_ATS',
-        payload: { controles: { ...anexoATS.controles, [id]: value } },
     });
   };
   
@@ -175,7 +172,6 @@ export function AtsStep() {
     const newPeligros = (anexoATS.peligrosAdicionales || []).filter((_, i) => i !== index);
     dispatch({ type: 'UPDATE_ATS', payload: { peligrosAdicionales: newPeligros } });
   };
-
 
   const toggleCategory = (category: string) => {
     setOpenCategories(prev =>
@@ -288,7 +284,7 @@ export function AtsStep() {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si">SI</Label>
+                    <Label htmlFor="bioseguridad-si`}>SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
@@ -311,7 +307,11 @@ export function AtsStep() {
                         {items.map(item => (
                              <div key={item.id} className="flex flex-col gap-1">
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id={item.id} checked={!!anexoATS.epp?.[item.id]} onCheckedChange={(checked) => handleEppChange(item.id, !!checked)} />
+                                    <Checkbox 
+                                        id={item.id} 
+                                        checked={!!anexoATS.epp?.[item.id]} 
+                                        onCheckedChange={(checked) => handleEppChange(item.id, !!checked)} 
+                                    />
                                     <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
                                 </div>
                                 {item.type === 'text' && anexoATS.epp?.[item.id] && (
