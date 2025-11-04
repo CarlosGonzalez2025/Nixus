@@ -13,20 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
-// Interfaces para tipado
-interface PeligroAdicional {
-  peligro: string;
-  descripcion: string;
-}
-
-interface AnexoATS {
-  peligros?: { [key: string]: 'si' | 'no' };
-  peligrosAdicionales?: PeligroAdicional[];
-  epp?: { [key: string]: boolean | string };
-  justificacion?: { [key: string]: boolean };
-  protocolosBioseguridad?: 'si' | 'no';
-}
+import type { AnexoATS } from '@/types';
 
 // Props del componente
 interface AtsStepProps {
@@ -56,26 +43,26 @@ const hazardCategories = {
     { id: 'derrame_productos_quimicos', label: 'Derrame o fugas de productos Químicos', control: 'Definir un plan de emergencia en caso de derrame o fuga de productos químicos, contar con kit antiderrames y elementos de protección personal aocrdes al producto químico que se este usando' },
   ],
   MECÁNICOS: [
-    { id: 'proyeccion_particulas', label: 'Proyección de particulas y fracmentos', control: 'Uso obligatorio y permanente  de elementos de protección individual, protección fácil y visual' },
+    { id: 'proyeccion_particulas', label: 'Proyección de particulas y fracmentos', control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual' },
     { id: 'mecanismo_movimiento', label: 'Mecanismo en movimiento', control: 'Mantener protecciones como guardas y dispositivos instalados en el equipo, no posicionar segmentos corporales en áreas de peligros, por ningún motivo violar una guarda de seguridad' },
     { id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos', control: 'Uso de equipos y herramientas eléctricas en condiciones operativas que no exponen al trabajador a riesgos, realizar inspección preoperacional' },
-    { id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio', control: 'Señalización en sitio de trabajo, personal con paleta de pare y siga  acompañando el desplazamiento por vías internas, manejo de trafico y control de senderos peatonas' },
-    { id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos', control: 'Pausas activas durante la jornada laboral,  rotación de personal para realizar la labor en jornada prolongadas donde se exponga a vibraciones' },
+    { id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio', control: 'Señalización en sitio de trabajo, personal con paleta de pare y siga acompañando el desplazamiento por vías internas, manejo de trafico y control de senderos peatonas' },
+    { id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos', control: 'Pausas activas durante la jornada laboral, rotación de personal para realizar la labor en jornada prolongadas donde se exponga a vibraciones' },
   ],
   BIOLÓGICOS: [
       { id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades', control: 'Orden y aseo en el lugar de trabajo, evitar la acumulación de agua que pueda ser foco de proliferación de vectores' },
       { id: 'contaminacion_biologica', label: 'Contaminación biológica', control: 'Prevenir y contener derrames de productos peligros, ubicación y disposición de kit de contención de derrames' },
   ],
   VIAL: [
-      { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento  seguro' },
-      { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol  de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
+      { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento seguro' },
+      { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
   ],
   BIOMECÁNICOS: [
       { id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)', control: 'Realizar calentamiento previo al inicio de las actividades (ejercicios pre-laborales); Tomar pausas activas. Higiene postural. Realizar cambios periódicos de actividad dentro de la tarea a ejecutar.' },
       { id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzo, Movilización de cargas, Movimientos repetitivos / repetidos)', control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.' },
   ],
   AMBIENTALES: [
-      { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo  a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones  de acuerdo al marco normativo definido' },
+      { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
       { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
       { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
       { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
@@ -132,7 +119,7 @@ const eppOptions = {
     ],
     'Otro': [
         { id: 'otro_epp', label: 'Otro:', type: 'text' },
-    ]
+    ],
 };
 
 const justificacionOptions = [
@@ -146,6 +133,14 @@ const justificacionOptions = [
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   const [newPeligro, setNewPeligro] = React.useState('');
   const [newPeligroDesc, setNewPeligroDesc] = React.useState('');
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
+
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
 
   const handlePeligroChange = (id: string, value: 'si' | 'no') => {
     onUpdateATS({ 
@@ -216,7 +211,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         </p>
         <div className="space-y-2">
           {Object.entries(hazardCategories).map(([category, hazards]) => (
-            <Collapsible key={category}>
+            <Collapsible key={category} open={openSections[category]} onOpenChange={() => toggleSection(category)}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
                   <span className="font-semibold">{category}</span>
@@ -292,11 +287,11 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
                 >
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="si" id="bioseguridad-si" />
-                    <Label htmlFor="bioseguridad-si">SI</Label>
+                    <Label htmlFor="bioseguridad-si`}>SI</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="no" id="bioseguridad-no" />
-                    <Label htmlFor="bioseguridad-no">NO</Label>
+                    <Label htmlFor="bioseguridad-no`}>NO</Label>
                 </div>
             </RadioGroup>
         </div>
