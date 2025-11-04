@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -95,7 +94,7 @@ const requerimientosEquipos = [
     { id: 'equiposAutonomos', label: 'EQUIPOS AUTONOMOS PARA PERSONAS DE ENTRADA Y SALIDA' },
     { id: 'extintores', label: 'EXTINTORES' },
     { id: 'ropaDotacionEspecial', label: 'ROPA Y DOTACION ESPECIAL DE PROTECCION' },
-    { id: 'bloqueosAislamientos', label: 'BLOQUEOS / AISLAMIENTOS /SALIDA' },
+    { id: 'bloqueosAislamientos', label: 'BLOQUEOS / AISLAMIENTOS /SALIDA ' },
     { id: 'lineasElectricasChequeadas', label: 'LÍNEAS ELÉCTRICAS: EXPUESTAS, OCULTAS ESTÁN CHEQUEADAS' },
     { id: 'areaSegura', label: 'AREA SEGURA' },
     { id: 'personalSeguridadCierre', label: 'PRESONAL DE SEGURIDAD DE CIERRE?' },
@@ -184,6 +183,20 @@ export function AnexoConfinadoStep() {
     setSigningTarget(null);
   };
 
+  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
+    <Collapsible defaultOpen={defaultOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
+          <h3 className="text-lg font-bold text-gray-700">{title}</h3>
+          <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
   return (
     <>
     <div className="space-y-8">
@@ -196,79 +209,71 @@ export function AnexoConfinadoStep() {
         </p>
       </div>
 
-      {/* Información General Anexos */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Información General del Anexo</h3>
+      <SectionWrapper title="Información General del Anexo" defaultOpen>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div><Label>Emitido por:</Label><Input value={generalInfo.nombreSolicitante || ''} readOnly disabled /></div>
           <div><Label>Área de Trabajo:</Label><Input value={generalInfo.areaEspecifica || ''} readOnly disabled /></div>
           <div><Label>Equipo o Área Específica:</Label><Input value={generalInfo.proceso || ''} readOnly disabled /></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div><Label>Responsable (Nombre):</Label><Input value={generalInfo.responsable?.nombre || ''} readOnly disabled /></div>
             <div><Label>Cargo:</Label><Input value={generalInfo.responsable?.cargo || ''} readOnly disabled /></div>
             <div><Label>Compañía:</Label><Input value={generalInfo.responsable?.compania || ''} readOnly disabled /></div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoConfinado?.emergencia?.contacto || ''} onChange={(e) => handleNestedFieldChange('emergencia', 'contacto', e.target.value)} /></div>
           <div><Label>Teléfono:</Label><Input value={anexoConfinado?.emergencia?.telefono || ''} onChange={(e) => handleNestedFieldChange('emergencia', 'telefono', e.target.value)} /></div>
         </div>
-      </div>
+      </SectionWrapper>
 
-      {/* Identificación de Peligros */}
-        <div className="space-y-4">
-            <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Identificación de Peligros y Aspectos</h3>
-            <div className="space-y-2">
-                {peligroSections.map((section) => (
-                    <Collapsible key={section.title}>
-                        <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
-                                <span className="font-semibold text-gray-700">{section.title}</span>
-                                <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-                            </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-3">
-                            {section.items.map(itemId => {
-                                const item = identificacionPeligros.find(p => p.id === itemId);
-                                if (!item) return null;
-                                return (
-                                    <div key={item.id} className="space-y-2">
-                                        <RadioGroupField
-                                            id={`peligro-${item.id}`}
-                                            label={item.label}
-                                            value={(anexoConfinado?.identificacionPeligros as any)?.[item.id] || 'na'}
-                                            onChange={(value) => handleNestedFieldChange('identificacionPeligros', item.id, value)}
+      <SectionWrapper title="Identificación de Peligros y Aspectos">
+        <div className="space-y-2">
+            {peligroSections.map((section) => (
+                <Collapsible key={section.title}>
+                    <CollapsibleTrigger asChild>
+                        <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
+                            <span className="font-semibold text-gray-700">{section.title}</span>
+                            <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-3">
+                        {section.items.map(itemId => {
+                            const item = identificacionPeligros.find(p => p.id === itemId);
+                            if (!item) return null;
+                            return (
+                                <div key={item.id} className="space-y-2">
+                                    <RadioGroupField
+                                        id={`peligro-${item.id}`}
+                                        label={item.label}
+                                        value={(anexoConfinado?.identificacionPeligros as any)?.[item.id] || 'na'}
+                                        onChange={(value) => handleNestedFieldChange('identificacionPeligros', item.id, value)}
+                                    />
+                                    {item.id === 'procedimientoComunicacion' && anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && (
+                                        <Input
+                                            className="ml-8 w-[calc(100%-2rem)]"
+                                            placeholder="Cuál procedimiento de comunicación?"
+                                            value={anexoConfinado?.procedimientoComunicacionCual || ''}
+                                            onChange={(e) => handleFieldChange('procedimientoComunicacionCual', e.target.value)}
                                         />
-                                        {item.id === 'procedimientoComunicacion' && anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && (
-                                            <Input
-                                                className="ml-8 w-[calc(100%-2rem)]"
-                                                placeholder="Cuál procedimiento de comunicación?"
-                                                value={anexoConfinado?.procedimientoComunicacionCual || ''}
-                                                onChange={(e) => handleFieldChange('procedimientoComunicacionCual', e.target.value)}
-                                            />
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </CollapsibleContent>
-                    </Collapsible>
-                ))}
-            </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </CollapsibleContent>
+                </Collapsible>
+            ))}
         </div>
+      </SectionWrapper>
       
-      {/* Precauciones y Controles */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Precauciones y Controles Específicos</h3>
+      <SectionWrapper title="Precauciones y Controles Específicos">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {precaucionesControles.map(item => (
                 <RadioGroupField key={item.id} id={`precaucion-${item.id}`} label={item.label} value={(anexoConfinado?.precauciones as any)?.[item.id] || 'na'} onChange={(value) => handleNestedFieldChange('precauciones', item.id, value)} />
             ))}
         </div>
-      </div>
+      </SectionWrapper>
       
-      {/* Pruebas de Gases */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Resultados de Pruebas de Gases</h3>
+      <SectionWrapper title="Resultados de Pruebas de Gases">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div><Label>LEL (0%)</Label><Input value={anexoConfinado?.resultadosPruebasGases?.lel || ''} onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'lel', e.target.value)} /></div>
             <div><Label>O2 (19.5-22%)</Label><Input value={anexoConfinado?.resultadosPruebasGases?.o2 || ''} onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'o2', e.target.value)} /></div>
@@ -283,23 +288,19 @@ export function AnexoConfinadoStep() {
                 {anexoConfinado?.resultadosPruebasGases?.firmaQuienRealiza && <img src={anexoConfinado.resultadosPruebasGases.firmaQuienRealiza} alt="Firma" className="mt-2 border rounded-md" />}
             </div>
         </div>
-      </div>
+      </SectionWrapper>
       
-       {/* Requerimientos y Equipos */}
-       <div className="space-y-4">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Requerimientos y Equipos Revisados</h3>
+       <SectionWrapper title="Requerimientos y Equipos Revisados">
          {requerimientosEquipos.map(item => (
             <RadioGroupField key={item.id} id={`req-${item.id}`} label={item.label} value={(anexoConfinado?.requerimientosEquipos as any)?.[item.id] || 'na'} onChange={(value) => handleNestedFieldChange('requerimientosEquipos', item.id, value)} />
          ))}
-         <div>
+         <div className='mt-4'>
             <Label>Las pruebas de gases se deben realizar cada:</Label>
             <Input value={anexoConfinado?.pruebasGasesPeriodicas?.intervalo || ''} onChange={e => handleNestedFieldChange('pruebasGasesPeriodicas', 'intervalo', e.target.value)} placeholder="Ej: 30 minutos"/>
          </div>
-       </div>
+       </SectionWrapper>
 
-      {/* Pruebas de Gases Periódicas */}
-      <div className="space-y-4">
-          <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Pruebas de Gases Periódicas</h3>
+      <SectionWrapper title="Pruebas de Gases Periódicas">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              <div><Label>Prueba realizada por:</Label><Input value={anexoConfinado?.pruebasGasesPeriodicas?.pruebaRealizadaPor || ''} onChange={e => handleNestedFieldChange('pruebasGasesPeriodicas', 'pruebaRealizadaPor', e.target.value)} /></div>
              <div><Label>Serial Monitor:</Label><Input value={anexoConfinado?.pruebasGasesPeriodicas?.serialMonitor || ''} onChange={e => handleNestedFieldChange('pruebasGasesPeriodicas', 'serialMonitor', e.target.value)} /></div>
@@ -307,7 +308,7 @@ export function AnexoConfinadoStep() {
              <div><Label>Fecha y Hora Calibración:</Label><Input type="datetime-local" value={anexoConfinado?.pruebasGasesPeriodicas?.fechaCalibracion || ''} onChange={e => handleNestedFieldChange('pruebasGasesPeriodicas', 'fechaCalibracion', e.target.value)} /></div>
           </div>
           
-          <Table>
+          <Table className="mt-4">
             <TableHeader>
               <TableRow>
                 <TableHead>Hora</TableHead><TableHead>LEL</TableHead><TableHead>O2</TableHead><TableHead>H2S</TableHead><TableHead>CO</TableHead><TableHead>Firma</TableHead><TableHead></TableHead>
@@ -328,14 +329,12 @@ export function AnexoConfinadoStep() {
             </TableBody>
           </Table>
           {(anexoConfinado?.pruebasGasesPeriodicas?.pruebas?.length || 0) < 4 && (
-            <Button size="sm" onClick={() => addToList('pruebasGasesPeriodicas', 'pruebas', { id: `prueba-${Date.now()}` })}><Plus className="mr-2 h-4 w-4"/>Agregar Prueba</Button>
+            <Button size="sm" onClick={() => addToList('pruebasGasesPeriodicas', 'pruebas', { id: `prueba-${Date.now()}` })} className="mt-2"><Plus className="mr-2 h-4 w-4"/>Agregar Prueba</Button>
           )}
-      </div>
+      </SectionWrapper>
 
-       {/* Autorizaciones */}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Autorizaciones</h3>
-        <div className="p-4 border rounded-lg">
+       <SectionWrapper title="Autorizaciones">
+        <div className="p-4 border rounded-lg mb-4">
             <p className="text-sm font-semibold mb-2">Autoridad del Área</p>
             <p className="text-xs text-muted-foreground mb-4">"Al firmar como Autoridad del Área..."</p>
             <div className="grid grid-cols-2 gap-4">
@@ -345,7 +344,7 @@ export function AnexoConfinadoStep() {
             <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('autoridadDelArea', 'firma')}><Signature className="mr-2"/>Firmar</Button>
             {anexoConfinado?.autoridadDelArea?.firma && <img src={anexoConfinado.autoridadDelArea.firma} alt="Firma" className="mt-2 border rounded-md" />}
         </div>
-        <div className="p-4 border rounded-lg">
+        <div className="p-4 border rounded-lg mb-4">
             <p className="text-sm font-semibold mb-2">Responsable del Trabajo</p>
             <p className="text-xs text-muted-foreground mb-4">"Al firmar como Responsable del Trabajo..."</p>
             <div className="grid grid-cols-2 gap-4">
@@ -365,13 +364,12 @@ export function AnexoConfinadoStep() {
             <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('supervisorTrabajo', 'firma')}><Signature className="mr-2"/>Firmar</Button>
             {anexoConfinado?.supervisorTrabajo?.firma && <img src={anexoConfinado.supervisorTrabajo.firma} alt="Firma" className="mt-2 border rounded-md" />}
         </div>
-      </div>
+      </SectionWrapper>
       
-      {/* Validacion y Cierre */}
-      <div className="space-y-4">
-         <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Validación y Cierre</h3>
+      <SectionWrapper title="Validación y Cierre">
          {/* Implement validation and closure sections similar to AnexoAlturaStep */}
-      </div>
+         <p className="text-muted-foreground text-sm">Esta sección está en construcción.</p>
+      </SectionWrapper>
 
     </div>
     <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
