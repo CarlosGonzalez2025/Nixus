@@ -54,7 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica } from '@/types';
+import type { ExternalWorker, Permit, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, AnexoCaliente } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
@@ -69,7 +69,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
 
 const workTypes: {[key: string]: string} = {
-  'altura': 'Trabajo en Alturas',
+  'alturas': 'Trabajo en Alturas',
   'confinado': 'Espacios Confinados',
   'energia': 'Control de Energías',
   'izaje': 'Izaje de Cargas',
@@ -107,7 +107,36 @@ export default function CreatePermitPage() {
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
 
-  // Step 1 - ATS
+  // Step 1 - General Info
+  const [generalInfo, setGeneralInfo] = useState<Partial<PermitGeneralInfo>>({
+    areaEspecifica: '',
+    planta: '',
+    proceso: '',
+    contrato: '',
+    empresa: '',
+    nombreSolicitante: user?.displayName || '',
+    fechaCreacion: new Date().toISOString(),
+    validFrom: '',
+    validUntil: '',
+    workDescription: '',
+    tools: [],
+    numTrabajadores: '',
+    reunionInicio: 'na',
+    atsVerificado: 'na',
+    responsable: { nombre: '', cargo: '', compania: '', alcance: '' }
+  });
+  const [selectedWorkTypes, setSelectedWorkTypes] = useState({
+    alturas: false,
+    confinado: false,
+    energia: false,
+    izaje: false,
+    caliente: false,
+    excavacion: false,
+    general: false,
+  });
+  const [newToolName, setNewToolName] = useState('');
+
+  // Step 2 - ATS
   const [anexoATS, setAnexoATS] = useState<Partial<AnexoATS>>({
     area: '',
     solicitante: '',
@@ -118,27 +147,8 @@ export default function CreatePermitPage() {
     epp: {},
     causalesSuspension: 'LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:',
   });
-
-  // Step 2
-  const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>([]);
-  const [generalInfo, setGeneralInfo] = useState<Partial<PermitGeneralInfo>>({
-    fechaExpedicion: '',
-    planta: '',
-    proceso: '',
-    contrato: '',
-    empresa: '',
-    nombreSolicitante: '',
-    validFrom: '',
-    validUntil: '',
-    workDescription: '',
-    tools: [],
-    numTrabajadores: '',
-    reunionInicio: 'na',
-    atsVerificado: 'na',
-  });
-  const [newToolName, setNewToolName] = useState('');
   
-  // Anexo Altura
+  // Step 3 - Annexes
   const [anexoAltura, setAnexoAltura] = useState<Partial<AnexoAltura>>({
     tipoEstructura: {
       escaleraCuerpo: false,
@@ -182,8 +192,6 @@ export default function CreatePermitPage() {
       responsable: { fecha: '', nombre: '', firma: '' },
     },
   });
-
-  // Anexo Confinado
   const [anexoConfinado, setAnexoConfinado] = useState<Partial<AnexoConfinado>>({
     informacionGeneral: {
       emitidoPor: '',
@@ -228,8 +236,6 @@ export default function CreatePermitPage() {
       responsable: {},
     },
   });
-
-  // Anexo Izaje
   const [anexoIzaje, setAnexoIzaje] = useState<Partial<AnexoIzaje>>({
     informacionGeneral: {
       accion: {},
@@ -241,26 +247,35 @@ export default function CreatePermitPage() {
     observaciones: '',
     liderIzaje: { nombre: '', cedula: '', firmaApertura: '' }
   });
-
-  // Anexo Energias
   const [anexoEnergias, setAnexoEnergias] = useState<Partial<AnexoEnergias>>({
     tensionExpuesta: 'muy_baja',
     planeacion: {},
-    metodoTrabajo: 'sin_tension'
+    metodoTrabajo: 'sin_tension',
+    energiasPeligrosas: {},
+    procedimientoLOTO: {},
+    trabajoSinTension: {},
+    observaciones: ''
+  });
+  const [anexoCaliente, setAnexoCaliente] = useState<Partial<AnexoCaliente>>({
+    distanciaSeguridad: 'na',
+    medicionAtmosfera: 'na',
+    aislarArea: 'na',
+    taparAberturas: 'na',
+    extintores: 'na',
+    vigiaFuego: 'na',
+    personalCapacitado: 'na',
+    listasChequeo: 'na',
+    otro: ''
   });
 
-  // Step 3
+  // Step 4 - Peligros, EPP
   const [hazardsData, setHazardsData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
-
-  // Step 4
   const [ppeData, setPpeData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
   const [ppeSystemsData, setPpeSystemsData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
 
-  // Step 5
+  // Step 5 - Emergencia, Trabajadores
   const [emergencyData, setEmergencyData] = useState<{ [key: string]: 'si' | 'no' | 'na' }>({});
   const [notification, setNotification] = useState(false);
-  
-  // Step 6
   const [workers, setWorkers] = useState<ExternalWorker[]>([]);
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
@@ -270,12 +285,8 @@ export default function CreatePermitPage() {
   const [signatureContext, setSignatureContext] = useState<any>(null);
 
 
-  const handleWorkTypeChange = (workTypeKey: string) => {
-    setSelectedWorkTypes(prev => 
-      prev.includes(workTypeKey) 
-        ? prev.filter(item => item !== workTypeKey)
-        : [...prev, workTypeKey]
-    );
+  const handleWorkTypeChange = (workTypeKey: keyof typeof selectedWorkTypes) => {
+    setSelectedWorkTypes(prev => ({...prev, [workTypeKey]: !prev[workTypeKey]}));
   };
 
   const openNewWorkerDialog = () => {
@@ -390,12 +401,6 @@ export default function CreatePermitPage() {
       setGeneralInfo(prev => ({...prev, tools: [...(prev.tools || []), { name: newToolName.trim(), status: 'B' }]}));
       setNewToolName('');
     }
-  };
-
-  const updateToolStatus = (index: number, status: 'B' | 'M') => {
-    const updatedTools = [...(generalInfo.tools || [])];
-    updatedTools[index].status = status;
-    setGeneralInfo(prev => ({...prev, tools: updatedTools}));
   };
 
   const removeTool = (index: number) => {
@@ -531,44 +536,34 @@ export default function CreatePermitPage() {
     {id: 'brigadistas', label: 'F.- Ubicación de Brigadistas cercanos'},
   ];
 
-
   const canProceed = () => {
-    const currentStepInfo = steps[step - 1];
-    if (currentStepInfo.label === "Análisis de Trabajo Seguro") {
-        const { area, solicitante, fechaInicio, fechaTerminacion, descripcionTarea } = anexoATS;
+    // Validate Step 1
+    if (step === 1) {
+        const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores } = generalInfo;
         const missingFields = [];
-        if (!area) missingFields.push("Área");
-        if (!solicitante) missingFields.push("Solicitante");
-        if (!fechaInicio) missingFields.push("Fecha de Inicio");
-        if (!fechaTerminacion) missingFields.push("Fecha de Terminación");
-        if (!descripcionTarea) missingFields.push("Descripción de la Tarea");
-        
+        if (!areaEspecifica) missingFields.push("Área específica");
+        if (!planta) missingFields.push("Planta");
+        if (!nombreSolicitante) missingFields.push("Nombre solicitante");
+        if (!validFrom) missingFields.push("Fecha de inicio");
+        if (!validUntil) missingFields.push("Fecha de fin");
+        if (!workDescription) missingFields.push("Descripción de la Tarea");
+        if (!numTrabajadores) missingFields.push("No. Trabajadores");
+
+        if (!Object.values(selectedWorkTypes).some(v => v)) {
+            missingFields.push("Tipo de Trabajo (al menos uno)");
+        }
+
         if (missingFields.length > 0) {
             toast({
                 variant: "destructive",
-                title: "Campos Incompletos",
-                description: `Por favor, complete los siguientes campos en el ATS: ${missingFields.join(', ')}.`,
+                title: "Campos Incompletos en Información General",
+                description: `Por favor, complete los siguientes campos obligatorios: ${missingFields.join(', ')}.`,
             });
             return false;
         }
     }
-    if (currentStepInfo.label === "Info General") {
-      const missingFields = [];
-      if (selectedWorkTypes.length === 0) missingFields.push("Tipo de Trabajo");
-      if (!generalInfo.workDescription) missingFields.push("Descripción del Trabajo");
-      if (!generalInfo.validFrom) missingFields.push("Fecha de Inicio");
-      if (!generalInfo.validUntil) missingFields.push("Fecha de Fin");
-      
-      if (missingFields.length > 0) {
-        toast({
-            variant: "destructive",
-            title: "Campos Incompletos",
-            description: `Por favor, complete los siguientes campos: ${missingFields.join(', ')}.`,
-        });
-        return false;
-      }
-    }
-    // Add more validation for other steps if needed
+    
+    // Add validation for other steps if needed
     return true;
   };
   
@@ -577,7 +572,7 @@ export default function CreatePermitPage() {
     setRecommendations('');
     try {
       const result = await getRiskAssessmentRecommendations({
-        workType: selectedWorkTypes.map(key => workTypes[key]).join(', ') || 'General',
+        workType: Object.entries(selectedWorkTypes).filter(([,v]) => v).map(([k]) => workTypes[k]).join(', '),
         environmentalFactors: "Factores diversos según peligros seleccionados",
         permitDetails: generalInfo.workDescription || '',
       });
@@ -606,18 +601,19 @@ export default function CreatePermitPage() {
     setIsSubmitting(true);
     try {
       const fullPermitData: PermitFormData = {
-        workType: selectedWorkTypes,
         generalInfo,
+        ...selectedWorkTypes,
         hazards: hazardsData,
         ppe: ppeData,
         ppeSystems: ppeSystemsData,
         emergency: { ...emergencyData, notification },
         workers: workers,
         anexoATS,
-        anexoAltura: selectedWorkTypes.includes('altura') ? anexoAltura : undefined,
-        anexoConfinado: selectedWorkTypes.includes('confinado') ? anexoConfinado : undefined,
-        anexoIzaje: selectedWorkTypes.includes('izaje') ? anexoIzaje : undefined,
-        anexoEnergias: selectedWorkTypes.includes('energia') ? anexoEnergias : undefined,
+        anexoAltura: selectedWorkTypes.alturas ? anexoAltura : undefined,
+        anexoConfinado: selectedWorkTypes.confinado ? anexoConfinado : undefined,
+        anexoIzaje: selectedWorkTypes.izaje ? anexoIzaje : undefined,
+        anexoEnergias: selectedWorkTypes.energia ? anexoEnergias : undefined,
+        anexoCaliente: selectedWorkTypes.caliente ? anexoCaliente : undefined,
       };
 
       const result = await createPermit({
@@ -650,15 +646,16 @@ export default function CreatePermitPage() {
   };
 
   const baseSteps = [
-    { label: "Análisis de Trabajo Seguro", condition: true },
     { label: "Info General", condition: true },
-    { label: "Anexo Altura", condition: selectedWorkTypes.includes('altura')},
-    { label: "Anexo Confinado", condition: selectedWorkTypes.includes('confinado')},
-    { label: "Anexo Energías", condition: selectedWorkTypes.includes('energia')},
-    { label: "Anexo Izaje", condition: selectedWorkTypes.includes('izaje')},
-    { label: "Peligros", condition: true },
-    { label: "EPP", condition: true },
-    { label: "Sistemas y Emergencia", condition: true },
+    { label: "ATS y Peligros", condition: true },
+    { label: "Anexo Altura", condition: selectedWorkTypes.alturas},
+    { label: "Anexo Confinado", condition: selectedWorkTypes.confinado},
+    { label: "Anexo Energías", condition: selectedWorkTypes.energia},
+    { label: "Anexo Caliente", condition: selectedWorkTypes.caliente},
+    { label: "Anexo Izaje", condition: selectedWorkTypes.izaje},
+    // { label: "Anexo Excavaciones", condition: selectedWorkTypes.excavacion},
+    { label: "Verificación Peligros", condition: true },
+    { label: "EPP y Emergencias", condition: true },
     { label: "Trabajadores", condition: true },
     { label: "Revisión", condition: true }
   ];
@@ -781,6 +778,15 @@ export default function CreatePermitPage() {
            if (group === 'anexoAltura.afectaciones') {
               return { ...prevState, afectaciones: { ...prevState.afectaciones, [id]: value } };
           }
+          if (group === 'anexoEnergias.procedimientoLOTO') {
+              return { ...prevState, procedimientoLOTO: { ...prevState.procedimientoLOTO, [id]: value } };
+          }
+          if (group === 'anexoEnergias.trabajoSinTension') {
+            return { ...prevState, trabajoSinTension: { ...prevState.trabajoSinTension, [id]: value } };
+          }
+          if(group === 'anexoCaliente'){
+            return {...prevState, [id]: value}
+          }
           return prevState;
       }
       
@@ -790,6 +796,8 @@ export default function CreatePermitPage() {
           case 'ppeSystems': setState = setPpeSystemsData; break;
           case 'emergency': setState = setEmergencyData; break;
           case 'anexoEnergias': setState = setAnexoEnergias; break;
+          case 'anexoEnergias.procedimientoLOTO': setState = setAnexoEnergias; break;
+          case 'anexoEnergias.trabajoSinTension': setState = setAnexoEnergias; break;
           case 'anexoATS-peligros': setState = setAnexoATS; break;
           case 'anexoATS-epp': setState = setAnexoATS; break;
           case 'anexoAltura': setState = setAnexoAltura; break;
@@ -797,6 +805,7 @@ export default function CreatePermitPage() {
           case 'anexoConfinado.identificacionPeligros': setState = setAnexoConfinado; break;
           case 'anexoConfinado.requerimientosEquipos': setState = setAnexoConfinado; break;
           case 'anexoIzaje': setState = setAnexoIzaje; break;
+          case 'anexoCaliente': setState = setAnexoCaliente; break;
           case 'generalInfo': setState = setGeneralInfo; break;
           default: return;
       }
@@ -817,6 +826,8 @@ export default function CreatePermitPage() {
         case 'ppeSystems': state = ppeSystemsData; break;
         case 'emergency': state = emergencyData; break;
         case 'anexoEnergias': state = anexoEnergias.planeacion || {}; break;
+        case 'anexoEnergias.procedimientoLOTO': state = anexoEnergias.procedimientoLOTO || {}; break;
+        case 'anexoEnergias.trabajoSinTension': state = anexoEnergias.trabajoSinTension || {}; break;
         case 'anexoATS-peligros': state = anexoATS.peligros || {}; break;
         case 'anexoATS-epp': state = anexoATS.epp || {}; break;
         case 'anexoAltura': state = anexoSection ? (anexoAltura as any)[anexoSection] || {} : {}; break;
@@ -824,6 +835,7 @@ export default function CreatePermitPage() {
         case 'anexoConfinado.identificacionPeligros': state = anexoConfinado.identificacionPeligros || {}; break;
         case 'anexoConfinado.requerimientosEquipos': state = anexoConfinado.requerimientosEquipos || {}; break;
         case 'anexoIzaje': state = anexoIzaje.aspectosRequeridos || {}; break;
+        case 'anexoCaliente': state = anexoCaliente; break;
         case 'generalInfo': state = generalInfo; break;
     }
     
@@ -1067,6 +1079,45 @@ export default function CreatePermitPage() {
     { id: 'procedimientoNormalizado', label: 'Se cuenta con un procedimiento normalizado para realizar la actividad y ATS' },
     { id: 'supervisionControl', label: 'Se realizar supervisión y control en el sitio de trabajo considerando en forma prioritaria la detección y el control de los riesgos, vigilando el cumplimiento estricto de las normas y procedimientos de seguridad aplicables' },
   ];
+  
+  const anexoCalienteVerificacion = [
+    { id: 'distanciaSeguridad', label: 'A.- Regla de distancia de seguridad de 11 m de materiales combustibles e inflamables' },
+    { id: 'medicionAtmosfera', label: 'B.- Medición de atmósfera explosiva (uso de medidor de atmósferas)' },
+    { id: 'aislarArea', label: 'C.- Aislar el área de trabajo por medio de biombos, lonas, mamparas' },
+    { id: 'taparAberturas', label: 'D.- Tapar toda abertura existente a fin de impedir dispersión de chispas' },
+    { id: 'extintores', label: 'E.- Extintores portátiles en el área de trabajo' },
+    { id: 'vigiaFuego', label: 'F - Vigía o supervisor de fuego de incendio' },
+    { id: 'personalCapacitado', label: 'G - Personal capacitado, competente y entrenado' },
+    { id: 'listasChequeo', label: 'H - Listas de chequeo pre-operacional de equipos' },
+  ];
+
+  const anexoEnergiasPeligrosas = [
+      { id: 'mecanica', label: 'Mecánica' },
+      { id: 'neumatica', label: 'Neumática' },
+      { id: 'hidraulica', label: 'Hidráulica' },
+      { id: 'agua', label: 'Agua' },
+      { id: 'vapor', label: 'Vapor' },
+      { id: 'termica', label: 'Térmica' },
+      { id: 'quimica', label: 'Química' },
+  ];
+
+  const anexoEnergiasLOTO = [
+      { id: 'procedimientoLOTO', label: 'A.- Se cuenta procedimiento LO/TO' },
+      { id: 'fuentesIdentificadas', label: 'B.- Se han identificado las fuentes de energía' },
+      { id: 'purgadoLimpieza', label: 'C.- Purgado o limpieza del sistema' },
+      { id: 'corteVisible', label: '1. Corte visible de fuentes de energía' },
+      { id: 'instalarDispositivos', label: '2. Instalar dispositivos de bloqueo y tarjeta de bloqueo.' },
+      { id: 'disiparEnergia', label: '4. Disipar cualquier tipo de energía (puesta a tierra y en cortocircuito).' },
+      { id: 'verificarAusencia', label: '3. Verificar ausencia de fuentes de energía' },
+      { id: 'senalizarZona', label: '5. Señalizar y delimitar zona de trabajo.' },
+  ];
+
+  const anexoEnergiasSinTension = [
+    { id: 'analizarFuentes', label: 'Analizar fuentes de energía (fichas y diagrama de bloqueo).' },
+    { id: 'comprobarPeligros', label: 'Comprobar que nadie este expuesto a peligros.' },
+    { id: 'aplicarBloqueo', label: 'Aplicar procedimiento de bloqueo y aislamiento de energías, (Anexo 3). Hasta tanto no se haya aplicado a cabalidad las 5 reglas de oro y durante la aplicación de las mismas, se debe considerar el sistema energizado y cumplir los controles establecidos para sistemas energizados.' },
+    { id: 'usoEPP', label: 'Uso de EPP especifico para trabajos con circuitos energizados (aplica durante aplicación de 5 reglas de oro) (Botas dieléctricas, casco dieléctrico, guantes dieléctricos, careta protección arco eléctrico, overol ignifugo, tapete dieléctrico y demás requeridos los EPP se deben seleccionar de acuerdo al nivel de tensión del sistema y estudio de arco eléctrico, NFPA 70 E), los cuales deben ser certificados, ser inspeccionados y verificados antes de su uso y contar con ensayo de rigidez / aislamiento dieléctrico (Guantes mínimo 2 veces al año; tapetes, pértigas, escaleras, vehículos mínimo una vez al año).' },
+  ];
 
 
   return (
@@ -1141,7 +1192,148 @@ export default function CreatePermitPage() {
       
       <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
         <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
-          {currentStepInfo.label === "Análisis de Trabajo Seguro" && (
+          {currentStepInfo.label === "Info General" && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                  Información General del Permiso
+                </h2>
+                <p className="text-muted-foreground text-sm">Complete todos los campos obligatorios (*)</p>
+              </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label className="font-bold text-gray-700">Área o equipo específico *</Label>
+                        <Input value={generalInfo.areaEspecifica || ''} onChange={(e) => setGeneralInfo(p => ({...p, areaEspecifica: e.target.value}))} placeholder="Ej: Caldera 2"/>
+                    </div>
+                     <div>
+                        <Label className="font-bold text-gray-700">Planta *</Label>
+                        <Input value={generalInfo.planta || ''} onChange={(e) => setGeneralInfo(p => ({...p, planta: e.target.value}))} placeholder="Ej: Faca"/>
+                    </div>
+                     <div>
+                        <Label>Proceso</Label>
+                        <Input value={generalInfo.proceso} onChange={e => setGeneralInfo(p => ({...p, proceso: e.target.value}))} placeholder="Ej: Mantenimiento"/>
+                    </div>
+                     <div>
+                        <Label>Contrato</Label>
+                        <Input value={generalInfo.contrato} onChange={e => setGeneralInfo(p => ({...p, contrato: e.target.value}))} placeholder="Ej: C-123"/>
+                    </div>
+                     <div>
+                        <Label>Empresa</Label>
+                        <Input value={generalInfo.empresa} onChange={e => setGeneralInfo(p => ({...p, empresa: e.target.value}))} placeholder="Ej: NIXUS"/>
+                    </div>
+                     <div>
+                        <Label className="font-bold text-gray-700">Nombre del solicitante *</Label>
+                        <Input value={generalInfo.nombreSolicitante} onChange={e => setGeneralInfo(p => ({...p, nombreSolicitante: e.target.value}))} placeholder="Nombre del solicitante"/>
+                    </div>
+                </div>
+
+                <div>
+                    <Label className="font-bold text-gray-700">Listas de Verificación Complementarias *</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 p-4 border rounded-lg mt-2">
+                    {Object.entries(workTypes).map(([key, name]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                        <Checkbox
+                            id={key}
+                            checked={selectedWorkTypes[key as keyof typeof selectedWorkTypes]}
+                            onCheckedChange={() => handleWorkTypeChange(key as keyof typeof selectedWorkTypes)}
+                        />
+                        <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {name}
+                        </label>
+                        </div>
+                    ))}
+                    </div>
+                </div>
+                
+                 <div>
+                    <Label className="font-bold text-gray-700">Duración del Permiso *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg">
+                        <div>
+                        <label className="text-sm font-medium">Desde</label>
+                        <Input
+                            type="datetime-local"
+                            value={generalInfo.validFrom}
+                            onChange={(e) => setGeneralInfo({...generalInfo, validFrom: e.target.value})}
+                        />
+                        </div>
+
+                        <div>
+                        <label className="text-sm font-medium">Hasta</label>
+                        <Input
+                            type="datetime-local"
+                            value={generalInfo.validUntil}
+                            onChange={(e) => setGeneralInfo({...generalInfo, validUntil: e.target.value})}
+                        />
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <Label className="font-bold">Descripción de la Tarea - ALCANCE *</Label>
+                    <Textarea
+                        value={generalInfo.workDescription}
+                        onChange={(e) => setGeneralInfo({...generalInfo, workDescription: e.target.value})}
+                        rows={3}
+                        className="w-full mt-1"
+                        placeholder="Describa el alcance, descripción y área/equipo..."
+                    />
+                </div>
+
+              <div>
+                <Label className="font-bold text-gray-700">Equipos y/o Herramientas</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg mt-2">
+                    <div className="space-y-2">
+                        {generalInfo.tools?.slice(0, 4).map((tool, index) => (
+                            <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
+                            <span className="flex-1">{tool.name}</span>
+                            <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                    </div>
+                     <div className="space-y-2">
+                        {generalInfo.tools?.slice(4, 8).map((tool, index) => (
+                            <div key={index + 4} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
+                            <span className="flex-1">{tool.name}</span>
+                            <Button variant="ghost" size="icon" onClick={() => removeTool(index + 4)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="md:col-span-2 flex gap-2">
+                        <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
+                        <Button onClick={addTool}><Plus/></Button>
+                    </div>
+                </div>
+              </div>
+
+               <div>
+                    <Label className="font-bold text-gray-700">No. Trabajadores *</Label>
+                    <Input type="number" value={generalInfo.numTrabajadores} onChange={e => setGeneralInfo(p => ({...p, numTrabajadores: e.target.value}))} placeholder="Cantidad de trabajadores"/>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                    <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
+                    {renderRadioGroup('reunionInicio', 'generalInfo')}
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
+                    <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
+                    {renderRadioGroup('atsVerificado', 'generalInfo')}
+                </div>
+
+                <div>
+                    <Label className="font-bold text-gray-700">Responsable del Trabajo / Ejecutor</Label>
+                    <div className="p-4 border rounded-lg mt-2 space-y-4">
+                        <Input placeholder="Nombre completo" value={generalInfo.responsable?.nombre} onChange={e => setGeneralInfo(p => ({...p, responsable: {...p.responsable!, nombre: e.target.value}}))}/>
+                        <Input placeholder="Cargo" value={generalInfo.responsable?.cargo} onChange={e => setGeneralInfo(p => ({...p, responsable: {...p.responsable!, cargo: e.target.value}}))}/>
+                        <Input placeholder="Compañía" value={generalInfo.responsable?.compania} onChange={e => setGeneralInfo(p => ({...p, responsable: {...p.responsable!, compania: e.target.value}}))}/>
+                        <Textarea placeholder="Alcance" value={generalInfo.responsable?.alcance} onChange={e => setGeneralInfo(p => ({...p, responsable: {...p.responsable!, alcance: e.target.value}}))}/>
+                    </div>
+                </div>
+
+            </div>
+          )}
+
+          {currentStepInfo.label === "ATS y Peligros" && (
             <div className="space-y-6">
                 <div className="text-center mb-6">
                     <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -1149,32 +1341,10 @@ export default function CreatePermitPage() {
                     </h2>
                     <p className="text-muted-foreground text-sm">Diligencie la información base para el análisis de riesgos.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label className="font-bold text-gray-700">Área *</Label>
-                        <Input value={anexoATS.area || ''} onChange={(e) => setAnexoATS(p => ({...p, area: e.target.value}))} placeholder="Ej: Producción"/>
-                    </div>
-                    <div>
-                        <Label className="font-bold text-gray-700">Solicitante *</Label>
-                        <Input value={anexoATS.solicitante || ''} onChange={(e) => setAnexoATS(p => ({...p, solicitante: e.target.value}))} placeholder="Ej: Juan Pérez"/>
-                    </div>
-                    <div>
-                        <Label className="font-bold text-gray-700">Fecha y Hora de Inicio *</Label>
-                        <Input type="datetime-local" value={anexoATS.fechaInicio || ''} onChange={(e) => setAnexoATS(p => ({...p, fechaInicio: e.target.value}))}/>
-                    </div>
-                    <div>
-                        <Label className="font-bold text-gray-700">Fecha y Hora de Terminación *</Label>
-                        <Input type="datetime-local" value={anexoATS.fechaTerminacion || ''} onChange={(e) => setAnexoATS(p => ({...p, fechaTerminacion: e.target.value}))}/>
-                    </div>
-                </div>
-                <div>
-                    <Label className="font-bold text-gray-700">Descripción de la Tarea *</Label>
-                    <Textarea value={anexoATS.descripcionTarea || ''} onChange={(e) => setAnexoATS(p => ({...p, descripcionTarea: e.target.value}))} placeholder="Describa detalladamente la tarea a realizar..."/>
-                </div>
-
+                
                 <div>
                     <Label className="font-bold text-gray-700">Identificación de Peligros, Riesgos y Controles</Label>
-                    <p className="text-xs text-muted-foreground">Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando se asigne un "SI" para un peligro, RESALTAR en la 2a columna el CONTROL para cada una de las condiciones relacionadas al peligro.</p>
+                    <p className="text-xs text-muted-foreground">Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando se asigne un "SI" para un peligro, RESALTAR en la 2ª columna el CONTROL para cada una de las condiciones relacionadas al peligro.</p>
                     <div className="mt-4 space-y-4">
                         {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
                             <div key={seccion} className="p-4 border rounded-lg">
@@ -1220,144 +1390,6 @@ export default function CreatePermitPage() {
                     placeholder="LA OCURRENCIA DE UNA SITUACIÓN DE ALERTA, EXPLOSIÓN, INCENDIO, SEÑAL DE EVACUACIÓN U ORDEN EXPRESA DE LA PERSONA QUE AUTORIZA, DETERMINA LA SUSPENSIÓN DEL MISMO. Indique otras causales si las hay:"
                   />
                 </div>
-            </div>
-          )}
-
-          {currentStepInfo.label === "Info General" && (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                  Información General del Permiso
-                </h2>
-                <p className="text-muted-foreground text-sm">Complete todos los campos obligatorios (*)</p>
-              </div>
-
-                <div>
-                    <Label className="font-bold text-gray-700">Tipo de Trabajo *</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4 border rounded-lg mt-2">
-                    {Object.entries(workTypes).map(([key, name]) => (
-                        <div key={key} className="flex items-center space-x-2">
-                        <Checkbox
-                            id={key}
-                            checked={selectedWorkTypes.includes(key)}
-                            onCheckedChange={() => handleWorkTypeChange(key)}
-                        />
-                        <label htmlFor={key} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            {name}
-                        </label>
-                        </div>
-                    ))}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <Label>Fecha de Expedición</Label>
-                        <Input type="date" value={generalInfo.fechaExpedicion} onChange={e => setGeneralInfo(p => ({...p, fechaExpedicion: e.target.value}))}/>
-                    </div>
-                     <div>
-                        <Label>Planta</Label>
-                        <Input value={generalInfo.planta} onChange={e => setGeneralInfo(p => ({...p, planta: e.target.value}))} placeholder="Planta"/>
-                    </div>
-                     <div>
-                        <Label>Proceso</Label>
-                        <Input value={generalInfo.proceso} onChange={e => setGeneralInfo(p => ({...p, proceso: e.target.value}))} placeholder="Proceso"/>
-                    </div>
-                     <div>
-                        <Label>Contrato</Label>
-                        <Input value={generalInfo.contrato} onChange={e => setGeneralInfo(p => ({...p, contrato: e.target.value}))} placeholder="Contrato"/>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                     <div>
-                        <Label>Empresa</Label>
-                        <Input value={generalInfo.empresa} onChange={e => setGeneralInfo(p => ({...p, empresa: e.target.value}))} placeholder="Empresa"/>
-                    </div>
-                     <div>
-                        <Label>Nombre del Solicitante</Label>
-                        <Input value={generalInfo.nombreSolicitante} onChange={e => setGeneralInfo(p => ({...p, nombreSolicitante: e.target.value}))} placeholder="Nombre del solicitante"/>
-                    </div>
-                </div>
-
-                <div>
-                    <Label className="font-bold text-gray-700">Duración del Permiso *</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg">
-                        <div>
-                        <label className="text-sm font-medium">Desde</label>
-                        <Input
-                            type="datetime-local"
-                            value={generalInfo.validFrom}
-                            onChange={(e) => setGeneralInfo({...generalInfo, validFrom: e.target.value})}
-                        />
-                        </div>
-
-                        <div>
-                        <label className="text-sm font-medium">Hasta</label>
-                        <Input
-                            type="datetime-local"
-                            value={generalInfo.validUntil}
-                            onChange={(e) => setGeneralInfo({...generalInfo, validUntil: e.target.value})}
-                        />
-                        </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <Label className="font-bold">ALCANCE. El trabajo se LIMITA a lo siguiente (Alcance del Trabajo - Descripcion y Area/Equipo): *</Label>
-                    <Textarea
-                        value={generalInfo.workDescription}
-                        onChange={(e) => setGeneralInfo({...generalInfo, workDescription: e.target.value})}
-                        rows={3}
-                        className="w-full mt-1"
-                        placeholder="Describa el alcance, descripción y área/equipo..."
-                    />
-                </div>
-
-              <div>
-                <Label className="font-bold text-gray-700">Equipos y/o Herramientas</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg mt-2">
-                    <div className="space-y-2">
-                        {generalInfo.tools?.slice(0, 4).map((tool, index) => (
-                            <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
-                            <span className="flex-1">{tool.name}</span>
-                            <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                            </div>
-                        ))}
-                    </div>
-                     <div className="space-y-2">
-                        {generalInfo.tools?.slice(4, 8).map((tool, index) => (
-                            <div key={index + 4} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
-                            <span className="flex-1">{tool.name}</span>
-                            <Button variant="ghost" size="icon" onClick={() => removeTool(index + 4)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="md:col-span-2 flex gap-2">
-                        <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
-                        <Button onClick={addTool}><Plus/></Button>
-                    </div>
-                </div>
-              </div>
-
-               <div>
-                    <Label>No. Trabajadores</Label>
-                    <Input type="number" value={generalInfo.numTrabajadores} onChange={e => setGeneralInfo(p => ({...p, numTrabajadores: e.target.value}))} placeholder="Cantidad de trabajadores"/>
-                </div>
-
-                <div className="my-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-yellow-800">
-                    <p><strong>Marque dentro de los cuadros SI / NO /NA según el caso. Si alguna de las verificaciones a las preguntas es "NO", NO SE DEBERA INICIAR EL TRABAJO HASTA TANTO NO SE SOLUCIONE LA SITUACIÓN, SI ES N/A REALICE SU JUSTIFICACIÓN EN OBSERVACIONES.</strong></p>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
-                    <Label className="flex-1 text-sm">REUNIÓN DE INICIO</Label>
-                    {renderRadioGroup('reunionInicio', 'generalInfo')}
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-md bg-gray-50 border">
-                    <Label className="flex-1 text-sm">ATS Verificar el correcto diligenciamiento del ATS en el sitio de trabajo</Label>
-                    {renderRadioGroup('atsVerificado', 'generalInfo')}
-                </div>
-
             </div>
           )}
           
@@ -1887,6 +1919,133 @@ export default function CreatePermitPage() {
             </div>
           )}
 
+          {currentStepInfo.label === "Anexo Caliente" && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                      ANEXO - TRABAJOS EN CALIENTE
+                  </h2>
+                  <p className="text-muted-foreground text-sm">Verifique los controles para trabajos en caliente.</p>
+              </div>
+              <div className="p-4 border rounded-lg space-y-3">
+                <h3 className="font-bold text-primary mb-2">VERIFICACIÓN DE CONTROLES</h3>
+                {anexoCalienteVerificacion.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                      <Label className="flex-1 text-sm">{item.label}</Label>
+                      {renderRadioGroup(item.id, 'anexoCaliente')}
+                  </div>
+                ))}
+                <div className="flex items-center justify-between p-2 rounded-md bg-gray-50 min-h-[44px]">
+                  <Label className="text-sm">Otro (Cual):</Label>
+                  <Input 
+                    className="max-w-xs"
+                    value={anexoCaliente.otro}
+                    onChange={(e) => setAnexoCaliente(p => ({...p, otro: e.target.value}))}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStepInfo.label === "Anexo Energías" && (
+            <div className="space-y-6">
+                 <div className="text-center mb-6">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
+                        ANEXO 3 - TRABAJOS CON ENERGÍAS
+                    </h2>
+                    <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-bold text-primary">Trabajos con Energías Peligrosas</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {anexoEnergiasPeligrosas.map(item => (
+                        <div key={item.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`energia-peligrosa-${item.id}`}
+                            checked={anexoEnergias.energiasPeligrosas?.[item.id]}
+                            onCheckedChange={checked => setAnexoEnergias(p => ({...p, energiasPeligrosas: {...p.energiasPeligrosas, [item.id]: !!checked}}))}
+                          />
+                          <Label htmlFor={`energia-peligrosa-${item.id}`} className="font-normal">{item.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-3">
+                  <h3 className="font-bold text-primary">Procedimiento LO/TO</h3>
+                  {anexoEnergiasLOTO.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                        <Label className="flex-1 text-sm">{item.label}</Label>
+                        {renderRadioGroup(item.id, 'anexoEnergias.procedimientoLOTO')}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Tensión a la cual el personal estará expuesto</h4>
+                    <RadioGroup 
+                      value={anexoEnergias.tensionExpuesta} 
+                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, tensionExpuesta: value as any }))}
+                      className="space-y-2"
+                    >
+                      {anexoEnergiasTension.map(item => (
+                        <div key={item.id} className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value={item.id} id={`tension-${item.id}`} />
+                          <Label htmlFor={`tension-${item.id}`} className="font-normal text-sm">{item.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Planeación</h4>
+                    <div className="space-y-3">
+                       {anexoEnergiasPlaneacion.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                              <Label className="flex-1 text-sm">{item.label}</Label>
+                              {renderRadioGroup(item.id, 'anexoEnergias')}
+                          </div>
+                      ))}
+                    </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-bold text-primary">Método de trabajo</h4>
+                    <RadioGroup 
+                      value={anexoEnergias.metodoTrabajo} 
+                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, metodoTrabajo: value as any }))}
+                      className="flex gap-4"
+                    >
+                        <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value="sin_tension" id="metodo-sin" />
+                          <Label htmlFor="metodo-sin" className="font-normal text-sm">Sin Tensión</Label>
+                        </div>
+                         <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
+                          <RadioGroupItem value="con_tension" id="metodo-con" />
+                          <Label htmlFor="metodo-con" className="font-normal text-sm">Con Tensión</Label>
+                        </div>
+                    </RadioGroup>
+                    {anexoEnergias.metodoTrabajo === 'sin_tension' && (
+                        <div className='p-4 border-t mt-4 space-y-3'>
+                            <h5 className='font-semibold'>Trabajo sin Tensión</h5>
+                            {anexoEnergiasSinTension.map(item => (
+                                <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
+                                    <Label className="flex-1 text-sm">{item.label}</Label>
+                                    {renderRadioGroup(item.id, 'anexoEnergias.trabajoSinTension')}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                 <div className="p-4 border rounded-lg">
+                    <h4 className="font-bold text-primary">Observaciones / Supervisión</h4>
+                    <Textarea value={anexoEnergias.observaciones || ''} onChange={e => setAnexoEnergias(p => ({...p, observaciones: e.target.value}))} rows={4}/>
+                </div>
+            </div>
+          )}
+
           {currentStepInfo.label === "Anexo Izaje" && (
              <div className="space-y-6">
                  <div className="text-center mb-6">
@@ -2002,65 +2161,8 @@ export default function CreatePermitPage() {
                 </div>
             </div>
           )}
-          
-          {currentStepInfo.label === "Anexo Energías" && (
-            <div className="space-y-6">
-                 <div className="text-center mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                        ANEXO 3 - TRABAJOS CON ENERGÍAS
-                    </h2>
-                    <p className="text-muted-foreground text-sm">Complete toda la información requerida para este anexo.</p>
-                </div>
 
-                <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Tensión a la cual el personal estará expuesto</h4>
-                    <RadioGroup 
-                      value={anexoEnergias.tensionExpuesta} 
-                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, tensionExpuesta: value as any }))}
-                      className="space-y-2"
-                    >
-                      {anexoEnergiasTension.map(item => (
-                        <div key={item.id} className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
-                          <RadioGroupItem value={item.id} id={`tension-${item.id}`} />
-                          <Label htmlFor={`tension-${item.id}`} className="font-normal text-sm">{item.label}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                </div>
-
-                <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Planeación</h4>
-                    <div className="space-y-3">
-                       {anexoEnergiasPlaneacion.map(item => (
-                          <div key={item.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50">
-                              <Label className="flex-1 text-sm">{item.label}</Label>
-                              {renderRadioGroup(item.id, 'anexoEnergias')}
-                          </div>
-                      ))}
-                    </div>
-                </div>
-
-                <div className="p-4 border rounded-lg space-y-4">
-                    <h4 className="font-bold text-primary">Método de trabajo</h4>
-                    <RadioGroup 
-                      value={anexoEnergias.metodoTrabajo} 
-                      onValueChange={(value) => setAnexoEnergias(p => ({ ...p, metodoTrabajo: value as any }))}
-                      className="flex gap-4"
-                    >
-                        <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
-                          <RadioGroupItem value="sin_tension" id="metodo-sin" />
-                          <Label htmlFor="metodo-sin" className="font-normal text-sm">Sin Tensión</Label>
-                        </div>
-                         <div className="flex items-center space-x-2 p-2 rounded-md bg-gray-50">
-                          <RadioGroupItem value="con_tension" id="metodo-con" />
-                          <Label htmlFor="metodo-con" className="font-normal text-sm">Con Tensión</Label>
-                        </div>
-                    </RadioGroup>
-                </div>
-            </div>
-          )}
-
-          {currentStepInfo.label === "Peligros" && (
+          {currentStepInfo.label === "Verificación Peligros" && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
@@ -2080,13 +2182,13 @@ export default function CreatePermitPage() {
             </div>
           )}
           
-          {currentStepInfo.label === "EPP" && (
+          {currentStepInfo.label === "EPP y Emergencias" && (
             <div className="space-y-6">
                  <div className="text-center mb-6">
                     <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                        EPP - Señalización
+                        EPP, Señalización y Emergencias
                     </h2>
-                    <p className="text-muted-foreground text-sm">Verifique el estado de los equipos de protección y señalización.</p>
+                    <p className="text-muted-foreground text-sm">Verifique el estado de los equipos, señalización y planes de emergencia.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2095,23 +2197,10 @@ export default function CreatePermitPage() {
                     {renderSection("Protección auditiva", ppe["Protección auditiva"], 'ppe')}
                     {renderSection("Protección respiratoria", ppe["Protección respiratoria"], 'ppe')}
                     {renderSection("Protección cabeza", ppe["Protección cabeza"], 'ppe')}
-                </div>
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {renderSection("Protección facial y ocular", ppe["Protección facial y ocular"], 'ppe')}
                     {renderSection("Barrera/Señales de advertencia", ppe["Barrera/Señales de advertencia"], 'ppe')}
                     {renderSection("Guantes", ppe.Guantes, 'ppe')}
                     {renderSection("Otros", ppe.Otros, 'ppe')}
-                </div>
-            </div>
-          )}
-
-          {currentStepInfo.label === "Sistemas y Emergencia" && (
-             <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.dark }}>
-                    Sistemas de Prevención y Emergencias
-                  </h2>
-                  <p className="text-muted-foreground text-sm">Verifique los sistemas de prevención y el plan de emergencias.</p>
                 </div>
                 
                  <div className="p-4 border rounded-lg">
@@ -2504,8 +2593,3 @@ export default function CreatePermitPage() {
           </DialogHeader>
           <SignaturePad onSave={handleSaveSignature} />
         </DialogContent>
-      </Dialog>
-    </div>
-    </>
-  );
-}

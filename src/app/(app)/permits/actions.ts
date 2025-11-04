@@ -10,7 +10,7 @@ import { config } from 'dotenv';
 config();
 
 const workTypesMap: {[key: string]: string} = {
-  'altura': 'Trabajo en Alturas',
+  'alturas': 'Trabajo en Alturas',
   'confinado': 'Espacios Confinados',
   'energia': 'Control de Energías',
   'izaje': 'Izaje de Cargas',
@@ -19,9 +19,15 @@ const workTypesMap: {[key: string]: string} = {
   'general': 'Trabajo General'
 };
 
-const getWorkTypesString = (types: string[]): string => {
-  if (!Array.isArray(types) || types.length === 0) return workTypesMap['general'];
-  return types.map(key => workTypesMap[key] || key).join(', ');
+const getWorkTypesString = (permit: Partial<Permit>): string => {
+  const selectedTypes = Object.entries(workTypesMap)
+    .filter(([key]) => (permit as any)[key] === true)
+    .map(([, name]) => name);
+
+  if (selectedTypes.length === 0) {
+    return workTypesMap['general'];
+  }
+  return selectedTypes.join(', ');
 };
 
 const getStatusText = (status: string) => {
@@ -72,7 +78,6 @@ export async function createPermit(data: PermitCreateData) {
 
   const permitPayload: Partial<Permit> = {
     ...permitData,
-    workType: permitData.workType && permitData.workType.length > 0 ? permitData.workType : ['general'],
     status: 'pendiente_revision' as const,
     createdBy: userId,
     createdAt: FieldValue.serverTimestamp(),
@@ -85,12 +90,6 @@ export async function createPermit(data: PermitCreateData) {
     closure: {},
   };
   
-  if (permitData.anexoATS) permitPayload.anexoATS = permitData.anexoATS;
-  if (permitData.anexoAltura) permitPayload.anexoAltura = permitData.anexoAltura;
-  if (permitData.anexoConfinado) permitPayload.anexoConfinado = permitData.anexoConfinado;
-  if (permitData.anexoIzaje) permitPayload.anexoIzaje = permitData.anexoIzaje;
-  if (permitData.anexoEnergias) permitPayload.anexoEnergias = permitData.anexoEnergias;
-
   try {
     const docRef = await adminDb.collection('permits').add(permitPayload as any);
     const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
@@ -98,7 +97,7 @@ export async function createPermit(data: PermitCreateData) {
     
     console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
 
-    const workTypesText = getWorkTypesString(permitPayload.workType || ['general']);
+    const workTypesText = getWorkTypesString(permitPayload);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${docRef.id}`;
     
@@ -246,7 +245,4 @@ ${permitUrl}`;
         console.error("❌ Error updating permit status:", error);
         return {
             success: false,
-            error: error.message || 'Could not update permit status.'
-        };
-    }
-}
+            error: error.message || 'Could not

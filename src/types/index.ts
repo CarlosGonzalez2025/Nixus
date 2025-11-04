@@ -227,35 +227,36 @@ export type AnexoConfinado = {
   };
 };
 
-export type AnexoIzaje = {
-  informacionGeneral: {
-    accion: { [key: string]: boolean };
-    pesoCarga: { [key: string]: boolean };
-    equipoUtilizar: { [key: string]: string };
-  };
-  aspectosRequeridos: { [key: string]: 'si' | 'no' | 'na' };
-  precauciones: { [key: string]: boolean };
-  observaciones: string;
-  liderIzaje: {
-    nombre: string;
-    cedula: string;
-    firmaApertura: string;
-  };
+export type AnexoCaliente = {
+  distanciaSeguridad: 'si' | 'no' | 'na';
+  medicionAtmosfera: 'si' | 'no' | 'na';
+  aislarArea: 'si' | 'no' | 'na';
+  taparAberturas: 'si' | 'no' | 'na';
+  extintores: 'si' | 'no' | 'na';
+  vigiaFuego: 'si' | 'no' | 'na';
+  personalCapacitado: 'si' | 'no' | 'na';
+  listasChequeo: 'si' | 'no' | 'na';
+  otro: string;
 };
 
 export type AnexoEnergias = {
   tensionExpuesta: 'muy_baja' | 'baja' | 'media' | 'alta' | 'extra_alta';
   planeacion: { [key: string]: 'si' | 'no' };
   metodoTrabajo: 'sin_tension' | 'con_tension';
+  energiasPeligrosas: { [key: string]: boolean };
+  procedimientoLOTO: { [key: string]: 'si' | 'no' | 'na' };
+  trabajoSinTension: { [key: string]: 'si' | 'no' | 'na' };
+  observaciones: string;
 };
 
 export type PermitGeneralInfo = {
-    fechaExpedicion: string;
-    planta: string;
-    proceso: string;
-    contrato: string;
-    empresa: string;
-    nombreSolicitante: string;
+    areaEspecifica: string,
+    planta: string,
+    proceso: string,
+    contrato: string,
+    empresa: string,
+    nombreSolicitante: string,
+    fechaCreacion: string,
     validFrom: string;
     validUntil: string;
     workDescription: string;
@@ -263,13 +264,18 @@ export type PermitGeneralInfo = {
     numTrabajadores: string;
     reunionInicio: 'si' | 'no' | 'na';
     atsVerificado: 'si' | 'no' | 'na';
+    responsable: {
+        nombre: string;
+        cargo: string;
+        compania: string;
+        alcance: string;
+    }
 }
 
 
 export type Permit = {
   id: string;
   number?: string;
-  workType: string[];
   status: PermitStatus;
   createdBy: string;
   createdAt: Timestamp;
@@ -279,6 +285,19 @@ export type Permit = {
     email?: string | null;
     photoURL?: string | null;
   };
+  
+  // New structure
+  trabajoAlturas?: boolean;
+  espaciosConfinados?: boolean;
+  controlEnergia?: boolean;
+  izajeCargas?: boolean;
+  trabajoCaliente?: boolean;
+  excavaciones?: boolean;
+  trabajoGeneral?: boolean;
+
+  // Old structure (for compatibility)
+  workType?: string[];
+
   generalInfo?: Partial<PermitGeneralInfo>;
   hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
   ppe?: { [key:string]: string };
@@ -296,7 +315,4 @@ export type Permit = {
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoIzaje?: Partial<AnexoIzaje>;
-  anexoEnergias?: Partial<AnexoEnergias>;
-};
-
-    
+  
