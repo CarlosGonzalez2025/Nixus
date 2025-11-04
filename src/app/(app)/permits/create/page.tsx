@@ -62,6 +62,11 @@ import { AnexoIzajeStep } from './components/AnexoIzajeStep';
 import { AnexoExcavacionesStep } from './components/AnexoExcavacionesStep';
 import { VerificacionPeligrosStep } from './components/VerificacionPeligrosStep';
 import { EppEmergenciasStep } from './components/EppEmergenciasStep';
+import { WorkersStep } from './components/WorkersStep';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const workerRoles = [
@@ -156,7 +161,7 @@ function CreatePermitWizard() {
     dispatch({ type: 'SET_WORKERS', payload: updatedWorkers });
   };
   
-  const handleWorkerInputChange = (field: keyof ExternalWorker, value: string) => {
+  const handleWorkerInputChange = (field: keyof ExternalWorker, value: string | boolean) => {
     setCurrentWorker(prev => prev ? { ...prev, [field]: value } : null);
   };
 
@@ -318,6 +323,13 @@ function CreatePermitWizard() {
         return <VerificacionPeligrosStep />;
       case "EPP y Emergencias":
         return <EppEmergenciasStep eppEmergencias={formData.eppEmergencias as EppEmergencias} onUpdate={handleUpdateEppEmergencias} />;
+      case "Trabajadores":
+        return <WorkersStep 
+                  workers={formData.workers || []}
+                  onAddWorker={openNewWorkerDialog}
+                  onEditWorker={openEditWorkerDialog}
+                  onRemoveWorker={removeWorker}
+               />;
       // Add other cases as you create the components
       default:
         return (
@@ -487,6 +499,68 @@ function CreatePermitWizard() {
           </DialogContent>
       </Dialog>
       
+        <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>{editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto p-4">
+                    <div>
+                        <Label htmlFor="worker-name">Nombres y Apellidos</Label>
+                        <Input id="worker-name" value={currentWorker?.nombre || ''} onChange={(e) => handleWorkerInputChange('nombre', e.target.value)} />
+                    </div>
+                    <div>
+                        <Label htmlFor="worker-cedula">Cédula</Label>
+                        <Input id="worker-cedula" value={currentWorker?.cedula || ''} onChange={(e) => handleWorkerInputChange('cedula', e.target.value)} />
+                    </div>
+                    <div>
+                        <Label htmlFor="worker-rol">Cargo/Rol</Label>
+                        <Select value={currentWorker?.rol || ''} onValueChange={(value) => handleWorkerInputChange('rol', value)}>
+                            <SelectTrigger id="worker-rol"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {workerRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="font-semibold">Certificado Aptitud Médica</Label>
+                        <div className="flex gap-4">
+                            <div className="flex items-center gap-2"><Checkbox id="cert-tec" checked={currentWorker?.tsaTec === 'tec'} onCheckedChange={checked => handleWorkerInputChange('tsaTec', checked ? 'tec' : 'na')} /> <Label htmlFor="cert-tec">TEC</Label></div>
+                            <div className="flex items-center gap-2"><Checkbox id="cert-tsa" checked={currentWorker?.tsaTec === 'tsa'} onCheckedChange={checked => handleWorkerInputChange('tsaTec', checked ? 'tsa' : 'na')} /> <Label htmlFor="cert-tsa">TSA</Label></div>
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label className="font-semibold">Entrenamiento / Capacitación</Label>
+                        <div className="flex gap-4">
+                             <div className="flex items-center gap-2"><Checkbox id="ent-tec" checked={currentWorker?.entrenamiento === 'tec'} onCheckedChange={checked => handleWorkerInputChange('entrenamiento', checked ? 'tec' : 'otro')} /> <Label htmlFor="ent-tec">TEC</Label></div>
+                            <div className="flex items-center gap-2"><Checkbox id="ent-tsa" checked={currentWorker?.entrenamiento === 'tsa'} onCheckedChange={checked => handleWorkerInputChange('entrenamiento', checked ? 'tsa' : 'otro')} /> <Label htmlFor="ent-tsa">TSA</Label></div>
+                        </div>
+                         <Input placeholder="Otro" value={currentWorker?.entrenamiento === 'otro' ? (currentWorker as any).otroEntrenamiento || '' : ''} onChange={e => handleWorkerInputChange('otroEntrenamiento' as any, e.target.value)} disabled={currentWorker?.entrenamiento !== 'otro'} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label className="font-semibold">Afiliación a Seguridad Social</Label>
+                        <div className="flex gap-4">
+                           <div className="flex items-center gap-2"><Checkbox id="afil-eps" checked={!!currentWorker?.eps} onCheckedChange={checked => handleWorkerInputChange('eps', checked ? 'activo' : '')} /> <Label htmlFor="afil-eps">EPS</Label></div>
+                           <div className="flex items-center gap-2"><Checkbox id="afil-arl" checked={!!currentWorker?.arl} onCheckedChange={checked => handleWorkerInputChange('arl', checked ? 'activo' : '')} /> <Label htmlFor="afil-arl">ARL</Label></div>
+                           <div className="flex items-center gap-2"><Checkbox id="afil-pension" checked={!!currentWorker?.pensiones} onCheckedChange={checked => handleWorkerInputChange('pensiones', checked ? 'activo' : '')} /> <Label htmlFor="afil-pension">Pensiones</Label></div>
+                        </div>
+                    </div>
+                    <div>
+                      <Label>Firma de Apertura</Label>
+                      <Button variant="outline" className="w-full mt-2" onClick={() => openSignaturePad('worker.firmaApertura')}>
+                        <Signature className="mr-2"/> {currentWorker?.firmaApertura ? 'Ver/Cambiar Firma' : 'Registrar Firma'}
+                      </Button>
+                      {currentWorker?.firmaApertura && <Image src={currentWorker.firmaApertura} alt="Firma Apertura" width={150} height={75} className="mx-auto mt-2 border rounded-md"/>}
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button variant="secondary" onClick={() => setIsWorkerDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleSaveWorker}>Guardar Trabajador</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
        <Dialog open={isSignaturePadOpen} onOpenChange={setIsSignaturePadOpen}>
         <DialogContent className="w-[90vw] max-w-lg">
           <DialogHeader>

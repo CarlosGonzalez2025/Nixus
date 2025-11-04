@@ -35,6 +35,7 @@ export interface ExternalWorker {
   rol: string;
   tsaTec: 'tsa' | 'tec' | 'otro' | 'na';
   entrenamiento: 'tsa' | 'tec' | 'otro';
+  otroEntrenamiento?: string;
   eps: string;
   arl: string;
   pensiones: string;
