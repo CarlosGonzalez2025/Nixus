@@ -858,7 +858,7 @@ export default function PermitDetailPage() {
                 {/* Cabecera del Permiso */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 items-start pb-6 border-b">
                     <div className="col-span-2 lg:col-span-1 flex items-center justify-center">
-                        <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={150} height={75} />
+                        <Image src="https://i.postimg.cc/VsZBSkmH/Italcol.png" alt="Logo" width={150} height={75} />
                     </div>
                     <div className="col-span-2 lg:col-span-3 text-center">
                         <h2 className="text-xl md:text-2xl font-bold text-gray-800">FORMATO DE PERMISO DE TRABAJO</h2>

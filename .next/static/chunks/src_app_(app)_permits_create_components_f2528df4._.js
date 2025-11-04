@@ -2294,7 +2294,7 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                 children: label
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 97,
+                lineNumber: 99,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -2311,62 +2311,12 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                                 id: `${id}-si`
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 99,
+                                lineNumber: 101,
                                 columnNumber: 56
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                 htmlFor: `${id}-si`,
                                 children: "SI"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 99,
-                                columnNumber: 101
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 99,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center space-x-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
-                                value: "no",
-                                id: `${id}-no`
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 100,
-                                columnNumber: 56
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                htmlFor: `${id}-no`,
-                                children: "NO"
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 100,
-                                columnNumber: 101
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 100,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center space-x-2",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
-                                value: "na",
-                                id: `${id}-na`
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 101,
-                                columnNumber: 56
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                htmlFor: `${id}-na`,
-                                children: "N/A"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
                                 lineNumber: 101,
@@ -2377,17 +2327,67 @@ const RadioGroupField = ({ id, label, value, onChange })=>/*#__PURE__*/ (0, __TU
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
                         lineNumber: 101,
                         columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center space-x-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
+                                value: "no",
+                                id: `${id}-no`
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                                lineNumber: 102,
+                                columnNumber: 56
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                                htmlFor: `${id}-no`,
+                                children: "NO"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                                lineNumber: 102,
+                                columnNumber: 101
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                        lineNumber: 102,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center space-x-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroupItem"], {
+                                value: "na",
+                                id: `${id}-na`
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                                lineNumber: 103,
+                                columnNumber: 56
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                                htmlFor: `${id}-na`,
+                                children: "N/A"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                                lineNumber: 103,
+                                columnNumber: 101
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
+                        lineNumber: 103,
+                        columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 98,
+                lineNumber: 100,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-        lineNumber: 96,
+        lineNumber: 98,
         columnNumber: 3
     }, this);
 _c = RadioGroupField;
@@ -2405,25 +2405,25 @@ const SectionWrapper = ({ title, children, defaultOpen = false })=>/*#__PURE__*/
                             children: title
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 110,
+                            lineNumber: 112,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                             className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 111,
+                            lineNumber: 113,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                    lineNumber: 109,
+                    lineNumber: 111,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 108,
+                lineNumber: 110,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -2431,13 +2431,13 @@ const SectionWrapper = ({ title, children, defaultOpen = false })=>/*#__PURE__*/
                 children: children
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 114,
+                lineNumber: 116,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-        lineNumber: 107,
+        lineNumber: 109,
         columnNumber: 5
     }, this);
 _c1 = SectionWrapper;
@@ -2447,63 +2447,41 @@ function AnexoAlturaStep() {
     const { generalInfo, anexoAltura } = state;
     const [isSignatureDialogOpen, setIsSignatureDialogOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [signingTarget, setSigningTarget] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    // Función principal para actualizar campos del anexo
-    const handleFieldChange = (field, value)=>{
+    const handleUpdate = (payload)=>{
         dispatch({
             type: 'UPDATE_ANEXO_ALTURA',
-            payload: {
+            payload
+        });
+    };
+    const handleNestedChange = (section, field, value)=>{
+        const currentSection = anexoAltura[section] || {};
+        handleUpdate({
+            [section]: {
+                ...currentSection,
                 [field]: value
             }
         });
     };
-    // Función para campos anidados (ej: emergencia.contacto)
-    const handleNestedFieldChange = (section, field, value)=>{
-        const currentSection = anexoAltura[section] || {};
-        handleFieldChange(section, {
-            ...currentSection,
-            [field]: value
-        });
-    };
-    // Función para campos anidados profundos (ej: cierre.autoridad.nombre)
-    const handleDeepNestedChange = (section, subSection, field, value)=>{
-        const currentSection = anexoAltura[section] || {};
-        const currentSubSection = currentSection[subSection] || {};
-        handleFieldChange(section, {
-            ...currentSection,
-            [subSection]: {
-                ...currentSubSection,
-                [field]: value
-            }
-        });
-    };
-    // Función para listas (ej: validacion.autoridad[index])
-    const handleListChange = (section, listName, index, field, value)=>{
-        const currentSection = anexoAltura[section] || {};
+    const handleListChange = (section, list, index, field, value)=>{
         const currentList = [
-            ...currentSection[listName] || []
+            ...anexoAltura[section]?.[list] || []
         ];
-        // Asegurar que el índice existe
-        while(currentList.length <= index){
-            currentList.push({
-                dia: currentList.length + 1,
-                nombre: '',
-                firma: '',
-                fecha: ''
-            });
-        }
         currentList[index] = {
             ...currentList[index],
             [field]: value
         };
-        handleFieldChange(section, {
-            ...currentSection,
-            [listName]: currentList
+        handleNestedChange(section, list, currentList);
+    };
+    const handleDeepNestedChange = (section, subSection, field, value)=>{
+        const currentSubSection = anexoAltura[section]?.[subSection] || {};
+        handleNestedChange(section, subSection, {
+            ...currentSubSection,
+            [field]: value
         });
     };
-    // Inicializar validación diaria
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "AnexoAlturaStep.useEffect": ()=>{
-            if (!anexoAltura.validacion) {
+            if (!anexoAltura.validacion || !anexoAltura.validacion.autoridad || anexoAltura.validacion.autoridad.length === 0) {
                 const autoridad = Array(7).fill(0).map({
                     "AnexoAlturaStep.useEffect.autoridad": (_, i)=>({
                             dia: i + 1,
@@ -2520,13 +2498,15 @@ function AnexoAlturaStep() {
                             fecha: ''
                         })
                 }["AnexoAlturaStep.useEffect.responsable"]);
-                handleFieldChange('validacion', {
-                    autoridad,
-                    responsable
+                handleUpdate({
+                    validacion: {
+                        autoridad,
+                        responsable
+                    }
                 });
             }
         }
-    }["AnexoAlturaStep.useEffect"], []); // Solo ejecutar una vez
+    }["AnexoAlturaStep.useEffect"], []);
     const openSignatureDialog = (section, field, index)=>{
         setSigningTarget({
             section,
@@ -2538,16 +2518,14 @@ function AnexoAlturaStep() {
     const handleSaveSignature = (signature)=>{
         if (!signingTarget) return;
         const { section, field, index } = signingTarget;
-        if (index !== undefined) {
-            // Para listas como validacion.autoridad[0].firma
-            handleListChange(section, field, index, 'firma', signature);
-        } else if (section.includes('.')) {
-            // Para campos anidados profundos como cierre.autoridad.firma
-            const [mainSection, subSection] = section.split('.');
-            handleDeepNestedChange(mainSection, subSection, 'firma', signature);
+        if (section === 'validacion' && field && index !== undefined) {
+            handleListChange('validacion', field, index, 'firma', signature);
+        } else if (section === 'cierre' && field) {
+            handleDeepNestedChange('cierre', field, 'firma', signature);
+        } else if (section === 'cancelacion') {
+            handleNestedChange('cancelacion', 'firma', signature);
         } else {
-            // Para campos directos como autoridadArea.firma
-            handleNestedFieldChange(section, 'firma', signature);
+            handleNestedChange(section, 'firma', signature);
         }
         setIsSignatureDialogOpen(false);
         setSigningTarget(null);
@@ -2565,7 +2543,7 @@ function AnexoAlturaStep() {
                                 children: "Anexo de Trabajo en Alturas"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 227,
+                                lineNumber: 184,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2573,13 +2551,13 @@ function AnexoAlturaStep() {
                                 children: "Complete la información requerida para trabajos en alturas."
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 230,
+                                lineNumber: 187,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 226,
+                        lineNumber: 183,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -2595,7 +2573,7 @@ function AnexoAlturaStep() {
                                                 children: "Emitido por:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 237,
+                                                lineNumber: 194,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2604,13 +2582,13 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 237,
+                                                lineNumber: 194,
                                                 columnNumber: 45
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 237,
+                                        lineNumber: 194,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2619,7 +2597,7 @@ function AnexoAlturaStep() {
                                                 children: "Área de Trabajo:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 238,
+                                                lineNumber: 195,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2628,13 +2606,13 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 238,
+                                                lineNumber: 195,
                                                 columnNumber: 49
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 238,
+                                        lineNumber: 195,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2643,7 +2621,7 @@ function AnexoAlturaStep() {
                                                 children: "Equipo o Área Específica:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 239,
+                                                lineNumber: 196,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2652,19 +2630,19 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 239,
+                                                lineNumber: 196,
                                                 columnNumber: 58
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 239,
+                                        lineNumber: 196,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 236,
+                                lineNumber: 193,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2676,7 +2654,7 @@ function AnexoAlturaStep() {
                                                 children: "Responsable (Nombre):"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 242,
+                                                lineNumber: 199,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2685,13 +2663,13 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 242,
+                                                lineNumber: 199,
                                                 columnNumber: 54
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 242,
+                                        lineNumber: 199,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2700,7 +2678,7 @@ function AnexoAlturaStep() {
                                                 children: "Cargo:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 243,
+                                                lineNumber: 200,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2709,13 +2687,13 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 243,
+                                                lineNumber: 200,
                                                 columnNumber: 39
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 243,
+                                        lineNumber: 200,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2724,7 +2702,7 @@ function AnexoAlturaStep() {
                                                 children: "Compañía:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 244,
+                                                lineNumber: 201,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2733,19 +2711,19 @@ function AnexoAlturaStep() {
                                                 disabled: true
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 244,
+                                                lineNumber: 201,
                                                 columnNumber: 42
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 244,
+                                        lineNumber: 201,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 241,
+                                lineNumber: 198,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2757,21 +2735,21 @@ function AnexoAlturaStep() {
                                                 children: "En caso de emergencia contactar a:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 247,
+                                                lineNumber: 204,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                 value: anexoAltura.emergencia?.contacto || '',
-                                                onChange: (e)=>handleNestedFieldChange('emergencia', 'contacto', e.target.value)
+                                                onChange: (e)=>handleNestedChange('emergencia', 'contacto', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 247,
+                                                lineNumber: 204,
                                                 columnNumber: 67
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 247,
+                                        lineNumber: 204,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2780,27 +2758,27 @@ function AnexoAlturaStep() {
                                                 children: "Teléfono:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 248,
+                                                lineNumber: 205,
                                                 columnNumber: 18
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                 value: anexoAltura.emergencia?.telefono || '',
-                                                onChange: (e)=>handleNestedFieldChange('emergencia', 'telefono', e.target.value)
+                                                onChange: (e)=>handleNestedChange('emergencia', 'telefono', e.target.value)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 248,
+                                                lineNumber: 205,
                                                 columnNumber: 42
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 248,
+                                        lineNumber: 205,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 246,
+                                lineNumber: 203,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2810,28 +2788,30 @@ function AnexoAlturaStep() {
                                         children: "Altura aproximada a la cual se va a desarrollar la actividad (Indicar en metros)"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 251,
+                                        lineNumber: 208,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                         type: "number",
                                         value: anexoAltura.alturaAproximada || '',
-                                        onChange: (e)=>handleFieldChange('alturaAproximada', e.target.value)
+                                        onChange: (e)=>handleUpdate({
+                                                alturaAproximada: e.target.value
+                                            })
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 252,
+                                        lineNumber: 209,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 250,
+                                lineNumber: 207,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 235,
+                        lineNumber: 192,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -2845,10 +2825,10 @@ function AnexoAlturaStep() {
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
                                                 id: `struct-${item.id}`,
                                                 checked: !!anexoAltura.tipoEstructura?.[item.id],
-                                                onCheckedChange: (checked)=>handleNestedFieldChange('tipoEstructura', item.id, !!checked)
+                                                onCheckedChange: (checked)=>handleNestedChange('tipoEstructura', item.id, !!checked)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 260,
+                                                lineNumber: 217,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -2856,34 +2836,34 @@ function AnexoAlturaStep() {
                                                 children: item.label
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                lineNumber: 265,
+                                                lineNumber: 222,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, item.id, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 259,
+                                        lineNumber: 216,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 257,
+                                lineNumber: 214,
                                 columnNumber: 9
                             }, this),
                             anexoAltura.tipoEstructura?.otros && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                 placeholder: "Especifique otros",
                                 value: anexoAltura.tipoEstructura.otrosCual || '',
-                                onChange: (e)=>handleNestedFieldChange('tipoEstructura', 'otrosCual', e.target.value),
+                                onChange: (e)=>handleNestedChange('tipoEstructura', 'otrosCual', e.target.value),
                                 className: "mt-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 270,
+                                lineNumber: 227,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 256,
+                        lineNumber: 213,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -2894,20 +2874,20 @@ function AnexoAlturaStep() {
                                     id: `aspecto-${item.id}`,
                                     label: item.label,
                                     value: anexoAltura.aspectosSeguridad?.[item.id] || 'na',
-                                    onChange: (value)=>handleNestedFieldChange('aspectosSeguridad', item.id, value)
+                                    onChange: (value)=>handleNestedChange('aspectosSeguridad', item.id, value)
                                 }, item.id, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 282,
+                                    lineNumber: 239,
                                     columnNumber: 17
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 280,
+                            lineNumber: 237,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 279,
+                        lineNumber: 236,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -2919,31 +2899,31 @@ function AnexoAlturaStep() {
                                         id: `precaucion-${item.id}`,
                                         label: item.label,
                                         value: anexoAltura.precauciones?.[item.id] || 'na',
-                                        onChange: (value)=>handleNestedFieldChange('precauciones', item.id, value)
+                                        onChange: (value)=>handleNestedChange('precauciones', item.id, value)
                                     }, item.id, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                        lineNumber: 296,
+                                        lineNumber: 253,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 294,
+                                lineNumber: 251,
                                 columnNumber: 9
                             }, this),
                             anexoAltura.precauciones?.otro === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                 placeholder: "Especifique otra precaución",
                                 value: anexoAltura.precauciones.otroCual || '',
-                                onChange: (e)=>handleNestedFieldChange('precauciones', 'otroCual', e.target.value),
+                                onChange: (e)=>handleNestedChange('precauciones', 'otroCual', e.target.value),
                                 className: "mt-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 306,
+                                lineNumber: 263,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 293,
+                        lineNumber: 250,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -2955,30 +2935,30 @@ function AnexoAlturaStep() {
                                     id: "afect-riesgo-otras",
                                     label: "¿Este trabajo produce riesgos para otros trabajos en áreas adyacentes?",
                                     value: anexoAltura.afectaciones?.riesgoOtrasAreas || 'na',
-                                    onChange: (value)=>handleNestedFieldChange('afectaciones', 'riesgoOtrasAreas', value)
+                                    onChange: (value)=>handleNestedChange('afectaciones', 'riesgoOtrasAreas', value)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 317,
+                                    lineNumber: 274,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                                     id: "afect-otras-riesgo",
                                     label: "¿Los otros trabajos en áreas adyacentes producen riesgo a este trabajo?",
                                     value: anexoAltura.afectaciones?.otrasAreasRiesgo || 'na',
-                                    onChange: (value)=>handleNestedFieldChange('afectaciones', 'otrasAreasRiesgo', value)
+                                    onChange: (value)=>handleNestedChange('afectaciones', 'otrasAreasRiesgo', value)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 323,
+                                    lineNumber: 280,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                                     id: "afect-personal-notificado",
                                     label: "¿El personal del área potencialmente afectado y los trabajadores fueron notificados del trabajo a realizar?",
                                     value: anexoAltura.afectaciones?.personalNotificado || 'na',
-                                    onChange: (value)=>handleNestedFieldChange('afectaciones', 'personalNotificado', value)
+                                    onChange: (value)=>handleNestedChange('afectaciones', 'personalNotificado', value)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 329,
+                                    lineNumber: 286,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2987,32 +2967,32 @@ function AnexoAlturaStep() {
                                             children: "Observaciones:"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 336,
+                                            lineNumber: 293,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
                                             value: anexoAltura.afectaciones?.observaciones || '',
-                                            onChange: (e)=>handleNestedFieldChange('afectaciones', 'observaciones', e.target.value)
+                                            onChange: (e)=>handleNestedChange('afectaciones', 'observaciones', e.target.value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 337,
+                                            lineNumber: 294,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 335,
+                                    lineNumber: 292,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 316,
+                            lineNumber: 273,
                             columnNumber: 9
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 315,
+                        lineNumber: 272,
                         columnNumber: 8
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3028,7 +3008,7 @@ function AnexoAlturaStep() {
                                             children: "Autoridad del Área"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 348,
+                                            lineNumber: 305,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3036,7 +3016,7 @@ function AnexoAlturaStep() {
                                             children: '"Al firmar como Autoridad del Área, estoy enterado del trabajo a realizar y apruebo su ejecución bajo las medidas de seguridad contempladas en este permiso y sus documentos complementarios."'
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 349,
+                                            lineNumber: 306,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3045,45 +3025,45 @@ function AnexoAlturaStep() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     placeholder: "Nombre Completo",
                                                     value: anexoAltura.autoridadArea?.nombre || '',
-                                                    onChange: (e)=>handleNestedFieldChange('autoridadArea', 'nombre', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('autoridadArea', 'nombre', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 351,
+                                                    lineNumber: 308,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     type: "time",
                                                     placeholder: "Hora",
                                                     value: anexoAltura.autoridadArea?.hora || '',
-                                                    onChange: (e)=>handleNestedFieldChange('autoridadArea', 'hora', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('autoridadArea', 'hora', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 356,
+                                                    lineNumber: 313,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 350,
+                                            lineNumber: 307,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                             variant: "outline",
                                             className: "w-full mt-4",
-                                            onClick: ()=>openSignatureDialog('autoridadArea', 'firma'),
+                                            onClick: ()=>openSignatureDialog('autoridadArea'),
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                     className: "mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 368,
+                                                    lineNumber: 325,
                                                     columnNumber: 23
                                                 }, this),
                                                 "Firmar"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 363,
+                                            lineNumber: 320,
                                             columnNumber: 21
                                         }, this),
                                         anexoAltura.autoridadArea?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3092,13 +3072,13 @@ function AnexoAlturaStep() {
                                             className: "mt-2 border rounded-md max-h-20"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 371,
+                                            lineNumber: 328,
                                             columnNumber: 23
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 347,
+                                    lineNumber: 304,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3109,7 +3089,7 @@ function AnexoAlturaStep() {
                                             children: "Responsable del Trabajo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 376,
+                                            lineNumber: 333,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3117,7 +3097,7 @@ function AnexoAlturaStep() {
                                             children: '"Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asociados a este, dispongo de los recursos necesarios y tomaré las medidas de seguridad..."'
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 377,
+                                            lineNumber: 334,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3126,45 +3106,45 @@ function AnexoAlturaStep() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     placeholder: "Nombre Completo",
                                                     value: anexoAltura.responsableTrabajo?.nombre || '',
-                                                    onChange: (e)=>handleNestedFieldChange('responsableTrabajo', 'nombre', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('responsableTrabajo', 'nombre', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 379,
+                                                    lineNumber: 336,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     type: "time",
                                                     placeholder: "Hora",
                                                     value: anexoAltura.responsableTrabajo?.hora || '',
-                                                    onChange: (e)=>handleNestedFieldChange('responsableTrabajo', 'hora', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('responsableTrabajo', 'hora', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 384,
+                                                    lineNumber: 341,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 378,
+                                            lineNumber: 335,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                             variant: "outline",
                                             className: "w-full mt-4",
-                                            onClick: ()=>openSignatureDialog('responsableTrabajo', 'firma'),
+                                            onClick: ()=>openSignatureDialog('responsableTrabajo'),
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                     className: "mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 396,
+                                                    lineNumber: 353,
                                                     columnNumber: 23
                                                 }, this),
                                                 "Firmar"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 391,
+                                            lineNumber: 348,
                                             columnNumber: 21
                                         }, this),
                                         anexoAltura.responsableTrabajo?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3173,13 +3153,13 @@ function AnexoAlturaStep() {
                                             className: "mt-2 border rounded-md max-h-20"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 399,
+                                            lineNumber: 356,
                                             columnNumber: 23
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 375,
+                                    lineNumber: 332,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3190,7 +3170,7 @@ function AnexoAlturaStep() {
                                             children: "Coordinador de Trabajos en Alturas"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 404,
+                                            lineNumber: 361,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3198,7 +3178,7 @@ function AnexoAlturaStep() {
                                             children: '"Manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias."'
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 405,
+                                            lineNumber: 362,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3207,45 +3187,45 @@ function AnexoAlturaStep() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     placeholder: "Nombre Completo",
                                                     value: anexoAltura.coordinadorTrabajosAltura?.nombre || '',
-                                                    onChange: (e)=>handleNestedFieldChange('coordinadorTrabajosAltura', 'nombre', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('coordinadorTrabajosAltura', 'nombre', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 407,
+                                                    lineNumber: 364,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     type: "time",
                                                     placeholder: "Hora",
                                                     value: anexoAltura.coordinadorTrabajosAltura?.hora || '',
-                                                    onChange: (e)=>handleNestedFieldChange('coordinadorTrabajosAltura', 'hora', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('coordinadorTrabajosAltura', 'hora', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 412,
+                                                    lineNumber: 369,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 406,
+                                            lineNumber: 363,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                             variant: "outline",
                                             className: "w-full mt-4",
-                                            onClick: ()=>openSignatureDialog('coordinadorTrabajosAltura', 'firma'),
+                                            onClick: ()=>openSignatureDialog('coordinadorTrabajosAltura'),
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                     className: "mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 424,
+                                                    lineNumber: 381,
                                                     columnNumber: 23
                                                 }, this),
                                                 "Firmar"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 419,
+                                            lineNumber: 376,
                                             columnNumber: 21
                                         }, this),
                                         anexoAltura.coordinadorTrabajosAltura?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3254,24 +3234,24 @@ function AnexoAlturaStep() {
                                             className: "mt-2 border rounded-md max-h-20"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 427,
+                                            lineNumber: 384,
                                             columnNumber: 23
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 403,
+                                    lineNumber: 360,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 346,
+                            lineNumber: 303,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 345,
+                        lineNumber: 302,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3287,7 +3267,7 @@ function AnexoAlturaStep() {
                                             children: "Autoridad del Área"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 436,
+                                            lineNumber: 393,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Table"], {
@@ -3299,39 +3279,39 @@ function AnexoAlturaStep() {
                                                                 children: "Día"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 440,
+                                                                lineNumber: 397,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Nombre"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 441,
+                                                                lineNumber: 398,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Firma"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 442,
+                                                                lineNumber: 399,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Fecha"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 443,
+                                                                lineNumber: 400,
                                                                 columnNumber: 29
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                        lineNumber: 439,
+                                                        lineNumber: 396,
                                                         columnNumber: 27
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 438,
+                                                    lineNumber: 395,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -3341,7 +3321,7 @@ function AnexoAlturaStep() {
                                                                     children: i + 1
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 449,
+                                                                    lineNumber: 406,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3351,12 +3331,12 @@ function AnexoAlturaStep() {
                                                                         className: "h-8"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 451,
+                                                                        lineNumber: 408,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 450,
+                                                                    lineNumber: 407,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3368,17 +3348,17 @@ function AnexoAlturaStep() {
                                                                             className: "h-4 w-4"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                            lineNumber: 463,
+                                                                            lineNumber: 420,
                                                                             columnNumber: 41
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 458,
+                                                                        lineNumber: 415,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 457,
+                                                                    lineNumber: 414,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3389,35 +3369,35 @@ function AnexoAlturaStep() {
                                                                         className: "h-8"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 467,
+                                                                        lineNumber: 424,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 466,
+                                                                    lineNumber: 423,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, i, true, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 448,
+                                                            lineNumber: 405,
                                                             columnNumber: 33
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 446,
+                                                    lineNumber: 403,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 437,
+                                            lineNumber: 394,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 435,
+                                    lineNumber: 392,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3428,7 +3408,7 @@ function AnexoAlturaStep() {
                                             children: "Responsable del Trabajo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 480,
+                                            lineNumber: 437,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Table"], {
@@ -3440,39 +3420,39 @@ function AnexoAlturaStep() {
                                                                 children: "Día"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 484,
+                                                                lineNumber: 441,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Nombre"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 485,
+                                                                lineNumber: 442,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Firma"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 486,
+                                                                lineNumber: 443,
                                                                 columnNumber: 29
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                                 children: "Fecha"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                lineNumber: 487,
+                                                                lineNumber: 444,
                                                                 columnNumber: 29
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                        lineNumber: 483,
+                                                        lineNumber: 440,
                                                         columnNumber: 27
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 482,
+                                                    lineNumber: 439,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -3482,7 +3462,7 @@ function AnexoAlturaStep() {
                                                                     children: i + 1
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 493,
+                                                                    lineNumber: 450,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3492,12 +3472,12 @@ function AnexoAlturaStep() {
                                                                         className: "h-8"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 495,
+                                                                        lineNumber: 452,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 494,
+                                                                    lineNumber: 451,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3509,17 +3489,17 @@ function AnexoAlturaStep() {
                                                                             className: "h-4 w-4"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                            lineNumber: 507,
+                                                                            lineNumber: 464,
                                                                             columnNumber: 41
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 502,
+                                                                        lineNumber: 459,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 501,
+                                                                    lineNumber: 458,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -3530,46 +3510,46 @@ function AnexoAlturaStep() {
                                                                         className: "h-8"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                        lineNumber: 511,
+                                                                        lineNumber: 468,
                                                                         columnNumber: 39
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 510,
+                                                                    lineNumber: 467,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, i, true, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 492,
+                                                            lineNumber: 449,
                                                             columnNumber: 33
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 490,
+                                                    lineNumber: 447,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 481,
+                                            lineNumber: 438,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 479,
+                                    lineNumber: 436,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 434,
+                            lineNumber: 391,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 433,
+                        lineNumber: 390,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3585,17 +3565,17 @@ function AnexoAlturaStep() {
                                             children: "Cancelación del Trabajo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 529,
+                                            lineNumber: 486,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                                             id: "cancelacion-si-no",
                                             label: "¿Se canceló el trabajo?",
                                             value: anexoAltura.cancelacion?.seCancelo || 'no',
-                                            onChange: (value)=>handleNestedFieldChange('cancelacion', 'seCancelo', value)
+                                            onChange: (value)=>handleNestedChange('cancelacion', 'seCancelo', value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 530,
+                                            lineNumber: 487,
                                             columnNumber: 17
                                         }, this),
                                         anexoAltura.cancelacion?.seCancelo === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3604,47 +3584,47 @@ function AnexoAlturaStep() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
                                                     placeholder: "Razón de la cancelación",
                                                     value: anexoAltura.cancelacion.razon || '',
-                                                    onChange: (e)=>handleNestedFieldChange('cancelacion', 'razon', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('cancelacion', 'razon', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 538,
+                                                    lineNumber: 495,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     placeholder: "Nombre de quien cancela",
                                                     value: anexoAltura.cancelacion.nombre || '',
-                                                    onChange: (e)=>handleNestedFieldChange('cancelacion', 'nombre', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('cancelacion', 'nombre', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 543,
+                                                    lineNumber: 500,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                                     type: "date",
                                                     value: anexoAltura.cancelacion.fecha || '',
-                                                    onChange: (e)=>handleNestedFieldChange('cancelacion', 'fecha', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('cancelacion', 'fecha', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 548,
+                                                    lineNumber: 505,
                                                     columnNumber: 26
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                                     variant: "outline",
                                                     className: "w-full",
-                                                    onClick: ()=>openSignatureDialog('cancelacion', 'firma'),
+                                                    onClick: ()=>openSignatureDialog('cancelacion'),
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                             className: "mr-2"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 558,
+                                                            lineNumber: 515,
                                                             columnNumber: 27
                                                         }, this),
                                                         "Firmar Cancelación"
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 553,
+                                                    lineNumber: 510,
                                                     columnNumber: 25
                                                 }, this),
                                                 anexoAltura.cancelacion?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3653,19 +3633,19 @@ function AnexoAlturaStep() {
                                                     className: "mt-2 border rounded-md max-h-20"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 561,
+                                                    lineNumber: 518,
                                                     columnNumber: 27
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 537,
+                                            lineNumber: 494,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 528,
+                                    lineNumber: 485,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3676,17 +3656,17 @@ function AnexoAlturaStep() {
                                             children: "Cierre del Permiso"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 567,
+                                            lineNumber: 524,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                                             id: "cierre-si-no",
                                             label: "¿Se terminó el trabajo?",
                                             value: anexoAltura.cierre?.seTermino || 'no',
-                                            onChange: (value)=>handleNestedFieldChange('cierre', 'seTermino', value)
+                                            onChange: (value)=>handleNestedChange('cierre', 'seTermino', value)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 568,
+                                            lineNumber: 525,
                                             columnNumber: 17
                                         }, this),
                                         anexoAltura.cierre?.seTermino === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3695,10 +3675,10 @@ function AnexoAlturaStep() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
                                                     placeholder: "Observaciones de cierre",
                                                     value: anexoAltura.cierre.observaciones || '',
-                                                    onChange: (e)=>handleNestedFieldChange('cierre', 'observaciones', e.target.value)
+                                                    onChange: (e)=>handleNestedChange('cierre', 'observaciones', e.target.value)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 576,
+                                                    lineNumber: 533,
                                                     columnNumber: 26
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3709,7 +3689,7 @@ function AnexoAlturaStep() {
                                                             children: "Autoridad del Área"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 582,
+                                                            lineNumber: 539,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3718,7 +3698,7 @@ function AnexoAlturaStep() {
                                                             onChange: (e)=>handleDeepNestedChange('cierre', 'autoridad', 'nombre', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 583,
+                                                            lineNumber: 540,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3728,27 +3708,27 @@ function AnexoAlturaStep() {
                                                             onChange: (e)=>handleDeepNestedChange('cierre', 'autoridad', 'fecha', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 588,
+                                                            lineNumber: 545,
                                                             columnNumber: 30
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                                             variant: "outline",
                                                             size: "sm",
                                                             className: "w-full mt-2",
-                                                            onClick: ()=>openSignatureDialog('cierre.autoridad', 'firma'),
+                                                            onClick: ()=>openSignatureDialog('cierre', 'autoridad'),
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                                     className: "mr-2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 600,
+                                                                    lineNumber: 557,
                                                                     columnNumber: 31
                                                                 }, this),
                                                                 "Firmar Cierre"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 594,
+                                                            lineNumber: 551,
                                                             columnNumber: 29
                                                         }, this),
                                                         anexoAltura.cierre.autoridad?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3757,13 +3737,13 @@ function AnexoAlturaStep() {
                                                             className: "mt-2 border rounded-md max-h-20"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 603,
+                                                            lineNumber: 560,
                                                             columnNumber: 31
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 581,
+                                                    lineNumber: 538,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3774,7 +3754,7 @@ function AnexoAlturaStep() {
                                                             children: "Responsable del Trabajo"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 607,
+                                                            lineNumber: 564,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3783,7 +3763,7 @@ function AnexoAlturaStep() {
                                                             onChange: (e)=>handleDeepNestedChange('cierre', 'responsable', 'nombre', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 608,
+                                                            lineNumber: 565,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -3793,27 +3773,27 @@ function AnexoAlturaStep() {
                                                             onChange: (e)=>handleDeepNestedChange('cierre', 'responsable', 'fecha', e.target.value)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 613,
+                                                            lineNumber: 570,
                                                             columnNumber: 29
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                                             variant: "outline",
                                                             size: "sm",
                                                             className: "w-full mt-2",
-                                                            onClick: ()=>openSignatureDialog('cierre.responsable', 'firma'),
+                                                            onClick: ()=>openSignatureDialog('cierre', 'responsable'),
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
                                                                     className: "mr-2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                                    lineNumber: 625,
+                                                                    lineNumber: 582,
                                                                     columnNumber: 31
                                                                 }, this),
                                                                 "Firmar Cierre"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 619,
+                                                            lineNumber: 576,
                                                             columnNumber: 29
                                                         }, this),
                                                         anexoAltura.cierre.responsable?.firma && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -3822,42 +3802,42 @@ function AnexoAlturaStep() {
                                                             className: "mt-2 border rounded-md max-h-20"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                            lineNumber: 628,
+                                                            lineNumber: 585,
                                                             columnNumber: 31
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                                    lineNumber: 606,
+                                                    lineNumber: 563,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                            lineNumber: 575,
+                                            lineNumber: 532,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                    lineNumber: 566,
+                                    lineNumber: 523,
                                     columnNumber: 14
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 527,
+                            lineNumber: 484,
                             columnNumber: 10
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                        lineNumber: 526,
+                        lineNumber: 483,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 225,
+                lineNumber: 182,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -3870,30 +3850,30 @@ function AnexoAlturaStep() {
                                 children: "Registrar Firma"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                                lineNumber: 641,
+                                lineNumber: 598,
                                 columnNumber: 11
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 640,
+                            lineNumber: 597,
                             columnNumber: 9
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SignaturePad"], {
                             onSave: handleSaveSignature
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                            lineNumber: 643,
+                            lineNumber: 600,
                             columnNumber: 9
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                    lineNumber: 639,
+                    lineNumber: 596,
                     columnNumber: 7
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx",
-                lineNumber: 638,
+                lineNumber: 595,
                 columnNumber: 5
             }, this)
         ]

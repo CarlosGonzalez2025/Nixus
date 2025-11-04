@@ -109,9 +109,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex w-full items-start justify-between">
                 <div className="w-8" />
                 <div className="bg-white rounded-lg p-2">
-                  <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={40} height={40} />
+                  <Image src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" alt="Logo" width={120} height={100} />
                 </div>
-                <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent" />
+                <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent md:hidden" />
               </div>
               <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                 SGTC Móvil
@@ -254,7 +254,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <main className="flex-1">
-          <header className="flex h-12 items-center border-b bg-background px-4 md:hidden">
+          <header className="sticky top-0 z-10 hidden h-12 items-center border-b bg-background px-4 md:flex">
             <SidebarTrigger className="text-foreground" />
           </header>
           <SidebarInset className="md:p-0">{children}</SidebarInset>
