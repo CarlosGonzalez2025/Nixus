@@ -15,7 +15,7 @@ import { PlusCircle, Search, Loader2, FileX, ChevronRight, Filter } from 'lucide
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit, PermitStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useUser } from '@/hooks/use-user';
 
 const getStatusColor = (status: string) => {
   const statusColors: {[key: string]: string} = {
@@ -156,6 +157,7 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
 const permitStatuses: PermitStatus[] = ['pendiente_revision', 'aprobado', 'en_ejecucion', 'cerrado', 'rechazado', 'suspendido'];
 
 export default function PermitsPage() {
+  const { user, loading: userLoading } = useUser();
   const [allPermits, setAllPermits] = useState<Permit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -164,8 +166,25 @@ export default function PermitsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    if (userLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!user) {
+      setAllPermits([]);
+      setLoading(false);
+      return;
+    }
+
     const permitsCollection = collection(db, 'permits');
-    const q = query(permitsCollection, orderBy('createdAt', 'desc'));
+    const queryConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc')];
+    
+    // Si el usuario es solicitante, solo puede ver sus permisos.
+    if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+      queryConstraints.push(where('createdBy', '==', user.uid));
+    }
+
+    const q = query(permitsCollection, ...queryConstraints);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const permitsData = snapshot.docs.map(doc => {
@@ -195,7 +214,7 @@ export default function PermitsPage() {
     });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [user, userLoading, toast]);
 
   const filteredPermits = useMemo(() => {
     return allPermits.filter(permit => {
@@ -234,12 +253,14 @@ export default function PermitsPage() {
 
       // Filtro por búsqueda de texto
       const searchLower = searchTerm.toLowerCase();
+      if (!searchLower) return true; // No search term, so it's a match
+      
       return (
         (permit.number || permit.numeroPermiso || permit.id).toLowerCase().includes(searchLower) ||
         getWorkTypesString(permit).toLowerCase().includes(searchLower) ||
         (permit.user?.displayName || '').toLowerCase().includes(searchLower) ||
-        (permit.areaEspecifica || '').toLowerCase().includes(searchLower) ||
-        (permit.planta || '').toLowerCase().includes(searchLower)
+        (permit.generalInfo?.areaEspecifica || '').toLowerCase().includes(searchLower) ||
+        (permit.generalInfo?.planta || '').toLowerCase().includes(searchLower)
       );
     });
   }, [allPermits, activeTab, searchTerm, workTypeFilter]);
@@ -279,7 +300,7 @@ export default function PermitsPage() {
                         {permit.number || permit.numeroPermiso || `#${permit.id.substring(0, 8)}`}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {permit.areaEspecifica || 'N/A'} • {permit.planta || 'N/A'}
+                        {permit.generalInfo?.areaEspecifica || 'N/A'} • {permit.generalInfo?.planta || 'N/A'}
                       </p>
                     </div>
                     <Badge className={getStatusColor(permit.status)}>
@@ -324,8 +345,8 @@ export default function PermitsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <p className="font-medium">{permit.areaEspecifica || 'N/A'}</p>
-                      <p className="text-xs text-muted-foreground">{permit.planta || 'N/A'}</p>
+                      <p className="font-medium">{permit.generalInfo?.areaEspecifica || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground">{permit.generalInfo?.planta || 'N/A'}</p>
                     </div>
                   </TableCell>
                   <TableCell>

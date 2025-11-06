@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, type QueryConstraint } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,3 +17,4 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { app, auth, db, firebaseConfig };
+export type { QueryConstraint };

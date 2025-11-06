@@ -21,6 +21,31 @@ service cloud.firestore {
       return isSignedIn() && getRole() == 'admin';
     }
 
+    function isCreator(permit) {
+      return request.auth.uid == permit.createdBy;
+    }
+    
+    function isSolicitante() {
+      let role = getRole();
+      return role == 'solicitante' || role == 'lider_tarea';
+    }
+    
+    function isAutorizante() {
+      return getRole() == 'autorizante';
+    }
+
+    function isMantenimiento() {
+        return getRole() == 'mantenimiento';
+    }
+
+    function isLiderSST() {
+        return getRole() == 'lider_sst';
+    }
+    
+    function isLiderTarea() {
+      return getRole() == 'lider_tarea';
+    }
+
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
       // Un admin puede listar todos los usuarios, un usuario autenticado puede leer su propio perfil.
@@ -39,8 +64,11 @@ service cloud.firestore {
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      // LECTURA: Cualquier usuario autenticado puede leer cualquier permiso.
-      allow read: if isSignedIn();
+      // LECTURA: Admins, Autorizantes y Líderes SST pueden leer todos. Solicitantes solo los suyos.
+      allow read: if isAdmin() || isAutorizante() || isLiderSST() || isCreator(resource.data);
+
+      // LIST: Admins, Autorizantes y Líderes SST pueden listar. Solicitantes usan query filtrada.
+      allow list: if isAdmin() || isAutorizante() || isLiderSST();
 
       // CREACIÓN/ELIMINACIÓN: Protegidas, solo se hacen desde el servidor.
       allow create, delete: if false;
@@ -50,21 +78,24 @@ service cloud.firestore {
         // Regla 1: Un admin puede hacer cualquier cambio.
         isAdmin() ||
         
-        // Regla 2: El creador del permiso (solicitante) puede modificarlo si aún no ha firmado.
-        (isOwner(resource.data.createdBy) && !request.resource.data.approvals.solicitante.status == 'aprobado') ||
+        // Regla 2: El creador del permiso (solicitante/lider_tarea) puede modificarlo si aún no ha firmado.
+        (isCreator(resource.data) && resource.data.approvals.solicitante.status == 'pendiente') ||
 
-        // Regla 3: Un usuario puede firmar su propia aprobación si el permiso está pendiente.
+        // Regla 3: Un usuario puede firmar su propia aprobación si el permiso está pendiente y se cumple la secuencia.
         (
           isSignedIn() && resource.data.status == 'pendiente_revision' &&
           (
-            // El solicitante firma
-            (getRole() == 'solicitante' && request.resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.solicitante.status == 'pendiente') ||
-            // El autorizante firma después del solicitante
-            (getRole() == 'autorizante' && resource.data.approvals.solicitante.status == 'aprobado' && request.resource.data.approvals.autorizante.status == 'aprobado') ||
-            // Mantenimiento firma después del autorizante (si es trabajo de energía)
-            (getRole() == 'mantenimiento' && resource.data.controlEnergia == true && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.mantenimiento.status == 'aprobado') ||
-            // SST firma después del autorizante
-            (getRole() == 'lider_sst' && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.lider_sst.status == 'aprobado')
+            // Solicitante firma (es el primero, no tiene pre-condición)
+            (isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.solicitante.status == 'pendiente') ||
+            
+            // Autorizante firma DESPUÉS del solicitante
+            (isAutorizante() && resource.data.approvals.solicitante.status == 'aprobado' && request.resource.data.approvals.autorizante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'pendiente') ||
+            
+            // Mantenimiento firma DESPUÉS del autorizante (y solo si es trabajo de energía)
+            (isMantenimiento() && resource.data.controlEnergia == true && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.mantenimiento.status == 'aprobado' && resource.data.approvals.mantenimiento.status == 'pendiente') ||
+            
+            // SST firma DESPUÉS del autorizante
+            (isLiderSST() && resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.lider_sst.status == 'aprobado' && resource.data.approvals.lider_sst.status == 'pendiente')
           )
         ) ||
         
@@ -73,15 +104,15 @@ service cloud.firestore {
           isSignedIn() && 
           (
             // Aprobar: Solo el autorizante puede hacerlo si el permiso está pendiente y las firmas requeridas están listas.
-            (request.resource.data.status == 'aprobado' && resource.data.status == 'pendiente_revision' && getRole() == 'autorizante' && resource.data.approvals.solicitante.status == 'aprobado') ||
+            (request.resource.data.status == 'aprobado' && resource.data.status == 'pendiente_revision' && isAutorizante() && resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'aprobado') ||
             // Rechazar: Autorizante o SST pueden rechazar si está pendiente.
-            (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && (getRole() == 'autorizante' || getRole() == 'lider_sst')) ||
+            (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && (isAutorizante() || isLiderSST())) ||
             // Iniciar Ejecución: El líder de la tarea puede iniciar si está aprobado.
-            (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'aprobado' && getRole() == 'lider_tarea') ||
+            (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'aprobado' && isLiderTarea()) ||
             // Suspender: El líder SST puede suspender si está en ejecución.
-            (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && getRole() == 'lider_sst') ||
+            (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && isLiderSST()) ||
              // Cerrar: El líder de la tarea puede cerrar si está en ejecución o suspendido.
-            (request.resource.data.status == 'cerrado' && (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') && getRole() == 'lider_tarea')
+            (request.resource.data.status == 'cerrado' && (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') && isLiderTarea())
           )
         );
     }
