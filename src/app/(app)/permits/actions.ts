@@ -52,15 +52,11 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-const signatureRoles: { [key in UserRole | 'sst' | 'mantenimiento']: string } = {
+const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst']: string } = {
   solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
   autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  sst: 'AREA SST (si aplica)',
-  lider_tarea: 'Líder de la Tarea',
-  ejecutante: 'Ejecutante del Trabajo',
-  lider_sst: 'Líder SST',
-  admin: 'Administrador'
+  lider_sst: 'AREA SST (si aplica)',
 };
 
 
@@ -82,7 +78,7 @@ export async function createPermit(data: PermitCreateData) {
     solicitante: { status: 'pendiente' as const },
     autorizante: { status: 'pendiente' as const },
     mantenimiento: { status: 'pendiente' as const },
-    sst: { status: 'pendiente' as const }
+    lider_sst: { status: 'pendiente' as const }
   };
 
   const permitPayload: Partial<Permit> = {
@@ -137,7 +133,7 @@ ${permitUrl}`;
 
 export async function addSignatureAndNotify(
   permitId: string, 
-  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst', 
+  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: { uid: string, displayName: string | null }
@@ -258,3 +254,5 @@ ${permitUrl}`;
         };
     }
 }
+
+    

@@ -1408,7 +1408,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navi
 ;
 ;
 ;
-function useIdleTimer({ timeout = 30 * 60 * 1000, onIdle, onActive, events = [
+function useIdleTimer({ timeout = 30 * 60 * 1000, promptBeforeIdle = 0, onIdle, onActive, onPrompt, events = [
     'mousedown',
     'mousemove',
     'keypress',
@@ -1419,46 +1419,50 @@ function useIdleTimer({ timeout = 30 * 60 * 1000, onIdle, onActive, events = [
 ], debounce = 500, disabled = false } = {}) {
     const { logout } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$auth$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useAuth"])();
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRouter"])();
-    const timeoutRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])();
-    const debounceRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])();
+    const idleTimeout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])();
+    const promptTimeout = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])();
+    const eventDebounce = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])();
     const isIdleRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(false);
+    const isPromptedRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(false);
+    const handleIdle = ()=>{
+        isIdleRef.current = true;
+        isPromptedRef.current = false;
+        onIdle?.();
+        logout();
+        router.push('/login?reason=timeout');
+    };
+    const handlePrompt = ()=>{
+        isPromptedRef.current = true;
+        onPrompt?.();
+    };
     const reset = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         if (disabled) return;
-        // Limpiar timeouts existentes
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
-        }
-        // Si estaba inactivo, marcar como activo
-        if (isIdleRef.current) {
-            isIdleRef.current = false;
+        // Clear existing timers
+        if (idleTimeout.current) clearTimeout(idleTimeout.current);
+        if (promptTimeout.current) clearTimeout(promptTimeout.current);
+        // If was idle or prompted, call onActive
+        if (isIdleRef.current || isPromptedRef.current) {
             onActive?.();
         }
-        // Configurar nuevo timeout para inactividad
-        timeoutRef.current = setTimeout(()=>{
-            isIdleRef.current = true;
-            onIdle?.();
-            // Auto logout después de inactividad
-            logout();
-            router.push('/login?reason=timeout');
-        }, timeout);
+        isIdleRef.current = false;
+        isPromptedRef.current = false;
+        // Set new timers
+        idleTimeout.current = setTimeout(handleIdle, timeout);
+        if (promptBeforeIdle > 0) {
+            promptTimeout.current = setTimeout(handlePrompt, timeout - promptBeforeIdle);
+        }
     }, [
         disabled,
         timeout,
-        onIdle,
-        onActive,
-        logout,
-        router
+        promptBeforeIdle,
+        onActive
     ]);
     const handleEvent = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
         if (disabled) return;
-        // Debounce para evitar demasiadas llamadas
-        if (debounceRef.current) {
-            clearTimeout(debounceRef.current);
+        if (eventDebounce.current) {
+            clearTimeout(eventDebounce.current);
         }
-        debounceRef.current = setTimeout(()=>{
+        eventDebounce.current = setTimeout(()=>{
             reset();
         }, debounce);
     }, [
@@ -1467,23 +1471,27 @@ function useIdleTimer({ timeout = 30 * 60 * 1000, onIdle, onActive, events = [
         reset
     ]);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (disabled) return;
-        // Inicializar timer
+        if (disabled) {
+            // Clean up if disabled
+            if (idleTimeout.current) clearTimeout(idleTimeout.current);
+            if (promptTimeout.current) clearTimeout(promptTimeout.current);
+            if (eventDebounce.current) clearTimeout(eventDebounce.current);
+            return;
+        }
         reset();
-        // Agregar event listeners
         events.forEach((event)=>{
-            document.addEventListener(event, handleEvent, true);
+            document.addEventListener(event, handleEvent, {
+                capture: true
+            });
         });
-        // Cleanup
         return ()=>{
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-            if (debounceRef.current) {
-                clearTimeout(debounceRef.current);
-            }
+            if (idleTimeout.current) clearTimeout(idleTimeout.current);
+            if (promptTimeout.current) clearTimeout(promptTimeout.current);
+            if (eventDebounce.current) clearTimeout(eventDebounce.current);
             events.forEach((event)=>{
-                document.removeEventListener(event, handleEvent, true);
+                document.removeEventListener(event, handleEvent, {
+                    capture: true
+                });
             });
         };
     }, [
@@ -1493,11 +1501,9 @@ function useIdleTimer({ timeout = 30 * 60 * 1000, onIdle, onActive, events = [
         events
     ]);
     const getRemainingTime = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
-        if (!timeoutRef.current) return 0;
-        return timeout; // En una implementación completa, calcularías el tiempo restante
-    }, [
-        timeout
-    ]);
+        // This would require a more complex implementation to be accurate
+        return 0;
+    }, []);
     const isIdle = ()=>isIdleRef.current;
     return {
         reset,
@@ -1663,75 +1669,49 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useToast"])();
     const [showWarning, setShowWarning] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [countdown, setCountdown] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(warningTime * 60); // en segundos
-    const [warningShown, setWarningShown] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
-    const timeoutMs = timeout * 60 * 1000; // convertir a milisegundos
+    const timeoutMs = timeout * 60 * 1000;
     const warningTimeMs = warningTime * 60 * 1000;
-    const { reset } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$idle$2d$timer$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useIdleTimer"])({
+    const { reset, isIdle, getRemainingTime } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$idle$2d$timer$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useIdleTimer"])({
         timeout: timeoutMs,
+        promptBeforeIdle: warningTimeMs,
         disabled: !user,
         onIdle: ()=>{
-            // Este callback se ejecuta justo antes del logout automático
-            console.log('Usuario inactivo - cerrando sesión');
+            console.log('User is idle, logging out.');
         },
         onActive: ()=>{
-            // Usuario volvió a estar activo
             setShowWarning(false);
-            setWarningShown(false);
             setCountdown(warningTime * 60);
-            console.log('Usuario activo de nuevo');
+            console.log('User is active again.');
+        },
+        onPrompt: ()=>{
+            setShowWarning(true);
+            toast({
+                title: "Sesión por expirar",
+                description: `Tu sesión expirará en ${warningTime} minutos por inactividad.`,
+                duration: 5000
+            });
+            setCountdown(warningTime * 60);
         }
     });
-    // Timer separado para mostrar advertencia
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (!user) return;
-        let warningTimer;
-        let countdownTimer;
-        const startWarningTimer = ()=>{
-            warningTimer = setTimeout(()=>{
-                if (!warningShown) {
-                    setShowWarning(true);
-                    setWarningShown(true);
-                    // Mostrar toast de advertencia
-                    toast({
-                        title: "Sesión por expirar",
-                        description: `Tu sesión expirará en ${warningTime} minutos por inactividad.`,
-                        duration: 5000
-                    });
-                    // Iniciar countdown
-                    setCountdown(warningTime * 60);
-                    const startCountdown = ()=>{
-                        countdownTimer = setInterval(()=>{
-                            setCountdown((prev)=>{
-                                if (prev <= 1) {
-                                    clearInterval(countdownTimer);
-                                    return 0;
-                                }
-                                return prev - 1;
-                            });
-                        }, 1000);
-                    };
-                    startCountdown();
-                }
-            }, timeoutMs - warningTimeMs);
-        };
-        startWarningTimer();
+        let interval;
+        if (showWarning && user) {
+            interval = setInterval(()=>{
+                setCountdown((prev)=>prev > 0 ? prev - 1 : 0);
+            }, 1000);
+        }
         return ()=>{
-            if (warningTimer) clearTimeout(warningTimer);
-            if (countdownTimer) clearInterval(countdownTimer);
+            if (interval) {
+                clearInterval(interval);
+            }
         };
     }, [
-        user,
-        timeoutMs,
-        warningTimeMs,
-        warningTime,
-        warningShown,
-        toast
+        showWarning,
+        user
     ]);
     const handleContinueSession = ()=>{
         setShowWarning(false);
-        setWarningShown(false);
-        setCountdown(warningTime * 60);
-        reset(); // Reiniciar el timer de inactividad
+        reset();
         toast({
             title: "Sesión extendida",
             description: "Tu sesión ha sido extendida exitosamente.",
@@ -1761,14 +1741,14 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                             className: "h-5 w-5 text-orange-500"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                            lineNumber: 130,
+                                            lineNumber: 103,
                                             columnNumber: 15
                                         }, this),
                                         "Sesión por Expirar"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                    lineNumber: 129,
+                                    lineNumber: 102,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
@@ -1780,7 +1760,7 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                                 children: "Tu sesión expirará automáticamente por inactividad."
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                                lineNumber: 135,
+                                                lineNumber: 108,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1790,7 +1770,7 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                                         className: "h-4 w-4 text-orange-600"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                                        lineNumber: 140,
+                                                        lineNumber: 113,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1801,13 +1781,13 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                                        lineNumber: 141,
+                                                        lineNumber: 114,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                                lineNumber: 139,
+                                                lineNumber: 112,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1815,24 +1795,24 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                                 children: 'Haz clic en "Continuar Sesión" para mantener tu sesión activa.'
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                                lineNumber: 146,
+                                                lineNumber: 119,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                        lineNumber: 134,
+                                        lineNumber: 107,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                    lineNumber: 133,
+                                    lineNumber: 106,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                            lineNumber: 128,
+                            lineNumber: 101,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -1847,23 +1827,23 @@ function IdleTimerProvider({ children, timeout = 30, warningTime = 5 // 5 minuto
                                 children: "Continuar Sesión"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                                lineNumber: 153,
+                                lineNumber: 126,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                            lineNumber: 152,
+                            lineNumber: 125,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                    lineNumber: 127,
+                    lineNumber: 100,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/IdleTimerProvider.tsx",
-                lineNumber: 126,
+                lineNumber: 99,
                 columnNumber: 7
             }, this)
         ]

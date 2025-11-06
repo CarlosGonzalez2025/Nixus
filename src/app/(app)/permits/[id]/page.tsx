@@ -159,12 +159,12 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueCha
 };
 
 
-type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'sst';
+type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst';
 const signatureRoles: { [key in SignatureRole]: string } = {
   solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
   autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  sst: 'AREA SST (si aplica)',
+  lider_sst: 'AREA SST (si aplica)',
 };
 
 
@@ -335,7 +335,7 @@ export default function PermitDetailPage() {
          const cardWidth = (doc.internal.pageSize.width - (margin * 3)) / 2;
 
          for (const role of Object.keys(signatureRoles) as SignatureRole[]) {
-             const approval = permit.approvals?.[role];
+             const approval = permit.approvals?.[role as keyof typeof permit.approvals];
 
              doc.setFillColor(248, 249, 250);
              doc.roundedRect(xPos, yPos, cardWidth, 45, 3, 3, 'FD');
@@ -477,8 +477,18 @@ export default function PermitDetailPage() {
   const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser || !permit || !permit.approvals) return false;
       
-      const approval = permit.approvals[role];
-      const isCorrectRole = currentUser.role === role || currentUser.role === 'admin';
+      const approval = permit.approvals[role as keyof typeof permit.approvals];
+      const userRole = currentUser.role;
+      
+      let isCorrectRole = userRole === 'admin';
+      
+      if (role === 'solicitante') {
+        isCorrectRole = isCorrectRole || userRole === 'solicitante' || userRole === 'lider_tarea';
+      } else if (role === 'lider_sst') {
+        isCorrectRole = isCorrectRole || userRole === 'lider_sst';
+      } else {
+        isCorrectRole = isCorrectRole || userRole === role;
+      }
       
       if (type === 'firmaApertura') {
           return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura && permit.status === 'pendiente_revision';
@@ -1031,7 +1041,7 @@ export default function PermitDetailPage() {
                 <Section title="Aprobaciones del Permiso">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
-                            const approval = permit.approvals?.[role];
+                            const approval = permit.approvals?.[role as keyof typeof permit.approvals];
                             return (
                                 <Card key={role} className="flex flex-col">
                                     <CardHeader className="pb-2">
@@ -1089,4 +1099,5 @@ export default function PermitDetailPage() {
   );
 }
 
+    
     
