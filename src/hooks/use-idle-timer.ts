@@ -1,20 +1,25 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
 interface UseIdleTimerOptions {
-  timeout?: number; // en milisegundos
+  timeout?: number;
+  promptBeforeIdle?: number;
   onIdle?: () => void;
   onActive?: () => void;
-  events?: string[];
+  onPrompt?: () => void;
+  events?: (keyof DocumentEventMap)[];
   debounce?: number;
   disabled?: boolean;
 }
 
 export function useIdleTimer({
-  timeout = 30 * 60 * 1000, // 30 minutos por defecto
+  timeout = 30 * 60 * 1000,
+  promptBeforeIdle = 0,
   onIdle,
   onActive,
+  onPrompt,
   events = [
     'mousedown',
     'mousemove',
@@ -29,81 +34,92 @@ export function useIdleTimer({
 }: UseIdleTimerOptions = {}) {
   const { logout } = useAuth();
   const router = useRouter();
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const debounceRef = useRef<NodeJS.Timeout>();
+  
+  const idleTimeout = useRef<NodeJS.Timeout>();
+  const promptTimeout = useRef<NodeJS.Timeout>();
+  const eventDebounce = useRef<NodeJS.Timeout>();
+  
   const isIdleRef = useRef(false);
+  const isPromptedRef = useRef(false);
+
+  const handleIdle = () => {
+    isIdleRef.current = true;
+    isPromptedRef.current = false;
+    onIdle?.();
+    logout();
+    router.push('/login?reason=timeout');
+  };
+
+  const handlePrompt = () => {
+    isPromptedRef.current = true;
+    onPrompt?.();
+  };
 
   const reset = useCallback(() => {
     if (disabled) return;
+    
+    // Clear existing timers
+    if (idleTimeout.current) clearTimeout(idleTimeout.current);
+    if (promptTimeout.current) clearTimeout(promptTimeout.current);
 
-    // Limpiar timeouts existentes
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    // Si estaba inactivo, marcar como activo
-    if (isIdleRef.current) {
-      isIdleRef.current = false;
+    // If was idle or prompted, call onActive
+    if (isIdleRef.current || isPromptedRef.current) {
       onActive?.();
     }
 
-    // Configurar nuevo timeout para inactividad
-    timeoutRef.current = setTimeout(() => {
-      isIdleRef.current = true;
-      onIdle?.();
-      
-      // Auto logout después de inactividad
-      logout();
-      router.push('/login?reason=timeout');
-    }, timeout);
-  }, [disabled, timeout, onIdle, onActive, logout, router]);
+    isIdleRef.current = false;
+    isPromptedRef.current = false;
+
+    // Set new timers
+    idleTimeout.current = setTimeout(handleIdle, timeout);
+    if (promptBeforeIdle > 0) {
+      promptTimeout.current = setTimeout(handlePrompt, timeout - promptBeforeIdle);
+    }
+  }, [disabled, timeout, promptBeforeIdle, onActive]);
+
 
   const handleEvent = useCallback(() => {
     if (disabled) return;
 
-    // Debounce para evitar demasiadas llamadas
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+    if (eventDebounce.current) {
+      clearTimeout(eventDebounce.current);
     }
 
-    debounceRef.current = setTimeout(() => {
+    eventDebounce.current = setTimeout(() => {
       reset();
     }, debounce);
   }, [disabled, debounce, reset]);
 
   useEffect(() => {
-    if (disabled) return;
+    if (disabled) {
+      // Clean up if disabled
+      if (idleTimeout.current) clearTimeout(idleTimeout.current);
+      if (promptTimeout.current) clearTimeout(promptTimeout.current);
+      if (eventDebounce.current) clearTimeout(eventDebounce.current);
+      return;
+    }
 
-    // Inicializar timer
     reset();
 
-    // Agregar event listeners
     events.forEach(event => {
-      document.addEventListener(event, handleEvent, true);
+      document.addEventListener(event, handleEvent, { capture: true });
     });
 
-    // Cleanup
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (idleTimeout.current) clearTimeout(idleTimeout.current);
+      if (promptTimeout.current) clearTimeout(promptTimeout.current);
+      if (eventDebounce.current) clearTimeout(eventDebounce.current);
 
       events.forEach(event => {
-        document.removeEventListener(event, handleEvent, true);
+        document.removeEventListener(event, handleEvent, { capture: true });
       });
     };
   }, [disabled, reset, handleEvent, events]);
 
   const getRemainingTime = useCallback(() => {
-    if (!timeoutRef.current) return 0;
-    return timeout; // En una implementación completa, calcularías el tiempo restante
-  }, [timeout]);
+    // This would require a more complex implementation to be accurate
+    return 0;
+  }, []);
 
   const isIdle = () => isIdleRef.current;
 

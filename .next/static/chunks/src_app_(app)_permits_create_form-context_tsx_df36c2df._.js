@@ -52,8 +52,7 @@ const initialState = {
         peligros: {},
         controles: {},
         epp: {},
-        justificacion: {},
-        protocolosBioseguridad: 'no'
+        justificacion: {}
     },
     anexoAltura: {
         tipoEstructura: {
@@ -263,7 +262,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 237,
+        lineNumber: 236,
         columnNumber: 5
     }, this);
 }

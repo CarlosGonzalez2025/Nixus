@@ -31,80 +31,53 @@ export function IdleTimerProvider({
   const { toast } = useToast();
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(warningTime * 60); // en segundos
-  const [warningShown, setWarningShown] = useState(false);
 
-  const timeoutMs = timeout * 60 * 1000; // convertir a milisegundos
+  const timeoutMs = timeout * 60 * 1000;
   const warningTimeMs = warningTime * 60 * 1000;
 
-  const { reset } = useIdleTimer({
+  const { reset, isIdle, getRemainingTime } = useIdleTimer({
     timeout: timeoutMs,
-    disabled: !user, // Solo activar si hay usuario logueado
+    promptBeforeIdle: warningTimeMs,
+    disabled: !user,
     onIdle: () => {
-      // Este callback se ejecuta justo antes del logout automático
-      console.log('Usuario inactivo - cerrando sesión');
+      console.log('User is idle, logging out.');
     },
     onActive: () => {
-      // Usuario volvió a estar activo
       setShowWarning(false);
-      setWarningShown(false);
       setCountdown(warningTime * 60);
-      console.log('Usuario activo de nuevo');
+      console.log('User is active again.');
+    },
+    onPrompt: () => {
+      setShowWarning(true);
+      toast({
+        title: "Sesión por expirar",
+        description: `Tu sesión expirará en ${warningTime} minutos por inactividad.`,
+        duration: 5000,
+      });
+      setCountdown(warningTime * 60);
     }
   });
 
-  // Timer separado para mostrar advertencia
   useEffect(() => {
-    if (!user) return;
+    let interval: NodeJS.Timeout | undefined;
 
-    let warningTimer: NodeJS.Timeout;
-    let countdownTimer: NodeJS.Timeout;
-
-    const startWarningTimer = () => {
-      warningTimer = setTimeout(() => {
-        if (!warningShown) {
-          setShowWarning(true);
-          setWarningShown(true);
-          
-          // Mostrar toast de advertencia
-          toast({
-            title: "Sesión por expirar",
-            description: `Tu sesión expirará en ${warningTime} minutos por inactividad.`,
-            duration: 5000,
-          });
-
-          // Iniciar countdown
-          setCountdown(warningTime * 60);
-          
-          const startCountdown = () => {
-            countdownTimer = setInterval(() => {
-              setCountdown(prev => {
-                if (prev <= 1) {
-                  clearInterval(countdownTimer);
-                  return 0;
-                }
-                return prev - 1;
-              });
-            }, 1000);
-          };
-
-          startCountdown();
-        }
-      }, timeoutMs - warningTimeMs);
-    };
-
-    startWarningTimer();
+    if (showWarning && user) {
+      interval = setInterval(() => {
+        setCountdown(prev => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
 
     return () => {
-      if (warningTimer) clearTimeout(warningTimer);
-      if (countdownTimer) clearInterval(countdownTimer);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
-  }, [user, timeoutMs, warningTimeMs, warningTime, warningShown, toast]);
+  }, [showWarning, user]);
+
 
   const handleContinueSession = () => {
     setShowWarning(false);
-    setWarningShown(false);
-    setCountdown(warningTime * 60);
-    reset(); // Reiniciar el timer de inactividad
+    reset(); 
     
     toast({
       title: "Sesión extendida",
