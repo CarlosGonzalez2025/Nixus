@@ -319,11 +319,7 @@ const signatureRoles = {
     solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
     autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
     mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-    sst: 'AREA SST (si aplica)',
-    lider_tarea: 'Líder de la Tarea',
-    ejecutante: 'Ejecutante del Trabajo',
-    lider_sst: 'Líder SST',
-    admin: 'Administrador'
+    lider_sst: 'AREA SST (si aplica)'
 };
 async function createPermit(data) {
     if (!data.userId) {
@@ -343,7 +339,7 @@ async function createPermit(data) {
         mantenimiento: {
             status: 'pendiente'
         },
-        sst: {
+        lider_sst: {
             status: 'pendiente'
         }
     };

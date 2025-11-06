@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -945,7 +946,7 @@ export default function PermitDetailPage() {
                                 </div>
                             </Section>
                              <Section title="3. Justificación de Uso" className="mt-6">
-                                 {Object.keys(permit.anexoATS.justificacion || {}).map(key => (
+                                 {permit.anexoATS.justificacion && Object.keys(permit.anexoATS.justificacion).map(key => (
                                     <div key={key} className="flex items-center gap-2 text-xs">
                                         <Check className="h-4 w-4 text-green-500" />
                                         <span>{key.replace(/_/g, ' ')}</span>

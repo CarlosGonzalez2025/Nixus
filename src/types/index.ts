@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -406,7 +407,7 @@ export type Permit = {
     solicitante: Partial<Approval>;
     autorizante: Partial<Approval>;
     mantenimiento: Partial<Approval>;
-    sst: Partial<Approval>;
+    lider_sst: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
   anexoATS?: Partial<AnexoATS>;
