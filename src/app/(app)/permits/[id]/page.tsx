@@ -32,6 +32,7 @@ import {
   PlayCircle,
   PauseCircle,
   Lock,
+  Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -188,6 +189,8 @@ export default function PermitDetailPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
+  
+  const [isSolicitanteSignAlertOpen, setIsSolicitanteSignAlertOpen] = useState(false);
 
   useEffect(() => {
     if (!permitId) {
@@ -403,8 +406,18 @@ export default function PermitDetailPage() {
 };
 
   const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
-      setSigningRole({role, type: signatureType});
-      setIsSignatureDialogOpen(true);
+      if (role === 'solicitante' && signatureType === 'firmaApertura') {
+          setIsSolicitanteSignAlertOpen(true);
+      } else {
+          setSigningRole({role, type: signatureType});
+          setIsSignatureDialogOpen(true);
+      }
+  }
+
+  const handleConfirmSolicitanteSign = () => {
+    setSigningRole({role: 'solicitante', type: 'firmaApertura'});
+    setIsSignatureDialogOpen(true);
+    setIsSolicitanteSignAlertOpen(false);
   }
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
@@ -476,30 +489,52 @@ export default function PermitDetailPage() {
   };
   
   const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
-      if(!currentUser || !permit || !permit.approvals) return false;
-      
-      const approval = permit.approvals[role as keyof typeof permit.approvals];
-      const userRole = currentUser.role;
-      
-      let isCorrectRole = userRole === 'admin';
-      
-      if (role === 'solicitante') {
-        isCorrectRole = isCorrectRole || userRole === 'solicitante' || userRole === 'lider_tarea';
-      } else if (role === 'lider_sst') {
-        isCorrectRole = isCorrectRole || userRole === 'lider_sst';
-      } else {
-        isCorrectRole = isCorrectRole || userRole === role;
-      }
-      
-      if (type === 'firmaApertura') {
-          return isCorrectRole && approval?.status === 'pendiente' && !approval?.firmaApertura && permit.status === 'pendiente_revision';
-      }
-       if (type === 'firmaCierre') {
-          const allOpeningSignaturesDone = Object.values(permit.approvals).every(a => a.status === 'aprobado');
-          return isCorrectRole && allOpeningSignaturesDone && !approval?.firmaCierre && (permit.status === 'en_ejecucion' || permit.status === 'suspendido');
-      }
-      return false;
-  }
+    if (!currentUser || !permit || !permit.approvals) return false;
+
+    // Regla 1: Nadie puede firmar si el permiso está rechazado, cerrado o suspendido.
+    if (['rechazado', 'cerrado', 'suspendido'].includes(permit.status) && type === 'firmaApertura') {
+        return false;
+    }
+    
+    // El usuario debe tener el rol correcto o ser admin
+    let isCorrectRole = currentUser.role === 'admin';
+    if (role === 'solicitante') isCorrectRole = isCorrectRole || currentUser.role === 'solicitante' || currentUser.role === 'lider_tarea';
+    else isCorrectRole = isCorrectRole || currentUser.role === role;
+
+    if (!isCorrectRole) return false;
+    
+    const { solicitante, autorizante, mantenimiento, lider_sst } = permit.approvals;
+
+    // Lógica para firmas de APERTURA
+    if (type === 'firmaApertura') {
+        if (permit.status !== 'pendiente_revision') return false;
+
+        switch (role) {
+            case 'solicitante':
+                return !solicitante?.status || solicitante.status === 'pendiente';
+            case 'autorizante':
+                // Solo puede firmar si el solicitante ya firmó
+                return solicitante?.status === 'aprobado' && (!autorizante?.status || autorizante.status === 'pendiente');
+            case 'mantenimiento':
+                // Solo si el trabajo es de energía y el autorizante ya firmó
+                return permit.controlEnergia === true && autorizante?.status === 'aprobado' && (!mantenimiento?.status || mantenimiento.status === 'pendiente');
+            case 'lider_sst':
+                // Solo si solicitante y autorizante ya firmaron
+                return solicitante?.status === 'aprobado' && autorizante?.status === 'aprobado' && (!lider_sst?.status || lider_sst.status === 'pendiente');
+            default:
+                return false;
+        }
+    }
+    
+    // Lógica para firmas de CIERRE
+    if (type === 'firmaCierre') {
+        if (!['en_ejecucion', 'suspendido'].includes(permit.status)) return false;
+        const approval = permit.approvals[role];
+        return !approval?.firmaCierre; // Puede firmar si no ha firmado el cierre
+    }
+
+    return false;
+  };
   
   const canChangeStatus = (targetStatus: PermitStatus) => {
     if (!currentUser || !permit) return false;
@@ -508,9 +543,15 @@ export default function PermitDetailPage() {
 
     if (!approvals) return false;
 
-    const allRequiredSignaturesDone = 
+    // Verifica que todas las firmas requeridas estén completas
+    let allRequiredSignaturesDone = 
       approvals.solicitante?.status === 'aprobado' &&
       approvals.autorizante?.status === 'aprobado';
+      
+    // Si es trabajo de energía, también se requiere la firma de mantenimiento
+    if(permit.controlEnergia){
+        allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.mantenimiento?.status === 'aprobado';
+    }
 
     switch (targetStatus) {
       case 'aprobado':
@@ -1042,7 +1083,15 @@ export default function PermitDetailPage() {
                 <Section title="Aprobaciones del Permiso">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
+                            // Conditional rendering for Mantenimiento
+                            if (role === 'mantenimiento' && !permit.controlEnergia) {
+                                return null;
+                            }
+                            
                             const approval = permit.approvals?.[role as keyof typeof permit.approvals];
+                            const canSignOpening = canSign(role, 'firmaApertura');
+                            const showSolicitanteModify = role === 'solicitante' && currentUser?.role === 'solicitante' && (!approval || approval.status === 'pendiente');
+
                             return (
                                 <Card key={role} className="flex flex-col">
                                     <CardHeader className="pb-2">
@@ -1071,11 +1120,18 @@ export default function PermitDetailPage() {
                                                 </div>
                                             )}
                                         </div>
-                                         {canSign(role, 'firmaApertura') && (
-                                            <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={isSigning}>
-                                                {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar como {signatureRoles[role]}
-                                            </Button>
-                                        )}
+                                        <div className="flex flex-wrap gap-2">
+                                            {canSignOpening && (
+                                                <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={isSigning} className="flex-1">
+                                                    {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
+                                                </Button>
+                                            )}
+                                            {showSolicitanteModify && (
+                                                <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
+                                                    <Edit className="mr-2"/> Modificar
+                                                </Button>
+                                            )}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             )
@@ -1096,6 +1152,24 @@ export default function PermitDetailPage() {
                 <SignaturePad onSave={handleSaveSignature} isSaving={isSigning} />
             </DialogContent>
         </Dialog>
+        
+        <AlertDialog open={isSolicitanteSignAlertOpen} onOpenChange={setIsSolicitanteSignAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar Firma</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Al firmar, confirma que la información del permiso es correcta. El permiso será remitido para autorización y ya no podrá ser modificado. ¿Desea continuar?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmSolicitanteSign}>
+                        Confirmar y Firmar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
       </div>
   );
 }

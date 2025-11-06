@@ -173,7 +173,7 @@ export async function addSignatureAndNotify(
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
         
-        const messageBody = `*Notificación de Firma - SGPT* 🖋️
+        let messageBody = `*Notificación de Firma - SGPT* 🖋️
 El permiso *${permitData.number || permitId}* ha sido firmado.
 
 👤 *Quién firmó:* ${user.displayName || 'N/A'}
@@ -182,6 +182,17 @@ El permiso *${permitData.number || permitId}* ha sido firmado.
 
 Puede ver los detalles aquí:
 ${permitUrl}`;
+
+        // Notificación especial cuando el solicitante firma
+        if (role === 'solicitante' && signatureType === 'firmaApertura') {
+            messageBody = `*Permiso listo para Autorización - SGPT* ⏳
+El permiso *${permitData.number || permitId}* ha sido firmado por el solicitante y está listo para su revisión.
+
+👤 *Solicitante:* ${user.displayName || 'N/A'}
+
+Por favor, ingrese para revisarlo y autorizarlo:
+${permitUrl}`;
+        }
         
         await sendWhatsAppNotification(messageBody);
 
