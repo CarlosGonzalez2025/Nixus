@@ -254,7 +254,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <main className="flex-1">
-          <header className="sticky top-0 z-10 hidden h-12 items-center border-b bg-background px-4 md:flex">
+          <header className="sticky top-0 z-10 flex h-12 items-center border-b bg-background px-4 md:hidden">
             <SidebarTrigger className="text-foreground" />
           </header>
           <SidebarInset className="md:p-0">{children}</SidebarInset>
