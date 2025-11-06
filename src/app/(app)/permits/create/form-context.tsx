@@ -60,7 +60,6 @@ const initialState: FormState = {
     controles: {},
     epp: {},
     justificacion: {},
-    protocolosBioseguridad: 'no'
   },
   anexoAltura: {
     tipoEstructura: {

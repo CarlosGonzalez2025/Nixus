@@ -76,7 +76,6 @@ export type AnexoATS = {
   controles?: { [key: string]: 'si' | 'no' | 'na' };
   epp?: { [key: string]: boolean | string };
   justificacion?: { [key: string]: boolean };
-  protocolosBioseguridad?: 'si' | 'no';
   peligrosAdicionales?: { peligro: string, descripcion: string }[];
 };
 
