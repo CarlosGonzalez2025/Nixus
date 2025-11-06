@@ -74,6 +74,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 // ✅ Helper function to handle different date formats
@@ -488,53 +489,59 @@ export default function PermitDetailPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
   
-  const canSign = (role: SignatureRole, type: 'firmaApertura' | 'firmaCierre') => {
-    if (!currentUser || !permit || !permit.approvals) return false;
+    const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
+        if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
 
-    // Regla 1: Nadie puede firmar si el permiso está rechazado, cerrado o suspendido.
-    if (['rechazado', 'cerrado', 'suspendido'].includes(permit.status) && type === 'firmaApertura') {
-        return false;
-    }
-    
-    // El usuario debe tener el rol correcto o ser admin
-    let isCorrectRole = currentUser.role === 'admin';
-    if (role === 'solicitante') isCorrectRole = isCorrectRole || currentUser.role === 'solicitante' || currentUser.role === 'lider_tarea';
-    else isCorrectRole = isCorrectRole || currentUser.role === role;
+        // Regla General: Nadie puede firmar si el permiso está rechazado, cerrado o suspendido.
+        if (['rechazado', 'cerrado', 'suspendido'].includes(permit.status)) {
+            return { can: false, reason: `El permiso está ${permit.status}.` };
+        }
+        
+        // El permiso debe estar en revisión para nuevas firmas de apertura.
+        if (permit.status !== 'pendiente_revision') {
+             return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
+        }
 
-    if (!isCorrectRole) return false;
-    
-    const { solicitante, autorizante, mantenimiento, lider_sst } = permit.approvals;
+        // El usuario debe tener el rol correcto o ser admin
+        let isCorrectRole = currentUser.role === 'admin';
+        if (role === 'solicitante') isCorrectRole = isCorrectRole || currentUser.role === 'solicitante' || currentUser.role === 'lider_tarea';
+        else isCorrectRole = isCorrectRole || currentUser.role === role;
 
-    // Lógica para firmas de APERTURA
-    if (type === 'firmaApertura') {
-        if (permit.status !== 'pendiente_revision') return false;
+        if (!isCorrectRole) return { can: false, reason: 'No tienes el rol requerido.' };
+
+        const { solicitante, autorizante, mantenimiento, lider_sst } = permit.approvals;
 
         switch (role) {
             case 'solicitante':
-                return !solicitante?.status || solicitante.status === 'pendiente';
+                const canSignSolicitante = !solicitante?.status || solicitante.status === 'pendiente';
+                return { can: canSignSolicitante, reason: canSignSolicitante ? undefined : 'Ya has firmado.' };
+            
             case 'autorizante':
-                // Solo puede firmar si el solicitante ya firmó
-                return solicitante?.status === 'aprobado' && (!autorizante?.status || autorizante.status === 'pendiente');
-            case 'mantenimiento':
-                // Solo si el trabajo es de energía y el autorizante ya firmó
-                return permit.controlEnergia === true && autorizante?.status === 'aprobado' && (!mantenimiento?.status || mantenimiento.status === 'pendiente');
-            case 'lider_sst':
-                // Solo si solicitante y autorizante ya firmaron
-                return solicitante?.status === 'aprobado' && autorizante?.status === 'aprobado' && (!lider_sst?.status || lider_sst.status === 'pendiente');
-            default:
-                return false;
-        }
-    }
-    
-    // Lógica para firmas de CIERRE
-    if (type === 'firmaCierre') {
-        if (!['en_ejecucion', 'suspendido'].includes(permit.status)) return false;
-        const approval = permit.approvals[role];
-        return !approval?.firmaCierre; // Puede firmar si no ha firmado el cierre
-    }
+                if (solicitante?.status !== 'aprobado') {
+                    return { can: false, reason: 'Esperando firma del Solicitante.' };
+                }
+                const canSignAutorizante = !autorizante?.status || autorizante.status === 'pendiente';
+                return { can: canSignAutorizante, reason: canSignAutorizante ? undefined : 'Ya has firmado.' };
 
-    return false;
-  };
+            case 'mantenimiento':
+                if (!permit.controlEnergia) return { can: false, reason: 'No se requiere para este trabajo.' };
+                if (autorizante?.status !== 'aprobado') {
+                    return { can: false, reason: 'Esperando firma del Autorizante.' };
+                }
+                const canSignMantenimiento = !mantenimiento?.status || mantenimiento.status === 'pendiente';
+                return { can: canSignMantenimiento, reason: canSignMantenimiento ? undefined : 'Ya has firmado.' };
+
+            case 'lider_sst':
+                if (solicitante?.status !== 'aprobado' || autorizante?.status !== 'aprobado') {
+                    return { can: false, reason: 'Esperando firma del Solicitante y Autorizante.' };
+                }
+                const canSignLiderSST = !lider_sst?.status || lider_sst.status === 'pendiente';
+                return { can: canSignLiderSST, reason: canSignLiderSST ? undefined : 'Ya has firmado.' };
+
+            default:
+                return { can: false, reason: 'Rol de firma no reconocido.' };
+        }
+    };
   
   const canChangeStatus = (targetStatus: PermitStatus) => {
     if (!currentUser || !permit) return false;
@@ -1083,14 +1090,19 @@ export default function PermitDetailPage() {
                 <Section title="Aprobaciones del Permiso">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
-                            // Conditional rendering for Mantenimiento
                             if (role === 'mantenimiento' && !permit.controlEnergia) {
                                 return null;
                             }
                             
                             const approval = permit.approvals?.[role as keyof typeof permit.approvals];
-                            const canSignOpening = canSign(role, 'firmaApertura');
+                            const { can, reason } = canSign(role);
                             const showSolicitanteModify = role === 'solicitante' && currentUser?.role === 'solicitante' && (!approval || approval.status === 'pendiente');
+
+                            const SignButton = () => (
+                                <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
+                                    {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
+                                </Button>
+                            );
 
                             return (
                                 <Card key={role} className="flex flex-col">
@@ -1121,10 +1133,19 @@ export default function PermitDetailPage() {
                                             )}
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-                                            {canSignOpening && (
-                                                <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={isSigning} className="flex-1">
-                                                    {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
-                                                </Button>
+                                             {can ? <SignButton /> : (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="w-full">
+                                                                <Button disabled className="w-full flex-1">
+                                                                    <SignatureIcon className="mr-2"/> Firmar Apertura
+                                                                </Button>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        {reason && <TooltipContent><p>{reason}</p></TooltipContent>}
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             )}
                                             {showSolicitanteModify && (
                                                 <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
