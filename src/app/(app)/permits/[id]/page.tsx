@@ -167,7 +167,7 @@ const signatureRoles: { [key in SignatureRole]: string } = {
   solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
   autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  lider_sst: 'AREA SST (si aplica)',
+  lider_sst: 'AREA SST (SI APLICA)',
 };
 
 
@@ -497,16 +497,16 @@ export default function PermitDetailPage() {
             return { can: false, reason: `El permiso está ${permit.status}.` };
         }
         
-        // El permiso debe estar en revisión para nuevas firmas de apertura.
+        // Regla: El permiso debe estar en 'pendiente_revision' para las firmas de apertura.
         if (permit.status !== 'pendiente_revision') {
              return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
         }
-
-        // El usuario debe tener el rol correcto o ser admin
+        
+        // Regla: El usuario debe tener el rol correcto o ser admin.
         let isCorrectRole = currentUser.role === 'admin';
         if (role === 'solicitante') isCorrectRole = isCorrectRole || currentUser.role === 'solicitante' || currentUser.role === 'lider_tarea';
         else isCorrectRole = isCorrectRole || currentUser.role === role;
-
+        
         if (!isCorrectRole) return { can: false, reason: 'No tienes el rol requerido.' };
 
         const { solicitante, autorizante, mantenimiento, lider_sst } = permit.approvals;
@@ -524,7 +524,9 @@ export default function PermitDetailPage() {
                 return { can: canSignAutorizante, reason: canSignAutorizante ? undefined : 'Ya has firmado.' };
 
             case 'mantenimiento':
-                if (!permit.controlEnergia) return { can: false, reason: 'No se requiere para este trabajo.' };
+                 if (!permit.controlEnergia) {
+                    return { can: false, reason: 'No se requiere para este trabajo.' };
+                }
                 if (autorizante?.status !== 'aprobado') {
                     return { can: false, reason: 'Esperando firma del Autorizante.' };
                 }
@@ -1133,7 +1135,9 @@ export default function PermitDetailPage() {
                                             )}
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-                                             {can ? <SignButton /> : (
+                                             {can ? (
+                                                <SignButton /> 
+                                             ) : (
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -1195,5 +1199,6 @@ export default function PermitDetailPage() {
   );
 }
 
+    
     
     
