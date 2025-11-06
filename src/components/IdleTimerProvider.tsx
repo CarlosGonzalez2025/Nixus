@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useIdleTimer } from '@/hooks/use-idle-timer';
@@ -129,21 +130,23 @@ export function IdleTimerProvider({
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               Sesión por Expirar
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                Tu sesión expirará automáticamente por inactividad.
-              </p>
-              
-              <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <Clock className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-800">
-                  Tiempo restante: {formatTime(countdown)}
-                </span>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <div>
+                  Tu sesión expirará automáticamente por inactividad.
+                </div>
+                
+                <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-800">
+                    Tiempo restante: {formatTime(countdown)}
+                  </span>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  Haz clic en "Continuar Sesión" para mantener tu sesión activa.
+                </div>
               </div>
-              
-              <p className="text-sm text-gray-600">
-                Haz clic en "Continuar Sesión" para mantener tu sesión activa.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
