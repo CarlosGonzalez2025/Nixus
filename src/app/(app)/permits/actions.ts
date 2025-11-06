@@ -165,7 +165,6 @@ export async function addSignatureAndNotify(
 
         await docRef.update(updateData);
         
-        // Fetch permit for notification
         const permitDoc = await docRef.get();
         const permitData = permitDoc.data() as Permit;
         
@@ -183,7 +182,6 @@ El permiso *${permitData.number || permitId}* ha sido firmado.
 Puede ver los detalles aquí:
 ${permitUrl}`;
 
-        // Notificación especial cuando el solicitante firma
         if (role === 'solicitante' && signatureType === 'firmaApertura') {
             messageBody = `*Permiso listo para Autorización - SGPT* ⏳
 El permiso *${permitData.number || permitId}* ha sido firmado por el solicitante y está listo para su revisión.
@@ -195,6 +193,7 @@ ${permitUrl}`;
         }
         
         await sendWhatsAppNotification(messageBody);
+        console.log(`[Action] Notificación de firma enviada para el permiso ${permitId}`);
 
         revalidatePath(`/permits/${permitId}`);
         return { success: true };

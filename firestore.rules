@@ -4,17 +4,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getRole() == 'admin';
+    }
+
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      // Un administrador puede leer la lista completa de usuarios.
-      // Esto es para que la tabla en "Gestión de Usuarios" funcione.
-      allow list: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-
-      // Un usuario puede leer su propio perfil, o un admin puede leer cualquier perfil.
-      allow get: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      // Un admin puede listar todos los usuarios, un usuario autenticado puede leer su propio perfil.
+      allow read: if isAdmin() || isOwner(userId);
+      allow list: if isAdmin();
       
-      // Un usuario puede actualizar su propio perfil, o un admin puede actualizar cualquier perfil.
-      allow update: if request.auth != null && (request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      // Un usuario puede actualizar su propio perfil, un admin puede actualizar cualquier perfil.
+      allow update: if isOwner(userId) || isAdmin();
 
       // La creación de usuarios se hace desde el servidor (Admin SDK), no desde el cliente.
       allow create: if false;
@@ -25,36 +39,67 @@ service cloud.firestore {
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      // LECTURA: Sigue siendo para usuarios autenticados.
-      allow read: if request.auth != null;
+      // LECTURA: Cualquier usuario autenticado puede leer cualquier permiso.
+      allow read: if isSignedIn();
 
-      // ACTUALIZACIÓN: Se divide en dos casos.
-      allow update: if 
-        // CASO 1: El usuario está autenticado (para firmar, cerrar, etc.)
-        (request.auth != null) || 
-        // CASO 2: El usuario NO está autenticado, PERO solo está añadiendo un trabajador a la lista.
-        (request.auth == null && 
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workers']) &&
-         request.resource.data.workers.size() == resource.data.workers.size() + 1);
-
-      // CREACIÓN/ELIMINACIÓN: Siguen protegidas.
+      // CREACIÓN/ELIMINACIÓN: Protegidas, solo se hacen desde el servidor.
       allow create, delete: if false;
+
+      // ACTUALIZACIÓN: Lógica de negocio compleja para los diferentes roles y estados.
+      allow update: if 
+        // Regla 1: Un admin puede hacer cualquier cambio.
+        isAdmin() ||
+        
+        // Regla 2: El creador del permiso (solicitante) puede modificarlo si aún no ha firmado.
+        (isOwner(resource.data.createdBy) && !request.resource.data.approvals.solicitante.status == 'aprobado') ||
+
+        // Regla 3: Un usuario puede firmar su propia aprobación si el permiso está pendiente.
+        (
+          isSignedIn() && resource.data.status == 'pendiente_revision' &&
+          (
+            // El solicitante firma
+            (getRole() == 'solicitante' && request.resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.solicitante.status == 'pendiente') ||
+            // El autorizante firma después del solicitante
+            (getRole() == 'autorizante' && resource.data.approvals.solicitante.status == 'aprobado' && request.resource.data.approvals.autorizante.status == 'aprobado') ||
+            // Mantenimiento firma después del autorizante (si es trabajo de energía)
+            (getRole() == 'mantenimiento' && resource.data.controlEnergia == true && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.mantenimiento.status == 'aprobado') ||
+            // SST firma después del autorizante
+            (getRole() == 'lider_sst' && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.lider_sst.status == 'aprobado')
+          )
+        ) ||
+        
+        // Regla 4: Cambiar el estado del permiso.
+        (
+          isSignedIn() && 
+          (
+            // Aprobar: Solo el autorizante puede hacerlo si el permiso está pendiente y las firmas requeridas están listas.
+            (request.resource.data.status == 'aprobado' && resource.data.status == 'pendiente_revision' && getRole() == 'autorizante' && resource.data.approvals.solicitante.status == 'aprobado') ||
+            // Rechazar: Autorizante o SST pueden rechazar si está pendiente.
+            (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && (getRole() == 'autorizante' || getRole() == 'lider_sst')) ||
+            // Iniciar Ejecución: El líder de la tarea puede iniciar si está aprobado.
+            (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'aprobado' && getRole() == 'lider_tarea') ||
+            // Suspender: El líder SST puede suspender si está en ejecución.
+            (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && getRole() == 'lider_sst') ||
+             // Cerrar: El líder de la tarea puede cerrar si está en ejecución o suspendido.
+            (request.resource.data.status == 'cerrado' && (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') && getRole() == 'lider_tarea')
+          )
+        );
     }
 
     // --- Colección de Listas Dinámicas (dynamic_lists) ---
     match /dynamic_lists/{listName} {
       // Cualquier usuario autenticado puede leer las listas (para los desplegables).
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
 
       // Solo los administradores pueden crear, actualizar o eliminar listas.
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if isAdmin();
     }
 
     // --- Colección de Prueba (test) ---
     match /test/{docId} {
       // Cualquiera puede leer, pero solo usuarios autenticados pueden escribir.
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isSignedIn();
     }
   }
 }
