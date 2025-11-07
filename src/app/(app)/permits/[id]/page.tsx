@@ -662,7 +662,7 @@ export default function PermitDetailPage() {
         'izaje': 'Izaje de Cargas',
         'caliente': 'Trabajo en Caliente',
         'excavacion': 'Excavaciones',
-        'general': 'Trabajo General'
+        'general': 'Trabajo en General'
       };
       return permit.workType.map(key => workTypesMap[key] || key).join(', ');
     }
@@ -710,35 +710,8 @@ export default function PermitDetailPage() {
     return acc;
  }, {} as {[key: string]: typeof atsPeligros});
 
- const hazards = [
-    { id: 'ruido', label: 'Ruido' },
-    { id: 'vibracion', label: 'Vibración' },
-    { id: 'temperatura', label: 'Temperatura' },
-    { id: 'radiacion', label: 'Radiación' },
-    { id: 'iluminacion', label: 'Deficiencia / Exceso de iluminación' },
-    { id: 'desnivel', label: 'Diferencias de nivel (Huecos y desnivel)' },
-    { id: 'quimicos', label: 'Contacto con sustancias químicas' },
-    { id: 'biologicos', label: 'Contacto con animales, virus, bacteria' },
-    { id: 'carga_fisica', label: 'Carga física (manipulación manual)' },
-    { id: 'electrica', label: 'Contacto con energía eléctrica A/M/B' },
-    { id: 'hidraulica', label: 'Contacto con energía hidráulica' },
-    { id: 'neumatica', label: 'Contacto con energía neumática' },
-    { id: 'mecanica', label: 'Contacto con energía mecánica (atrap)' },
-    { id: 'termica', label: 'Contacto con energía térmica' },
-    { id: 'confinados', label: 'Espacios confinados' },
-    { id: 'altura', label: 'Caídas de altura' },
-    { id: 'caliente', label: 'Trabajo en caliente' },
-    { id: 'izaje', label: 'Izaje de cargas' },
-    { id: 'transito', label: 'Tránsito' },
-    { id: 'fenomenos_naturales', label: 'Fenómenos naturales' },
-    { id: 'incendio', label: 'Incendio / Explosión' },
-    { id: 'emisiones', label: 'Emisiones / Vertimientos' },
-    { id: 'residuos', label: 'Residuos Peligrosos' },
-    { id: 'otros_riesgos', label: 'Otros riesgos (Cuales):' },
-  ];
-
-  const ppe = {
-    "Ropa": [
+ const eppOptions = {
+    'Ropa': [
       { id: 'overol_trabajo', label: 'Overol de trabajo' },
       { id: 'overol_ignifugo', label: 'Overol Ignifugo, Categoria:' },
       { id: 'peto', label: 'Peto' },
@@ -746,73 +719,57 @@ export default function PermitDetailPage() {
       { id: 'polainas', label: 'Polainas' },
       { id: 'otro_ropa', label: 'Otro (Cual):' },
     ],
-    "Protección de pies y piernas": [
+    'Protección de pies y piernas': [
       { id: 'botas_seguridad', label: 'Botas de seguridad con puntera' },
       { id: 'botas_dielectricas', label: 'Botas dieléctricas' },
       { id: 'otro_pies', label: 'Otro (Cual):' },
     ],
-     "Protección auditiva": [
+    'Protección auditiva': [
       { id: 'tipo_insercion', label: 'Tipo Inserción' },
       { id: 'tipo_copa', label: 'Tipo copa' },
     ],
-    "Protección respiratoria": [
+    'Protección respiratoria': [
       { id: 'respirador_cartuchos', label: 'Respirador con cartuchos para:' },
       { id: 'mascarilla_desechable', label: 'Mascarilla desechable para:' },
       { id: 'otro_respiratoria', label: 'Otro (Cual):' },
     ],
-    "Protección cabeza": [
-        { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuquejo' },
-        { id: 'chavo', label: 'Chavo en tela o carnaza' },
+    'Protección cabeza': [
+      { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuquejo' },
+      { id: 'chavo', label: 'Chavo en tela o carnaza' },
     ],
-    "Protección facial y ocular": [
-        { id: 'careta_lente_neutro', label: 'Careta lente neutro' },
-        { id: 'monogafas', label: 'Monogafas / Gafas' },
-        { id: 'gafas_oxicorte', label: 'Gafas de oxicorte' },
-        { id: 'careta_soldador', label: 'Careta de soldador' },
-        { id: 'careta_dielectrica', label: 'Careta de dieléctrica, clase:' },
-        { id: 'otro_facial', label: 'Otro (Cual):' },
+    'Protección facial y ocular': [
+      { id: 'careta_lente_neutro', label: 'Careta lente neutro' },
+      { id: 'monogafas', label: 'Monogafas / Gafas' },
+      { id: 'gafas_oxicorte', label: 'Gafas de oxicorte' },
+      { id: 'careta_soldador', label: 'Careta de soldador' },
+      { id: 'careta_dielectrica', label: 'Careta de dieléctrica, clase:' },
+      { id: 'otro_facial', label: 'Otro (Cual):' },
     ],
-    "Barrera/Señales de advertencia": [
-        { id: 'senalizacion', label: 'Señalización' },
-        { id: 'barandas', label: 'Barandas' },
-        { id: 'delimitacion', label: 'Delimitación Perimetral' },
-        { id: 'control_acceso', label: 'Control de acceso' },
+    'Barrera/Señales de advertencia': [
+      { id: 'senalizacion', label: 'Señalización' },
+      { id: 'barandas', label: 'Barandas' },
+      { id: 'delimitacion', label: 'Delimitación Perimetral' },
+      { id: 'control_acceso', label: 'Control de acceso' },
     ],
-    "Guantes": [
-        { id: 'proteccion_mecanica', label: 'Protección mecánica:' },
-        { id: 'proteccion_dielectrica_guantes', label: 'Protección dieléctrica:' },
-        { id: 'proteccion_quimica', label: 'Protección química' },
-        { id: 'otro_guantes', label: 'Otro (Cual):' },
+    'Guantes': [
+      { id: 'proteccion_mecanica', label: 'Protección mecánica:' },
+      { id: 'proteccion_dielectrica_guantes', label: 'Protección dieléctrica:' },
+      { id: 'proteccion_quimica', label: 'Protección química' },
+      { id: 'otro_guantes', label: 'Otro (Cual):' },
     ],
-    "Otros": [
-        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico' },
-        { id: 'pertiga_dielectrica', label: 'Pértiga dieléctrica' },
-        { id: 'otro_otros', label: 'Otro (Cual):' },
-    ]
-  }
-
-  const ppeSystems = [
-      { id: 'arnes', label: 'Arnés, Tipo:' },
-      { id: 'mosqueton', label: 'Mosquetón' },
-      { id: 'eslinga', label: 'Eslinga, Tipo:' },
-      { id: 'linea_vida', label: 'Línea de vida, Tipo:' },
-      { id: 'freno_arrestador', label: 'Freno/Arrestador' },
-      { id: 'punto_anclaje', label: 'Punto de anclaje (Cual):' },
-      { id: 'autoretractil', label: 'Autoretráctil' },
-      { id: 'tie_off', label: 'Tie-off' },
-      { id: 'baranda_rodapies', label: 'Baranda con rodapiés' },
-      { id: 'sistema_acceso', label: 'Sistema de acceso (Cual):' },
-      { id: 'tripode', label: 'Tripode / pescante' },
-      { id: 'otro_sistemas', label: 'Otro (Cual):' },
-  ];
+    'Otros': [
+      { id: 'tapete_dielectrico', label: 'Tapete dieléctrico' },
+      { id: 'pertiga_dielectrica', label: 'Pértiga dieléctrica' },
+      { id: 'otro_otros', label: 'Otro (Cual):' },
+    ],
+};
   
-  const emergencyQuestions = [
-    {id: 'potenciales', label: 'A.- Las emergencias potenciales que pueden ocurrir'},
-    {id: 'procedimientos', label: 'B.- Los procedimientos establecidos para tales situaciones.'},
-    {id: 'rutas_evacuacion', label: 'C.- Rutas de Evacuación'},
-    {id: 'puntos_encuentro', label: 'D.- Puntos de encuentro'},
-    {id: 'equipos_emergencia', label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo'},
-    {id: 'brigadistas', label: 'F.- Ubicación de Brigadistas cercanos'},
+  const justificacionOptions = [
+    { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
+    { id: 'no_rutinario_emergencia', label: 'TRABAJO NO RUTINARIO (EMERGENCIA)' },
+    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
+    { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
+    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
   ];
   
     const anexoAlturaEstructuras = [
@@ -825,34 +782,30 @@ export default function PermitDetailPage() {
       { id: 'otros', label: 'Otros' },
     ];
 
-    const anexoAlturaAspectos = {
-      left: [
-        { id: 'afiliacionVigente', label: 'A. El personal ejecutante de la actividad tiene la afiliación vigente a seguridad social?' },
-        { id: 'procedimientoActividad', label: 'B. Se cuenta con el procedimiento de la actividad a ejecutar?' },
-        { id: 'medidasPrevencion', label: 'C. Se han determinado las medidas de prevención contra caídas?' },
-        { id: 'conocenMedidas', label: 'D. Todos los ejecutantes conocen las medidas de precaución establecidas en la evaluación de riesgos?' },
-        { id: 'entrenadosCertificados', label: 'E. Están los ejecutantes entrenados y se encuentran los certificados en sitio para realizar trabajos en altura?' },
-        { id: 'elementosProteccionCertificados', label: 'F. Están todos los elementos de protección contra caídas en buen estado y certificados?' },
-        { id: 'sistemaAseguramientoVerificado', label: 'G. Se verifico el sistema de aseguramiento de la escalera , andamio o plataforma a una estructura fija' },
-        { id: 'estadoElementosVerificado', label: 'H. Se verifico el estado de: eslingas, arnes, casco, mosquetones, casco, y demas elementos necesarios para realizar el trabajo.' },
-        { id: 'puntosAnclajeCertificados', label: 'I. Los puntos de anclaje y demas elementos cumplen con la resistencia de 5000 lbs por persona y estan certificados?' },
-        { id: 'areaDelimitada', label: 'J. Esta delimitada y señalizada el area de trabajo' },
-        { id: 'personalSaludable', label: 'K. El personal que realiza el trabajo se encuentra en condiciones adecuadas de salud para la actividad?.' },
-      ],
-      right: [
-        { id: 'equiposAccesoBuenEstado', label: 'L. Se cuenta con todos los equipos y sistemas de acceso para trabjo en alturas en buen estado?' },
-        { id: 'espacioCaidaLibreSuficiente', label: 'M. El espacio de caida libre es suficiente para evitar que la persona se golpee contra el nivel inferior.' },
-        { id: 'equiposEmergenciaDisponibles', label: 'N. Se cuenta con elementos para atencion de emergencias en el area y plan de emergencias para rescate en alturas?' },
-        { id: 'eppSeleccionadosCorrectamente', label: 'O. Están los elementos de protección personal seleccionados teniendo en cuenta los riesgos y requerimientos de la tarea?' },
-        { id: 'plataformaSoportaCarga', label: 'P.La plataforma o estructura soporta la carga de trabajo, es firme y se evita la caída de objetos o herramientas?' },
-        { id: 'supervisorConstante', label: 'Q.Existe un supervisor o acompañante constaste durante el trabajo' },
-        { id: 'andamiosCompletos', label: 'R. En caso de trabajos sobre andamios, estos estan completos y adecuadamente armados (rodapies, barandas, etc.)' },
-        { id: 'condicionesClimaticasAdecuadas', label: 'S.Las condiciones climaticas son adecuadas para realizar el trabajo' },
-        { id: 'metodoSubirHerramientasSeguro', label: 'T.El metodo de subir herramientas es seguro' },
-        { id: 'sistemasRestriccion', label: 'U. En caso de requerirse se cuenta con sistemas de restricción' },
-        { id: 'sistemasPosicionamiento', label: 'V. En caso de requerirse se cuenta con sistemas de posicionamiento' },
-      ]
-    };
+    const anexoAlturaAspectos = [
+        { id: 'afiliacionVigente', label: 'A. EL PERSONAL EJECUTANTE DE LA ACTIVIDAD TIENE LA AFILIACIÓN VIGENTE A SEGURIDAD SOCIAL? '},
+        { id: 'procedimientoActividad', label: 'B. SE CUENTA CON EL PROCEDIMIENTO DE LA ACTIVIDAD A EJECUTAR?' },
+        { id: 'medidasPrevencion', label: 'C. SE HAN DETERMINADO LAS MEDIDAS DE PREVENCIÓN CONTRA CAÍDAS?' },
+        { id: 'conocenMedidas', label: 'D. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?'},
+        { id: 'entrenadosCertificados', label: 'E. ESTÁN LOS EJECUTANTES ENTRENADOS Y SE ENCUENTRAN LOS CERTIFICADOS EN SITIO PARA REALIZAR   TRABAJOS EN ALTURA?'},
+        { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO Y CERTIFICADOS?' },
+        { id: 'sistemaAseguramientoVerificado', label: 'G. SE VERIFICO EL SISTEMA DE ASEGURAMIENTO DE LA ESCALERA , ANDAMIO O PLATAFORMA A UNA ESTRUCTURA FIJA' },
+        { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
+        { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
+        { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
+        { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+        { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
+        { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
+        { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
+        { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
+        { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
+        { id: 'supervisorConstante', label: 'Q.EXISTE UN SUPERVISOR O ACOMPAÑANTE CONSTASTE DURANTE EL TRABAJO' },
+        { id: 'andamiosCompletos', label: 'R. EN CASO DE TRABAJOS SOBRE ANDAMIOS, ESTOS ESTAN COMPLETOS Y ADECUADAMENTE ARMADOS (RODAPIES, BARANDAS, ETC.)' },
+        { id: 'condicionesClimaticasAdecuadas', label: 'S.LAS CONDICIONES CLIMATICAS SON ADECUADAS PARA REALIZAR EL TRABAJO' },
+        { id: 'metodoSubirHerramientasSeguro', label: 'T.EL METODO DE SUBIR HERRAMIENTAS ES SEGURO' },
+        { id: 'sistemasRestriccion', label: 'U. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE RESTRICCIÓN' },
+        { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
+    ];
   
     return (
       <div className="flex flex-1 flex-col bg-gray-50/50">
@@ -887,7 +840,7 @@ export default function PermitDetailPage() {
                             <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Escriba el motivo del rechazo..."/>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', reason)} disabled={!rejectionReason || isStatusChanging}>
+                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', rejectionReason)} disabled={!rejectionReason || isStatusChanging}>
                                 {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Rechazar
                                 </AlertDialogAction>
                             </AlertDialogFooter>
@@ -1001,31 +954,31 @@ export default function PermitDetailPage() {
                                 ))}
                                 </div>
                             </Section>
-                             <Section title="2. EPP Requeridos" className="mt-6">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {Object.entries(ppe).flatMap(([category, items]) => 
-                                        items.map(item => (
-                                            <div key={item.id} className="flex items-center gap-2 text-xs">
-                                                {(permit.anexoATS?.epp as any)?.[item.id] ? 
-                                                  <CheckCircle className="h-4 w-4 text-green-500" /> : 
-                                                  <XCircle className="h-4 w-4 text-red-500" />
-                                                }
-                                                <span>{item.label} {(permit.anexoATS?.epp as any)?.[`${item.id}_spec`]}</span>
-                                            </div>
-                                        ))
-                                    )}
+                            <Section title="2. EPP Requeridos" className="mt-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                                {Object.entries(eppOptions).flatMap(([category, items]) => 
+                                    items.map(item => (
+                                        <div key={item.id} className="flex items-center gap-2 text-xs">
+                                            {(permit.anexoATS?.epp as any)?.[item.id] ? 
+                                                <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                                <XCircle className="h-4 w-4 text-red-500" />
+                                            }
+                                            <span>{item.label} {(permit.anexoATS?.epp as any)?.[`${item.id}_spec`]}</span>
+                                        </div>
+                                    ))
+                                )}
                                 </div>
                             </Section>
                              <Section title="3. Justificación de Uso" className="mt-6">
-                                 {Object.keys(permit.anexoATS?.justificacion || {}).map(key => (
-                                    <div key={key} className="flex items-center gap-2 text-xs">
-                                       {(permit.anexoATS?.justificacion as any)[key] ?
+                                {justificacionOptions.map(item => (
+                                    <div key={item.id} className="flex items-center gap-2 text-xs">
+                                    {(permit.anexoATS?.justificacion as any)?.[item.id] ?
                                             <CheckCircle className="h-4 w-4 text-green-500" /> :
                                             <XCircle className="h-4 w-4 text-red-500" />
                                         }
-                                        <span>{key.replace(/_/g, ' ')}</span>
+                                        <span>{item.label}</span>
                                     </div>
-                                 ))}
+                                ))}
                             </Section>
                         </CollapsibleContent>
                     </Collapsible>
@@ -1044,24 +997,21 @@ export default function PermitDetailPage() {
                        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-blue-100">
                            <Section title="Estructura y Aspectos de Seguridad">
                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                                 {anexoAlturaEstructuras.map(e => (permit.anexoAltura?.tipoEstructura as any)?.[e.id] && (
+                                 {anexoAlturaEstructuras.map(e => (
                                      <div key={e.id} className="flex items-center gap-2 text-xs">
-                                         <CheckCircle className="h-4 w-4 text-green-500" />
+                                         {(permit.anexoAltura?.tipoEstructura as any)?.[e.id] ? 
+                                          <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                          <XCircle className="h-4 w-4 text-red-500" />}
                                          <span>{e.label} {(e.id === 'otros' && (permit.anexoAltura.tipoEstructura as any).otrosCual) ? `: ${(permit.anexoAltura.tipoEstructura as any).otrosCual}` : ''}</span>
                                      </div>
                                  ))}
                              </div>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                               {anexoAlturaAspectos.left.map(aspect => (
-                                 <RadioCheck key={aspect.id} label={aspect.label} value={(permit.anexoAltura?.aspectosSeguridad as any)?.[aspect.id]} readOnly />
-                               ))}
-                               {anexoAlturaAspectos.right.map(aspect => (
+                               {anexoAlturaAspectos.map(aspect => (
                                  <RadioCheck key={aspect.id} label={aspect.label} value={(permit.anexoAltura?.aspectosSeguridad as any)?.[aspect.id]} readOnly />
                                ))}
                              </div>
                            </Section>
-                           
-                           {/* Add more sections for Altura as needed */}
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1222,7 +1172,3 @@ export default function PermitDetailPage() {
       </div>
   );
 }
-
-    
-    
-    
