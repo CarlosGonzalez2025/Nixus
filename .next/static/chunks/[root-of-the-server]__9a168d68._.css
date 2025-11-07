@@ -1247,6 +1247,10 @@ body {
   gap: 2rem;
 }
 
+.gap-x-4 {
+  column-gap: 1rem;
+}
+
 .gap-x-6 {
   column-gap: 1.5rem;
 }
@@ -1265,10 +1269,6 @@ body {
 
 .gap-y-6 {
   row-gap: 1.5rem;
-}
-
-.gap-x-4 {
-  column-gap: 1rem;
 }
 
 .space-x-1 > :not([hidden]) ~ :not([hidden]) {
@@ -1867,10 +1867,6 @@ body {
 
 .pr-2 {
   padding-right: .5rem;
-}
-
-.pr-4 {
-  padding-right: 1rem;
 }
 
 .pr-8 {

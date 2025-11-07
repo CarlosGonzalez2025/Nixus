@@ -12,6 +12,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { addDays, format } from 'date-fns';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'alturas', name: 'Trabajo en Alturas' },
@@ -94,6 +95,28 @@ export function GeneralInfoStep() {
     const newTools = (generalInfo.tools || []).filter((_, i) => i !== index);
     handleInputChange('tools', newTools);
   };
+  
+  const maxDate = React.useMemo(() => {
+    if (!generalInfo.validFrom) return '';
+    const startDate = new Date(generalInfo.validFrom);
+    const maxDate = addDays(startDate, 7);
+    // Format for datetime-local which is 'yyyy-MM-ddThh:mm'
+    return format(maxDate, "yyyy-MM-dd'T'HH:mm");
+  }, [generalInfo.validFrom]);
+
+  const handleUntilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUntilDate = e.target.value;
+    if (maxDate && newUntilDate > maxDate) {
+        toast({
+            variant: "destructive",
+            title: "Fecha Inválida",
+            description: "La duración del permiso no puede exceder los 7 días.",
+        });
+        handleInputChange('validUntil', maxDate);
+    } else {
+        handleInputChange('validUntil', newUntilDate);
+    }
+  };
 
   const renderDynamicSelect = React.useCallback((listKey: keyof typeof dynamicLists, fieldKey: keyof typeof generalInfo, label: string, required: boolean) => (
     <div>
@@ -164,6 +187,7 @@ export function GeneralInfoStep() {
               type="datetime-local"
               value={generalInfo.validFrom}
               onChange={(e) => handleInputChange('validFrom', e.target.value)}
+              min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
             />
           </div>
           <div>
@@ -171,7 +195,10 @@ export function GeneralInfoStep() {
             <Input
               type="datetime-local"
               value={generalInfo.validUntil}
-              onChange={(e) => handleInputChange('validUntil', e.target.value)}
+              onChange={handleUntilChange}
+              disabled={!generalInfo.validFrom}
+              min={generalInfo.validFrom}
+              max={maxDate}
             />
           </div>
         </div>
