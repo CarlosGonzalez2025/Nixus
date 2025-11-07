@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, CheckCircle, Clock, XCircle, PlusCircle, Activity, TrendingUp, Upload, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
-import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { format } from 'date-fns';
@@ -118,8 +118,17 @@ export default function Dashboard() {
 
     try {
       const permitsCollection = collection(db, 'permits');
+      const queryConstraints: QueryConstraint[] = [];
+
+      // Si el usuario es solicitante o lider_tarea, solo puede ver sus permisos.
+      if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+        queryConstraints.push(where('createdBy', '==', user.uid));
+      }
+
+      // Query para permisos recientes (usando las restricciones de rol)
       const recentPermitsQuery = query(
         permitsCollection, 
+        ...queryConstraints,
         orderBy('createdAt', 'desc'),
         limit(10)
       );
@@ -151,10 +160,10 @@ export default function Dashboard() {
           setLoading(false);
         }
       );
-
       unsubscribers.push(permitsUnsubscribe);
 
-      const allPermitsQuery = query(collection(db, 'permits'));
+      // Query para estadísticas (usando las mismas restricciones de rol)
+      const allPermitsQuery = query(permitsCollection, ...queryConstraints);
       
       const statsUnsubscribe = onSnapshot(
         allPermitsQuery,
@@ -177,7 +186,6 @@ export default function Dashboard() {
           }
         }
       );
-
       unsubscribers.push(statsUnsubscribe);
 
     } catch (error) {
