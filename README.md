@@ -1,49 +1,71 @@
-
 # SGTC Móvil - Sistema de Gestión de Tareas Críticas
 
 ![SGTC Login](https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png)
 
-**SGTC Móvil** es una aplicación web moderna y robusta, diseñada para digitalizar y optimizar el ciclo de vida completo de los permisos de trabajo para tareas de alto riesgo. El sistema reemplaza los procesos manuales basados en papel por un flujo de trabajo digital, centralizado y en tiempo real, mejorando la seguridad, la trazabilidad y la eficiencia operativa.
+**SGTC Móvil** es una aplicación web robusta y moderna, diseñada para digitalizar y optimizar el ciclo de vida completo de los permisos de trabajo para tareas de alto riesgo. El sistema reemplaza los procesos manuales basados en papel por un flujo de trabajo digital, centralizado y en tiempo real, mejorando radicalmente la seguridad, la trazabilidad y la eficiencia operativa.
 
-La plataforma ha sido construida sobre una base tecnológica de última generación, garantizando una experiencia de usuario fluida, segura y escalable, accesible desde cualquier dispositivo a través de un navegador web.
+La plataforma ha sido construida sobre una base tecnológica de última generación (Next.js, Firebase, Tailwind CSS), garantizando una experiencia de usuario fluida, segura y escalable, accesible desde cualquier dispositivo a través de un navegador web.
 
 ---
 
-## 🚀 Características Principales
+## 🎯 A Quién Va Dirigido
 
-El sistema se organiza en varios módulos interconectados que cubren todo el flujo de trabajo de un permiso.
+El sistema está diseñado para empresas y organizaciones donde la seguridad en operaciones de alto riesgo es una prioridad, involucrando a los siguientes actores clave:
 
-### 1. Autenticación y Gestión de Sesiones
+-   **Líderes de Tarea y Solicitantes:** Personal que necesita planificar y solicitar autorización para ejecutar trabajos críticos.
+-   **Jefes de Área y Supervisores (Autorizantes):** Responsables de revisar la viabilidad y seguridad de los trabajos propuestos en sus áreas de influencia.
+-   **Personal de Mantenimiento:** Equipos especializados que deben validar y asegurar el control de energías peligrosas.
+-   **Líderes de Seguridad y Salud en el Trabajo (SST):** Profesionales encargados de velar por el cumplimiento de las normativas de seguridad y auditar los permisos.
+-   **Ejecutantes del Trabajo:** El personal en campo que realiza la tarea una vez que el permiso está aprobado.
+-   **Administradores del Sistema:** Usuarios con privilegios para gestionar perfiles, roles y listas maestras de la aplicación.
+
+---
+
+## 🚀 Funciones Principales
+
+### 1. Autenticación y Gestión de Roles (RBAC)
 -   **Inicio de Sesión Seguro:** Acceso mediante correo electrónico y contraseña validados contra Firebase Authentication.
--   **Perfiles de Usuario y Roles (RBAC):** Cada usuario tiene un rol (`Administrador`, `Solicitante`, `Autorizante`, `Líder SST`, `Ejecutante`) que define sus permisos dentro del sistema.
--   **Protección de Sesión por Inactividad:** Cierre de sesión automático tras un período de inactividad, con una advertencia previa para extender la sesión.
+-   **Roles de Usuario:** El sistema implementa un robusto Control de Acceso Basado en Roles (RBAC). Cada usuario tiene un rol asignado que determina qué puede ver y hacer:
+    -   `admin`: Control total. Gestiona usuarios, listas y tiene todos los permisos de los demás roles.
+    -   `solicitante` / `lider_tarea`: Pueden crear permisos y solo pueden ver los permisos creados por ellos mismos.
+    -   `autorizante`: Puede ver todos los permisos y es el rol clave para aprobar o rechazar un permiso.
+    -   `lider_sst`: Puede ver todos los permisos y firmar como responsable de seguridad.
+    -   `mantenimiento`: Rol especializado que debe firmar obligatoriamente en permisos que involucren control de energías.
+-   **Protección de Sesión por Inactividad:** Cierre de sesión automático tras 30 minutos de inactividad, con una advertencia previa de 5 minutos para extender la sesión.
 
 ### 2. Panel de Control (Dashboard)
--   **Estadísticas en Tiempo Real:** Visualización instantánea del número de permisos totales, pendientes, aprobados y en ejecución.
--   **Acciones Rápidas:** Botones para crear un nuevo permiso o ver todos los permisos existentes.
--   **Permisos Recientes:** Una tabla con los últimos permisos creados para un acceso rápido.
+-   **Vista Personalizada por Rol:** El dashboard se adapta al rol del usuario. Los administradores, autorizantes y líderes SST ven estadísticas globales, mientras que los solicitantes ven solo las estadísticas de sus propios permisos.
+-   **Estadísticas Clave:** Visualización instantánea del número de permisos totales, pendientes, aprobados y en ejecución.
+-   **Acciones Rápidas:** Botones para crear un nuevo permiso o ver todos los permisos.
+-   **Permisos Recientes:** Una tabla con los últimos permisos relevantes para el usuario.
 
-### 3. Creación de Permisos de Trabajo (Asistente Guiado)
+### 3. Creación de Permisos (Asistente Guiado)
 Un flujo de varios pasos que asegura la recopilación completa y precisa de la información:
--   **Paso 1: Análisis de Trabajo Seguro (ATS):** Formulario detallado para la identificación de peligros, riesgos y controles.
--   **Paso 2: Información General y Tipos de Trabajo:** Selección de los tipos de trabajo de alto riesgo, lo que activa dinámicamente los anexos correspondientes.
--   **Pasos de Anexos (Dinámicos):** Formularios detallados y replicados de los formatos oficiales para:
-    -   **Anexo 1 - Trabajos en Altura:** Verificación de equipos, aspectos de seguridad, validación diaria y firmas.
-    -   **Anexo 2 - Espacios Confinados:** Mediciones de gases (iniciales y periódicas), requerimientos de equipos y autorizaciones.
-    -   **Anexo 3 - Trabajos con Energías:** Verificación de bloqueo (LO/TO), método de trabajo y planeación.
--   **Gestión de Trabajadores:** Registro de personal involucrado con captura de firma digital.
--   **Análisis de Riesgo con IA (Genkit):** Una funcionalidad que permite evaluar los detalles del permiso para sugerir controles de riesgo adicionales.
+-   **Paso 1: Información General y Tipos de Trabajo:** Se seleccionan los tipos de trabajo de alto riesgo, lo que activa dinámicamente los anexos correspondientes en los pasos siguientes.
+-   **Paso 2: Análisis de Trabajo Seguro (ATS):** Formulario detallado para la identificación de peligros, riesgos y controles recomendados.
+-   **Pasos de Anexos (Dinámicos):** Formularios detallados y replicados de los formatos oficiales, que aparecen solo si se seleccionó el tipo de trabajo correspondiente:
+    -   **Anexo - Trabajos en Altura**
+    -   **Anexo - Espacios Confinados**
+    -   **Anexo - Control de Energías**
+    -   **Anexo - Izaje de Cargas**
+    -   **Anexo - Trabajo en Caliente**
+    -   **Anexo - Excavaciones**
+-   **Paso 3: Trabajadores y Firmas:** Registro del personal involucrado con captura de firma digital.
+-   **Paso 4: Revisión y Envío:** Un resumen final antes de crear el permiso.
 
 ### 4. Ciclo de Vida y Gestión de Permisos
--   **Vista de Detalles Completa:** Cada permiso tiene una página dedicada que muestra toda su información en un formato claro y legible.
--   **Flujo de Aprobación y Firmas Digitales:** Los usuarios autorizados pueden firmar digitalmente para la apertura y cierre de permisos.
--   **Gestión de Estados:** Los roles adecuados pueden cambiar el estado de un permiso (`Aprobar`, `Rechazar`, `Iniciar Ejecución`, `Cerrar Permiso`), con notificaciones automáticas.
+-   **Listado y Filtrado:** Una vista de tabla que permite filtrar permisos por estado (`Pendiente`, `Aprobado`, etc.) y buscar por palabras clave.
+-   **Vista de Detalles Completa:** Cada permiso tiene una página dedicada que muestra toda su información en un formato claro y legible, donde ocurren las aprobaciones.
+-   **Notificaciones por WhatsApp:** El sistema se integra con **Twilio** para enviar notificaciones automáticas por WhatsApp a los supervisores cuando se crea un nuevo permiso o cuando el solicitante firma, agilizando el proceso de revisión.
 
-### 5. Notificaciones por WhatsApp
--   El sistema se integra con **Twilio** para enviar notificaciones automáticas por WhatsApp a los supervisores cuando se crea un nuevo permiso, agilizando el proceso de revisión.
-
-### 6. Módulo de Administración (Exclusivo para Admin)
--   Panel para crear, editar y gestionar los perfiles de todos los usuarios del sistema, incluyendo la asignación de roles y la activación/desactivación de cuentas.
+### 5. Flujo de Firmas Secuencial y Condicional
+Este es el corazón del sistema, garantizando un proceso de aprobación lógico y seguro:
+1.  **Firma del Solicitante:** Es el primer paso. Al firmar, el solicitante confirma que la información es correcta y el permiso ya no puede ser modificado por él. Se envía una notificación al autorizante.
+2.  **Firma del Autorizante:** Solo puede firmar DESPUÉS de que el solicitante haya firmado.
+3.  **Firma de Mantenimiento (Condicional):** Solo puede firmar DESPUÉS del autorizante, y únicamente si el permiso incluye "Control de Energías".
+4.  **Firma del Líder SST:** Solo puede firmar DESPUÉS de que tanto el solicitante como el autorizante hayan firmado.
+5.  **Aprobación/Rechazo Final:** Un `autorizante` o `admin` puede aprobar el permiso (cambia a estado `aprobado`) solo si todas las firmas requeridas están completas. También pueden rechazarlo en cualquier momento del proceso de revisión.
+6.  **Inicio y Cierre:** Un `lider_tarea` o `admin` puede cambiar el estado a `en_ejecucion` y, finalmente, a `cerrado`.
 
 ---
 
@@ -52,10 +74,9 @@ Un flujo de varios pasos que asegura la recopilación completa y precisa de la i
 -   **Framework:** [Next.js](https://nextjs.org/) (con App Router)
 -   **Lenguaje:** [TypeScript](https://www.typescriptlang.org/)
 -   **UI y Estilos:** [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/), [ShadCN/UI](https://ui.shadcn.com/)
--   **Backend y Base de Datos:** [Firebase](https://firebase.google.com/) (Authentication, Firestore, Admin SDK)
--   **Inteligencia Artificial:** [Genkit](https://firebase.google.com/docs/genkit) (para el análisis de riesgos)
+-   **Backend y Base de Datos:** [Firebase](https://firebase.google.com/) (Authentication, Firestore con reglas de seguridad estrictas)
 -   **Notificaciones:** [Twilio](https://www.twilio.com/) (para WhatsApp)
--   **Exportación a PDF:** `jspdf` y `html2canvas`
+-   **Exportación a PDF:** `jspdf` y `jspdf-autotable`
 
 ---
 
@@ -67,62 +88,44 @@ A continuación, se detalla la estructura del proyecto y el funcionamiento de ca
 src/
 ├── app/
 │   ├── (app)/              # Rutas protegidas (requieren login)
-│   │   ├── admin/          # Módulo de Administración
+│   │   ├── admin/          # Módulo de Administración (usuarios y listas)
 │   │   ├── dashboard/      # Panel de Control principal
 │   │   ├── permits/       # Creación y gestión de permisos
 │   │   │   ├── create/     # Asistente de creación de permisos
-│   │   │   └── [id]/       # Vista de detalle de un permiso
-│   │   └── ...
+│   │   │   └── [id]/       # Vista de detalle y ciclo de vida de un permiso
+│   │   └── guide/          # Guía visual del flujo de trabajo
 │   ├── login/              # Página de inicio de sesión
 │   └── ...
-├── components/             # Componentes de UI reutilizables
-├── hooks/                  # Hooks personalizados (useAuth, useUser)
-├── lib/                    # Librerías y utilidades (Firebase, helpers)
-├── ai/                     # Lógica de IA con Genkit
-├── types/                  # Definiciones de tipos de TypeScript
+├── components/             # Componentes de UI reutilizables (Sidebar, SignaturePad, etc.)
+├── hooks/                  # Hooks personalizados (useAuth, useUser, useIdleTimer)
+├── lib/                    # Librerías y utilidades (Firebase, notificaciones, errores)
+├── types/                  # Definiciones de tipos de TypeScript (Permit, User, etc.)
 └── ...
 ```
 
-### **Módulo 1: Autenticación y Sesión (`/login`, `hooks/useAuth.tsx`)**
--   **Cómo funciona:** El usuario ingresa sus credenciales en la página de `/login`. El `hook/useAuth.tsx` utiliza la función `signInWithEmailAndPassword` de Firebase Authentication para validar al usuario. Si tiene éxito, Firebase establece una sesión en el navegador.
--   **Gestión de Perfil (`hooks/useUser.tsx`):** Una vez autenticado, el sistema consulta la colección `users` en Firestore usando el ID de usuario. De allí obtiene información crucial como el **rol**, la empresa y el nombre completo. Este rol se utiliza en toda la aplicación para mostrar u ocultar funcionalidades (Control de Acceso Basado en Roles - RBAC).
--   **Archivos Clave:**
-    -   `src/app/login/page.tsx`: Contiene la interfaz y la lógica del formulario de inicio de sesión.
-    -   `src/hooks/useAuth.tsx`: Centraliza la lógica de `login`, `logout` y monitorea el estado de autenticación.
-    -   `src/hooks/useUser.tsx`: Obtiene y provee los datos del perfil del usuario logueado desde Firestore.
+### **Módulo 1: Autenticación y Roles (`/hooks/use-auth.tsx`, `/hooks/use-user.tsx`)**
+-   **Cómo funciona:** `useAuth` maneja la comunicación con Firebase Authentication. Al hacer login, `useUser` se activa y consulta la colección `users` en Firestore para obtener el perfil completo del usuario, incluyendo su **rol**. Este rol es el que determina los permisos en toda la aplicación.
+-   **Seguridad:** Las reglas de Firestore (`firestore.rules`) aseguran que un usuario solo pueda leer su propio perfil, mientras que un `admin` puede leer el de todos.
 
 ### **Módulo 2: Creación de Permisos (`/permits/create`)**
--   **Cómo funciona:** Es un asistente de múltiples pasos que gestiona un estado complejo en el cliente. Cada paso recopila una parte de la información del permiso. La selección de "Tipo de Trabajo" en el paso 2 determina dinámicamente qué anexos (pasos adicionales) se mostrarán.
--   **Lógica de Anexos:** Los formularios para `Altura`, `Espacios Confinados`, `Energías` y `Trabajo en Caliente` son componentes condicionales que solo se renderizan si el usuario selecciona el tipo de trabajo correspondiente.
--   **Gestión de Trabajadores:** Permite agregar dinámicamente a los trabajadores involucrados, capturando sus datos y firma digital a través de un componente (`SignaturePad`).
--   **Envío del Permiso (`permits/actions.ts`):** Al finalizar, toda la información recopilada se ensambla en un único objeto y se envía a la `Server Action` llamada `createPermit`. Esta función del lado del servidor se encarga de:
+-   **Cómo funciona:** Es un asistente de múltiples pasos que utiliza un `Context` de React (`PermitFormProvider`) para gestionar el estado del formulario a través de los diferentes componentes. La selección de "Tipo de Trabajo" en el primer paso renderiza condicionalmente los componentes de los anexos correspondientes.
+-   **Envío del Permiso (`/permits/actions.ts`):** Al finalizar, se invoca la `Server Action` `createPermit`. Esta función se ejecuta en el servidor y es la única encargada de:
     1.  Crear el documento del permiso en la colección `permits` de Firestore.
-    2.  Asignarle un número de permiso único.
-    3.  Establecer el estado inicial como `pendiente_revision`.
-    4.  **Disparar una notificación por WhatsApp** al supervisor a través de la integración con Twilio.
--   **Archivos Clave:**
-    -   `src/app/(app)/permits/create/page.tsx`: El componente principal que orquesta todo el asistente de creación.
-    -   `src/app/(app)/permits/actions.ts`: Contiene la lógica del servidor para crear el permiso en la base de datos y enviar notificaciones.
-    -   `src/types/index.ts`: Define la estructura de datos completa de un `Permit` y todos sus `Anexos`.
+    2.  Asignarle un número de permiso único y el estado inicial `pendiente_revision`.
+    3.  Disparar la notificación por WhatsApp a través de la integración con Twilio.
+-   **Seguridad:** Las reglas de Firestore prohíben la creación de permisos directamente desde el cliente (`allow create: false`), forzando el uso de esta `Server Action` segura.
 
 ### **Módulo 3: Ciclo de Vida del Permiso (`/permits`, `/permits/[id]`)**
--   **Listado de Permisos (`/permits`):** Esta página muestra todos los permisos en una tabla con pestañas para filtrar por estado (`Pendiente`, `Aprobado`, etc.). Utiliza `onSnapshot` de Firestore para escuchar cambios en tiempo real, por lo que la lista se actualiza automáticamente.
+-   **Listado de Permisos (`/permits`):** Esta página realiza una consulta a Firestore que se filtra automáticamente según el rol del usuario. Un `solicitante` solo recibe sus propios permisos, mientras que un `autorizante` o `admin` reciben todos.
 -   **Detalle del Permiso (`/permits/[id]`):**
-    -   **Cómo funciona:** Es la vista más importante para la gestión. Muestra toda la información de un permiso, incluyendo todos los anexos y datos recopilados. También utiliza `onSnapshot` para que cualquier cambio (como una nueva firma) se refleje al instante.
-    -   **Firmas y Aprobaciones:** Los usuarios autorizados verán botones para firmar digitalmente. Al firmar, se invoca la `Server Action` `addSignatureAndNotify`, que actualiza el documento del permiso en Firestore y envía una notificación por WhatsApp.
-    -   **Cambio de Estado:** Botones como `Aprobar`, `Rechazar` o `Cerrar Permiso` son visibles según el rol del usuario y el estado actual del permiso. Estos botones llaman a la `Server Action` `updatePermitStatus`, que actualiza el estado en Firestore y notifica a los involucrados.
--   **Archivos Clave:**
-    -   `src/app/(app)/permits/page.tsx`: La vista de lista y filtrado de permisos.
-    -   `src/app/(app)/permits/[id]/page.tsx`: La vista de detalle, centro de la interacción con el permiso.
-    -   `src/app/(app)/permits/actions.ts`: Contiene las `Server Actions` para firmar y cambiar el estado de un permiso.
+    -   **Lógica de Visualización:** El componente renderiza dinámicamente las tarjetas de firma y los botones de acción (`Aprobar`, `Rechazar`, `Iniciar Ejecución`) basándose en el estado actual del permiso y el rol del usuario.
+    -   **Lógica de Firmas (`canSign`):** Una función clave en este componente verifica en tiempo real si se cumplen las condiciones para que un usuario pueda firmar (ej: "el solicitante ya firmó Y el permiso está pendiente"). Los botones deshabilitados incluyen un `Tooltip` que explica por qué no se puede firmar.
+    -   **Actualizaciones Seguras:** Todas las acciones (firmar, cambiar de estado) se realizan a través de `Server Actions` (`addSignatureAndNotify`, `updatePermitStatus`), que a su vez son validadas por las estrictas reglas de `update` en `firestore.rules`. Esto crea una doble capa de seguridad.
 
-### **Módulo 4: Administración (`/admin/users`)**
--   **Cómo funciona:** Es una sección protegida, accesible solo para usuarios con rol de `admin`. Muestra una tabla con todos los usuarios del sistema.
--   **Lógica de Backend (Admin SDK):** Las acciones de crear, editar o cambiar el estado de un usuario se realizan a través de `Server Actions` que utilizan el **Firebase Admin SDK**. Esto es crucial para la seguridad, ya que permite realizar operaciones privilegiadas (como crear un usuario en Firebase Authentication o modificar el rol de otro usuario) desde un entorno seguro en el servidor, en lugar de hacerlo desde el cliente.
--   **Archivos Clave:**
-    -   `src/app/(app)/admin/users/page.tsx`: La interfaz del panel de administración.
-    -   `src/app/(app)/admin/users/actions.ts`: Las `Server Actions` que interactúan con el Admin SDK para gestionar usuarios.
-    -   `src/lib/firebase-admin.ts`: Configuración e inicialización del Firebase Admin SDK.
+### **Módulo 4: Administración (`/admin/users`, `/admin/lists`)**
+-   **Cómo funciona:** Son secciones protegidas, accesibles solo para `admin`.
+-   **Gestión de Usuarios:** Permite crear y gestionar perfiles de usuario. Las acciones invocan `Server Actions` que utilizan el **Firebase Admin SDK**, un requisito para operaciones privilegiadas como crear un usuario en Firebase Authentication o modificar su rol.
+-   **Gestión de Listas:** Permite a los administradores añadir o eliminar elementos de las listas desplegables que se usan en los formularios (ej: Áreas, Plantas, Contratos), manteniendo la aplicación personalizable.
 
 ---
 
@@ -130,51 +133,16 @@ src/
 
 Para ejecutar el proyecto en un entorno de desarrollo, siga estos pasos:
 
-### **1. Prerrequisitos**
--   Node.js (versión 18 o superior)
--   npm o yarn
-
-### **2. Instalación**
-Clone el repositorio y luego instale las dependencias:
-```bash
-git clone <url-del-repositorio>
-cd <nombre-del-repositorio>
-npm install
-```
-
-### **3. Variables de Entorno**
-Cree un archivo `.env` en la raíz del proyecto y agregue las siguientes variables con sus respectivos valores obtenidos de Firebase y Twilio:
-
-```env
-# Firebase - Configuración del Cliente (puedes obtener esto desde la consola de Firebase)
-NEXT_PUBLIC_FIREBASE_API_KEY="AI..."
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="..."
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="..."
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="..."
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="..."
-NEXT_PUBLIC_FIREBASE_APP_ID="1:..."
-
-# Firebase - Credenciales del Admin SDK (para operaciones de backend)
-# Estas se obtienen de la cuenta de servicio en "Configuración del proyecto" -> "Cuentas de servicio"
-FIREBASE_PROJECT_ID="..."
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-..."
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Twilio - Credenciales para Notificaciones por WhatsApp
-TWILIO_ACCOUNT_SID="AC..."
-TWILIO_AUTH_TOKEN="..."
-TWILIO_WHATSAPP_FROM="whatsapp:+1..."
-WHATSAPP_TO="whatsapp:+57..." # Número del supervisor para recibir alertas
-
-# Genkit - Credenciales para la API de Gemini
-GEMINI_API_KEY="AI..."
-```
-
-**Nota Importante sobre `FIREBASE_PRIVATE_KEY`:** Al copiar la clave privada del archivo JSON de Firebase, asegúrese de que los saltos de línea `\n` se mantengan como literales en el archivo `.env`.
-
-### **4. Ejecutar la Aplicación**
-Una vez configuradas las variables de entorno, puede iniciar el servidor de desarrollo:
-```bash
-npm run dev
-```
-La aplicación estará disponible en `http://localhost:9002` (o el puerto que hayas configurado).
+1.  **Prerrequisitos:** Node.js (v18+), npm o yarn.
+2.  **Instalación:**
+    ```bash
+    git clone <url-del-repositorio>
+    cd <nombre-del-repositorio>
+    npm install
+    ```
+3.  **Variables de Entorno:** Cree un archivo `.env` en la raíz del proyecto y agregue las credenciales de Firebase y Twilio.
+4.  **Ejecución:**
+    ```bash
+    npm run dev
+    ```
+    La aplicación estará disponible en `http://localhost:9002`.
