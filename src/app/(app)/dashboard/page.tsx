@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import {
@@ -119,19 +120,23 @@ export default function Dashboard() {
     try {
       const permitsCollection = collection(db, 'permits');
       const queryConstraints: QueryConstraint[] = [];
+      const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
 
       // Si el usuario es solicitante o lider_tarea, solo puede ver sus permisos.
-      if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+      if (isSolicitante) {
         queryConstraints.push(where('createdBy', '==', user.uid));
       }
 
       // Query para permisos recientes (usando las restricciones de rol)
-      const recentPermitsQuery = query(
-        permitsCollection, 
-        ...queryConstraints,
-        orderBy('createdAt', 'desc'),
-        limit(10)
-      );
+      const recentPermitsQueryConstraints: QueryConstraint[] = [...queryConstraints, limit(10)];
+      
+      // Solo ordenar si NO es un solicitante para evitar el error de índice compuesto
+      if (!isSolicitante) {
+        recentPermitsQueryConstraints.push(orderBy('createdAt', 'desc'));
+      }
+      
+      const recentPermitsQuery = query(permitsCollection, ...recentPermitsQueryConstraints);
+
 
       const permitsUnsubscribe = onSnapshot(
         recentPermitsQuery,
@@ -145,6 +150,11 @@ export default function Dashboard() {
               createdAt: parseFirestoreDate(data.createdAt),
             } as Permit;
           });
+          
+          // Si es solicitante, ordenar en el cliente
+          if (isSolicitante) {
+            allRecentPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          }
           
           setPermits(allRecentPermits);
           setLoading(false);

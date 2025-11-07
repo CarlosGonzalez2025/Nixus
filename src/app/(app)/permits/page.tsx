@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -177,11 +178,15 @@ export default function PermitsPage() {
     }
 
     const permitsCollection = collection(db, 'permits');
-    const queryConstraints: QueryConstraint[] = [orderBy('createdAt', 'desc')];
+    const queryConstraints: QueryConstraint[] = [];
+    const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
     
     // Si el usuario es solicitante, solo puede ver sus permisos.
-    if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+    if (isSolicitante) {
       queryConstraints.push(where('createdBy', '==', user.uid));
+    } else {
+        // Solo ordenar si no es solicitante para evitar el error de índice.
+        queryConstraints.push(orderBy('createdAt', 'desc'));
     }
 
     const q = query(permitsCollection, ...queryConstraints);
@@ -195,6 +200,10 @@ export default function PermitsPage() {
           createdAt: parseFirestoreDate(data.createdAt),
         } as Permit;
       });
+      // Ordenar en el cliente si es solicitante
+      if(isSolicitante) {
+        permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+      }
       setAllPermits(permitsData);
       setLoading(false);
     }, (serverError) => {

@@ -415,13 +415,12 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
             updateData[signedAtPath] = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
         }
         await docRef.update(updateData);
-        // Fetch permit for notification
         const permitDoc = await docRef.get();
         const permitData = permitDoc.data();
         const signatureRoleName = signatureRoles[role] || role;
         const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
-        const messageBody = `*Notificación de Firma - SGPT* 🖋️
+        let messageBody = `*Notificación de Firma - SGPT* 🖋️
 El permiso *${permitData.number || permitId}* ha sido firmado.
 
 👤 *Quién firmó:* ${user.displayName || 'N/A'}
@@ -430,7 +429,17 @@ El permiso *${permitData.number || permitId}* ha sido firmado.
 
 Puede ver los detalles aquí:
 ${permitUrl}`;
+        if (role === 'solicitante' && signatureType === 'firmaApertura') {
+            messageBody = `*Permiso listo para Autorización - SGPT* ⏳
+El permiso *${permitData.number || permitId}* ha sido firmado por el solicitante y está listo para su revisión.
+
+👤 *Solicitante:* ${user.displayName || 'N/A'}
+
+Por favor, ingrese para revisarlo y autorizarlo:
+${permitUrl}`;
+        }
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$notifications$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendWhatsAppNotification"])(messageBody);
+        console.log(`[Action] Notificación de firma enviada para el permiso ${permitId}`);
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
         return {
             success: true
