@@ -167,7 +167,7 @@ const signatureRoles: { [key in SignatureRole]: string } = {
   solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
   autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  lider_sst: 'AREA SST (SI APLICA)',
+  lider_sst: 'AREA SST (si aplica)',
 };
 
 
@@ -323,6 +323,37 @@ export default function PermitDetailPage() {
                 startY: yPos,
                 theme: 'grid',
                 headStyles: { fillColor: [22, 160, 133] },
+                didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 10;
+        }
+        
+        // --- ANEXO ATS ---
+        if (permit.anexoATS) {
+            checkPageBreak(40);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Análisis de Trabajo Seguro (ATS)', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.text('Identificación de Peligros, Riesgos y Controles', margin, yPos);
+            yPos += 6;
+
+            const atsBody = atsPeligros.map(peligro => {
+              const value = (permit.anexoATS?.peligros as any)?.[peligro.id];
+              let status = 'N/A';
+              if (value === 'si') status = 'SI';
+              if (value === 'no') status = 'NO';
+              return [peligro.seccion, peligro.label, status];
+            });
+
+            autoTable(doc, {
+                head: [['Sección', 'Peligro', 'Aplica']],
+                body: atsBody,
+                startY: yPos,
+                theme: 'striped',
+                headStyles: { fillColor: [41, 128, 185] },
                 didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
             });
             yPos = (doc as any).lastAutoTable.finalY + 10;
@@ -491,19 +522,20 @@ export default function PermitDetailPage() {
   
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
+    const { status, approvals } = permit;
 
-    if (['rechazado', 'cerrado', 'suspendido'].includes(permit.status)) {
-        return { can: false, reason: `El permiso está ${permit.status}.` };
+    if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
+        return { can: false, reason: `El permiso está ${status}.` };
     }
     
-    if (permit.status !== 'pendiente_revision') {
+    if (status !== 'pendiente_revision') {
          return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
     }
     
-    const { solicitante, autorizante, mantenimiento, lider_sst } = permit.approvals;
+    const { solicitante, autorizante, mantenimiento, lider_sst } = approvals;
     const hasSigned = (approval: Partial<Approval> | undefined) => approval?.status === 'aprobado';
 
-    const hasCorrectRole = currentUser.role === 'admin' || currentUser.role === role || (role === 'solicitante' && currentUser.role === 'lider_tarea');
+    const hasCorrectRole = currentUser.role === 'admin' || currentUser.role === role || (role === 'solicitante' && currentUser.role === 'lider_tarea') || (role === 'lider_sst' && currentUser.role === 'lider_sst');
     if (!hasCorrectRole) return { can: false, reason: 'No tienes el rol requerido.' };
 
     if (hasSigned((permit.approvals as any)[role])) {
@@ -524,8 +556,7 @@ export default function PermitDetailPage() {
             return { can: true };
 
         case 'lider_sst':
-            if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
-            if (!hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Autorizante.' };
+            if (!hasSigned(solicitante) || !hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Solicitante y Autorizante.' };
             return { can: true };
 
         default:
@@ -730,7 +761,7 @@ export default function PermitDetailPage() {
       { id: 'otro_respiratoria', label: 'Otro (Cual):' },
     ],
     "Protección cabeza": [
-        { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuque' },
+        { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuquejo' },
         { id: 'chavo', label: 'Chavo en tela o carnaza' },
     ],
     "Protección facial y ocular": [
@@ -856,7 +887,7 @@ export default function PermitDetailPage() {
                             <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Escriba el motivo del rechazo..."/>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', rejectionReason)} disabled={!rejectionReason || isStatusChanging}>
+                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', reason)} disabled={!rejectionReason || isStatusChanging}>
                                 {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Rechazar
                                 </AlertDialogAction>
                             </AlertDialogFooter>
@@ -958,13 +989,12 @@ export default function PermitDetailPage() {
                                         <h4 className="font-semibold text-gray-600 mb-2">{seccion}</h4>
                                         <div className="pl-4 space-y-1">
                                             {peligros.map(peligro => (
-                                                <div key={peligro.id} className="flex items-center gap-2 text-xs">
-                                                     {(permit.anexoATS?.peligros as any)?.[peligro.id] === 'si' 
-                                                         ? <CheckCircle className="h-4 w-4 text-green-500" />
-                                                         : <XCircle className="h-4 w-4 text-red-500" />
-                                                     }
-                                                    <span>{peligro.label}</span>
-                                                </div>
+                                                <RadioCheck 
+                                                  key={peligro.id} 
+                                                  label={peligro.label} 
+                                                  value={(permit.anexoATS?.peligros as any)?.[peligro.id]} 
+                                                  readOnly 
+                                                />
                                             ))}
                                         </div>
                                     </div>
@@ -974,9 +1004,12 @@ export default function PermitDetailPage() {
                              <Section title="2. EPP Requeridos" className="mt-6">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {Object.entries(ppe).flatMap(([category, items]) => 
-                                        items.map(item => (permit.anexoATS?.epp as any)?.[item.id] && (
+                                        items.map(item => (
                                             <div key={item.id} className="flex items-center gap-2 text-xs">
-                                                <Check className="h-4 w-4 text-green-500" />
+                                                {(permit.anexoATS?.epp as any)?.[item.id] ? 
+                                                  <CheckCircle className="h-4 w-4 text-green-500" /> : 
+                                                  <XCircle className="h-4 w-4 text-red-500" />
+                                                }
                                                 <span>{item.label} {(permit.anexoATS?.epp as any)?.[`${item.id}_spec`]}</span>
                                             </div>
                                         ))
@@ -984,9 +1017,12 @@ export default function PermitDetailPage() {
                                 </div>
                             </Section>
                              <Section title="3. Justificación de Uso" className="mt-6">
-                                 {permit.anexoATS.justificacion && Object.keys(permit.anexoATS.justificacion).map(key => (
+                                 {Object.keys(permit.anexoATS?.justificacion || {}).map(key => (
                                     <div key={key} className="flex items-center gap-2 text-xs">
-                                        <Check className="h-4 w-4 text-green-500" />
+                                       {(permit.anexoATS?.justificacion as any)[key] ?
+                                            <CheckCircle className="h-4 w-4 text-green-500" /> :
+                                            <XCircle className="h-4 w-4 text-red-500" />
+                                        }
                                         <span>{key.replace(/_/g, ' ')}</span>
                                     </div>
                                  ))}
