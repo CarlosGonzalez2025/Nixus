@@ -23,9 +23,12 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$esm$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/esm/index.esm.js [app-client] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.esm2017.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$addDays$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/date-fns/addDays.mjs [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/date-fns/format.mjs [app-client] (ecmascript) <locals>");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
+;
 ;
 ;
 ;
@@ -181,6 +184,30 @@ function GeneralInfoStep() {
         const newTools = (generalInfo.tools || []).filter((_, i)=>i !== index);
         handleInputChange('tools', newTools);
     };
+    const maxDate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "GeneralInfoStep.useMemo[maxDate]": ()=>{
+            if (!generalInfo.validFrom) return '';
+            const startDate = new Date(generalInfo.validFrom);
+            const maxDate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$addDays$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["addDays"])(startDate, 7);
+            // Format for datetime-local which is 'yyyy-MM-ddThh:mm'
+            return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(maxDate, "yyyy-MM-dd'T'HH:mm");
+        }
+    }["GeneralInfoStep.useMemo[maxDate]"], [
+        generalInfo.validFrom
+    ]);
+    const handleUntilChange = (e)=>{
+        const newUntilDate = e.target.value;
+        if (maxDate && newUntilDate > maxDate) {
+            toast({
+                variant: "destructive",
+                title: "Fecha Inválida",
+                description: "La duración del permiso no puede exceder los 7 días."
+            });
+            handleInputChange('validUntil', maxDate);
+        } else {
+            handleInputChange('validUntil', newUntilDate);
+        }
+    };
     const renderDynamicSelect = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "GeneralInfoStep.useCallback[renderDynamicSelect]": (listKey, fieldKey, label, required)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 children: [
@@ -189,7 +216,7 @@ function GeneralInfoStep() {
                         children: label
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 100,
+                        lineNumber: 123,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -204,12 +231,12 @@ function GeneralInfoStep() {
                                     placeholder: loadingLists ? "Cargando..." : `Seleccione una opción...`
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                    lineNumber: 107,
+                                    lineNumber: 130,
                                     columnNumber: 11
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 106,
+                                lineNumber: 129,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -219,25 +246,25 @@ function GeneralInfoStep() {
                                             children: item
                                         }, item, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                            lineNumber: 111,
+                                            lineNumber: 134,
                                             columnNumber: 13
                                         }, this)
                                 }["GeneralInfoStep.useCallback[renderDynamicSelect]"])
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 109,
+                                lineNumber: 132,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 101,
+                        lineNumber: 124,
                         columnNumber: 7
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 99,
+                lineNumber: 122,
                 columnNumber: 5
             }, this)
     }["GeneralInfoStep.useCallback[renderDynamicSelect]"], [
@@ -257,7 +284,7 @@ function GeneralInfoStep() {
                         children: "Información General del Permiso"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 122,
+                        lineNumber: 145,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -265,13 +292,13 @@ function GeneralInfoStep() {
                         children: "Complete todos los campos obligatorios (*)"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 125,
+                        lineNumber: 148,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 121,
+                lineNumber: 144,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -289,7 +316,7 @@ function GeneralInfoStep() {
                                 children: "Nombre del solicitante"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 135,
+                                lineNumber: 158,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -298,19 +325,19 @@ function GeneralInfoStep() {
                                 disabled: true
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 136,
+                                lineNumber: 159,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 134,
+                        lineNumber: 157,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 128,
+                lineNumber: 151,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -320,7 +347,7 @@ function GeneralInfoStep() {
                         children: "Listas de Verificación Complementarias *"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 141,
+                        lineNumber: 164,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -334,7 +361,7 @@ function GeneralInfoStep() {
                                         onCheckedChange: (checked)=>handleWorkTypeChange(key, !!checked)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 145,
+                                        lineNumber: 168,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -343,24 +370,24 @@ function GeneralInfoStep() {
                                         children: name
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 150,
+                                        lineNumber: 173,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, key, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 144,
+                                lineNumber: 167,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 142,
+                        lineNumber: 165,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 140,
+                lineNumber: 163,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -370,7 +397,7 @@ function GeneralInfoStep() {
                         children: "Duración del Permiso *"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 159,
+                        lineNumber: 182,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -383,22 +410,23 @@ function GeneralInfoStep() {
                                         children: "Desde"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 162,
+                                        lineNumber: 185,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                         type: "datetime-local",
                                         value: generalInfo.validFrom,
-                                        onChange: (e)=>handleInputChange('validFrom', e.target.value)
+                                        onChange: (e)=>handleInputChange('validFrom', e.target.value),
+                                        min: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(), "yyyy-MM-dd'T'HH:mm")
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 163,
+                                        lineNumber: 186,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 161,
+                                lineNumber: 184,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -408,34 +436,37 @@ function GeneralInfoStep() {
                                         children: "Hasta"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 194,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                                         type: "datetime-local",
                                         value: generalInfo.validUntil,
-                                        onChange: (e)=>handleInputChange('validUntil', e.target.value)
+                                        onChange: handleUntilChange,
+                                        disabled: !generalInfo.validFrom,
+                                        min: generalInfo.validFrom,
+                                        max: maxDate
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 171,
+                                        lineNumber: 195,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 169,
+                                lineNumber: 193,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 160,
+                        lineNumber: 183,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 158,
+                lineNumber: 181,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -445,7 +476,7 @@ function GeneralInfoStep() {
                         children: "Descripción de la Tarea - ALCANCE *"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 181,
+                        lineNumber: 208,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -456,13 +487,13 @@ function GeneralInfoStep() {
                         placeholder: "Describa el alcance, descripción y área/equipo..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 182,
+                        lineNumber: 209,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 180,
+                lineNumber: 207,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -472,7 +503,7 @@ function GeneralInfoStep() {
                         children: "Equipos y/o Herramientas"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 192,
+                        lineNumber: 219,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -488,7 +519,7 @@ function GeneralInfoStep() {
                                                 children: tool.name
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 197,
+                                                lineNumber: 224,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -499,23 +530,23 @@ function GeneralInfoStep() {
                                                     className: "h-4 w-4 text-destructive"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                    lineNumber: 198,
+                                                    lineNumber: 225,
                                                     columnNumber: 91
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 198,
+                                                lineNumber: 225,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, index, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 196,
+                                        lineNumber: 223,
                                         columnNumber: 21
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 194,
+                                lineNumber: 221,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -528,7 +559,7 @@ function GeneralInfoStep() {
                                                 children: tool.name
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 205,
+                                                lineNumber: 232,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -539,23 +570,23 @@ function GeneralInfoStep() {
                                                     className: "h-4 w-4 text-destructive"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                    lineNumber: 206,
+                                                    lineNumber: 233,
                                                     columnNumber: 95
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 206,
+                                                lineNumber: 233,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, index + 4, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 204,
+                                        lineNumber: 231,
                                         columnNumber: 21
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 202,
+                                lineNumber: 229,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -567,37 +598,37 @@ function GeneralInfoStep() {
                                         placeholder: "Nueva herramienta..."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 211,
+                                        lineNumber: 238,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                         onClick: addTool,
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {}, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                            lineNumber: 212,
+                                            lineNumber: 239,
                                             columnNumber: 43
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 212,
+                                        lineNumber: 239,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 210,
+                                lineNumber: 237,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 193,
+                        lineNumber: 220,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 191,
+                lineNumber: 218,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -607,7 +638,7 @@ function GeneralInfoStep() {
                         children: "No. Trabajadores *"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 218,
+                        lineNumber: 245,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -617,13 +648,13 @@ function GeneralInfoStep() {
                         placeholder: "Cantidad de trabajadores"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 219,
+                        lineNumber: 246,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 217,
+                lineNumber: 244,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -633,7 +664,7 @@ function GeneralInfoStep() {
                         children: "Responsable del Trabajo / Ejecutor"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 225,
+                        lineNumber: 252,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -645,7 +676,7 @@ function GeneralInfoStep() {
                                 onChange: (e)=>handleResponsableChange('nombre', e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 227,
+                                lineNumber: 254,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -654,7 +685,7 @@ function GeneralInfoStep() {
                                 onChange: (e)=>handleResponsableChange('cargo', e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 228,
+                                lineNumber: 255,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -663,7 +694,7 @@ function GeneralInfoStep() {
                                 onChange: (e)=>handleResponsableChange('compania', e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 229,
+                                lineNumber: 256,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -672,29 +703,29 @@ function GeneralInfoStep() {
                                 onChange: (e)=>handleResponsableChange('alcance', e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 230,
+                                lineNumber: 257,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 226,
+                        lineNumber: 253,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 224,
+                lineNumber: 251,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-        lineNumber: 120,
+        lineNumber: 143,
         columnNumber: 5
     }, this);
 }
-_s(GeneralInfoStep, "zDmC86Scfep4X7O5QWcOvnD0AiA=", false, function() {
+_s(GeneralInfoStep, "7b1G8PuQfq97+oygpYLPNtFaKyY=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePermitForm"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]

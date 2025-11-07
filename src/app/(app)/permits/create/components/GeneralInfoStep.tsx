@@ -254,7 +254,6 @@ export function GeneralInfoStep() {
           <Input placeholder="Nombre completo" value={generalInfo.responsable?.nombre} onChange={e => handleResponsableChange('nombre', e.target.value)} />
           <Input placeholder="Cargo" value={generalInfo.responsable?.cargo} onChange={e => handleResponsableChange('cargo', e.target.value)} />
           <Input placeholder="Compañía" value={generalInfo.responsable?.compania} onChange={e => handleResponsableChange('compania', e.target.value)} />
-          <Textarea placeholder="Alcance" value={generalInfo.responsable?.alcance} onChange={e => handleResponsableChange('alcance', e.target.value)} />
         </div>
       </div>
     </div>
