@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -161,7 +162,7 @@ export function GeneralInfoStep() {
       </div>
 
       <div>
-        <Label className="font-bold text-gray-700">Listas de Verificación Complementarias *</Label>
+        <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Listas de Verificación Complementarias</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 p-4 border rounded-lg mt-2">
           {workTypes.map(({ key, name }) => (
             <div key={key} className="flex items-center space-x-2">
@@ -179,7 +180,7 @@ export function GeneralInfoStep() {
       </div>
 
       <div>
-        <Label className="font-bold text-gray-700">Duración del Permiso *</Label>
+        <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Duración del Permiso</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg">
           <div>
             <label className="text-sm font-medium">Desde</label>
@@ -205,7 +206,7 @@ export function GeneralInfoStep() {
       </div>
 
       <div>
-        <Label className="font-bold">Descripción de la Tarea - ALCANCE *</Label>
+        <Label className="font-bold after:content-['*'] after:ml-0.5 after:text-red-500">Descripción de la Tarea - ALCANCE</Label>
         <Textarea
           value={generalInfo.workDescription}
           onChange={(e) => handleInputChange('workDescription', e.target.value)}
@@ -242,8 +243,11 @@ export function GeneralInfoStep() {
       </div>
 
       <div>
-        <Label className="font-bold text-gray-700">No. Trabajadores *</Label>
+        <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">No. Trabajadores</Label>
         <Input type="number" value={generalInfo.numTrabajadores} onChange={e => handleInputChange('numTrabajadores', e.target.value)} placeholder="Cantidad de trabajadores" />
+        <p className="text-xs text-muted-foreground mt-1">
+            Tener presente que el número de trabajadores aquí relacionados debe ser el mismo número de trabajadores firmantes, si la cantidad de firmantes no es igual el sistema no le permitirá generar el permiso.
+        </p>
       </div>
 
       {/* Boolean Radios would go here */}

@@ -10,6 +10,17 @@
       "layer": {
         "app/(app)/permits/create/page": "action-browser"
       }
+    },
+    "407282eb75929b38cb56be7f0cd547a72b6c80de19": {
+      "workers": {
+        "app/(app)/permits/create/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/create/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/create/page": "action-browser"
+      }
     }
   },
   "edge": {}
