@@ -250,14 +250,21 @@ export function GeneralInfoStep() {
         </p>
       </div>
 
-      {/* Boolean Radios would go here */}
-
       <div>
-        <Label className="font-bold text-gray-700">Responsable del Trabajo / Ejecutor</Label>
+        <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Responsable del Trabajo / Ejecutor</Label>
         <div className="p-4 border rounded-lg mt-2 space-y-4">
-          <Input placeholder="Nombre completo" value={generalInfo.responsable?.nombre} onChange={e => handleResponsableChange('nombre', e.target.value)} />
-          <Input placeholder="Cargo" value={generalInfo.responsable?.cargo} onChange={e => handleResponsableChange('cargo', e.target.value)} />
-          <Input placeholder="Compañía" value={generalInfo.responsable?.compania} onChange={e => handleResponsableChange('compania', e.target.value)} />
+          <div>
+            <Label className="text-sm text-muted-foreground after:content-['*'] after:ml-0.5 after:text-red-500">Nombre completo</Label>
+            <Input placeholder="Nombre completo" value={generalInfo.responsable?.nombre} onChange={e => handleResponsableChange('nombre', e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-sm text-muted-foreground after:content-['*'] after:ml-0.5 after:text-red-500">Cargo</Label>
+            <Input placeholder="Cargo" value={generalInfo.responsable?.cargo} onChange={e => handleResponsableChange('cargo', e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-sm text-muted-foreground after:content-['*'] after:ml-0.5 after:text-red-500">Compañía</Label>
+            <Input placeholder="Compañía" value={generalInfo.responsable?.compania} onChange={e => handleResponsableChange('compania', e.target.value)} />
+          </div>
         </div>
       </div>
     </div>
