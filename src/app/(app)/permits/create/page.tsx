@@ -111,6 +111,12 @@ function CreatePermitWizard() {
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
+  
+  // Scroll to top on step change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
 
   useEffect(() => {
     const editId = searchParams.get('edit');
@@ -267,7 +273,7 @@ function CreatePermitWizard() {
   
   const canProceed = () => {
     if (step === 1) {
-        const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores } = formData.generalInfo;
+        const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores, responsable } = formData.generalInfo;
         const missingFields = [];
         if (!areaEspecifica) missingFields.push("Área específica");
         if (!planta) missingFields.push("Planta");
@@ -276,6 +282,10 @@ function CreatePermitWizard() {
         if (!validUntil) missingFields.push("Fecha de fin");
         if (!workDescription) missingFields.push("Descripción de la Tarea");
         if (!numTrabajadores) missingFields.push("No. Trabajadores");
+        if (!responsable?.nombre) missingFields.push("Nombre del Responsable");
+        if (!responsable?.cargo) missingFields.push("Cargo del Responsable");
+        if (!responsable?.compania) missingFields.push("Compañía del Responsable");
+
 
         const workTypes = formData.selectedWorkTypes;
         if (!Object.values(workTypes).some(v => v)) {
