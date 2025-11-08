@@ -61,7 +61,7 @@ const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' 
 };
 
 
-type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user'> & {
+type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
   userId: string;
   userDisplayName: string | null;
   userEmail: string | null;
@@ -131,6 +131,49 @@ ${permitUrl}`;
     };
   }
 }
+
+export async function savePermitDraft(data: PermitCreateData & { draftId?: string }) {
+  if (!data.userId) {
+    return { success: false, error: 'User not authenticated' };
+  }
+
+  const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
+
+  const permitPayload: Partial<Permit> = {
+    ...permitData,
+    status: 'borrador' as const,
+    createdBy: userId,
+    user: {
+      displayName: userDisplayName,
+      email: userEmail,
+      photoURL: userPhotoURL,
+    },
+  };
+
+  try {
+    if (draftId) {
+      // Actualizar un borrador existente
+      const docRef = adminDb.collection('permits').doc(draftId);
+      await docRef.update({ ...permitPayload, updatedAt: FieldValue.serverTimestamp() });
+      revalidatePath(`/permits/${draftId}`);
+      revalidatePath('/permits');
+      return { success: true, permitId: draftId, isUpdate: true };
+    } else {
+      // Crear un nuevo borrador
+      permitPayload.createdAt = FieldValue.serverTimestamp();
+      const docRef = await adminDb.collection('permits').add(permitPayload as any);
+      revalidatePath('/permits');
+      return { success: true, permitId: docRef.id, isUpdate: false };
+    }
+  } catch (error: any) {
+    console.error("❌ [Action] Error al guardar borrador:", error);
+    return { 
+      success: false, 
+      error: error.message || 'Could not save draft. Please try again.' 
+    };
+  }
+}
+
 
 export async function addSignatureAndNotify(
   permitId: string, 

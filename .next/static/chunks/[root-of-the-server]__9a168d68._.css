@@ -858,6 +858,10 @@ body {
   height: 100svh;
 }
 
+.h-64 {
+  height: 16rem;
+}
+
 .max-h-20 {
   max-height: 5rem;
 }
@@ -3315,6 +3319,10 @@ body {
     justify-content: space-between;
   }
 
+  .sm\:gap-4 {
+    gap: 1rem;
+  }
+
   .sm\:space-x-2 > :not([hidden]) ~ :not([hidden]) {
     --tw-space-x-reverse: 0;
     margin-right: calc(.5rem * var(--tw-space-x-reverse));
@@ -3486,6 +3494,11 @@ body {
   .md\:py-6 {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+  }
+
+  .md\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 
   .md\:pb-24 {

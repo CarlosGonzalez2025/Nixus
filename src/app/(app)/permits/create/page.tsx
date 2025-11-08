@@ -1,10 +1,11 @@
+
 'use client';
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
-import { createPermit } from '../actions';
-import { useRouter } from 'next/navigation';
+import { createPermit, savePermitDraft } from '../actions';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle,
   XCircle,
@@ -28,6 +29,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Copy,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,6 +70,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 const workerRoles = [
@@ -85,23 +89,60 @@ function CreatePermitWizard() {
   const { user } = useUser();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { state: formData, dispatch } = usePermitForm();
+  
+  const [draftId, setDraftId] = useState<string | undefined>(undefined);
+  const [isLoadingForm, setIsLoadingForm] = useState(true);
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAssessing, setIsAssessing] = useState(false);
-  const [recommendations, setRecommendations] = useState('');
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
-  // Step 5 - Emergencia, Trabajadores
+  // Worker Dialog State
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
+  
+  // Signature Pad State
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
+
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId) {
+      setIsLoadingForm(true);
+      const fetchDraft = async () => {
+        try {
+          const docRef = doc(db, 'permits', editId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().status === 'borrador') {
+            const draftData = docSnap.data() as Permit;
+            // Populate form state from draft
+            dispatch({ type: 'UPDATE_GENERAL_INFO', payload: draftData.generalInfo || {} });
+            dispatch({ type: 'SET_WORKERS', payload: draftData.workers || [] });
+            // Populate other steps...
+            // e.g., dispatch({ type: 'UPDATE_ATS', payload: draftData.anexoATS || {} });
+            setDraftId(editId);
+          } else {
+            toast({ variant: "destructive", title: "Borrador no encontrado" });
+            router.push('/permits/create');
+          }
+        } catch (error) {
+          toast({ variant: "destructive", title: "Error al cargar borrador" });
+        } finally {
+          setIsLoadingForm(false);
+        }
+      };
+      fetchDraft();
+    } else {
+      setIsLoadingForm(false);
+    }
+  }, [searchParams, dispatch, router, toast]);
 
   useEffect(() => {
     if (user && !formData.generalInfo.nombreSolicitante) {
@@ -166,12 +207,6 @@ function CreatePermitWizard() {
     setCurrentWorker(prev => prev ? { ...prev, [field]: value } : null);
   };
 
-  const handleFileUpload = (field: keyof ExternalWorker) => {
-    // This is a simulation. In a real app, you'd handle file uploads.
-    handleWorkerInputChange(field, `archivo_cargado_${Date.now()}.pdf`);
-    toast({ title: 'Archivo Simulado', description: 'Se ha simulado la carga de un archivo.'})
-  }
-
   const openSignaturePad = (target: string, context?: any) => {
     setSignatureTarget(target);
     setSignatureContext(context);
@@ -191,6 +226,38 @@ function CreatePermitWizard() {
     setSignatureTarget(null);
     setSignatureContext(null);
   };
+  
+  const handleSaveDraft = async () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error de Autenticación' });
+      return;
+    }
+
+    setIsSavingDraft(true);
+    try {
+      const result = await savePermitDraft({
+          userId: user.uid, 
+          userDisplayName: user.displayName || null, 
+          userEmail: user.email || null,
+          userPhotoURL: user.photoURL || null,
+          draftId: draftId,
+          ...formData
+      });
+
+      if (result.success && result.permitId) {
+        if (!draftId) {
+          setDraftId(result.permitId);
+        }
+        toast({ title: "Borrador Guardado", description: "Tu progreso ha sido guardado." });
+      } else {
+        throw new Error(result.error || 'No se pudo guardar el borrador.');
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message });
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
 
   const colors = {
     primary: 'hsl(var(--primary))',
@@ -199,7 +266,6 @@ function CreatePermitWizard() {
   };
   
   const canProceed = () => {
-    // Validate Step 1
     if (step === 1) {
         const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores } = formData.generalInfo;
         const missingFields = [];
@@ -225,13 +291,7 @@ function CreatePermitWizard() {
             return false;
         }
     }
-    
-    // Add validation for other steps if needed
     return true;
-  };
-  
-  const handleAssessRisk = async () => {
-    // Implement AI risk assessment logic
   };
 
   const handleSavePermit = async () => {
@@ -288,11 +348,6 @@ function CreatePermitWizard() {
   const steps = baseSteps.filter(s => s.condition);
   const currentStepInfo = steps[step - 1];
   
-  const getInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-  };
-  
   const handleUpdateATS = useCallback((updates: Partial<AnexoATS>) => {
     dispatch({ type: 'UPDATE_ATS', payload: updates });
   }, [dispatch]);
@@ -301,8 +356,15 @@ function CreatePermitWizard() {
     dispatch({ type: 'UPDATE_EPP_EMERGENCIAS', payload: updates });
   }, [dispatch]);
 
-
   const renderStepContent = () => {
+    if (isLoadingForm) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+    }
+
     const currentStepLabel = steps[step - 1]?.label;
     switch (currentStepLabel) {
       case "Info General":
@@ -419,17 +481,27 @@ function CreatePermitWizard() {
 
         {/* Navigation Buttons */}
         <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex gap-4">
+          <div className="max-w-5xl mx-auto px-4 py-3 flex gap-2 sm:gap-4">
             <Button
               onClick={() => setStep(step - 1)}
               disabled={isSubmitting || step === 1}
               variant="outline"
-              className="px-6 py-3 h-auto md:px-8"
+              className="px-4 py-3 h-auto md:px-6"
             >
-              <ArrowLeft className="mr-2" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Anterior
             </Button>
             
+            <Button
+                onClick={handleSaveDraft}
+                variant="secondary"
+                disabled={isSavingDraft || isSubmitting}
+                className="px-4 py-3 h-auto md:px-6"
+            >
+                {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                Borrador
+            </Button>
+
             {step < steps.length ? (
               <Button
                 onClick={() => {
@@ -441,7 +513,7 @@ function CreatePermitWizard() {
                 className="flex-1 py-3 h-auto"
               >
                 Siguiente
-                <ArrowRight className="ml-2" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
                 <AlertDialog>
@@ -455,7 +527,7 @@ function CreatePermitWizard() {
                             ) : (
                             <CheckCircle size={22} className="mr-2" />
                             )}
-                            <span>Enviar para Aprobación</span>
+                            <span>Enviar</span>
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

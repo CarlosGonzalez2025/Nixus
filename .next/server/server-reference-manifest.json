@@ -1,17 +1,5 @@
 {
-  "node": {
-    "401402f01c0118016efe5c5d736d335e2f6d150079": {
-      "workers": {
-        "app/(app)/permits/create/page": {
-          "moduleId": "[project]/.next-internal/server/app/(app)/permits/create/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
-        }
-      },
-      "layer": {
-        "app/(app)/permits/create/page": "action-browser"
-      }
-    }
-  },
+  "node": {},
   "edge": {},
   "encryptionKey": "UOMR6nx7+STFbmvmqCQZnhvUX2/6GvSRYfaBi9CrKcs="
 }

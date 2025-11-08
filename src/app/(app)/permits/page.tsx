@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, Loader2, FileX, ChevronRight, Filter } from 'lucide-react';
+import { PlusCircle, Search, Loader2, FileX, ChevronRight, Filter, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -155,7 +156,7 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
   return badges;
 };
 
-const permitStatuses: PermitStatus[] = ['pendiente_revision', 'aprobado', 'en_ejecucion', 'cerrado', 'rechazado', 'suspendido'];
+const permitStatuses: PermitStatus[] = ['borrador', 'pendiente_revision', 'aprobado', 'en_ejecucion', 'cerrado', 'rechazado', 'suspendido'];
 
 export default function PermitsPage() {
   const { user, loading: userLoading } = useUser();
@@ -265,7 +266,7 @@ export default function PermitsPage() {
       if (!searchLower) return true; // No search term, so it's a match
       
       return (
-        (permit.number || permit.numeroPermiso || permit.id).toLowerCase().includes(searchLower) ||
+        (permit.number || permit.id).toLowerCase().includes(searchLower) ||
         getWorkTypesString(permit).toLowerCase().includes(searchLower) ||
         (permit.user?.displayName || '').toLowerCase().includes(searchLower) ||
         (permit.generalInfo?.areaEspecifica || '').toLowerCase().includes(searchLower) ||
@@ -300,13 +301,13 @@ export default function PermitsPage() {
         {/* Mobile View */}
         <div className="md:hidden space-y-3">
           {permits.map((permit) => (
-            <Link key={permit.id} href={`/permits/${permit.id}`} className="block">
+            <Link key={permit.id} href={permit.status === 'borrador' ? `/permits/create?edit=${permit.id}` : `/permits/${permit.id}`} className="block">
               <Card className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 overflow-hidden">
                       <p className="font-semibold text-primary truncate">
-                        {permit.number || permit.numeroPermiso || `#${permit.id.substring(0, 8)}`}
+                        {permit.number || `Borrador #${permit.id.substring(0, 8)}`}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {permit.generalInfo?.areaEspecifica || 'N/A'} • {permit.generalInfo?.planta || 'N/A'}
@@ -348,8 +349,8 @@ export default function PermitsPage() {
               {permits.map((permit) => (
                 <TableRow key={permit.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
-                    <Link href={`/permits/${permit.id}`} className="hover:underline text-primary">
-                      {permit.number || permit.numeroPermiso || `#${permit.id.substring(0, 8)}`}
+                    <Link href={permit.status === 'borrador' ? `/permits/create?edit=${permit.id}` : `/permits/${permit.id}`} className="hover:underline text-primary">
+                      {permit.number || `Borrador #${permit.id.substring(0, 8)}`}
                     </Link>
                   </TableCell>
                   <TableCell>
@@ -373,11 +374,20 @@ export default function PermitsPage() {
                     {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm", { locale: es }) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/permits/${permit.id}`}>
-                        Ver Detalles
-                      </Link>
-                    </Button>
+                    {permit.status === 'borrador' ? (
+                       <Button asChild variant="outline" size="sm">
+                          <Link href={`/permits/create?edit=${permit.id}`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Continuar
+                          </Link>
+                        </Button>
+                    ) : (
+                       <Button asChild variant="outline" size="sm">
+                          <Link href={`/permits/${permit.id}`}>
+                            Ver Detalles
+                          </Link>
+                        </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
