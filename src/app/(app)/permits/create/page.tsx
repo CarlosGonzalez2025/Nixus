@@ -63,7 +63,7 @@ import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
 import { AnexoIzajeStep } from './components/AnexoIzajeStep';
 import { AnexoExcavacionesStep } from './components/AnexoExcavacionesStep';
 import { VerificacionPeligrosStep } from './components/VerificacionPeligrosStep';
-import { EppEmergenciasStep } from './components/EppEmergenciasStep';
+import { EppEmergenciasStep, eppItems } from './components/EppEmergenciasStep';
 import { WorkersStep } from './components/WorkersStep';
 import { ReviewStep } from './components/ReviewStep';
 import { Input } from '@/components/ui/input';
@@ -337,6 +337,28 @@ function CreatePermitWizard() {
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
                 description: "Debe seleccionar al menos una 'Justificación para el uso del ATS' para continuar.",
+            });
+            return false;
+        }
+    }
+    
+    if (currentStepInfo.label === 'EPP y Emergencias') {
+        const eppData = formData.eppEmergencias.epp || {};
+        const missingSpecFields = [];
+        for (const item of eppItems) {
+            if (item.manual && eppData[item.id] === 'si') {
+                const specField = `${item.id}_manual`;
+                if (!eppData[specField] || (eppData[specField] as string).trim() === '') {
+                    missingSpecFields.push(`'${item.label}'`);
+                }
+            }
+        }
+        if (missingSpecFields.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "Especificación de EPP Requerida",
+                description: `Por favor, complete la especificación para los siguientes EPP: ${missingSpecFields.join(', ')}.`,
+                duration: 6000,
             });
             return false;
         }

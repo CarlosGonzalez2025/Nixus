@@ -89,7 +89,7 @@ const RadioGroupField: React.FC<{
     </div>
 );
 
-const eppItems = [
+export const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: true },
     { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: true },
