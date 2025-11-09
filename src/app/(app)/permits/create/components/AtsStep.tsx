@@ -47,6 +47,7 @@ function useLocalInput(initialValue: string, onUpdate: (value: string) => void, 
     if (debouncedValue !== initialValue) {
       onUpdate(debouncedValue);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedValue, onUpdate]);
 
   React.useEffect(() => {
@@ -426,15 +427,22 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   // SectionWrapper con estado controlado
   const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string }> = React.memo(({ title, children, sectionId }) => (
     <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
-          <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-          <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-        {children}
-      </CollapsibleContent>
+        <CollapsibleTrigger asChild>
+            <Button 
+                variant="ghost" 
+                className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSection(sectionId);
+                }}
+            >
+                <h3 className="text-lg font-bold text-gray-700">{title}</h3>
+                <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+            </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+            {children}
+        </CollapsibleContent>
     </Collapsible>
   ));
 
@@ -457,7 +465,14 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
           {Object.entries(hazardCategories).map(([category, hazards]) => (
             <Collapsible key={category} open={openSections[category]} onOpenChange={() => toggleSection(category)}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
+                <Button 
+                    variant="ghost" 
+                    className="w-full justify-between p-4 border rounded-lg"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection(category);
+                    }}
+                >
                   <span className="font-semibold">{category}</span>
                   <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
                 </Button>
