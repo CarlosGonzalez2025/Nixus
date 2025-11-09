@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -66,7 +65,7 @@ const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: false },
     { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: false },
-    { id: 'proteccionRespiratoria', label: 'Proteccion respiratoria', manual: true },
+    { id: 'proteccionRespiratoria', label: 'Proteccion respiratoria', manual: false },
     { id: 'casco', label: 'Casco Tipo__ Clase__ SIN__ CON__ Barbuquejo', manual: true },
     { id: 'chavoTelaCarnaza', label: 'Chavo en tela o carnaza', manual: false },
     { id: 'botasSeguridadDielectrica', label: 'Botas de seguridad + dielectrica', manual: false },

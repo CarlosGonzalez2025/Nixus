@@ -12085,7 +12085,7 @@ const eppItems = [
     {
         id: 'ropaTrabajo',
         label: 'Ropa de trabajo',
-        manual: true
+        manual: false
     },
     {
         id: 'overolIgnifugo',
