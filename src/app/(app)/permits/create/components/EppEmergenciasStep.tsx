@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { EppEmergencias } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface EppEmergenciasStepProps {
     eppEmergencias: EppEmergencias;
@@ -40,7 +41,20 @@ const RadioGroupField: React.FC<{
     inputValue?: string;
     onInputChange?: (value: string) => void;
     placeholder?: string;
-}> = ({ id, label, value, onChange, showInput = false, inputValue, onInputChange, placeholder }) => (
+    isSelect?: boolean;
+    selectOptions?: string[];
+}> = ({ 
+    id, 
+    label, 
+    value, 
+    onChange, 
+    showInput = false, 
+    inputValue, 
+    onInputChange, 
+    placeholder,
+    isSelect = false,
+    selectOptions = [] 
+}) => (
     <div className="flex flex-col space-y-2 p-3 border rounded-md bg-white">
         <div className="flex justify-between items-center">
             <Label htmlFor={id} className="text-sm font-medium flex-1">{label}</Label>
@@ -50,13 +64,26 @@ const RadioGroupField: React.FC<{
                 <div className="flex items-center space-x-2"><RadioGroupItem value="na" id={`${id}-na`} /><Label htmlFor={`${id}-na`}>N/A</Label></div>
             </RadioGroup>
         </div>
-        {showInput && value === 'si' && onInputChange && (
-            <Input 
-                className="mt-2"
-                placeholder={placeholder || 'Especificar...'}
-                value={inputValue || ''}
-                onChange={(e) => onInputChange(e.target.value)}
-            />
+        {value === 'si' && onInputChange && (
+            isSelect ? (
+                <Select value={inputValue} onValueChange={onInputChange}>
+                    <SelectTrigger className="mt-2">
+                        <SelectValue placeholder={placeholder || "Seleccione una opción"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {selectOptions.map(option => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            ) : showInput ? (
+                <Input 
+                    className="mt-2"
+                    placeholder={placeholder || 'Especificar...'}
+                    value={inputValue || ''}
+                    onChange={(e) => onInputChange(e.target.value)}
+                />
+            ) : null
         )}
     </div>
 );
@@ -65,8 +92,7 @@ const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: false },
     { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: false },
-    { id: 'proteccionRespiratoria', label: 'Proteccion respiratoria', manual: false },
-    { id: 'casco', label: 'Casco Tipo__ Clase__ SIN__ CON__ Barbuquejo', manual: true },
+    { id: 'casco', label: 'Casco', manual: true, isSelect: true, selectOptions: ['Sin Barbuquejo', 'Con Barbuquejo'] },
     { id: 'chavoTelaCarnaza', label: 'Chavo en tela o carnaza', manual: false },
     { id: 'botasSeguridadDielectrica', label: 'Botas de seguridad + dielectrica', manual: false },
     { id: 'proteccionMetatarso', label: 'Proteccion metatarso', manual: false },
@@ -132,9 +158,11 @@ export function EppEmergenciasStep({ eppEmergencias, onUpdate }: EppEmergenciasS
                             value={eppEmergencias.epp?.[item.id] as string}
                             onChange={(value) => handleUpdate('epp', item.id, value)}
                             showInput={item.manual}
+                            isSelect={item.isSelect}
+                            selectOptions={item.selectOptions}
                             inputValue={eppEmergencias.epp?.[`${item.id}_manual`] as string || ''}
                             onInputChange={(value) => handleUpdate('epp', `${item.id}_manual`, value)}
-                            placeholder="Agregar tipo manualmente"
+                            placeholder={item.isSelect ? 'Seleccione tipo' : "Agregar tipo manualmente"}
                         />
                     ))}
                 </div>
