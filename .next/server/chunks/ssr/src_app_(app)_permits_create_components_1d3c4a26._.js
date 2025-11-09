@@ -11823,7 +11823,54 @@ function VerificacionPeligrosStep() {
                     fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
                     lineNumber: 140,
                     columnNumber: 17
-                }, this))
+                }, this)),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "p-4 border-t-2 border-dashed mt-8",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
+                        className: "font-bold text-lg mb-2 text-gray-800",
+                        children: "PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                        lineNumber: 156,
+                        columnNumber: 17
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
+                        className: "list-disc list-inside space-y-2 text-sm text-gray-600",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                                lineNumber: 158,
+                                columnNumber: 21
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                                lineNumber: 159,
+                                columnNumber: 21
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                                lineNumber: 160,
+                                columnNumber: 21
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                        lineNumber: 157,
+                        columnNumber: 17
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
+                lineNumber: 155,
+                columnNumber: 13
+            }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx",
