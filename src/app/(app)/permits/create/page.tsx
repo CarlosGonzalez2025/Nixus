@@ -320,13 +320,23 @@ function CreatePermitWizard() {
     }
 
     if (currentStepInfo.label === 'ATS') {
-        const { peligros } = formData.anexoATS;
+        const { peligros, justificacion } = formData.anexoATS;
         const hasAtLeastOneHazard = peligros && Object.values(peligros).some(value => value === 'si');
         if (!hasAtLeastOneHazard) {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
                 description: "Debe seleccionar 'SI' en al menos un peligro para continuar.",
+            });
+            return false;
+        }
+
+        const hasAtLeastOneJustification = justificacion && Object.values(justificacion).some(value => value === true);
+        if (!hasAtLeastOneJustification) {
+            toast({
+                variant: "destructive",
+                title: "Validación Requerida en ATS",
+                description: "Debe seleccionar al menos una 'Justificación para el uso del ATS' para continuar.",
             });
             return false;
         }
