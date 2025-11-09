@@ -379,6 +379,12 @@ OtrosPeligrosSection.displayName = 'OtrosPeligrosSection';
 
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   const handlePeligroChange = React.useCallback((id: string, value: 'si' | 'no') => {
     onUpdateATS({ 
       peligros: { ...anexoATS.peligros, [id]: value } 
@@ -402,8 +408,8 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     onUpdateATS({ peligrosAdicionales: peligros });
   }, [onUpdateATS]);
 
-  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; }> = React.memo(({ title, children }) => (
-    <Collapsible>
+  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string; }> = React.memo(({ title, children, sectionId }) => (
+    <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
         <CollapsibleTrigger asChild>
             <Button 
                 variant="ghost" 
@@ -432,13 +438,13 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         </p>
       </div>
 
-      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles">
+      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles" sectionId="peligros">
         <p className="text-xs text-muted-foreground mb-4">
           Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.
         </p>
         <div className="space-y-2">
           {Object.entries(hazardCategories).map(([category, hazards]) => (
-            <Collapsible key={category}>
+            <Collapsible key={category} open={openSections[category]} onOpenChange={() => toggleSection(category)}>
               <CollapsibleTrigger asChild>
                 <Button 
                     variant="ghost" 
@@ -490,7 +496,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         />
       </SectionWrapper>
 
-      <SectionWrapper title="2. EPP Requeridos">
+      <SectionWrapper title="2. EPP Requeridos" sectionId="epp">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {Object.entries(eppOptions).map(([category, items]) => (
               <EppCategory
@@ -504,7 +510,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
          </div>
       </SectionWrapper>
       
-      <SectionWrapper title="3. Justificación para el uso del ATS">
+      <SectionWrapper title="3. Justificación para el uso del ATS" sectionId="justificacion">
         <div className="space-y-3 p-4 border rounded-lg">
             {justificacionOptions.map(option => (
                 <div key={option.id} className="flex items-center space-x-3">
