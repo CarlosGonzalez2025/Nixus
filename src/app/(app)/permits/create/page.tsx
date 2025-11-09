@@ -271,8 +271,25 @@ function CreatePermitWizard() {
     success: 'hsl(var(--accent))',
   };
   
+  const baseSteps = [
+    { label: "Info General", condition: true },
+    { label: "ATS", condition: true },
+    { label: "Anexo Altura", condition: formData.selectedWorkTypes.alturas},
+    { label: "Anexo Confinado", condition: formData.selectedWorkTypes.confinado},
+    { label: "Anexo Energías", condition: formData.selectedWorkTypes.energia},
+    { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
+    { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
+    { label: "Verificación Peligros", condition: true },
+    { label: "EPP y Emergencias", condition: true },
+    { label: "Trabajadores", condition: true },
+    { label: "Revisión", condition: true }
+  ];
+
+  const steps = baseSteps.filter(s => s.condition);
+  const currentStepInfo = steps[step - 1];
+
   const canProceed = () => {
-    if (step === 1) {
+    if (currentStepInfo.label === 'Info General') {
         const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores, responsable } = formData.generalInfo;
         const missingFields = [];
         if (!areaEspecifica) missingFields.push("Área específica");
@@ -301,6 +318,20 @@ function CreatePermitWizard() {
             return false;
         }
     }
+
+    if (currentStepInfo.label === 'ATS') {
+        const { peligros } = formData.anexoATS;
+        const hasAtLeastOneHazard = peligros && Object.values(peligros).some(value => value === 'si');
+        if (!hasAtLeastOneHazard) {
+            toast({
+                variant: "destructive",
+                title: "Validación Requerida en ATS",
+                description: "Debe seleccionar 'SI' en al menos un peligro para continuar.",
+            });
+            return false;
+        }
+    }
+    
     return true;
   };
 
@@ -340,23 +371,6 @@ function CreatePermitWizard() {
       setIsSubmitting(false);
     }
   };
-
-  const baseSteps = [
-    { label: "Info General", condition: true },
-    { label: "ATS", condition: true },
-    { label: "Anexo Altura", condition: formData.selectedWorkTypes.alturas},
-    { label: "Anexo Confinado", condition: formData.selectedWorkTypes.confinado},
-    { label: "Anexo Energías", condition: formData.selectedWorkTypes.energia},
-    { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
-    { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
-    { label: "Verificación Peligros", condition: true },
-    { label: "EPP y Emergencias", condition: true },
-    { label: "Trabajadores", condition: true },
-    { label: "Revisión", condition: true }
-  ];
-
-  const steps = baseSteps.filter(s => s.condition);
-  const currentStepInfo = steps[step - 1];
   
   const handleUpdateATS = useCallback((updates: Partial<AnexoATS>) => {
     dispatch({ type: 'UPDATE_ATS', payload: updates });
