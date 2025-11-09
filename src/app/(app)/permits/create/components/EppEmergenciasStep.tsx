@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -90,8 +91,8 @@ const RadioGroupField: React.FC<{
 
 const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
-    { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: false },
-    { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: false },
+    { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: true },
+    { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: true },
     { id: 'casco', label: 'Casco', manual: true, isSelect: true, selectOptions: ['Sin Barbuquejo', 'Con Barbuquejo'] },
     { id: 'chavoTelaCarnaza', label: 'Chavo en tela o carnaza', manual: false },
     { id: 'botasSeguridadDielectrica', label: 'Botas de seguridad + dielectrica', manual: false },
@@ -104,12 +105,12 @@ const eppItems = [
     { id: 'proteccionAuditivaCopa', label: 'Proteccion auditiva copa', manual: false },
     { id: 'guantesAntiCorte', label: 'Guantes anti corte', manual: false },
     { id: 'guantesSustanciasQuimicas', label: 'Guantes sustancias químicas', manual: false },
-    { id: 'guantesTemperatura', label: 'Guantes temperatura', manual: true },
+    { id: 'guantesTemperatura', label: 'Guantes temperatura', manual: false },
     { id: 'arnes', label: 'Arnés, Tipo:', manual: true },
     { id: 'mosqueton', label: 'Mosquetón', manual: true },
     { id: 'eslinga', label: 'Eslinga, Tipo:', manual: true },
     { id: 'lineaVida', label: 'Línea de vida, Tipo:', manual: true },
-    { id: 'puntoAnclaje', label: 'Punto de anclaje (Cual):', manual: false },
+    { id: 'puntoAnclaje', label: 'Punto de anclaje (Cual):', manual: true },
     { id: 'senalizacion', label: 'Señalización', manual: false },
     { id: 'barandas', label: 'Barandas', manual: false },
     { id: 'delimitacionPerimetral', label: 'Delimitación Perimetral', manual: false },
