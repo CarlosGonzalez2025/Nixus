@@ -1159,6 +1159,10 @@ body {
   resize: both;
 }
 
+.list-inside {
+  list-style-position: inside;
+}
+
 .list-disc {
   list-style-type: disc;
 }
@@ -1464,6 +1468,10 @@ body {
 
 .border-t-0 {
   border-top-width: 0;
+}
+
+.border-t-2 {
+  border-top-width: 2px;
 }
 
 .border-dashed {
