@@ -165,10 +165,15 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueCha
 type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas';
 const signatureRoles: { [key in SignatureRole]: string } = {
   coordinador_alturas: 'COORDINADOR (ANEXO)',
-  solicitante: 'SOLICITANTE',
+  solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'MANTENIMIENTO (SI APLICA)',
   lider_sst: 'SST (SI APLICA)',
-  autorizante: 'QUIEN AUTORIZA',
+  autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
+};
+
+const signatureConsents: { [key in SignatureRole]?: string } = {
+    solicitante: "Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.",
+    coordinador_alturas: "Al firmar como Coordinador de Trabajos en Alturas, manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias.",
 };
 
 
@@ -185,6 +190,7 @@ export default function PermitDetailPage() {
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signingRole, setSigningRole] = useState<{role: SignatureRole, type: 'firmaApertura' | 'firmaCierre'} | null>(null);
+  const [signerName, setSignerName] = useState('');
   const [isSigning, setIsSigning] = useState(false);
 
   const [isStatusChanging, setIsStatusChanging] = useState(false);
@@ -439,40 +445,54 @@ export default function PermitDetailPage() {
 };
 
   const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
-      if (role === 'solicitante' && signatureType === 'firmaApertura') {
-          setIsSolicitanteSignAlertOpen(true);
+      setSigningRole({role, type: signatureType});
+      if (role === 'coordinador_alturas') {
+          // No pre-llenar el nombre para que el coordinador lo ingrese
+          setSignerName('');
       } else {
-          setSigningRole({role, type: signatureType});
-          setIsSignatureDialogOpen(true);
+          // Para otros roles, usar el nombre del usuario actual
+          setSignerName(currentUser?.displayName || '');
       }
-  }
-
-  const handleConfirmSolicitanteSign = () => {
-    setSigningRole({role: 'solicitante', type: 'firmaApertura'});
-    setIsSignatureDialogOpen(true);
-    setIsSolicitanteSignAlertOpen(false);
+      setIsSignatureDialogOpen(true);
   }
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
+    
+    // Validar nombre si es el coordinador
+    if (signingRole.role === 'coordinador_alturas' && !signerName.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Nombre Requerido',
+            description: 'Por favor, ingrese el nombre del coordinador.',
+        });
+        return;
+    }
+
     setIsSigning(true);
 
     try {
+        const userToSign = {
+            uid: signingRole.role === 'coordinador_alturas' ? 'N/A_COORDINADOR' : currentUser.uid,
+            displayName: signingRole.role === 'coordinador_alturas' ? signerName : currentUser.displayName || null,
+        };
+
         const result = await addSignatureAndNotify(
             permit.id,
             signingRole.role,
             signingRole.type,
             signatureDataUrl,
-            { uid: currentUser.uid, displayName: currentUser.displayName || null }
+            userToSign
         );
 
         if (result.success) {
             toast({
                 title: 'Permiso Firmado',
-                description: `Has firmado como ${signatureRoles[signingRole.role]}`,
+                description: `${userToSign.displayName} ha firmado como ${signatureRoles[signingRole.role]}`,
             });
             setIsSignatureDialogOpen(false);
             setSigningRole(null);
+            setSignerName('');
         } else {
             throw new Error(result.error || 'No se pudo guardar la firma.');
         }
@@ -523,13 +543,13 @@ export default function PermitDetailPage() {
   
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
-    const { status, approvals, selectedWorkTypes } = permit;
+    const { status, approvals, selectedWorkTypes, createdBy } = permit;
 
     if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
         return { can: false, reason: `El permiso está ${status}.` };
     }
     
-    if (status !== 'pendiente_revision') {
+    if (status !== 'pendiente_revision' && status !== 'borrador') {
          return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
     }
     
@@ -543,6 +563,8 @@ export default function PermitDetailPage() {
       }
       return currentUser.role === targetRole;
     }
+    
+    const isCreator = currentUser.uid === createdBy;
 
     if (hasSigned((permit.approvals as any)[role])) {
         return { can: false, reason: 'Ya has firmado.' };
@@ -551,11 +573,12 @@ export default function PermitDetailPage() {
     switch (role) {
         case 'coordinador_alturas':
             if (!selectedWorkTypes?.alturas) return { can: false, reason: 'No se requiere para este trabajo.' };
-            if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'Solo un Líder SST puede firmar como Coordinador de Alturas.' };
+            // El creador del permiso puede iniciar esta firma
+            if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede gestionar esta firma.' };
             return { can: true };
 
         case 'solicitante':
-            if (!hasCorrectRole(['solicitante', 'lider_tarea'])) return { can: false, reason: 'No tienes el rol requerido.' };
+            if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede firmar.' };
             if (selectedWorkTypes?.alturas && !hasSigned(coordinador_alturas)) {
                 return { can: false, reason: 'Esperando firma del Coordinador de Trabajos en Alturas.' };
             }
@@ -815,7 +838,7 @@ export default function PermitDetailPage() {
     const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
       const approval = permit.approvals?.[role as keyof typeof permit.approvals];
       const { can, reason } = canSign(role);
-      const isSolicitante = role === 'solicitante';
+      const consentText = signatureConsents[role];
 
       const SignButton = () => (
           <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
@@ -846,9 +869,9 @@ export default function PermitDetailPage() {
                     <Clock className="h-5 w-5" />
                     <span className="font-bold text-sm">Pendiente de Firma</span>
                   </div>
-                  {isSolicitante && (
+                  {consentText && (
                     <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
-                      Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.
+                      {consentText}
                     </p>
                   )}
                 </div>
@@ -869,7 +892,7 @@ export default function PermitDetailPage() {
                   </Tooltip>
                 </TooltipProvider>
               )}
-              {isSolicitante && permit.status === 'borrador' && (
+              {role === 'solicitante' && permit.status === 'borrador' && (
                 <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
                   <Edit className="mr-2"/> Modificar
                 </Button>
@@ -1235,8 +1258,28 @@ export default function PermitDetailPage() {
         
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
             <DialogContent>
-                <DialogHeader><DialogTitle>Registrar Firma</DialogTitle></DialogHeader>
-                <SignaturePad onSave={handleSaveSignature} isSaving={isSigning} />
+                <DialogHeader>
+                    <DialogTitle>Registrar Firma para {signingRole ? signatureRoles[signingRole.role] : ''}</DialogTitle>
+                </DialogHeader>
+                {signingRole?.role === 'coordinador_alturas' && (
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">{signatureConsents.coordinador_alturas}</p>
+                        <div className="space-y-1">
+                            <Label htmlFor="signerName">Nombre del Coordinador</Label>
+                            <Input 
+                                id="signerName" 
+                                value={signerName} 
+                                onChange={(e) => setSignerName(e.target.value)} 
+                                placeholder="Ingrese el nombre completo"
+                            />
+                        </div>
+                    </div>
+                )}
+                <SignaturePad 
+                    onSave={handleSaveSignature} 
+                    isSaving={isSigning} 
+                    consentText={signingRole?.role === 'coordinador_alturas' ? '' : undefined} // El consentimiento específico ya está arriba
+                />
             </DialogContent>
         </Dialog>
         
@@ -1245,12 +1288,12 @@ export default function PermitDetailPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar Firma de Solicitante</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso será remitido para autorización y ya no podrá ser modificado. ¿Desea continuar?
+                        {signatureConsents.solicitante} ¿Desea continuar?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmSolicitanteSign}>
+                    <AlertDialogAction onClick={() => openSignatureDialog('solicitante', 'firmaApertura')}>
                         Confirmar y Firmar
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -1260,3 +1303,4 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
