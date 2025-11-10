@@ -390,12 +390,17 @@ function CreatePermitWizard() {
     }
     
     if (currentLabel === 'Anexo Energías') {
-        const anexo = formData.anexoEnergias;
-        const trabajosEnCaliente = anexo?.trabajosEnCaliente as any;
-        if (trabajosEnCaliente?.otro === 'si' && !trabajosEnCaliente?.otroCual?.trim()) {
-          toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
+      const anexo = formData.anexoEnergias;
+      const trabajosEnCaliente = anexo?.trabajosEnCaliente as any;
+      if (trabajosEnCaliente?.otro === 'si' && !(trabajosEnCaliente?.otroCual || '').trim()) {
+        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
+        return false;
+      }
+      const energiasPeligrosas = anexo?.energiasPeligrosas as any;
+      if (energiasPeligrosas?.otra_check && !(energiasPeligrosas?.otra || '').trim()) {
+          toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' tipo de energía peligrosa." });
           return false;
-        }
+      }
     }
 
     if (currentLabel === 'Verificación Peligros') {
@@ -411,25 +416,48 @@ function CreatePermitWizard() {
     }
 
     if (currentLabel === 'EPP y Emergencias') {
-        const eppData = formData.eppEmergencias?.epp || {};
-        const missingSpecFields = eppItems
-            .filter(item => item.manual && eppData[item.id] === 'si')
-            .filter(item => {
-                const specFieldKey = `${item.id}_manual`;
-                const specValue = eppData[specFieldKey] as string | undefined;
-                return !specValue || specValue.trim() === '';
-            })
-            .map(item => `'${item.label.replace(/:$/, '')}'`);
+      const eppData = formData.eppEmergencias?.epp || {};
+      const missingSpecFields = eppItems
+        .filter(item => item.manual && eppData[item.id] === 'si')
+        .map(item => ({ item, specValue: eppData[`${item.id}_manual`] as string | undefined }))
+        .filter(({ specValue }) => !specValue || specValue.trim() === '')
+        .map(({ item }) => `'${item.label.replace(/:$/, '')}'`);
+    
+      if (missingSpecFields.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Especificación de EPP Requerida",
+          description: `Por favor, complete la especificación para: ${missingSpecFields.join(', ')}.`,
+          duration: 6000,
+        });
+        return false;
+      }
+    }
+    
+    if (currentLabel === 'Trabajadores') {
+      const numTrabajadores = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
+      const workers = formData.workers || [];
 
-        if (missingSpecFields.length > 0) {
-            toast({
-                variant: "destructive",
-                title: "Especificación de EPP Requerida",
-                description: `Por favor, complete la especificación para los siguientes EPP: ${missingSpecFields.join(', ')}.`,
-                duration: 6000,
-            });
-            return false;
-        }
+      if (workers.length !== numTrabajadores) {
+        toast({
+          variant: "destructive",
+          title: "Número de Trabajadores no Coincide",
+          description: `Ha especificado ${numTrabajadores} trabajadores, pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
+          duration: 6000,
+        });
+        return false;
+      }
+      
+      const missingSignatures = workers.filter(w => !w.firmaApertura);
+      if(missingSignatures.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Faltan Firmas de Trabajadores",
+          description: `Todos los trabajadores deben registrar su firma de apertura para poder continuar. Faltan ${missingSignatures.length} firmas.`,
+          duration: 6000,
+        });
+        return false;
+      }
     }
 
     return true;
@@ -784,3 +812,4 @@ export default function CreatePermitPage() {
     </PermitFormProvider>
   );
 }
+
