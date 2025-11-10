@@ -44,7 +44,6 @@ const initialState = {
         confinado: false,
         energia: false,
         izaje: false,
-        caliente: false,
         excavacion: false,
         general: false
     },
@@ -308,7 +307,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 255,
+        lineNumber: 254,
         columnNumber: 5
     }, this);
 }

@@ -16,12 +16,12 @@ import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
+  { key: 'general', name: 'Trabajo General' },
   { key: 'alturas', name: 'Trabajo en Alturas' },
   { key: 'confinado', name: 'Espacios Confinados' },
   { key: 'energia', name: 'Control de Energías' },
   { key: 'izaje', name: 'Izaje de Cargas' },
   { key: 'excavacion', name: 'Excavaciones' },
-  { key: 'general', name: 'Trabajo General' },
 ];
 
 export function GeneralInfoStep() {
