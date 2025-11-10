@@ -245,7 +245,7 @@ export function AnexoAlturaStep() {
               onChange={(value) => handleNestedChange('afectaciones', 'personalNotificado', value)} 
             />
             <div>
-              <Label>Observaciones:</Label>
+              <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Observaciones:</Label>
               <Textarea 
                 value={anexoAltura.afectaciones?.observaciones || ''} 
                 onChange={(e) => handleNestedChange('afectaciones', 'observaciones', e.target.value)} 

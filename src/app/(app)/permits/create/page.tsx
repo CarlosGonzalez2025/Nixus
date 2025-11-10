@@ -380,6 +380,10 @@ function CreatePermitWizard() {
         toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el otro tipo de estructura en el Anexo de Alturas." });
         return false;
       }
+      if (!anexo?.afectaciones?.observaciones?.trim()) {
+        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe ingresar las observaciones en la sección de Afectaciones del Anexo de Alturas." });
+        return false;
+      }
     }
 
     if (currentLabel === 'Anexo Confinado') {
