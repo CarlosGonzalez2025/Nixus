@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -105,7 +106,7 @@ const hazardCategories = {
   ],
 };
 
-const eppOptions = {
+export const eppOptions = {
     'Equipos Especiales': [
         { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
         { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },

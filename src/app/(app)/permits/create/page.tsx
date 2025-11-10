@@ -56,7 +56,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { PermitFormProvider, usePermitForm } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
-import { AtsStep } from './components/AtsStep';
+import { AtsStep, eppOptions as atsEppOptions } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
 import { AnexoConfinadoStep } from './components/AnexoConfinadoStep';
 import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
@@ -321,20 +321,42 @@ function CreatePermitWizard() {
     }
 
     if (currentLabel === 'ATS') {
-        const { peligros, justificacion } = formData.anexoATS;
+        const { peligros, justificacion, epp, peligrosAdicionales } = formData.anexoATS;
         if (!peligros || !Object.values(peligros).some(value => value === 'si')) {
-            toast({
-                variant: "destructive",
-                title: "Validación Requerida en ATS",
-                description: "Debe seleccionar 'SI' en al menos un peligro para continuar.",
-            });
-            return false;
+            if (!peligrosAdicionales || peligrosAdicionales.length === 0) {
+              toast({
+                  variant: "destructive",
+                  title: "Validación Requerida en ATS",
+                  description: "Debe seleccionar 'SI' en al menos un peligro o agregar un peligro adicional para continuar.",
+              });
+              return false;
+            }
         }
         if (!justificacion || !Object.values(justificacion).some(value => value === true)) {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
                 description: "Debe seleccionar al menos una 'Justificación para el uso del ATS' para continuar.",
+            });
+            return false;
+        }
+        // Validar especificaciones de EPP en ATS
+        const eppData = epp || {};
+        const allEppItems = Object.values(atsEppOptions).flat();
+        const missingAtsEppSpec = allEppItems
+            .filter(item => item.type === 'text' && eppData[item.id])
+            .filter(item => {
+                const specValue = eppData[`${item.id}_spec`] as string | undefined;
+                return !specValue || specValue.trim() === '';
+            })
+            .map(item => `'${item.label.replace(/:$/, '')}'`);
+
+        if (missingAtsEppSpec.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "Especificación de EPP Requerida en ATS",
+                description: `Por favor, complete la especificación para los siguientes EPP: ${missingAtsEppSpec.join(', ')}.`,
+                duration: 6000,
             });
             return false;
         }
@@ -380,7 +402,8 @@ function CreatePermitWizard() {
     
     if (currentLabel === 'Anexo Energías') {
         const anexo = formData.anexoEnergias;
-        if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente?.otro as string)?.trim()) {
+        const trabajosEnCaliente = anexo?.trabajosEnCaliente as any;
+        if (trabajosEnCaliente?.otro === 'si' && !trabajosEnCaliente?.otroCual?.trim()) {
           toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
           return false;
         }
