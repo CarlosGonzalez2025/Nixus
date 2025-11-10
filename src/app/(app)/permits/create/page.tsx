@@ -1,5 +1,4 @@
 
-
 'use client';
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
@@ -127,20 +126,20 @@ function CreatePermitWizard() {
         try {
           const docRef = doc(db, 'permits', editId);
           const docSnap = await getDoc(docRef);
-          if (docSnap.exists() && docSnap.data().status === 'borrador') {
+          if (docSnap.exists() && (docSnap.data().status === 'borrador' || docSnap.data().status === 'pendiente_revision')) {
             const draftData = docSnap.data() as Permit;
-            // Populate form state from draft
-            dispatch({ type: 'UPDATE_GENERAL_INFO', payload: draftData.generalInfo || {} });
-            dispatch({ type: 'SET_WORKERS', payload: draftData.workers || [] });
-            // Populate other steps...
-            // e.g., dispatch({ type: 'UPDATE_ATS', payload: draftData.anexoATS || {} });
+            
+            // Use a single action to set the entire state for consistency
+            dispatch({ type: 'SET_ENTIRE_STATE', payload: draftData });
+            
             setDraftId(editId);
           } else {
-            toast({ variant: "destructive", title: "Borrador no encontrado" });
-            router.push('/permits/create');
+            toast({ variant: "destructive", title: "Permiso no encontrado o no editable", description: "El permiso que intenta editar no existe o ya no está en estado de borrador." });
+            router.push('/permits');
           }
         } catch (error) {
-          toast({ variant: "destructive", title: "Error al cargar borrador" });
+          console.error("Error cargando borrador:", error);
+          toast({ variant: "destructive", title: "Error al Cargar", description: "No se pudo cargar la información del permiso." });
         } finally {
           setIsLoadingForm(false);
         }
@@ -150,6 +149,7 @@ function CreatePermitWizard() {
       setIsLoadingForm(false);
     }
   }, [searchParams, dispatch, router, toast]);
+
 
   useEffect(() => {
     if (user && !formData.generalInfo.nombreSolicitante) {
@@ -333,16 +333,17 @@ function CreatePermitWizard() {
 
     if (currentLabel === 'ATS') {
         const { peligros, justificacion, epp, peligrosAdicionales } = formData.anexoATS || {};
-        if (!peligros || !Object.values(peligros).some(value => value === 'si')) {
-            if (!peligrosAdicionales || peligrosAdicionales.length === 0) {
-              toast({
-                  variant: "destructive",
-                  title: "Validación Requerida en ATS",
-                  description: "Debe seleccionar 'SI' en al menos un peligro o agregar un peligro adicional para continuar.",
-              });
-              return false;
-            }
+        
+        const hasPeligro = (peligros && Object.values(peligros).some(value => value === 'si')) || (peligrosAdicionales && peligrosAdicionales.length > 0);
+        if (!hasPeligro) {
+          toast({
+              variant: "destructive",
+              title: "Validación Requerida en ATS",
+              description: "Debe seleccionar 'SI' en al menos un peligro o agregar un peligro adicional para continuar.",
+          });
+          return false;
         }
+
         if (!justificacion || !Object.values(justificacion).some(value => value === true)) {
             toast({
                 variant: "destructive",
@@ -351,7 +352,7 @@ function CreatePermitWizard() {
             });
             return false;
         }
-        // Validar especificaciones de EPP en ATS
+        
         const eppData = epp || {};
         const allEppItems = Object.values(atsEppOptions).flat();
         const missingAtsEppSpec = allEppItems
@@ -392,7 +393,7 @@ function CreatePermitWizard() {
     if (currentLabel === 'Anexo Energías') {
       const anexo = formData.anexoEnergias;
       const trabajosEnCaliente = anexo?.trabajosEnCaliente as any;
-      if (trabajosEnCaliente?.otro === 'si' && !(trabajosEnCaliente?.otroCual || '').trim()) {
+      if (trabajosEnCaliente?.otro_check && !(trabajosEnCaliente?.otro || '').trim()) {
         toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
         return false;
       }

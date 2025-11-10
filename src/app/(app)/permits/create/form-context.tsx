@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
@@ -24,6 +25,7 @@ type FormAction =
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
+  | { type: 'SET_ENTIRE_STATE', payload: Partial<Permit> }
   | { type: 'RESET_FORM' };
 
 
@@ -218,6 +220,22 @@ function formReducer(state: FormState, action: FormAction): FormState {
       // This is a simplified example
       console.log('Signature update needs to be implemented in reducer:', action.payload);
       return state;
+    case 'SET_ENTIRE_STATE':
+        const { payload } = action;
+        // Reconstruct the state from the payload, providing defaults for any missing pieces
+        return {
+            generalInfo: payload.generalInfo || initialState.generalInfo,
+            selectedWorkTypes: payload.selectedWorkTypes || initialState.selectedWorkTypes,
+            anexoATS: payload.anexoATS || initialState.anexoATS,
+            anexoAltura: payload.anexoAltura || initialState.anexoAltura,
+            anexoConfinado: payload.anexoConfinado || initialState.anexoConfinado,
+            anexoEnergias: payload.anexoEnergias || initialState.anexoEnergias,
+            anexoIzaje: payload.anexoIzaje || initialState.anexoIzaje,
+            anexoExcavaciones: payload.anexoExcavaciones || initialState.anexoExcavaciones,
+            verificacionPeligros: payload.verificacionPeligros || initialState.verificacionPeligros,
+            eppEmergencias: payload.eppEmergencias || initialState.eppEmergencias,
+            workers: payload.workers || initialState.workers,
+        };
     case 'RESET_FORM':
       return initialState;
     default:
