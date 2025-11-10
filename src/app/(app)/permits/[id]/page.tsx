@@ -523,7 +523,7 @@ export default function PermitDetailPage() {
   
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
-    const { status, approvals, trabajoAlturas } = permit;
+    const { status, approvals, selectedWorkTypes } = permit;
 
     if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
         return { can: false, reason: `El permiso está ${status}.` };
@@ -550,13 +550,13 @@ export default function PermitDetailPage() {
     
     switch (role) {
         case 'coordinador_alturas':
-            if (!trabajoAlturas) return { can: false, reason: 'No se requiere para este trabajo.' };
+            if (!selectedWorkTypes?.alturas) return { can: false, reason: 'No se requiere para este trabajo.' };
             if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'Solo un Líder SST puede firmar como Coordinador de Alturas.' };
             return { can: true };
 
         case 'solicitante':
             if (!hasCorrectRole(['solicitante', 'lider_tarea'])) return { can: false, reason: 'No tienes el rol requerido.' };
-            if (trabajoAlturas && !hasSigned(coordinador_alturas)) {
+            if (selectedWorkTypes?.alturas && !hasSigned(coordinador_alturas)) {
                 return { can: false, reason: 'Esperando firma del Coordinador de Trabajos en Alturas.' };
             }
             return { can: true };
@@ -662,29 +662,15 @@ export default function PermitDetailPage() {
 
   const getWorkTypesString = (permit: Permit): string => {
     const workTypes: string[] = [];
-    
-    // Primero verificar los campos booleanos nuevos
-    if (permit.trabajoAlturas) workTypes.push('Trabajo en Alturas');
-    if (permit.espaciosConfinados) workTypes.push('Espacios Confinados');
-    if (permit.controlEnergia) workTypes.push('Control de Energías');
-    if (permit.izajeCargas) workTypes.push('Izaje de Cargas');
-    if (permit.trabajoCaliente) workTypes.push('Trabajo en Caliente');
-    if (permit.excavaciones) workTypes.push('Excavaciones');
-    if (permit.trabajoGeneral) workTypes.push('Trabajo General');
-    
-    // Fallback al campo workType array (compatibilidad)
-    if (workTypes.length === 0 && permit.workType && Array.isArray(permit.workType)) {
-      const workTypesMap: {[key: string]: string} = {
-        'altura': 'Trabajo en Alturas',
-        'confinado': 'Espacios Confinados',
-        'energia': 'Control de Energías',
-        'izaje': 'Izaje de Cargas',
-        'caliente': 'Trabajo en Caliente',
-        'excavacion': 'Excavaciones',
-        'general': 'Trabajo en General'
-      };
-      return permit.workType.map(key => workTypesMap[key] || key).join(', ');
-    }
+    if (!permit.selectedWorkTypes) return 'Trabajo General';
+
+    if (permit.selectedWorkTypes.alturas) workTypes.push('Trabajo en Alturas');
+    if (permit.selectedWorkTypes.confinado) workTypes.push('Espacios Confinados');
+    if (permit.selectedWorkTypes.energia) workTypes.push('Control de Energías');
+    if (permit.selectedWorkTypes.izaje) workTypes.push('Izaje de Cargas');
+    if (permit.selectedWorkTypes.caliente) workTypes.push('Trabajo en Caliente');
+    if (permit.selectedWorkTypes.excavacion) workTypes.push('Excavaciones');
+    if (permit.selectedWorkTypes.general) workTypes.push('Trabajo General');
     
     return workTypes.length > 0 ? workTypes.join(', ') : 'Trabajo General';
   };
@@ -1005,7 +991,7 @@ export default function PermitDetailPage() {
 
 
                 {/* Sección de Anexo Altura */}
-                {permit.trabajoAlturas && permit.anexoAltura && (
+                {permit.selectedWorkTypes?.alturas && permit.anexoAltura && (
                     <Collapsible defaultOpen>
                        <CollapsibleTrigger className="w-full">
                            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg cursor-pointer">
@@ -1036,7 +1022,7 @@ export default function PermitDetailPage() {
                 )}
                 
                 {/* Sección de Anexo Confinado */}
-                {permit.espaciosConfinados && permit.anexoConfinado && (
+                {permit.selectedWorkTypes?.confinado && permit.anexoConfinado && (
                    <Collapsible defaultOpen>
                         <CollapsibleTrigger className="w-full">
                            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg cursor-pointer">
@@ -1074,7 +1060,7 @@ export default function PermitDetailPage() {
                    </Collapsible>
                 )}
                  {/* Sección de Anexo Energias */}
-                {permit.controlEnergia && permit.anexoEnergias && (
+                {permit.selectedWorkTypes?.energia && permit.anexoEnergias && (
                    <Collapsible defaultOpen>
                         <CollapsibleTrigger className="w-full">
                            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg cursor-pointer">
@@ -1090,7 +1076,7 @@ export default function PermitDetailPage() {
                    </Collapsible>
                 )}
                  {/* Sección de Anexo Izaje */}
-                {permit.izajeCargas && permit.anexoIzaje && (
+                {permit.selectedWorkTypes?.izaje && permit.anexoIzaje && (
                    <Collapsible defaultOpen>
                         <CollapsibleTrigger className="w-full">
                            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg cursor-pointer">
@@ -1108,7 +1094,7 @@ export default function PermitDetailPage() {
                    </Collapsible>
                 )}
                  {/* Sección de Anexo Excavaciones */}
-                {permit.excavaciones && permit.anexoExcavaciones && (
+                {permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones && (
                    <Collapsible defaultOpen>
                         <CollapsibleTrigger className="w-full">
                            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg cursor-pointer">
@@ -1163,7 +1149,7 @@ export default function PermitDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
                             if (role === 'mantenimiento' && !permit.controlEnergia) return null;
-                            if (role === 'coordinador_alturas' && !permit.trabajoAlturas) return null;
+                            if (role === 'coordinador_alturas' && !permit.selectedWorkTypes?.alturas) return null;
                             
                             const approval = permit.approvals?.[role as keyof typeof permit.approvals];
                             const { can, reason } = canSign(role);

@@ -242,6 +242,22 @@ function formReducer(state, action) {
             // This is a simplified example
             console.log('Signature update needs to be implemented in reducer:', action.payload);
             return state;
+        case 'SET_ENTIRE_STATE':
+            const { payload } = action;
+            // Reconstruct the state from the payload, providing defaults for any missing pieces
+            return {
+                generalInfo: payload.generalInfo || initialState.generalInfo,
+                selectedWorkTypes: payload.selectedWorkTypes || initialState.selectedWorkTypes,
+                anexoATS: payload.anexoATS || initialState.anexoATS,
+                anexoAltura: payload.anexoAltura || initialState.anexoAltura,
+                anexoConfinado: payload.anexoConfinado || initialState.anexoConfinado,
+                anexoEnergias: payload.anexoEnergias || initialState.anexoEnergias,
+                anexoIzaje: payload.anexoIzaje || initialState.anexoIzaje,
+                anexoExcavaciones: payload.anexoExcavaciones || initialState.anexoExcavaciones,
+                verificacionPeligros: payload.verificacionPeligros || initialState.verificacionPeligros,
+                eppEmergencias: payload.eppEmergencias || initialState.eppEmergencias,
+                workers: payload.workers || initialState.workers
+            };
         case 'RESET_FORM':
             return initialState;
         default:
@@ -260,7 +276,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 236,
+        lineNumber: 254,
         columnNumber: 5
     }, this);
 }
