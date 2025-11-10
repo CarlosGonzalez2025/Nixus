@@ -373,14 +373,21 @@ export default function PermitsPage() {
                   <TableCell className="text-sm">
                     {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm", { locale: es }) : 'N/A'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right flex items-center justify-end gap-2">
                     {permit.status === 'borrador' ? (
-                       <Button asChild variant="outline" size="sm">
-                          <Link href={`/permits/create?edit=${permit.id}`}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Continuar
-                          </Link>
+                       <>
+                        <Button asChild variant="ghost" size="sm">
+                            <Link href={`/permits/${permit.id}`}>
+                                Ver Detalles
+                            </Link>
                         </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/permits/create?edit=${permit.id}`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Continuar
+                            </Link>
+                        </Button>
+                       </>
                     ) : (
                        <Button asChild variant="outline" size="sm">
                           <Link href={`/permits/${permit.id}`}>
