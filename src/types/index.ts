@@ -67,6 +67,8 @@ export type PermitClosure = {
   validezHasta: string;
   fechaCierre: string;
   horaCierre: string;
+  autoridad?: Partial<AutorizacionPersona>;
+  responsable?: Partial<AutorizacionPersona>;
 }
 
 export type JustificacionATS = {
@@ -121,14 +123,14 @@ export type AnexoAltura = {
     responsable: ValidacionDiaria[];
   };
   cancelacion?: {
-    seCancelo: 'si' | 'no';
+    seCancelo: 'si' | 'no' | 'na';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
   cierre?: {
-    seTermino: 'si' | 'no';
+    seTermino: 'si' | 'no' | 'na';
     observaciones: string;
     autoridad?: Partial<AutorizacionPersona>;
     responsable?: Partial<AutorizacionPersona>;
@@ -190,14 +192,14 @@ export type AnexoConfinado = {
     responsable: ValidacionDiaria[];
   };
   cancelacion?: {
-    seCancelo: 'si' | 'no';
+    seCancelo: 'si' | 'no' | 'na';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
   cierre?: {
-    seTermino: 'si' | 'no';
+    seTermino: 'si' | 'no' | 'na';
     observaciones: string;
     autoridad?: Partial<AutorizacionPersona>;
     responsable?: Partial<AutorizacionPersona>;
@@ -260,14 +262,14 @@ export type AnexoIzaje = {
     responsable: ValidacionDiaria[];
   };
   cancelacion?: {
-    seCancelo: 'si' | 'no';
+    seCancelo: 'si' | 'no' | 'na';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
   cierre?: {
-    seTermino: 'si' | 'no';
+    seTermino: 'si' | 'no' | 'na';
     observaciones: string;
     autoridad?: Partial<AutorizacionPersona>;
     responsable?: Partial<AutorizacionPersona>;
@@ -294,14 +296,14 @@ export type AnexoExcavaciones = {
     responsable: ValidacionDiaria[];
   };
   cancelacion?: {
-    seCancelo: 'si' | 'no';
+    seCancelo: 'si' | 'no' | 'na';
     razon: string;
     nombre: string;
     firma: string;
     fecha: string;
   };
   cierre?: {
-    seTermino: 'si' | 'no';
+    seTermino: 'si' | 'no' | 'na';
     observaciones: string;
     autoridad?: Partial<AutorizacionPersona>;
     responsable?: Partial<AutorizacionPersona>;
@@ -407,3 +409,4 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
+

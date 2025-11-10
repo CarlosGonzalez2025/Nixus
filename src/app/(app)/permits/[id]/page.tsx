@@ -79,6 +79,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 // ✅ Helper function to handle different date formats
@@ -957,9 +958,10 @@ export default function PermitDetailPage() {
 
     const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
         const renderRows = (type: 'autoridad' | 'responsable') => {
-            const data = validationData?.[type] || [];
             return Array(7).fill(0).map((_, i) => {
-                const v = data[i];
+                const v = validationData?.[type]?.[i];
+                const canSignValidation = currentUser?.uid === permit.createdBy && !v?.firma;
+
                 return (
                     <TableRow key={`${type}-${i}`}>
                         <TableCell>{i + 1}</TableCell>
@@ -968,14 +970,21 @@ export default function PermitDetailPage() {
                             {v?.firma ? (
                                 <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
                             ) : (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openDailyValidationSignatureDialog(anexoName, type, i)}
-                                    disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v?.firma}
-                                >
-                                    <SignatureIcon className="h-4 w-4" />
-                                </Button>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => openDailyValidationSignatureDialog(anexoName, type, i)}
+                                                disabled={!canSignValidation}
+                                            >
+                                                <SignatureIcon className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        {!canSignValidation && <TooltipContent>Solo el creador del permiso puede registrar esta firma.</TooltipContent>}
+                                    </Tooltip>
+                                </TooltipProvider>
                             )}
                         </TableCell>
                         <TableCell>{v?.fecha || 'N/A'}</TableCell>
@@ -1377,6 +1386,67 @@ export default function PermitDetailPage() {
                         </div>
                     </div>
                 </Section>
+
+                 {/* Sección de Cancelación y Cierre */}
+                {isApproved && (
+                    <Collapsible>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg cursor-pointer mt-8">
+                              <h3 className="text-lg font-bold text-gray-700 flex items-center gap-2"><Lock /> Cancelación y Cierre</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Columna de Cancelación */}
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                    <h4 className="font-bold text-md">Cancelación del Trabajo</h4>
+                                    <div className="flex justify-between items-center p-3 border rounded-md bg-white">
+                                        <Label className="text-sm font-medium">¿Se canceló el trabajo?</Label>
+                                        <RadioGroup className="flex gap-4">
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" /><Label>SI</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" /><Label>NO</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="na" /><Label>N/A</Label></div>
+                                        </RadioGroup>
+                                    </div>
+                                    <Textarea placeholder="Razón de la cancelación" />
+                                    <Input placeholder="Nombre de quien cancela" />
+                                    <Input type="date" />
+                                    <Button variant="outline" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cancelación</Button>
+                                </div>
+                                
+                                {/* Columna de Cierre */}
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                    <h4 className="font-bold text-md">Cierre del Permiso</h4>
+                                     <div className="flex justify-between items-center p-3 border rounded-md bg-white">
+                                        <Label className="text-sm font-medium">¿Se terminó el trabajo?</Label>
+                                        <RadioGroup className="flex gap-4">
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" /><Label>SI</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" /><Label>NO</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="na" /><Label>N/A</Label></div>
+                                        </RadioGroup>
+                                    </div>
+                                    <Textarea placeholder="Observaciones de cierre" />
+
+                                    <div className="p-3 border rounded-md space-y-3">
+                                        <h5 className="text-sm font-semibold">Autoridad del Área</h5>
+                                        <Input placeholder="Nombre" />
+                                        <Input type="date" />
+                                        <Button variant="outline" size="sm" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                    </div>
+
+                                    <div className="p-3 border rounded-md space-y-3">
+                                        <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
+                                        <Input placeholder="Nombre" />
+                                        <Input type="date" />
+                                        <Button variant="outline" size="sm" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
+
             </div>
              <footer className="text-center text-xs text-gray-400 py-4 mt-8">
                 <p>Código: DN-FR-SST-016</p>
@@ -1450,6 +1520,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
