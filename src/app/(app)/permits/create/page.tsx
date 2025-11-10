@@ -379,11 +379,15 @@ function CreatePermitWizard() {
     }
     
     if (currentLabel === 'Anexo Energías') {
-      const anexo = formData.anexoEnergias;
-      if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente.otro as string)?.trim()) {
-        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
-        return false;
-      }
+        const anexo = formData.anexoEnergias;
+        if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente?.otro as string)?.trim()) {
+          toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
+          return false;
+        }
+        if (anexo?.energiasPeligrosas?.otra && !(anexo.energiasPeligrosas?.otra as string)?.trim()) {
+          toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' tipo de energía peligrosa." });
+          return false;
+        }
     }
 
     return true;
