@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones, ValidacionDiaria } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones, ValidacionDiaria, AutorizacionPersona } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -922,7 +922,7 @@ export default function PermitDetailPage() {
                     <Clock className="h-5 w-5" />
                     <span className="font-bold text-sm">Pendiente de Firma</span>
                   </div>
-                  {consentText && (
+                  {consentText && can && (
                     <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
                       {consentText}
                     </p>
@@ -1520,6 +1520,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
