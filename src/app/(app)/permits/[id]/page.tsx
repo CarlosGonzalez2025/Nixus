@@ -956,72 +956,56 @@ export default function PermitDetailPage() {
     };
 
     const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
-      return (
-        <Section title="Validación Diaria">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-4 border rounded-lg space-y-2">
-              <h4 className="font-semibold">Autoridad del Área</h4>
-              <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
-              <Table>
-                <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {(validationData?.autoridad || []).map((v, i) => (
-                    <TableRow key={`autoridad-${i}`}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{v.nombre || 'N/A'}</TableCell>
-                      <TableCell>
-                        {v.firma ? (
-                          <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => openDailyValidationSignatureDialog(anexoName, 'autoridad', i)}
-                            disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v.firma}
-                          >
-                            <SignatureIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell>{v.fecha || 'N/A'}</TableCell>
+        const renderRows = (type: 'autoridad' | 'responsable') => {
+            const data = validationData?.[type] || [];
+            return Array(7).fill(0).map((_, i) => {
+                const v = data[i];
+                return (
+                    <TableRow key={`${type}-${i}`}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell>{v?.nombre || 'N/A'}</TableCell>
+                        <TableCell>
+                            {v?.firma ? (
+                                <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
+                            ) : (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => openDailyValidationSignatureDialog(anexoName, type, i)}
+                                    disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v?.firma}
+                                >
+                                    <SignatureIcon className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </TableCell>
+                        <TableCell>{v?.fecha || 'N/A'}</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="p-4 border rounded-lg space-y-2">
-              <h4 className="font-semibold">Responsable del Trabajo</h4>
-              <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
-              <Table>
-                <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
-                <TableBody>
-                   {(validationData?.responsable || []).map((v, i) => (
-                    <TableRow key={`responsable-${i}`}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{v.nombre || 'N/A'}</TableCell>
-                      <TableCell>
-                        {v.firma ? (
-                          <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => openDailyValidationSignatureDialog(anexoName, 'responsable', i)}
-                            disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v.firma}
-                          >
-                            <SignatureIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell>{v.fecha || 'N/A'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </Section>
-      );
+                );
+            });
+        };
+
+        return (
+            <Section title="Validación Diaria">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-semibold">Autoridad del Área</h4>
+                        <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
+                            <TableBody>{renderRows('autoridad')}</TableBody>
+                        </Table>
+                    </div>
+                    <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-semibold">Responsable del Trabajo</h4>
+                        <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
+                            <TableBody>{renderRows('responsable')}</TableBody>
+                        </Table>
+                    </div>
+                </div>
+            </Section>
+        );
     };
   
     return (
@@ -1332,7 +1316,6 @@ export default function PermitDetailPage() {
 
                 {/* Sección de Personal */}
                 <Section title="Personal Autorizado y Externo">
-                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -1378,7 +1361,6 @@ export default function PermitDetailPage() {
                         ))}
                       </TableBody>
                     </Table>
-                  </div>
                 </Section>
                 
                  {/* Sección de Firmas de Aprobación */}
@@ -1407,8 +1389,8 @@ export default function PermitDetailPage() {
                 <DialogHeader>
                     <DialogTitle>Registrar Firma para {signingRole ? signatureRoles[signingRole.role] : ''}</DialogTitle>
                 </DialogHeader>
-                {signingRole?.role === 'coordinador_alturas' && (
-                    <div className="space-y-2">
+                 {signingRole?.role === 'coordinador_alturas' && (
+                    <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">{signatureConsents.coordinador_alturas}</p>
                         <div className="space-y-1">
                             <Label htmlFor="signerName">Nombre del Coordinador</Label>
@@ -1468,6 +1450,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
