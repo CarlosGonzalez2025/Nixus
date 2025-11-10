@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -215,9 +215,12 @@ export async function addSignatureAndNotify(
 
             // Si es el solicitante quien firma, cambiamos el estado y generamos el número.
             if (role === 'solicitante') {
-                const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
-                updateData['number'] = permitNumber;
-                updateData['status'] = 'pendiente_revision';
+                const permitDocBefore = await docRef.get();
+                if (permitDocBefore.exists() && permitDocBefore.data()?.status === 'borrador') {
+                  const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
+                  updateData['number'] = permitNumber;
+                  updateData['status'] = 'pendiente_revision';
+                }
             }
         }
         
@@ -322,4 +325,42 @@ ${permitUrl}`;
             error: error.message || 'Could not update permit status.'
         };
     }
+}
+
+export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria) {
+  if (!permitId || !anexoName || !validationType || index === undefined || !data) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+
+  try {
+    const docRef = adminDb.collection('permits').doc(permitId);
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    const anexoData = permitData[anexoName as keyof Permit] as any;
+    if (!anexoData || !anexoData.validacion) {
+      return { success: false, error: `El anexo ${anexoName} no está configurado para validación diaria.` };
+    }
+
+    const validationArray = anexoData.validacion[validationType] as ValidacionDiaria[];
+    if (!validationArray || index < 0 || index >= validationArray.length) {
+      return { success: false, error: `Índice de validación fuera de rango.` };
+    }
+
+    validationArray[index] = data;
+
+    await docRef.update({
+      [`${anexoName}.validacion.${validationType}`]: validationArray
+    });
+
+    revalidatePath(`/permits/${permitId}`);
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("❌ Error al guardar la validación diaria:", error);
+    return { success: false, error: 'No se pudo guardar la firma de validación.' };
+  }
 }

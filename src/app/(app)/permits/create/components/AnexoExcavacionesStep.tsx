@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -198,88 +199,6 @@ export function AnexoExcavacionesStep() {
                     </div>
                 </div>
             </SectionWrapper>
-             <SectionWrapper title="Validación y Cierre">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="p-4 border rounded-lg space-y-2">
-                        <h4 className="font-semibold">Autoridad del Área</h4>
-                        <p className='text-xs text-muted-foreground'>Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas.</p>
-                         <Table>
-                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {(anexoExcavaciones.validacion?.autoridad || []).map((v, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{i + 1}</TableCell>
-                                        <TableCell><Input value={v.nombre} onChange={(e) => handleListChange('validacion', 'autoridad', i, 'nombre', e.target.value)} className="h-8" /></TableCell>
-                                        <TableCell><Button variant="ghost" size="icon" onClick={() => openSignatureDialog('validacion.autoridad', undefined, i)}><Signature className="h-4 w-4"/></Button></TableCell>
-                                        <TableCell><Input type="date" value={v.fecha} onChange={(e) => handleListChange('validacion', 'autoridad', i, 'fecha', e.target.value)} className="h-8" /></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                         </Table>
-                    </div>
-                    <div className="p-4 border rounded-lg space-y-2">
-                        <h4 className="font-semibold">Responsable del Trabajo/Ejecutor</h4>
-                        <p className='text-xs text-muted-foreground'>Entiendo todas las condiciones de este trabajo y la responsabilidad de implementar las medidas de control establecidas.</p>
-                         <Table>
-                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {(anexoExcavaciones.validacion?.responsable || []).map((v, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{i + 1}</TableCell>
-                                        <TableCell><Input value={v.nombre} onChange={(e) => handleListChange('validacion', 'responsable', i, 'nombre', e.target.value)} className="h-8" /></TableCell>
-                                        <TableCell><Button variant="ghost" size="icon" onClick={() => openSignatureDialog('validacion.responsable', undefined, i)}><Signature className="h-4 w-4"/></Button></TableCell>
-                                        <TableCell><Input type="date" value={v.fecha} onChange={(e) => handleListChange('validacion', 'responsable', i, 'fecha', e.target.value)} className="h-8" /></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                         </Table>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div className="space-y-4 p-4 border rounded-lg">
-                        <h3 className="font-semibold">Cancelación del Trabajo</h3>
-                        <RadioGroup value={anexoExcavaciones.cancelacion?.seCancelo || 'no'} onValueChange={(v) => handleNestedChange('cancelacion', 'seCancelo', v)} className="flex gap-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cancel-si" /><Label htmlFor="cancel-si">SI</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cancel-no" /><Label htmlFor="cancel-no">NO</Label></div>
-                        </RadioGroup>
-                        {anexoExcavaciones.cancelacion?.seCancelo === 'si' && (
-                            <div className="space-y-3">
-                                <Textarea placeholder="Razón de la cancelación" value={anexoExcavaciones.cancelacion.razon || ''} onChange={(e) => handleNestedChange('cancelacion', 'razon', e.target.value)} />
-                                <Input placeholder="Nombre de quien cancela" value={anexoExcavaciones.cancelacion.nombre || ''} onChange={(e) => handleNestedChange('cancelacion', 'nombre', e.target.value)} />
-                                <Input type="date" value={anexoExcavaciones.cancelacion.fecha || ''} onChange={(e) => handleNestedChange('cancelacion', 'fecha', e.target.value)} />
-                                <Button variant="outline" className="w-full" onClick={() => openSignatureDialog('cancelacion')}><Signature className="mr-2"/>Firmar Cancelación</Button>
-                                {anexoExcavaciones.cancelacion?.firma && <img src={anexoExcavaciones.cancelacion.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
-                            </div>
-                        )}
-                    </div>
-                     <div className="space-y-4 p-4 border rounded-lg">
-                        <h3 className="font-semibold">Cierre del Permiso</h3>
-                         <RadioGroup value={anexoExcavaciones.cierre?.seTermino || 'no'} onValueChange={(v) => handleNestedChange('cierre', 'seTermino', v)} className="flex gap-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="cierre-si" /><Label htmlFor="cierre-si">SI</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cierre-no" /><Label htmlFor="cierre-no">NO</Label></div>
-                        </RadioGroup>
-                        {anexoExcavaciones.cierre?.seTermino === 'si' && (
-                            <div className="space-y-3">
-                                <Textarea placeholder="Observaciones de cierre" value={anexoExcavaciones.cierre.observaciones || ''} onChange={(e) => handleNestedChange('cierre', 'observaciones', e.target.value)} />
-                                <div className="p-3 border rounded-md">
-                                    <p className="text-xs font-bold">Autoridad del Área</p>
-                                    <Input placeholder="Nombre" value={anexoExcavaciones.cierre.autoridad?.nombre || ''} onChange={(e) => handleNestedChange('cierre', 'autoridad', { ...anexoExcavaciones.cierre.autoridad, nombre: e.target.value })} />
-                                    <Input type="date" className="mt-2" value={anexoExcavaciones.cierre.autoridad?.fecha || ''} onChange={(e) => handleNestedChange('cierre', 'autoridad', { ...anexoExcavaciones.cierre.autoridad, fecha: e.target.value })} />
-                                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre.autoridad')}><Signature className="mr-2"/>Firmar Cierre</Button>
-                                    {anexoExcavaciones.cierre.autoridad?.firma && <img src={anexoExcavaciones.cierre.autoridad.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
-                                </div>
-                                <div className="p-3 border rounded-md">
-                                    <p className="text-xs font-bold">Responsable del Trabajo</p>
-                                    <Input placeholder="Nombre" value={anexoExcavaciones.cierre.responsable?.nombre || ''} onChange={(e) => handleNestedChange('cierre', 'responsable', { ...anexoExcavaciones.cierre.responsable, nombre: e.target.value })} />
-                                    <Input type="date" className="mt-2" value={anexoExcavaciones.cierre.responsable?.fecha || ''} onChange={(e) => handleNestedChange('cierre', 'responsable', { ...anexoExcavaciones.cierre.responsable, fecha: e.target.value })} />
-                                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => openSignatureDialog('cierre.responsable')}><Signature className="mr-2"/>Firmar Cierre</Button>
-                                    {anexoExcavaciones.cierre.responsable?.firma && <img src={anexoExcavaciones.cierre.responsable.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-             </SectionWrapper>
             
             <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
                 <DialogContent>

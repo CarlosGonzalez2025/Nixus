@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones, ValidacionDiaria } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -64,7 +64,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updatePermitStatus, addSignatureAndNotify } from '../actions';
+import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature } from '../actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -203,6 +203,12 @@ export default function PermitDetailPage() {
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   
   const [isSolicitanteSignAlertOpen, setIsSolicitanteSignAlertOpen] = useState(false);
+  
+  const [isDailyValidationSignatureOpen, setIsDailyValidationSignatureOpen] = useState(false);
+  const [dailyValidationTarget, setDailyValidationTarget] = useState<{anexo: string, type: 'autoridad' | 'responsable', index: number} | null>(null);
+  const [dailyValidationName, setDailyValidationName] = useState('');
+  const [dailyValidationDate, setDailyValidationDate] = useState('');
+
 
   useEffect(() => {
     if (!permitId) {
@@ -657,6 +663,48 @@ export default function PermitDetailPage() {
     });
   }
 
+  const openDailyValidationSignatureDialog = (anexo: string, type: 'autoridad' | 'responsable', index: number) => {
+    setDailyValidationTarget({ anexo, type, index });
+    setDailyValidationName('');
+    setDailyValidationDate(format(new Date(), 'yyyy-MM-dd'));
+    setIsDailyValidationSignatureOpen(true);
+  };
+  
+  const handleSaveDailyValidationSignature = async (signature: string) => {
+    if (!permit || !dailyValidationTarget || !dailyValidationName.trim() || !dailyValidationDate) {
+      toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, complete nombre y fecha.' });
+      return;
+    }
+    
+    setIsSigning(true);
+    try {
+      const result = await addDailyValidationSignature(
+        permit.id,
+        dailyValidationTarget.anexo,
+        dailyValidationTarget.type,
+        dailyValidationTarget.index,
+        {
+          dia: dailyValidationTarget.index + 1,
+          nombre: dailyValidationName,
+          fecha: dailyValidationDate,
+          firma: signature,
+        }
+      );
+
+      if(result.success) {
+        toast({ title: 'Validación Diaria Guardada' });
+        setIsDailyValidationSignatureOpen(false);
+      } else {
+        throw new Error(result.error);
+      }
+
+    } catch(e: any) {
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
 
   if (loading || userLoading) {
     return (
@@ -686,6 +734,8 @@ export default function PermitDetailPage() {
   }
   
   const statusInfo = getStatusInfo(permit.status);
+  const isApproved = ['aprobado', 'en_ejecucion', 'suspendido'].includes(permit.status);
+
 
   const getWorkTypesString = (permit: Permit): string => {
     const workTypes: string[] = [];
@@ -905,6 +955,61 @@ export default function PermitDetailPage() {
         </Card>
       );
     };
+
+    const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
+      return (
+        <Section title="Validación Diaria">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="p-4 border rounded-lg space-y-2">
+              <h4 className="font-semibold">Autoridad del Área</h4>
+              <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
+              <Table>
+                <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(validationData?.autoridad || []).map((v, i) => (
+                    <TableRow key={`autoridad-${i}`}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{v.nombre || 'N/A'}</TableCell>
+                      <TableCell>
+                        {v.firma ? (
+                          <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
+                        ) : (
+                          <Button variant="ghost" size="icon" onClick={() => openDailyValidationSignatureDialog(anexoName, 'autoridad', i)}><SignatureIcon className="h-4 w-4" /></Button>
+                        )}
+                      </TableCell>
+                      <TableCell>{v.fecha || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="p-4 border rounded-lg space-y-2">
+              <h4 className="font-semibold">Responsable del Trabajo</h4>
+              <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
+              <Table>
+                <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
+                <TableBody>
+                   {(validationData?.responsable || []).map((v, i) => (
+                    <TableRow key={`responsable-${i}`}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{v.nombre || 'N/A'}</TableCell>
+                      <TableCell>
+                        {v.firma ? (
+                          <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
+                        ) : (
+                          <Button variant="ghost" size="icon" onClick={() => openDailyValidationSignatureDialog(anexoName, 'responsable', i)}><SignatureIcon className="h-4 w-4" /></Button>
+                        )}
+                      </TableCell>
+                      <TableCell>{v.fecha || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </Section>
+      );
+    };
   
     return (
       <div className="flex flex-1 flex-col bg-gray-50/50">
@@ -1111,6 +1216,7 @@ export default function PermitDetailPage() {
                                ))}
                              </div>
                            </Section>
+                           {isApproved && <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1150,6 +1256,7 @@ export default function PermitDetailPage() {
                                 </TableBody>
                               </Table>
                            </Section>
+                           {isApproved && <DailyValidationTable anexoName="anexoConfinado" validationData={permit.anexoConfinado.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1184,6 +1291,7 @@ export default function PermitDetailPage() {
                                 <Field label="Peso de la Carga" value={Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
                                 <Field label="Equipo a Utilizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
                            </Section>
+                           {isApproved && <DailyValidationTable anexoName="anexoIzaje" validationData={permit.anexoIzaje.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1203,6 +1311,7 @@ export default function PermitDetailPage() {
                                 <Field label="Ancho" value={permit.anexoExcavaciones.informacionGeneral.ancho} />
                                 <Field label="Largo" value={permit.anexoExcavaciones.informacionGeneral.largo} />
                            </Section>
+                           {isApproved && <DailyValidationTable anexoName="anexoExcavaciones" validationData={permit.anexoExcavaciones.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1323,9 +1432,30 @@ export default function PermitDetailPage() {
             </AlertDialogContent>
         </AlertDialog>
 
+        <Dialog open={isDailyValidationSignatureOpen} onOpenChange={setIsDailyValidationSignatureOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Registrar Validación Diaria</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Confirme las condiciones de seguridad para continuar con el trabajo hoy.</p>
+              <div>
+                <Label htmlFor="daily-validation-name">Nombre</Label>
+                <Input id="daily-validation-name" value={dailyValidationName} onChange={(e) => setDailyValidationName(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="daily-validation-date">Fecha</Label>
+                <Input id="daily-validation-date" type="date" value={dailyValidationDate} onChange={(e) => setDailyValidationDate(e.target.value)} />
+              </div>
+            </div>
+            <SignaturePad onSave={handleSaveDailyValidationSignature} isSaving={isSigning} />
+          </DialogContent>
+        </Dialog>
+
       </div>
   );
 }
+
 
 
 
