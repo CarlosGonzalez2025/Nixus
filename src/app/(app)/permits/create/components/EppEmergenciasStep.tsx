@@ -107,7 +107,7 @@ export const eppItems = [
     { id: 'guantesSustanciasQuimicas', label: 'Guantes sustancias químicas', manual: false },
     { id: 'guantesTemperatura', label: 'Guantes temperatura', manual: false },
     { id: 'arnes', label: 'Arnés, Tipo:', manual: true },
-    { id: 'mosqueton', label: 'Mosquetón', manual: true },
+    { id: 'mosqueton', label: 'Mosquetón', manual: false },
     { id: 'eslinga', label: 'Eslinga, Tipo:', manual: true },
     { id: 'lineaVida', label: 'Línea de vida, Tipo:', manual: true },
     { id: 'puntoAnclaje', label: 'Punto de anclaje (Cual):', manual: true },

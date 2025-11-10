@@ -12381,7 +12381,7 @@ const eppItems = [
     {
         id: 'proteccionCuerpoSoldador',
         label: 'Protección cuerpo para soldador',
-        manual: true
+        manual: false
     },
     {
         id: 'casco',
@@ -12581,7 +12581,7 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                             selectOptions: item.selectOptions,
                             inputValue: eppEmergencias.epp?.[`${item.id}_manual`] || '',
                             onInputChange: (value)=>handleUpdate('epp', `${item.id}_manual`, value),
-                            placeholder: item.isSelect ? 'Seleccione tipo' : "Agregar tipo manualmente"
+                            placeholder: item.isSelect ? 'Seleccione tipo' : "Especificar..."
                         }, item.id, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
                             lineNumber: 155,
