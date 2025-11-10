@@ -317,8 +317,8 @@ const getStatusText = (status)=>{
     return statusText[status] || status;
 };
 const signatureRoles = {
-    solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
-    autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+    solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+    autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
     mantenimiento: 'PERSONAL DE MANTENIMIENTO',
     lider_sst: 'AREA SST (si aplica)'
 };

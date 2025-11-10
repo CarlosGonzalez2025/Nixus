@@ -471,24 +471,25 @@ function CreatePermitWizard() {
 
     setIsSubmitting(true);
     try {
-      const result = await createPermit({
-          userId: user.uid, 
-          userDisplayName: user.displayName || null, 
-          userEmail: user.email || null,
-          userPhotoURL: user.photoURL || null,
-          ...formData
-        });
-      
+      const result = await savePermitDraft({
+        userId: user.uid,
+        userDisplayName: user.displayName || null,
+        userEmail: user.email || null,
+        userPhotoURL: user.photoURL || null,
+        draftId: draftId,
+        ...formData,
+      });
+
       if (result.success && result.permitId) {
-        setNewPermitInfo({
-            id: result.permitId,
-            number: result.permitNumber || '',
+        toast({
+          title: 'Borrador Guardado',
+          description: 'Será redirigido para firmar y activar el permiso.',
         });
-        setShowSuccessDialog(true);
+        // Redirect to the permit detail page to finalize and sign
+        router.push(`/permits/${result.permitId}`);
       } else {
-        throw new Error(result.error || 'Hubo un error creando el permiso.');
+        throw new Error(result.error || 'Hubo un error guardando el permiso.');
       }
-      
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -677,22 +678,22 @@ function CreatePermitWizard() {
                             {isSubmitting ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
-                            <CheckCircle size={22} className="mr-2" />
+                            <Save size={22} className="mr-2" />
                             )}
-                            <span>Enviar</span>
+                            <span>Guardar Permiso</span>
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>¿Está seguro de enviar el permiso?</AlertDialogTitle>
+                            <AlertDialogTitle>¿Está seguro de guardar el permiso?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Una vez que envíe el permiso para su aprobación, ya no podrá realizar modificaciones. Asegúrese de que toda la información es correcta.
+                                Se creará un borrador del permiso. Deberá ir a la página de detalles para firmar y activar el flujo de aprobación.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction onClick={handleSavePermit} disabled={isSubmitting}>
-                                 {isSubmitting ? 'Enviando...' : 'Sí, enviar ahora'}
+                                 {isSubmitting ? 'Guardando...' : 'Sí, guardar ahora'}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -813,3 +814,6 @@ export default function CreatePermitPage() {
   );
 }
 
+
+
+    
