@@ -53,11 +53,12 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst']: string } = {
+const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas']: string } = {
   solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   lider_sst: 'AREA SST (si aplica)',
+  coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
 };
 
 
@@ -79,7 +80,8 @@ export async function createPermit(data: PermitCreateData) {
     solicitante: { status: 'pendiente' as const },
     autorizante: { status: 'pendiente' as const },
     mantenimiento: { status: 'pendiente' as const },
-    lider_sst: { status: 'pendiente' as const }
+    lider_sst: { status: 'pendiente' as const },
+    coordinador_alturas: { status: 'pendiente' as const },
   };
 
   const permitPayload: Partial<Permit> = {
@@ -139,6 +141,14 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 
   const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
 
+  const initialApprovals = {
+    solicitante: { status: 'pendiente' as const },
+    autorizante: { status: 'pendiente' as const },
+    mantenimiento: { status: 'pendiente' as const },
+    lider_sst: { status: 'pendiente' as const },
+    coordinador_alturas: { status: 'pendiente' as const },
+  };
+
   const permitPayload: Partial<Permit> = {
     ...permitData,
     status: 'borrador' as const,
@@ -148,6 +158,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
       email: userEmail,
       photoURL: userPhotoURL,
     },
+    approvals: initialApprovals,
   };
 
   try {
@@ -177,7 +188,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 
 export async function addSignatureAndNotify(
   permitId: string, 
-  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst', 
+  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: { uid: string, displayName: string | null }
@@ -204,8 +215,12 @@ export async function addSignatureAndNotify(
         if (signatureType === 'firmaApertura') {
             updateData[statusPath] = 'aprobado';
             updateData[signedAtPath] = FieldValue.serverTimestamp();
-        }
 
+            if (role === 'solicitante') {
+                updateData['status'] = 'pendiente_revision';
+            }
+        }
+        
         await docRef.update(updateData);
         
         const permitDoc = await docRef.get();

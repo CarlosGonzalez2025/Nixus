@@ -409,6 +409,7 @@ export type Permit = {
     autorizante: Partial<Approval>;
     mantenimiento: Partial<Approval>;
     lider_sst: Partial<Approval>;
+    coordinador_alturas: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
   anexoATS?: Partial<AnexoATS>;
@@ -421,5 +422,3 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
-
-    

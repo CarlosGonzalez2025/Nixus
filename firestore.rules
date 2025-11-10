@@ -45,6 +45,11 @@ service cloud.firestore {
     function isLiderTarea() {
       return getRole() == 'lider_tarea';
     }
+    
+    function isCoordinadorAlturas() {
+      // Por ahora, asumimos que el Líder SST puede actuar como coordinador
+      return isLiderSST();
+    }
 
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
@@ -78,24 +83,54 @@ service cloud.firestore {
         // Regla 1: Un admin puede hacer cualquier cambio.
         isAdmin() ||
         
-        // Regla 2: El creador del permiso (solicitante/lider_tarea) puede modificarlo si aún no ha firmado.
-        (isCreator(resource.data) && resource.data.approvals.solicitante.status == 'pendiente') ||
+        // Regla 2: El creador del permiso (solicitante/lider_tarea) puede modificarlo si está en estado borrador.
+        (isCreator(resource.data) && resource.data.status == 'borrador') ||
 
-        // Regla 3: Un usuario puede firmar su propia aprobación si el permiso está pendiente y se cumple la secuencia.
+        // Regla 3: Un usuario puede firmar su propia aprobación si se cumple la secuencia.
         (
-          isSignedIn() && resource.data.status == 'pendiente_revision' &&
+          isSignedIn() &&
           (
-            // Solicitante firma (es el primero, no tiene pre-condición)
-            (isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.solicitante.status == 'pendiente') ||
+            // Coordinador de Alturas firma primero (si aplica)
+            (
+                resource.data.trabajoAlturas == true && isCoordinadorAlturas() &&
+                request.resource.data.approvals.coordinador_alturas.status == 'aprobado' &&
+                resource.data.approvals.coordinador_alturas.status == 'pendiente'
+            ) ||
+            
+            // Solicitante firma (después del coordinador de alturas si aplica)
+            (
+                isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' &&
+                resource.data.approvals.solicitante.status == 'pendiente' &&
+                (resource.data.trabajoAlturas == false || resource.data.approvals.coordinador_alturas.status == 'aprobado') &&
+                // Al firmar el solicitante, el estado cambia
+                request.resource.data.status == 'pendiente_revision'
+            ) ||
             
             // Autorizante firma DESPUÉS del solicitante
-            (isAutorizante() && resource.data.approvals.solicitante.status == 'aprobado' && request.resource.data.approvals.autorizante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'pendiente') ||
+            (
+                resource.data.status == 'pendiente_revision' && isAutorizante() &&
+                resource.data.approvals.solicitante.status == 'aprobado' &&
+                request.resource.data.approvals.autorizante.status == 'aprobado' &&
+                resource.data.approvals.autorizante.status == 'pendiente'
+            ) ||
             
             // Mantenimiento firma DESPUÉS del autorizante (y solo si es trabajo de energía)
-            (isMantenimiento() && resource.data.controlEnergia == true && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.mantenimiento.status == 'aprobado' && resource.data.approvals.mantenimiento.status == 'pendiente') ||
+            (
+                resource.data.status == 'pendiente_revision' && isMantenimiento() &&
+                resource.data.controlEnergia == true &&
+                resource.data.approvals.autorizante.status == 'aprobado' &&
+                request.resource.data.approvals.mantenimiento.status == 'aprobado' &&
+                resource.data.approvals.mantenimiento.status == 'pendiente'
+            ) ||
             
             // SST firma DESPUÉS del autorizante
-            (isLiderSST() && resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'aprobado' && request.resource.data.approvals.lider_sst.status == 'aprobado' && resource.data.approvals.lider_sst.status == 'pendiente')
+            (
+                resource.data.status == 'pendiente_revision' && isLiderSST() &&
+                resource.data.approvals.solicitante.status == 'aprobado' &&
+                resource.data.approvals.autorizante.status == 'aprobado' &&
+                request.resource.data.approvals.lider_sst.status == 'aprobado' &&
+                resource.data.approvals.lider_sst.status == 'pendiente'
+            )
           )
         ) ||
         
