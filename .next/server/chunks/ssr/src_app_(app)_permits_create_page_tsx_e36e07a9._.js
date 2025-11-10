@@ -453,7 +453,7 @@ function CreatePermitWizard() {
         }
         if (currentLabel === 'Anexo Energías') {
             const anexo = formData.anexoEnergias;
-            if (anexo?.trabajosEnCaliente?.otro === 'si' && !anexo.trabajosEnCaliente?.otro?.trim()) {
+            if (anexo?.trabajosEnCaliente?.otro === 'si' && !anexo.trabajosEnCaliente?.otroCual?.trim()) {
                 toast({
                     variant: "destructive",
                     title: "Campo Requerido",
@@ -461,7 +461,7 @@ function CreatePermitWizard() {
                 });
                 return false;
             }
-            if (anexo?.energiasPeligrosas?.otra && !anexo.energiasPeligrosas?.otra?.trim()) {
+            if (anexo?.energiasPeligrosas?.otra && !anexo.energiasPeligrosas?.otraCual?.trim()) {
                 toast({
                     variant: "destructive",
                     title: "Campo Requerido",

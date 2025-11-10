@@ -92,7 +92,7 @@ const RadioGroupField: React.FC<{
 export const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: true },
-    { id: 'proteccionCuerpoSoldador', label: 'Proteccion cuerpo para soldador y/o', manual: true },
+    { id: 'proteccionCuerpoSoldador', label: 'Protección cuerpo para soldador', manual: true },
     { id: 'casco', label: 'Casco', manual: true, isSelect: true, selectOptions: ['Sin Barbuquejo', 'Con Barbuquejo'] },
     { id: 'chavoTelaCarnaza', label: 'Chavo en tela o carnaza', manual: false },
     { id: 'botasSeguridadDielectrica', label: 'Botas de seguridad + dielectrica', manual: false },
