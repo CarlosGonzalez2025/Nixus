@@ -343,16 +343,22 @@ function CreatePermitWizard() {
     }
     
     if (currentStepInfo.label === 'EPP y Emergencias') {
-        const eppData = formData.eppEmergencias.epp || {};
+        const eppData = formData.eppEmergencias?.epp || {};
         const missingSpecFields = [];
+
         for (const item of eppItems) {
+            // Check if the item is selected ('si') and requires manual input
             if (item.manual && eppData[item.id] === 'si') {
-                const specField = `${item.id}_manual`;
-                if (!eppData[specField] || (eppData[specField] as string).trim() === '') {
+                const specFieldKey = `${item.id}_manual`;
+                const specValue = eppData[specFieldKey] as string | undefined;
+
+                // If the manual spec field is missing or empty, add to missing fields list
+                if (!specValue || specValue.trim() === '') {
                     missingSpecFields.push(`'${item.label}'`);
                 }
             }
         }
+
         if (missingSpecFields.length > 0) {
             toast({
                 variant: "destructive",
@@ -426,7 +432,7 @@ function CreatePermitWizard() {
       case "Info General":
         return <GeneralInfoStep />;
       case "ATS":
-        return <AtsStep anexoATS={formData.anexoATS} onUpdateATS={handleUpdateATS} />;
+        return <AtsStep anexoATS={formData.anexoATS as AnexoATS} onUpdateATS={handleUpdateATS} />;
       case "Anexo Altura":
         return <AnexoAlturaStep />;
       case "Anexo Confinado":

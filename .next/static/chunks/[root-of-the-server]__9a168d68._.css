@@ -818,6 +818,10 @@ body {
   height: 15rem;
 }
 
+.h-64 {
+  height: 16rem;
+}
+
 .h-7 {
   height: 1.75rem;
 }
@@ -856,10 +860,6 @@ body {
 
 .h-svh {
   height: 100svh;
-}
-
-.h-64 {
-  height: 16rem;
 }
 
 .max-h-20 {
@@ -1790,11 +1790,6 @@ body {
 .px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
-}
-
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
 }
 
 .px-8 {
@@ -3489,9 +3484,9 @@ body {
     padding: 2rem;
   }
 
-  .md\:px-8 {
-    padding-left: 2rem;
-    padding-right: 2rem;
+  .md\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 
   .md\:py-4 {
@@ -3502,11 +3497,6 @@ body {
   .md\:py-6 {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
-  }
-
-  .md\:px-6 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
   }
 
   .md\:pb-24 {
