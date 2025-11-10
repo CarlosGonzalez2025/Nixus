@@ -289,7 +289,9 @@ function CreatePermitWizard() {
   const currentStepInfo = steps[step - 1];
 
   const canProceed = () => {
-    if (currentStepInfo.label === 'Info General') {
+    const currentLabel = steps[step - 1]?.label;
+
+    if (currentLabel === 'Info General') {
         const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores, responsable } = formData.generalInfo;
         const missingFields = [];
         if (!areaEspecifica) missingFields.push("Área específica");
@@ -303,9 +305,7 @@ function CreatePermitWizard() {
         if (!responsable?.cargo) missingFields.push("Cargo del Responsable");
         if (!responsable?.compania) missingFields.push("Compañía del Responsable");
 
-
-        const workTypes = formData.selectedWorkTypes;
-        if (!Object.values(workTypes).some(v => v)) {
+        if (!Object.values(formData.selectedWorkTypes).some(v => v)) {
             missingFields.push("Tipo de Trabajo (al menos uno)");
         }
 
@@ -314,15 +314,15 @@ function CreatePermitWizard() {
                 variant: "destructive",
                 title: "Campos Incompletos en Información General",
                 description: `Por favor, complete los siguientes campos obligatorios: ${missingFields.join(', ')}.`,
+                duration: 6000,
             });
             return false;
         }
     }
 
-    if (currentStepInfo.label === 'ATS') {
+    if (currentLabel === 'ATS') {
         const { peligros, justificacion } = formData.anexoATS;
-        const hasAtLeastOneHazard = peligros && Object.values(peligros).some(value => value === 'si');
-        if (!hasAtLeastOneHazard) {
+        if (!peligros || !Object.values(peligros).some(value => value === 'si')) {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
@@ -330,9 +330,7 @@ function CreatePermitWizard() {
             });
             return false;
         }
-
-        const hasAtLeastOneJustification = justificacion && Object.values(justificacion).some(value => value === true);
-        if (!hasAtLeastOneJustification) {
+        if (!justificacion || !Object.values(justificacion).some(value => value === true)) {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
@@ -341,23 +339,17 @@ function CreatePermitWizard() {
             return false;
         }
     }
-    
-    if (currentStepInfo.label === 'EPP y Emergencias') {
-        const eppData = formData.eppEmergencias?.epp || {};
-        const missingSpecFields = [];
 
-        for (const item of eppItems) {
-            // Check if the item is selected ('si') and requires manual input
-            if (item.manual && eppData[item.id] === 'si') {
+    if (currentLabel === 'EPP y Emergencias') {
+        const eppData = formData.eppEmergencias?.epp || {};
+        const missingSpecFields = eppItems
+            .filter(item => item.manual && eppData[item.id] === 'si')
+            .filter(item => {
                 const specFieldKey = `${item.id}_manual`;
                 const specValue = eppData[specFieldKey] as string | undefined;
-
-                // If the manual spec field is missing or empty, add to missing fields list
-                if (!specValue || specValue.trim() === '') {
-                    missingSpecFields.push(`'${item.label}'`);
-                }
-            }
-        }
+                return !specValue || specValue.trim() === '';
+            })
+            .map(item => `'${item.label}'`);
 
         if (missingSpecFields.length > 0) {
             toast({
@@ -370,6 +362,30 @@ function CreatePermitWizard() {
         }
     }
     
+    if (currentLabel === 'Anexo Altura') {
+      const anexo = formData.anexoAltura;
+      if (anexo?.tipoEstructura?.otros && !anexo.tipoEstructura.otrosCual?.trim()) {
+        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el otro tipo de estructura en el Anexo de Alturas." });
+        return false;
+      }
+    }
+
+    if (currentLabel === 'Anexo Confinado') {
+      const anexo = formData.anexoConfinado;
+      if (anexo?.identificacionPeligros?.procedimientoComunicacion === 'si' && !anexo.procedimientoComunicacionCual?.trim()) {
+        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar cuál es el procedimiento de comunicación en el Anexo de Espacios Confinados." });
+        return false;
+      }
+    }
+    
+    if (currentLabel === 'Anexo Energías') {
+      const anexo = formData.anexoEnergias;
+      if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente.otro as string)?.trim()) {
+        toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
+        return false;
+      }
+    }
+
     return true;
   };
 
