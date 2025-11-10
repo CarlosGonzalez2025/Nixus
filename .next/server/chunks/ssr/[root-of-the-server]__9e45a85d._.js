@@ -320,7 +320,8 @@ const signatureRoles = {
     solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
     autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
     mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-    lider_sst: 'AREA SST (si aplica)'
+    lider_sst: 'AREA SST (si aplica)',
+    coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS'
 };
 async function createPermit(data) {
     if (!data.userId) {
@@ -341,6 +342,9 @@ async function createPermit(data) {
             status: 'pendiente'
         },
         lider_sst: {
+            status: 'pendiente'
+        },
+        coordinador_alturas: {
             status: 'pendiente'
         }
     };
@@ -400,6 +404,23 @@ async function savePermitDraft(data) {
         };
     }
     const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
+    const initialApprovals = {
+        solicitante: {
+            status: 'pendiente'
+        },
+        autorizante: {
+            status: 'pendiente'
+        },
+        mantenimiento: {
+            status: 'pendiente'
+        },
+        lider_sst: {
+            status: 'pendiente'
+        },
+        coordinador_alturas: {
+            status: 'pendiente'
+        }
+    };
     const permitPayload = {
         ...permitData,
         status: 'borrador',
@@ -408,7 +429,8 @@ async function savePermitDraft(data) {
             displayName: userDisplayName,
             email: userEmail,
             photoURL: userPhotoURL
-        }
+        },
+        approvals: initialApprovals
     };
     try {
         if (draftId) {
@@ -466,6 +488,9 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         if (signatureType === 'firmaApertura') {
             updateData[statusPath] = 'aprobado';
             updateData[signedAtPath] = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
+            if (role === 'solicitante') {
+                updateData['status'] = 'pendiente_revision';
+            }
         }
         await docRef.update(updateData);
         const permitDoc = await docRef.get();

@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoCaliente } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -1045,7 +1045,84 @@ export default function PermitDetailPage() {
                            </div>
                        </CollapsibleTrigger>
                        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-purple-100">
-                          {/* Add Confinado sections here */}
+                           <Section title="Resultados de Pruebas de Gases Iniciales">
+                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                   <Field label="LEL (0%)" value={permit.anexoConfinado.resultadosPruebasGases?.lel} />
+                                   <Field label="O2 (19.5-22%)" value={permit.anexoConfinado.resultadosPruebasGases?.o2} />
+                                   <Field label="H2S (0-10 PPM)" value={permit.anexoConfinado.resultadosPruebasGases?.h2s} />
+                                   <Field label="CO (0-25 PPM)" value={permit.anexoConfinado.resultadosPruebasGases?.co} />
+                               </div>
+                           </Section>
+                           <Section title="Pruebas Periódicas" className="mt-4">
+                              <Table>
+                                <TableHeader><TableRow><TableHead>Hora</TableHead><TableHead>LEL</TableHead><TableHead>O2</TableHead><TableHead>H2S</TableHead><TableHead>CO</TableHead><TableHead>Firma</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas?.map(p => (
+                                        <TableRow key={p.id}>
+                                            <TableCell>{p.hora}</TableCell>
+                                            <TableCell>{p.lel}</TableCell>
+                                            <TableCell>{p.o2}</TableCell>
+                                            <TableCell>{p.h2s}</TableCell>
+                                            <TableCell>{p.co}</TableCell>
+                                            <TableCell>{p.firma && <Image src={p.firma} alt="Firma" width={80} height={40}/>}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                              </Table>
+                           </Section>
+                       </CollapsibleContent>
+                   </Collapsible>
+                )}
+                 {/* Sección de Anexo Energias */}
+                {permit.controlEnergia && permit.anexoEnergias && (
+                   <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-yellow-700 flex items-center gap-2"><AlertTriangle /> Anexo de Control de Energías</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-yellow-100">
+                           <Section title="Tipos de Energía">
+                                {Object.entries(permit.anexoEnergias.energiasPeligrosas || {}).map(([key, value]) => value && <p key={key} className='capitalize'>{key.replace(/([A-Z])/g, ' $1')}</p>)}
+                           </Section>
+                       </CollapsibleContent>
+                   </Collapsible>
+                )}
+                 {/* Sección de Anexo Izaje */}
+                {permit.izajeCargas && permit.anexoIzaje && (
+                   <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-green-700 flex items-center gap-2"><AlertTriangle /> Anexo de Izaje de Cargas</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-green-100">
+                           <Section title="Información de la Carga">
+                                <Field label="Acción a realizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.accion || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
+                                <Field label="Peso de la Carga" value={Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
+                                <Field label="Equipo a Utilizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
+                           </Section>
+                       </CollapsibleContent>
+                   </Collapsible>
+                )}
+                 {/* Sección de Anexo Excavaciones */}
+                {permit.excavaciones && permit.anexoExcavaciones && (
+                   <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-orange-700 flex items-center gap-2"><AlertTriangle /> Anexo de Excavaciones</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-orange-100">
+                           <Section title="Dimensiones">
+                                <Field label="Dimensiones" value={permit.anexoExcavaciones.informacionGeneral.dimensiones} />
+                                <Field label="Profundidad" value={permit.anexoExcavaciones.informacionGeneral.profundidad} />
+                                <Field label="Ancho" value={permit.anexoExcavaciones.informacionGeneral.ancho} />
+                                <Field label="Largo" value={permit.anexoExcavaciones.informacionGeneral.largo} />
+                           </Section>
                        </CollapsibleContent>
                    </Collapsible>
                 )}
