@@ -75,6 +75,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Label } from '@/components/ui/label';
 
 
 // ✅ Helper function to handle different date formats
@@ -1303,4 +1304,5 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
