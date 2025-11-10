@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoCaliente, AnexoExcavaciones } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -718,7 +718,7 @@ export default function PermitDetailPage() {
     { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
     { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
     { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
-    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herramienta o equipos eléctricos' },
+    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos' },
     { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
     { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
     { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
@@ -1210,52 +1210,53 @@ export default function PermitDetailPage() {
 
                 {/* Sección de Personal */}
                 <Section title="Personal Autorizado y Externo">
-                     <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre / Cédula</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead>Aptitud</TableHead>
+                          <TableHead>Entrenamiento</TableHead>
+                          <TableHead>Seg. Social</TableHead>
+                          <TableHead>Firma Apertura</TableHead>
+                          <TableHead>Firma Cierre</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {permit.workers?.map((worker, index) => (
-                            <Card key={index} className="overflow-hidden">
-                                <CardHeader className="p-4 bg-gray-50/50 border-b">
-                                    <CardTitle className="text-base flex justify-between items-center">
-                                        <span>{worker.nombre}</span>
-                                        <Badge variant="outline">{worker.rol === 'Otro' ? worker.otroRol : worker.rol}</Badge>
-                                    </CardTitle>
-                                    <p className="text-xs text-muted-foreground pt-1">C.C. {worker.cedula}</p>
-                                </CardHeader>
-                                <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <HeartPulse className="h-4 w-4 text-blue-500" />
-                                            <span className="font-semibold">Aptitud Médica:</span>
-                                            <Badge variant="secondary" className="uppercase">{worker.tsaTec}</Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <BookUser className="h-4 w-4 text-blue-500"/>
-                                            <span className="font-semibold">Entrenamiento:</span>
-                                            <Badge variant="secondary" className="capitalize">{worker.entrenamiento}</Badge>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <ShieldCheck className="h-4 w-4 text-blue-500"/>
-                                            <span className="font-semibold">Seguridad Social:</span>
-                                            <div className="flex gap-2">
-                                                {worker.eps && <Badge className="bg-green-100 text-green-800">EPS</Badge>}
-                                                {worker.arl && <Badge className="bg-green-100 text-green-800">ARL</Badge>}
-                                                {worker.pensiones && <Badge className="bg-green-100 text-green-800">Pensión</Badge>}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-xs font-semibold text-muted-foreground">Firma Apertura</p>
-                                            {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma" width={100} height={50} className="border rounded mt-1" /> : <p className="text-xs italic text-muted-foreground mt-1">Pendiente</p>}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold text-muted-foreground">Firma Cierre</p>
-                                            {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma" width={100} height={50} className="border rounded mt-1" /> : <p className="text-xs italic text-muted-foreground mt-1">Pendiente</p>}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                          <TableRow key={index}>
+                            <TableCell>
+                              <p className="font-medium">{worker.nombre}</p>
+                              <p className="text-xs text-muted-foreground">C.C. {worker.cedula}</p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{worker.rol === 'Otro' ? worker.otroRol : worker.rol}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="uppercase">{worker.tsaTec}</Badge>
+                            </TableCell>
+                            <TableCell>
+                               <Badge variant="secondary" className="capitalize">{worker.entrenamiento}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {worker.eps && <Badge className="bg-green-100 text-green-800 text-xs p-1">EPS</Badge>}
+                                {worker.arl && <Badge className="bg-green-100 text-green-800 text-xs p-1">ARL</Badge>}
+                                {worker.pensiones && <Badge className="bg-green-100 text-green-800 text-xs p-1">P</Badge>}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="border rounded" /> : <span className="text-xs italic text-muted-foreground">Pendiente</span>}
+                            </TableCell>
+                            <TableCell>
+                              {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma Cierre" width={80} height={40} className="border rounded" /> : <span className="text-xs italic text-muted-foreground">Pendiente</span>}
+                            </TableCell>
+                          </TableRow>
                         ))}
-                     </div>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </Section>
                 
                  {/* Sección de Firmas de Aprobación */}
@@ -1325,6 +1326,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
