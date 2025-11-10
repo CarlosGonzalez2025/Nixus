@@ -296,6 +296,13 @@ export default function PermitsPage() {
       );
     }
 
+    const getPermitDisplayNumber = (permit: Permit) => {
+        if (permit.status === 'borrador') {
+            return `Borrador #${permit.id.substring(0, 8)}`;
+        }
+        return permit.number || `ID: ${permit.id.substring(0, 8)}`;
+    };
+
     return (
       <>
         {/* Mobile View */}
@@ -307,7 +314,7 @@ export default function PermitsPage() {
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 overflow-hidden">
                       <p className="font-semibold text-primary truncate">
-                        {permit.number || `Borrador #${permit.id.substring(0, 8)}`}
+                        {getPermitDisplayNumber(permit)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {permit.generalInfo?.areaEspecifica || 'N/A'} • {permit.generalInfo?.planta || 'N/A'}
@@ -349,8 +356,8 @@ export default function PermitsPage() {
               {permits.map((permit) => (
                 <TableRow key={permit.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
-                    <Link href={permit.status === 'borrador' ? `/permits/create?edit=${permit.id}` : `/permits/${permit.id}`} className="hover:underline text-primary">
-                      {permit.number || `Borrador #${permit.id.substring(0, 8)}`}
+                    <Link href={permit.status === 'borrador' ? `/permits/${permit.id}` : `/permits/${permit.id}`} className="hover:underline text-primary">
+                      {getPermitDisplayNumber(permit)}
                     </Link>
                   </TableCell>
                   <TableCell>

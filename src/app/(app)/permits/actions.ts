@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin';
@@ -54,11 +53,11 @@ const getStatusText = (status: string) => {
   };
 
 const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas']: string } = {
+  coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
   solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   lider_sst: 'AREA SST (si aplica)',
-  coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
 };
 
 
@@ -216,7 +215,10 @@ export async function addSignatureAndNotify(
             updateData[statusPath] = 'aprobado';
             updateData[signedAtPath] = FieldValue.serverTimestamp();
 
+            // Si es el solicitante quien firma, cambiamos el estado y generamos el número.
             if (role === 'solicitante') {
+                const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
+                updateData['number'] = permitNumber;
                 updateData['status'] = 'pendiente_revision';
             }
         }
