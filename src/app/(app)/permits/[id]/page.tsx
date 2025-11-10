@@ -164,11 +164,11 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueCha
 
 type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas';
 const signatureRoles: { [key in SignatureRole]: string } = {
-  solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
-  autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
-  mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  lider_sst: 'AREA SST (si aplica)',
-  coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
+  coordinador_alturas: 'COORDINADOR (ANEXO)',
+  solicitante: 'SOLICITANTE',
+  mantenimiento: 'MANTENIMIENTO (SI APLICA)',
+  lider_sst: 'SST (SI APLICA)',
+  autorizante: 'QUIEN AUTORIZA',
 };
 
 
@@ -811,6 +811,74 @@ export default function PermitDetailPage() {
         { id: 'sistemasRestriccion', label: 'U. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE RESTRICCIÓN' },
         { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
     ];
+    
+    const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
+      const approval = permit.approvals?.[role as keyof typeof permit.approvals];
+      const { can, reason } = canSign(role);
+      const isSolicitante = role === 'solicitante';
+
+      const SignButton = () => (
+          <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
+              {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
+          </Button>
+      );
+
+      return (
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col justify-between gap-4">
+            <div className="flex-grow">
+              {approval?.status === 'aprobado' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-bold text-sm">Aprobado</span>
+                  </div>
+                  <p className="text-xs">Por: <span className="font-semibold">{approval.userName}</span></p>
+                  <p className="text-xs">Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
+                  {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-yellow-600">
+                    <Clock className="h-5 w-5" />
+                    <span className="font-bold text-sm">Pendiente de Firma</span>
+                  </div>
+                  {isSolicitante && (
+                    <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
+                      Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {can ? <SignButton /> : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-full">
+                        <Button disabled className="w-full flex-1">
+                          <SignatureIcon className="mr-2"/> Firmar Apertura
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {reason && <TooltipContent><p>{reason}</p></TooltipContent>}
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {isSolicitante && permit.status === 'borrador' && (
+                <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
+                  <Edit className="mr-2"/> Modificar
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    };
   
     return (
       <div className="flex flex-1 flex-col bg-gray-50/50">
@@ -1143,89 +1211,21 @@ export default function PermitDetailPage() {
                         </TableBody>
                      </Table>
                 </Section>
-
+                
                  {/* Sección de Firmas de Aprobación */}
                 <Section title="Aprobaciones del Permiso">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {(Object.keys(signatureRoles) as SignatureRole[]).map(role => {
-                            if (role === 'mantenimiento' && !permit.controlEnergia) return null;
-                            if (role === 'coordinador_alturas' && !permit.selectedWorkTypes?.alturas) return null;
-                            
-                            const approval = permit.approvals?.[role as keyof typeof permit.approvals];
-                            const { can, reason } = canSign(role);
-                            const isSolicitante = role === 'solicitante';
-                            
-                            const SignButton = () => (
-                                <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
-                                    {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
-                                </Button>
-                            );
-
-                            return (
-                                <Card key={role} className="flex flex-col">
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow flex flex-col justify-between gap-4">
-                                        <div className="flex-grow">
-                                            {approval?.status === 'aprobado' ? (
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2 text-green-600">
-                                                        <CheckCircle className="h-5 w-5" />
-                                                        <span className="font-bold text-sm">Aprobado</span>
-                                                    </div>
-                                                    <p className="text-xs">
-                                                        Por: <span className="font-semibold">{approval.userName}</span>
-                                                    </p>
-                                                    <p className="text-xs">
-                                                        Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}
-                                                    </p>
-                                                    {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2 text-yellow-600">
-                                                        <Clock className="h-5 w-5" />
-                                                        <span className="font-bold text-sm">Pendiente de Firma</span>
-                                                    </div>
-                                                     {isSolicitante && (
-                                                        <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
-                                                            Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                             {can ? (
-                                                <SignButton /> 
-                                             ) : (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <div className="w-full">
-                                                                <Button disabled className="w-full flex-1">
-                                                                    <SignatureIcon className="mr-2"/> Firmar Apertura
-                                                                </Button>
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        {reason && <TooltipContent><p>{reason}</p></TooltipContent>}
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-                                            {isSolicitante && permit.status === 'borrador' && (
-                                                <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
-                                                    <Edit className="mr-2"/> Modificar
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })}
+                        {permit.selectedWorkTypes?.alturas && <SignatureCard role="coordinador_alturas" />}
+                        <SignatureCard role="solicitante" />
+                        {permit.controlEnergia && <SignatureCard role="mantenimiento" />}
+                        <SignatureCard role="lider_sst" />
+                    </div>
+                    <div className="mt-6 flex justify-center">
+                        <div className="w-full md:w-1/2">
+                          <SignatureCard role="autorizante" />
+                        </div>
                     </div>
                 </Section>
-
             </div>
              <footer className="text-center text-xs text-gray-400 py-4 mt-8">
                 <p>Código: DN-FR-SST-016</p>

@@ -3433,6 +3433,10 @@ body {
     width: 2.5rem;
   }
 
+  .md\:w-1\/2 {
+    width: 50%;
+  }
+
   .md\:max-w-\[420px\] {
     max-width: 420px;
   }
