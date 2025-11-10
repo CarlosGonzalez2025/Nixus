@@ -746,7 +746,8 @@ var { g: global, __dirname } = __turbopack_context__;
 {
 __turbopack_context__.s({
     "AtsStep": (()=>AtsStep),
-    "default": (()=>__TURBOPACK__default__export__)
+    "default": (()=>__TURBOPACK__default__export__),
+    "eppOptions": (()=>eppOptions)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
@@ -1185,7 +1186,7 @@ const DebouncedTextInput = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$
         type: "text"
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 190,
+        lineNumber: 191,
         columnNumber: 5
     }, this);
 });
@@ -1209,7 +1210,7 @@ const EppItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2
                         onCheckedChange: handleCheckedChange
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 225,
+                        lineNumber: 226,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -1218,13 +1219,13 @@ const EppItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2
                         children: item.label
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 230,
+                        lineNumber: 231,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 224,
+                lineNumber: 225,
                 columnNumber: 7
             }, this),
             item.type === 'text' && checked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(DebouncedTextInput, {
@@ -1234,13 +1235,13 @@ const EppItem = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2
                 placeholder: "Especificar..."
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 233,
+                lineNumber: 234,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 223,
+        lineNumber: 224,
         columnNumber: 5
     }, this);
 });
@@ -1255,7 +1256,7 @@ const EppCategory = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project
                 children: category
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 260,
+                lineNumber: 261,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1279,18 +1280,18 @@ const EppCategory = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project
                         onTextChange: (value)=>onEppChange(`${item.id}_spec`, value)
                     }, item.id, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 263,
+                        lineNumber: 264,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 261,
+                lineNumber: 262,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 259,
+        lineNumber: 260,
         columnNumber: 5
     }, this);
 });
@@ -1333,7 +1334,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                 children: "Otros Peligros"
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 320,
+                lineNumber: 321,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1350,7 +1351,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                             children: item.peligro
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 326,
+                                            lineNumber: 327,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1358,13 +1359,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                             children: item.descripcion
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 327,
+                                            lineNumber: 328,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 325,
+                                    lineNumber: 326,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1376,18 +1377,18 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         className: "h-4 w-4 text-destructive"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 335,
+                                        lineNumber: 336,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 329,
+                                    lineNumber: 330,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, `peligro-${index}`, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 324,
+                            lineNumber: 325,
                             columnNumber: 11
                         }, this)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1400,7 +1401,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         children: "Nombre del nuevo peligro"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 343,
+                                        lineNumber: 344,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -1412,13 +1413,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         type: "text"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 344,
+                                        lineNumber: 345,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 342,
+                                lineNumber: 343,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1428,7 +1429,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         children: "Descripción y control del peligro"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 354,
+                                        lineNumber: 355,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1440,13 +1441,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         rows: 3
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 355,
+                                        lineNumber: 356,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 353,
+                                lineNumber: 354,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1459,32 +1460,32 @@ const OtrosPeligrosSection = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 370,
+                                        lineNumber: 371,
                                         columnNumber: 13
                                     }, this),
                                     " Agregar Peligro"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 364,
+                                lineNumber: 365,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 341,
+                        lineNumber: 342,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 321,
+                lineNumber: 322,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 319,
+        lineNumber: 320,
         columnNumber: 5
     }, this);
 });
@@ -1553,25 +1554,25 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                 children: title
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 418,
+                                lineNumber: 419,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                 className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 419,
+                                lineNumber: 420,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 414,
+                        lineNumber: 415,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 413,
+                    lineNumber: 414,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -1579,13 +1580,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                     children: children
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 422,
+                    lineNumber: 423,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-            lineNumber: 412,
+            lineNumber: 413,
             columnNumber: 5
         }, this));
     SectionWrapper.displayName = "SectionWrapper";
@@ -1600,7 +1601,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: "Análisis de Peligros y ATS"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 433,
+                        lineNumber: 434,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1608,13 +1609,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: "Identifique los peligros, controles y EPP necesarios para la tarea."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 436,
+                        lineNumber: 437,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 432,
+                lineNumber: 433,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -1626,7 +1627,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: 'Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.'
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 442,
+                        lineNumber: 443,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1646,25 +1647,25 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                     children: category
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                    lineNumber: 453,
+                                                    lineNumber: 454,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                                     className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                    lineNumber: 454,
+                                                    lineNumber: 455,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 449,
+                                            lineNumber: 450,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 448,
+                                        lineNumber: 449,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -1681,7 +1682,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: hazard.label
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 461,
+                                                                lineNumber: 462,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -1697,7 +1698,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 id: `${hazard.id}-si`
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 470,
+                                                                                lineNumber: 471,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -1705,13 +1706,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 children: "SI"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 471,
+                                                                                lineNumber: 472,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                        lineNumber: 469,
+                                                                        lineNumber: 470,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1722,7 +1723,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 id: `${hazard.id}-no`
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 474,
+                                                                                lineNumber: 475,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -1730,25 +1731,25 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 children: "NO"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 475,
+                                                                                lineNumber: 476,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                        lineNumber: 473,
+                                                                        lineNumber: 474,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 464,
+                                                                lineNumber: 465,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                        lineNumber: 460,
+                                                        lineNumber: 461,
                                                         columnNumber: 21
                                                     }, this),
                                                     anexoATS.peligros?.[hazard.id] === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1759,7 +1760,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: "CONTROL RECOMENDADO:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 481,
+                                                                lineNumber: 482,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1767,35 +1768,35 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: hazard.control
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 482,
+                                                                lineNumber: 483,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                        lineNumber: 480,
+                                                        lineNumber: 481,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, hazard.id, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                lineNumber: 459,
+                                                lineNumber: 460,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 457,
+                                        lineNumber: 458,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, category, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 447,
+                                lineNumber: 448,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 445,
+                        lineNumber: 446,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(OtrosPeligrosSection, {
@@ -1803,13 +1804,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         onUpdatePeligros: handleUpdatePeligrosAdicionales
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 493,
+                        lineNumber: 494,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 441,
+                lineNumber: 442,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -1824,17 +1825,17 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                             onEppChange: handleEppChange
                         }, category, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 502,
+                            lineNumber: 503,
                             columnNumber: 15
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 500,
+                    lineNumber: 501,
                     columnNumber: 10
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 499,
+                lineNumber: 500,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -1851,7 +1852,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     onCheckedChange: (checked)=>handleJustificacionChange(option.id, !!checked)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 517,
+                                    lineNumber: 518,
                                     columnNumber: 21
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
@@ -1860,29 +1861,29 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     children: option.label
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 522,
+                                    lineNumber: 523,
                                     columnNumber: 21
                                 }, this)
                             ]
                         }, option.id, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 516,
+                            lineNumber: 517,
                             columnNumber: 17
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 514,
+                    lineNumber: 515,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 513,
+                lineNumber: 514,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 431,
+        lineNumber: 432,
         columnNumber: 5
     }, this);
 }

@@ -963,6 +963,10 @@ body {
   max-width: 24rem;
 }
 
+.max-w-3xl {
+  max-width: 48rem;
+}
+
 .flex-1 {
   flex: 1;
 }
@@ -1084,8 +1088,16 @@ body {
   list-style-position: inside;
 }
 
+.list-outside {
+  list-style-position: outside;
+}
+
 .list-disc {
   list-style-type: disc;
+}
+
+.list-decimal {
+  list-style-type: decimal;
 }
 
 .grid-cols-1 {
