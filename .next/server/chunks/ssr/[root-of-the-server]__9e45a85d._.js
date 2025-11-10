@@ -250,9 +250,10 @@ async function sendWhatsAppNotification(messageBody) {
 
 var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_context__;
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
-/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","7873b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
+/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","407282eb75929b38cb56be7f0cd547a72b6c80de19":"savePermitDraft","7873b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
     "addSignatureAndNotify": (()=>addSignatureAndNotify),
     "createPermit": (()=>createPermit),
+    "savePermitDraft": (()=>savePermitDraft),
     "updatePermitStatus": (()=>updatePermitStatus)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/build/webpack/loaders/next-flight-loader/server-reference.js [app-rsc] (ecmascript)");
@@ -391,6 +392,58 @@ ${permitUrl}`;
         };
     }
 }
+async function savePermitDraft(data) {
+    if (!data.userId) {
+        return {
+            success: false,
+            error: 'User not authenticated'
+        };
+    }
+    const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
+    const permitPayload = {
+        ...permitData,
+        status: 'borrador',
+        createdBy: userId,
+        user: {
+            displayName: userDisplayName,
+            email: userEmail,
+            photoURL: userPhotoURL
+        }
+    };
+    try {
+        if (draftId) {
+            // Actualizar un borrador existente
+            const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(draftId);
+            await docRef.update({
+                ...permitPayload,
+                updatedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
+            });
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${draftId}`);
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
+            return {
+                success: true,
+                permitId: draftId,
+                isUpdate: true
+            };
+        } else {
+            // Crear un nuevo borrador
+            permitPayload.createdAt = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
+            const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(permitPayload);
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
+            return {
+                success: true,
+                permitId: docRef.id,
+                isUpdate: false
+            };
+        }
+    } catch (error) {
+        console.error("❌ [Action] Error al guardar borrador:", error);
+        return {
+            success: false,
+            error: error.message || 'Could not save draft. Please try again.'
+        };
+    }
+}
 async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return {
@@ -508,10 +561,12 @@ ${permitUrl}`;
 ;
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$action$2d$validate$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ensureServerEntryExports"])([
     createPermit,
+    savePermitDraft,
     addSignatureAndNotify,
     updatePermitStatus
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(createPermit, "401402f01c0118016efe5c5d736d335e2f6d150079", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(savePermitDraft, "407282eb75929b38cb56be7f0cd547a72b6c80de19", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addSignatureAndNotify, "7c15bdb6ac388e78a59299d5091891127d63de7bc6", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updatePermitStatus, "7873b9c7850e737568a6f6f7a4e17cda15a8f18e15", null);
 __turbopack_async_result__();

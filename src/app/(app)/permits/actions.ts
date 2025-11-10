@@ -54,8 +54,8 @@ const getStatusText = (status: string) => {
   };
 
 const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst']: string } = {
-  solicitante: 'QUIEN SOLICITA (JEFES Y DUEÑOS DE AREA)',
-  autorizante: 'QUIEN AUTORIZA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+  solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+  autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   lider_sst: 'AREA SST (si aplica)',
 };
@@ -308,5 +308,3 @@ ${permitUrl}`;
         };
     }
 }
-
-    
