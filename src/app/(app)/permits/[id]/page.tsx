@@ -270,6 +270,14 @@ export default function PermitDetailPage() {
                 yPos = margin;
             }
         };
+        
+        const addSectionTitle = (title: string) => {
+          checkPageBreak(15);
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text(title, margin, yPos);
+          yPos += 8;
+        }
 
         // --- ENCABEZADO ---
         doc.setFontSize(16);
@@ -288,10 +296,7 @@ export default function PermitDetailPage() {
         yPos = (doc as any).lastAutoTable.finalY + 10;
         
         // --- INFORMACIÓN GENERAL ---
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('INFORMACIÓN GENERAL', margin, yPos);
-        yPos += 5;
+        addSectionTitle('Información General');
         
         const generalInfoData = [
             ['Número de Permiso', permit.number || permit.id.substring(0,8)],
@@ -328,15 +333,19 @@ export default function PermitDetailPage() {
 
         // --- PERSONAL AUTORIZADO ---
         if (permit.workers && permit.workers.length > 0) {
-            checkPageBreak(30);
-            doc.setFont('helvetica', 'bold');
-            doc.text('PERSONAL AUTORIZADO Y EXTERNO', margin, yPos);
-            yPos += 5;
-
-            const workersBody = permit.workers.map(w => [w.nombre, w.cedula, w.rol]);
+            addSectionTitle('Personal Autorizado');
+            
+            const workersBody = permit.workers.map(w => [
+              w.nombre,
+              w.cedula,
+              w.rol === 'Otro' ? w.otroRol : w.rol,
+              w.tsaTec?.toUpperCase(),
+              w.entrenamiento,
+              [w.eps ? 'EPS' : '', w.arl ? 'ARL' : '', w.pensiones ? 'P' : ''].filter(Boolean).join(', ')
+            ]);
             
             autoTable(doc, {
-                head: [['Nombre', 'Cédula', 'Rol']],
+                head: [['Nombre', 'Cédula', 'Rol', 'Aptitud', 'Entrenamiento', 'Seg. Social']],
                 body: workersBody,
                 startY: yPos,
                 theme: 'grid',
@@ -348,40 +357,84 @@ export default function PermitDetailPage() {
         
         // --- ANEXO ATS ---
         if (permit.anexoATS) {
-            checkPageBreak(40);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Análisis de Trabajo Seguro (ATS)', margin, yPos);
-            yPos += 8;
-
-            doc.setFontSize(10);
-            doc.text('Identificación de Peligros, Riesgos y Controles', margin, yPos);
-            yPos += 6;
-
-            const atsBody = atsPeligros.map(peligro => {
+            addSectionTitle('Análisis de Trabajo Seguro (ATS)');
+            
+            const atsPeligrosBody = atsPeligros.map(peligro => {
               const value = (permit.anexoATS?.peligros as any)?.[peligro.id];
-              let status = 'N/A';
-              if (value === 'si') status = 'SI';
-              if (value === 'no') status = 'NO';
+              let status = value === 'si' ? 'SI' : (value === 'no' ? 'NO' : 'N/A');
               return [peligro.seccion, peligro.label, status];
-            });
+            }).filter(row => row[2] === 'SI');
 
-            autoTable(doc, {
-                head: [['Sección', 'Peligro', 'Aplica']],
-                body: atsBody,
-                startY: yPos,
-                theme: 'striped',
-                headStyles: { fillColor: [41, 128, 185] },
-                didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 10;
+            if(atsPeligrosBody.length > 0) {
+              doc.setFontSize(10);
+              doc.text('Peligros Identificados', margin, yPos);
+              yPos += 5;
+              autoTable(doc, {
+                  head: [['Sección', 'Peligro', 'Aplica']],
+                  body: atsPeligrosBody,
+                  startY: yPos,
+                  theme: 'striped',
+                  headStyles: { fillColor: [41, 128, 185] },
+                  didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+              });
+              yPos = (doc as any).lastAutoTable.finalY + 5;
+            }
+            
+            const eppBody = Object.entries(eppOptions)
+                .flatMap(([category, items]) => items.map(item => ({...item, category})))
+                .filter(item => (permit.anexoATS?.epp as any)?.[item.id])
+                .map(item => {
+                    const spec = (permit.anexoATS?.epp as any)?.[`${item.id}_spec`] || '';
+                    return [item.category, `${item.label} ${spec}`.trim()];
+                });
+
+            if (eppBody.length > 0) {
+                addSectionTitle('EPP Requeridos');
+                autoTable(doc, {
+                    head: [['Categoría', 'Elemento']],
+                    body: eppBody,
+                    startY: yPos,
+                    theme: 'striped',
+                    headStyles: { fillColor: [41, 128, 185] },
+                    didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+                });
+                yPos = (doc as any).lastAutoTable.finalY + 10;
+            }
         }
+        
+        // --- ANEXOS ESPECÍFICOS (Función genérica para no repetir código) ---
+        const drawAnexo = (anexoName: string, anexoTitle: string, anexoData: any) => {
+            if (!anexoData) return;
+            addSectionTitle(anexoTitle);
+
+            // Podrías añadir tablas específicas para cada anexo aquí
+            // Ejemplo simple:
+            const aspects = Object.entries(anexoData.aspectosSeguridad || {})
+              .filter(([, value]) => value === 'si')
+              .map(([key]) => [key.replace(/([A-Z])/g, ' $1').trim()]);
+              
+            if(aspects.length > 0) {
+              autoTable(doc, {
+                  head: [['Aspectos de Seguridad Verificados']],
+                  body: aspects,
+                  startY: yPos,
+                  theme: 'grid',
+                  headStyles: { fillColor: [243, 156, 18] },
+                  didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+              });
+              yPos = (doc as any).lastAutoTable.finalY + 5;
+            }
+        };
+        
+        if (permit.selectedWorkTypes?.alturas) drawAnexo('anexoAltura', 'Anexo: Trabajo en Alturas', permit.anexoAltura);
+        if (permit.selectedWorkTypes?.confinado) drawAnexo('anexoConfinado', 'Anexo: Espacios Confinados', permit.anexoConfinado);
+        if (permit.selectedWorkTypes?.izaje) drawAnexo('anexoIzaje', 'Anexo: Izaje de Cargas', permit.anexoIzaje);
+        if (permit.selectedWorkTypes?.energia) drawAnexo('anexoEnergias', 'Anexo: Control de Energías', permit.anexoEnergias);
+        if (permit.selectedWorkTypes?.excavacion) drawAnexo('anexoExcavaciones', 'Anexo: Excavaciones', permit.anexoExcavaciones);
+
 
         // --- FIRMAS DE APROBACIÓN ---
-         checkPageBreak(60);
-         doc.setFont('helvetica', 'bold');
-         doc.text('APROBACIONES DEL PERMISO', margin, yPos);
-         yPos += 8;
+         addSectionTitle('Aprobaciones del Permiso');
 
          let xPos = margin;
          const signatureWidth = 40;
@@ -390,6 +443,9 @@ export default function PermitDetailPage() {
 
          for (const role of Object.keys(signatureRoles) as SignatureRole[]) {
              const approval = permit.approvals?.[role as keyof typeof permit.approvals];
+             if (!approval || approval.status !== 'aprobado') continue;
+             
+             checkPageBreak(55);
 
              doc.setFillColor(248, 249, 250);
              doc.roundedRect(xPos, yPos, cardWidth, 45, 3, 3, 'FD');
@@ -403,40 +459,32 @@ export default function PermitDetailPage() {
 
              doc.setFont('helvetica', 'normal');
              doc.setFontSize(9);
-             if (approval?.status === 'aprobado') {
-                 doc.setTextColor(40, 167, 69);
-                 doc.text('APROBADO', xPos + 5, innerY);
-                 doc.setTextColor(0, 0, 0);
-                 innerY += 5;
-                 doc.text(`Por: ${approval.userName || 'N/A'}`, xPos + 5, innerY);
-                 innerY += 5;
-                 doc.text(`Fecha: ${approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}`, xPos + 5, innerY);
-                 innerY += 5;
+             doc.setTextColor(40, 167, 69);
+             doc.text('APROBADO', xPos + 5, innerY);
+             doc.setTextColor(0, 0, 0);
+             innerY += 5;
+             doc.text(`Por: ${approval.userName || 'N/A'}`, xPos + 5, innerY);
+             innerY += 5;
+             doc.text(`Fecha: ${approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}`, xPos + 5, innerY);
+             innerY += 5;
 
-                 if (approval.firmaApertura) {
-                    try {
-                        doc.addImage(approval.firmaApertura, 'PNG', xPos + 5, innerY, signatureWidth, signatureHeight);
-                    } catch (e) {
-                        doc.text('[Firma no válida]', xPos + 5, innerY + 10);
-                    }
-                 }
-
-             } else {
-                 doc.setTextColor(255, 193, 7);
-                 doc.text('PENDIENTE DE FIRMA', xPos + 5, innerY);
-                 doc.setTextColor(0, 0, 0);
+             if (approval.firmaApertura) {
+                try {
+                    doc.addImage(approval.firmaApertura, 'PNG', xPos + 5, innerY, signatureWidth, signatureHeight);
+                } catch (e) {
+                    doc.text('[Firma no válida]', xPos + 5, innerY + 10);
+                }
              }
 
-             // Mover a la siguiente posición
              if (xPos + cardWidth + margin < doc.internal.pageSize.width - margin) {
                  xPos += cardWidth + margin;
              } else {
                  xPos = margin;
-                 yPos += 55; // Siguiente fila
-                 checkPageBreak(55);
+                 yPos += 55;
              }
          }
-         yPos = Math.max(yPos, (doc as any).lastAutoTable.finalY + 10);
+         yPos = Math.max(yPos, yPos); // Resetea la Y si se quedó a la mitad de una fila.
+
 
         doc.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
         
@@ -1374,16 +1422,12 @@ export default function PermitDetailPage() {
                 
                  {/* Sección de Firmas de Aprobación */}
                 <Section title="Aprobaciones del Permiso">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {permit.selectedWorkTypes?.alturas && <SignatureCard role="coordinador_alturas" />}
                         <SignatureCard role="solicitante" />
+                        <SignatureCard role="autorizante" />
                         {permit.controlEnergia && <SignatureCard role="mantenimiento" />}
                         <SignatureCard role="lider_sst" />
-                    </div>
-                    <div className="mt-6 flex justify-center">
-                        <div className="w-full md:w-1/2">
-                          <SignatureCard role="autorizante" />
-                        </div>
                     </div>
                 </Section>
 
@@ -1520,12 +1564,3 @@ export default function PermitDetailPage() {
       </div>
   );
 }
-
-
-
-
-
-
-
-
-
