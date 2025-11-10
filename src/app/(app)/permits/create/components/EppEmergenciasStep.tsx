@@ -125,6 +125,7 @@ const emergenciasItems = [
     { id: 'rutasEvacuacion', label: 'C.- Rutas de Evacuación' },
     { id: 'puntosEncuentro', label: 'D.- Puntos de encuentro' },
     { id: 'equiposEmergencia', label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo' },
+    { id: 'ubicacionBrigadistas', label: 'F.- Ubicación de Brigadistas cercanos' },
 ];
 
 export function EppEmergenciasStep({ eppEmergencias, onUpdate }: EppEmergenciasStepProps) {

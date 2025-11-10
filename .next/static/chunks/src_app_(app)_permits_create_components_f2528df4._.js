@@ -12461,7 +12461,7 @@ const eppItems = [
     {
         id: 'mosqueton',
         label: 'Mosquetón',
-        manual: true
+        manual: false
     },
     {
         id: 'eslinga',
