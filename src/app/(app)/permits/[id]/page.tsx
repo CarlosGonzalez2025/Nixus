@@ -583,7 +583,6 @@ export default function PermitDetailPage() {
     switch (role) {
         case 'coordinador_alturas':
             if (!selectedWorkTypes?.alturas) return { can: false, reason: 'No se requiere para este trabajo.' };
-            // El creador del permiso puede iniciar esta firma
             if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede gestionar esta firma.' };
             return { can: true };
 
@@ -974,7 +973,14 @@ export default function PermitDetailPage() {
                         {v.firma ? (
                           <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
                         ) : (
-                          <Button variant="ghost" size="icon" onClick={() => openDailyValidationSignatureDialog(anexoName, 'autoridad', i)}><SignatureIcon className="h-4 w-4" /></Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => openDailyValidationSignatureDialog(anexoName, 'autoridad', i)}
+                            disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v.firma}
+                          >
+                            <SignatureIcon className="h-4 w-4" />
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell>{v.fecha || 'N/A'}</TableCell>
@@ -997,7 +1003,14 @@ export default function PermitDetailPage() {
                         {v.firma ? (
                           <Image src={v.firma} alt="Firma" width={60} height={30} className="border rounded" />
                         ) : (
-                          <Button variant="ghost" size="icon" onClick={() => openDailyValidationSignatureDialog(anexoName, 'responsable', i)}><SignatureIcon className="h-4 w-4" /></Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => openDailyValidationSignatureDialog(anexoName, 'responsable', i)}
+                            disabled={!currentUser || currentUser.uid !== permit.createdBy || !!v.firma}
+                          >
+                            <SignatureIcon className="h-4 w-4" />
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell>{v.fecha || 'N/A'}</TableCell>
@@ -1455,6 +1468,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
