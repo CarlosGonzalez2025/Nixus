@@ -12527,6 +12527,10 @@ const emergenciasItems = [
     {
         id: 'equiposEmergencia',
         label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo'
+    },
+    {
+        id: 'ubicacionBrigadistas',
+        label: 'F.- Ubicación de Brigadistas cercanos'
     }
 ];
 function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
@@ -12549,7 +12553,7 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                         children: "EPP y Manejo de Emergencias"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 144,
+                        lineNumber: 145,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -12557,13 +12561,13 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                         children: "Especifique los equipos de protección personal y verificaciones de emergencia."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 147,
+                        lineNumber: 148,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 143,
+                lineNumber: 144,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -12584,17 +12588,17 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                             placeholder: item.isSelect ? 'Seleccione tipo' : "Especificar..."
                         }, item.id, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 155,
+                            lineNumber: 156,
                             columnNumber: 25
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                    lineNumber: 153,
+                    lineNumber: 154,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 152,
+                lineNumber: 153,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -12609,23 +12613,23 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                             onChange: (value)=>handleUpdate('emergencias', item.id, value)
                         }, item.id, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 175,
+                            lineNumber: 176,
                             columnNumber: 25
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                    lineNumber: 173,
+                    lineNumber: 174,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 172,
+                lineNumber: 173,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-        lineNumber: 142,
+        lineNumber: 143,
         columnNumber: 9
     }, this);
 }

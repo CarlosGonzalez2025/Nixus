@@ -349,7 +349,7 @@ function CreatePermitWizard() {
                 const specValue = eppData[specFieldKey] as string | undefined;
                 return !specValue || specValue.trim() === '';
             })
-            .map(item => `'${item.label}'`);
+            .map(item => `'${item.label.replace(/:$/, '')}'`);
 
         if (missingSpecFields.length > 0) {
             toast({
@@ -380,13 +380,21 @@ function CreatePermitWizard() {
     
     if (currentLabel === 'Anexo Energías') {
         const anexo = formData.anexoEnergias;
-        if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente?.otroCual as string)?.trim()) {
+        if (anexo?.trabajosEnCaliente?.otro === 'si' && !(anexo.trabajosEnCaliente?.otro as string)?.trim()) {
           toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente." });
           return false;
         }
-        if (anexo?.energiasPeligrosas?.otra && !(anexo.energiasPeligrosas?.otraCual as string)?.trim()) {
-          toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el 'otro' tipo de energía peligrosa." });
-          return false;
+    }
+
+    if (currentLabel === 'Verificación Peligros') {
+        const { verificacionPeligros } = formData;
+        if (!verificacionPeligros || Object.values(verificacionPeligros).every(category => !Object.values(category).some(value => value === 'si'))) {
+            toast({
+                variant: "destructive",
+                title: "Validación Requerida en Verificación de Peligros",
+                description: "Debe seleccionar 'SI' en al menos un peligro para poder continuar.",
+            });
+            return false;
         }
     }
 
