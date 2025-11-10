@@ -310,7 +310,7 @@ function CreatePermitWizard() {
         if (!nombreSolicitante) missingFields.push("Nombre solicitante");
         if (!validFrom) missingFields.push("Fecha de inicio");
         if (!validUntil) missingFields.push("Fecha de fin");
-        if (!workDescription) missingFields.push("Descripción de la Tarea");
+        if (!workDescription?.trim()) missingFields.push("Descripción de la Tarea");
         if (!numTrabajadores) missingFields.push("No. Trabajadores");
         if (!responsable?.nombre) missingFields.push("Nombre del Responsable");
         if (!responsable?.cargo) missingFields.push("Cargo del Responsable");

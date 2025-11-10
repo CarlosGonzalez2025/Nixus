@@ -42,6 +42,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$
 ;
 const workTypes = [
     {
+        key: 'general',
+        name: 'Trabajo General'
+    },
+    {
         key: 'alturas',
         name: 'Trabajo en Alturas'
     },
@@ -60,10 +64,6 @@ const workTypes = [
     {
         key: 'excavacion',
         name: 'Excavaciones'
-    },
-    {
-        key: 'general',
-        name: 'Trabajo General'
     }
 ];
 function GeneralInfoStep() {

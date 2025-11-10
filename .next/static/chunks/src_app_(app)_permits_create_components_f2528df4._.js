@@ -43,6 +43,10 @@ var _s = __turbopack_context__.k.signature();
 ;
 const workTypes = [
     {
+        key: 'general',
+        name: 'Trabajo General'
+    },
+    {
         key: 'alturas',
         name: 'Trabajo en Alturas'
     },
@@ -61,10 +65,6 @@ const workTypes = [
     {
         key: 'excavacion',
         name: 'Excavaciones'
-    },
-    {
-        key: 'general',
-        name: 'Trabajo General'
     }
 ];
 function GeneralInfoStep() {
