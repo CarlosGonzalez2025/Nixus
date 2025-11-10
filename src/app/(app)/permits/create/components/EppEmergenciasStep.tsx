@@ -92,7 +92,7 @@ const RadioGroupField: React.FC<{
 export const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: true },
-    { id: 'proteccionCuerpoSoldador', label: 'Protección cuerpo para soldador', manual: true },
+    { id: 'proteccionCuerpoSoldador', label: 'Protección cuerpo para soldador', manual: false },
     { id: 'casco', label: 'Casco', manual: true, isSelect: true, selectOptions: ['Sin Barbuquejo', 'Con Barbuquejo'] },
     { id: 'chavoTelaCarnaza', label: 'Chavo en tela o carnaza', manual: false },
     { id: 'botasSeguridadDielectrica', label: 'Botas de seguridad + dielectrica', manual: false },
@@ -163,7 +163,7 @@ export function EppEmergenciasStep({ eppEmergencias, onUpdate }: EppEmergenciasS
                             selectOptions={item.selectOptions}
                             inputValue={eppEmergencias.epp?.[`${item.id}_manual`] as string || ''}
                             onInputChange={(value) => handleUpdate('epp', `${item.id}_manual`, value)}
-                            placeholder={item.isSelect ? 'Seleccione tipo' : "Agregar tipo manualmente"}
+                            placeholder={item.isSelect ? 'Seleccione tipo' : "Especificar..."}
                         />
                     ))}
                 </div>

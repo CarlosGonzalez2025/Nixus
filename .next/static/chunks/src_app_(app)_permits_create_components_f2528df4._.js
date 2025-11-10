@@ -12380,7 +12380,7 @@ const eppItems = [
     },
     {
         id: 'proteccionCuerpoSoldador',
-        label: 'Proteccion cuerpo para soldador y/o',
+        label: 'Protección cuerpo para soldador',
         manual: true
     },
     {
