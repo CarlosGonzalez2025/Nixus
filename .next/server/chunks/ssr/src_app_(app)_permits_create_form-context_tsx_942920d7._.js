@@ -246,16 +246,46 @@ function formReducer(state, action) {
             const { payload } = action;
             // Reconstruct the state from the payload, providing defaults for any missing pieces
             return {
-                generalInfo: payload.generalInfo || initialState.generalInfo,
-                selectedWorkTypes: payload.selectedWorkTypes || initialState.selectedWorkTypes,
-                anexoATS: payload.anexoATS || initialState.anexoATS,
-                anexoAltura: payload.anexoAltura || initialState.anexoAltura,
-                anexoConfinado: payload.anexoConfinado || initialState.anexoConfinado,
-                anexoEnergias: payload.anexoEnergias || initialState.anexoEnergias,
-                anexoIzaje: payload.anexoIzaje || initialState.anexoIzaje,
-                anexoExcavaciones: payload.anexoExcavaciones || initialState.anexoExcavaciones,
-                verificacionPeligros: payload.verificacionPeligros || initialState.verificacionPeligros,
-                eppEmergencias: payload.eppEmergencias || initialState.eppEmergencias,
+                generalInfo: {
+                    ...initialState.generalInfo,
+                    ...payload.generalInfo
+                },
+                selectedWorkTypes: {
+                    ...initialState.selectedWorkTypes,
+                    ...payload.selectedWorkTypes
+                },
+                anexoATS: {
+                    ...initialState.anexoATS,
+                    ...payload.anexoATS
+                },
+                anexoAltura: {
+                    ...initialState.anexoAltura,
+                    ...payload.anexoAltura
+                },
+                anexoConfinado: {
+                    ...initialState.anexoConfinado,
+                    ...payload.anexoConfinado
+                },
+                anexoEnergias: {
+                    ...initialState.anexoEnergias,
+                    ...payload.anexoEnergias
+                },
+                anexoIzaje: {
+                    ...initialState.anexoIzaje,
+                    ...payload.anexoIzaje
+                },
+                anexoExcavaciones: {
+                    ...initialState.anexoExcavaciones,
+                    ...payload.anexoExcavaciones
+                },
+                verificacionPeligros: {
+                    ...initialState.verificacionPeligros,
+                    ...payload.verificacionPeligros
+                },
+                eppEmergencias: {
+                    ...initialState.eppEmergencias,
+                    ...payload.eppEmergencias
+                },
                 workers: payload.workers || initialState.workers
             };
         case 'RESET_FORM':
@@ -276,7 +306,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 254,
+        lineNumber: 255,
         columnNumber: 5
     }, this);
 }

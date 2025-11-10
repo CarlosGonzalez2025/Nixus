@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoCaliente, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -14,7 +14,6 @@ const workTypesMap: {[key: string]: string} = {
   'confinado': 'Espacios Confinados',
   'energia': 'Control de Energías',
   'izaje': 'Izaje de Cargas',
-  'caliente': 'Trabajo en Caliente',
   'excavacion': 'Excavaciones',
   'general': 'Trabajo General'
 };
@@ -25,7 +24,6 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
   if (permit.controlEnergias) selectedTypes.push('Control de Energías');
   if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
-  if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
   if (permit.excavaciones) selectedTypes.push('Excavaciones');
   
   if (selectedTypes.length === 0) {

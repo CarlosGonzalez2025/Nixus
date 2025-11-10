@@ -54,7 +54,6 @@ const initialState: FormState = {
     confinado: false,
     energia: false,
     izaje: false,
-    caliente: false,
     excavacion: false,
     general: false,
   },

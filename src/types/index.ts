@@ -274,18 +274,6 @@ export type AnexoIzaje = {
   };
 };
 
-export type AnexoCaliente = {
-  distanciaSeguridad: 'si' | 'no' | 'na';
-  medicionAtmosfera: 'si' | 'no' | 'na';
-  aislarArea: 'si' | 'no' | 'na';
-  taparAberturas: 'si' | 'no' | 'na';
-  extintores: 'si' | 'no' | 'na';
-  vigiaFuego: 'si' | 'no' | 'na';
-  personalCapacitado: 'si' | 'no' | 'na';
-  listasChequeo: 'si' | 'no' | 'na';
-  otro: string;
-};
-
 export type AnexoExcavaciones = {
   emergencia?: {
     contacto: string;
@@ -367,7 +355,6 @@ export type SelectedWorkTypes = {
   confinado: boolean;
   energia: boolean;
   izaje: boolean;
-  caliente: boolean;
   excavacion: boolean;
   general: boolean;
 }
@@ -394,7 +381,6 @@ export type Permit = {
   espaciosConfinados?: boolean;
   controlEnergia?: boolean;
   izajeCargas?: boolean;
-  trabajoCaliente?: boolean;
   excavaciones?: boolean;
   trabajoGeneral?: boolean;
 
@@ -417,7 +403,6 @@ export type Permit = {
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoEnergias?: Partial<AnexoEnergias>;
   anexoIzaje?: Partial<AnexoIzaje>;
-  anexoCaliente?: Partial<AnexoCaliente>;
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;

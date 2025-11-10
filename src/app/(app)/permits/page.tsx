@@ -78,7 +78,6 @@ const getWorkTypesString = (permit: Permit): string => {
   if (permit.espaciosConfinados) workTypes.push('Espacios Confinados');
   if (permit.controlEnergia) workTypes.push('Control de Energías');
   if (permit.izajeCargas) workTypes.push('Izaje de Cargas');
-  if (permit.trabajoCaliente) workTypes.push('Trabajo en Caliente');
   if (permit.excavaciones) workTypes.push('Excavaciones');
   if (permit.trabajoGeneral) workTypes.push('Trabajo General');
   
@@ -89,7 +88,6 @@ const getWorkTypesString = (permit: Permit): string => {
       'confinado': 'Espacios Confinados',
       'energia': 'Control de Energías',
       'izaje': 'Izaje de Cargas',
-      'caliente': 'Trabajo en Caliente',
       'excavacion': 'Excavaciones',
       'general': 'Trabajo General'
     };
@@ -128,13 +126,6 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
     badges.push(
       <Badge key="izaje" className="bg-green-100 text-green-800 text-xs">
         Izaje
-      </Badge>
-    );
-  }
-  if (permit.trabajoCaliente) {
-    badges.push(
-      <Badge key="caliente" className="bg-red-100 text-red-800 text-xs">
-        Caliente
       </Badge>
     );
   }
@@ -247,9 +238,6 @@ export default function PermitsPage() {
             break;
           case 'izaje':
             matchesWorkType = permit.izajeCargas === true;
-            break;
-          case 'caliente':
-            matchesWorkType = permit.trabajoCaliente === true;
             break;
           case 'excavaciones':
             matchesWorkType = permit.excavaciones === true;
@@ -466,7 +454,6 @@ export default function PermitsPage() {
                     <SelectItem value="confinados">Espacios Confinados</SelectItem>
                     <SelectItem value="energia">Control de Energías</SelectItem>
                     <SelectItem value="izaje">Izaje de Cargas</SelectItem>
-                    <SelectItem value="caliente">Trabajo en Caliente</SelectItem>
                     <SelectItem value="excavaciones">Excavaciones</SelectItem>
                     <SelectItem value="general">Trabajo General</SelectItem>
                   </SelectContent>

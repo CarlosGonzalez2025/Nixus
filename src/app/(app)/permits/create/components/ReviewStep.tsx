@@ -17,7 +17,6 @@ export function ReviewStep() {
                     case 'confinado': return 'Espacios Confinados';
                     case 'energia': return 'Control de Energías';
                     case 'izaje': return 'Izaje de Cargas';
-                    case 'caliente': return 'Trabajo en Caliente';
                     case 'excavacion': return 'Excavaciones';
                     case 'general': return 'Trabajo General';
                     default: return '';

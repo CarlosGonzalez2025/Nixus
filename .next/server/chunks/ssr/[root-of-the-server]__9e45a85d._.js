@@ -317,11 +317,11 @@ const getStatusText = (status)=>{
     return statusText[status] || status;
 };
 const signatureRoles = {
+    coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
     solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
     autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
     mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-    lider_sst: 'AREA SST (si aplica)',
-    coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS'
+    lider_sst: 'AREA SST (si aplica)'
 };
 async function createPermit(data) {
     if (!data.userId) {
@@ -488,7 +488,10 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         if (signatureType === 'firmaApertura') {
             updateData[statusPath] = 'aprobado';
             updateData[signedAtPath] = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
+            // Si es el solicitante quien firma, cambiamos el estado y generamos el número.
             if (role === 'solicitante') {
+                const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
+                updateData['number'] = permitNumber;
                 updateData['status'] = 'pendiente_revision';
             }
         }

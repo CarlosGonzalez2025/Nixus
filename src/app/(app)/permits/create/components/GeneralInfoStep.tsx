@@ -20,7 +20,6 @@ const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selecte
   { key: 'confinado', name: 'Espacios Confinados' },
   { key: 'energia', name: 'Control de Energías' },
   { key: 'izaje', name: 'Izaje de Cargas' },
-  { key: 'caliente', name: 'Trabajo en Caliente' },
   { key: 'excavacion', name: 'Excavaciones' },
   { key: 'general', name: 'Trabajo General' },
 ];
