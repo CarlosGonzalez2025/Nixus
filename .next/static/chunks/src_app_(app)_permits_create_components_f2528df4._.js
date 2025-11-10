@@ -12683,10 +12683,63 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                         lineNumber: 22,
                         columnNumber: 9
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-muted-foreground text-sm max-w-2xl mx-auto",
-                        children: "FIRMAS: (1) Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura, asumiendo el compromiso de cumplir con las orientaciones de seguridad contenidas en este documento, utilizar los equipos de protección personal y ejecutar solamente los servicios o actividades cubiertos por esta autorización. Así mismo manifiesto mi buen estado de salud para el desarrollo de las actividades. (2) Se verifican certificados de aptitud médica para Trabajos en alturas y espacios confinados; según aplique, con fecha de expedición inferior a un año. (3) Se verifican competencia - entrenamiento para TSA, TEC, trabajo en caliente, energías peligrosas, operación de equipo o maquinaria, trabajos con energía eléctrica; según aplique. (4) Se verifican el estado de afiliación al sistema de seguridad social (EPS, ARL, Fondo de Pensiones). (5) Para espacios confinados aplican lo siguientes ROLES: Trabajador Entrante, Vigía, Supervisor."
-                    }, void 0, false, {
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-muted-foreground text-sm max-w-3xl mx-auto text-left space-y-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "font-semibold",
+                                children: "FIRMAS:"
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                lineNumber: 26,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ol", {
+                                className: "list-decimal list-outside space-y-2 pl-5",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        children: "Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura, asumiendo el compromiso de cumplir con las orientaciones de seguridad contenidas en este documento, utilizar los equipos de protección personal y ejecutar solamente los servicios o actividades cubiertos por esta autorización. Así mismo manifiesto mi buen estado de salud para el desarrollo de las actividades."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                        lineNumber: 28,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        children: "Se verifican certificados de aptitud médica para Trabajos en alturas y espacios confinados; según aplique, con fecha de expedición inferior a un año."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                        lineNumber: 31,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        children: "Se verifican competencia - entrenamiento para TSA, TEC, trabajo en caliente, energías peligrosas, operación de equipo o maquinaria, trabajos con energía eléctrica; según aplique."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                        lineNumber: 34,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        children: "Se verifican el estado de afiliación al sistema de seguridad social (EPS, ARL, Fondo de Pensiones)."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                        lineNumber: 37,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        children: "Para espacios confinados aplican lo siguientes ROLES: Trabajador Entrante, Vigía, Supervisor."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                        lineNumber: 40,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
+                                lineNumber: 27,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
                         lineNumber: 25,
                         columnNumber: 9
@@ -12706,7 +12759,7 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                 children: "Lista de Trabajadores"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                lineNumber: 32,
+                                lineNumber: 49,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -12717,20 +12770,20 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                         className: "mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                        lineNumber: 34,
+                                        lineNumber: 51,
                                         columnNumber: 13
                                     }, this),
                                     " Agregar Trabajador"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                lineNumber: 33,
+                                lineNumber: 50,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                        lineNumber: 31,
+                        lineNumber: 48,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -12743,28 +12796,28 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                 children: "Nombre"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                lineNumber: 41,
+                                                lineNumber: 58,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                 children: "Cédula"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                lineNumber: 42,
+                                                lineNumber: 59,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                 children: "Rol"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                lineNumber: 43,
+                                                lineNumber: 60,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
                                                 children: "Firma Apertura"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                lineNumber: 44,
+                                                lineNumber: 61,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableHead"], {
@@ -12772,18 +12825,18 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                 children: "Acciones"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                lineNumber: 45,
+                                                lineNumber: 62,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                        lineNumber: 40,
+                                        lineNumber: 57,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                    lineNumber: 39,
+                                    lineNumber: 56,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -12794,12 +12847,12 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                             children: "No hay trabajadores agregados."
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                            lineNumber: 51,
+                                            lineNumber: 68,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                        lineNumber: 50,
+                                        lineNumber: 67,
                                         columnNumber: 17
                                     }, this) : workers.map((worker, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableRow"], {
                                             children: [
@@ -12808,14 +12861,14 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                     children: worker.nombre
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                    lineNumber: 58,
+                                                    lineNumber: 75,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
                                                     children: worker.cedula
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                    lineNumber: 59,
+                                                    lineNumber: 76,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -12824,12 +12877,12 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                         children: worker.rol
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                        lineNumber: 61,
+                                                        lineNumber: 78,
                                                         columnNumber: 23
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                    lineNumber: 60,
+                                                    lineNumber: 77,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -12841,19 +12894,19 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                         className: "border rounded-md"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                        lineNumber: 65,
+                                                        lineNumber: 82,
                                                         columnNumber: 28
                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                         className: "text-xs text-muted-foreground",
                                                         children: "Pendiente"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                        lineNumber: 67,
+                                                        lineNumber: 84,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                    lineNumber: 63,
+                                                    lineNumber: 80,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -12869,12 +12922,12 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                                     className: "h-4 w-4"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                                    lineNumber: 73,
+                                                                    lineNumber: 90,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                                lineNumber: 72,
+                                                                lineNumber: 89,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -12885,51 +12938,51 @@ function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }) {
                                                                     className: "h-4 w-4 text-destructive"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                                    lineNumber: 76,
+                                                                    lineNumber: 93,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                                lineNumber: 75,
+                                                                lineNumber: 92,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                        lineNumber: 71,
+                                                        lineNumber: 88,
                                                         columnNumber: 23
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                                    lineNumber: 70,
+                                                    lineNumber: 87,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, index, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                            lineNumber: 57,
+                                            lineNumber: 74,
                                             columnNumber: 19
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                                    lineNumber: 48,
+                                    lineNumber: 65,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                            lineNumber: 38,
+                            lineNumber: 55,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                        lineNumber: 37,
+                        lineNumber: 54,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/WorkersStep.tsx",
-                lineNumber: 30,
+                lineNumber: 47,
                 columnNumber: 7
             }, this)
         ]

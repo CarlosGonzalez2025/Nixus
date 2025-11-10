@@ -1,4 +1,5 @@
 
+
 'use client';
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
@@ -162,6 +163,7 @@ function CreatePermitWizard() {
       nombre: '',
       cedula: '',
       rol: '',
+      otroRol: '',
       eps: '',
       arl: '',
       pensiones: '',
@@ -185,6 +187,15 @@ function CreatePermitWizard() {
         variant: 'destructive',
         title: 'Campos Incompletos',
         description: 'Nombre, cédula y rol son requeridos.',
+      });
+      return;
+    }
+    
+    if (currentWorker.rol === 'Otro' && !currentWorker.otroRol?.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Especificación Requerida',
+        description: 'Por favor, especifique el rol "Otro".',
       });
       return;
     }
@@ -321,7 +332,7 @@ function CreatePermitWizard() {
     }
 
     if (currentLabel === 'ATS') {
-        const { peligros, justificacion, epp, peligrosAdicionales } = formData.anexoATS;
+        const { peligros, justificacion, epp, peligrosAdicionales } = formData.anexoATS || {};
         if (!peligros || !Object.values(peligros).some(value => value === 'si')) {
             if (!peligrosAdicionales || peligrosAdicionales.length === 0) {
               toast({
@@ -361,28 +372,6 @@ function CreatePermitWizard() {
             return false;
         }
     }
-
-    if (currentLabel === 'EPP y Emergencias') {
-        const eppData = formData.eppEmergencias?.epp || {};
-        const missingSpecFields = eppItems
-            .filter(item => item.manual && eppData[item.id] === 'si')
-            .filter(item => {
-                const specFieldKey = `${item.id}_manual`;
-                const specValue = eppData[specFieldKey] as string | undefined;
-                return !specValue || specValue.trim() === '';
-            })
-            .map(item => `'${item.label.replace(/:$/, '')}'`);
-
-        if (missingSpecFields.length > 0) {
-            toast({
-                variant: "destructive",
-                title: "Especificación de EPP Requerida",
-                description: `Por favor, complete la especificación para los siguientes EPP: ${missingSpecFields.join(', ')}.`,
-                duration: 6000,
-            });
-            return false;
-        }
-    }
     
     if (currentLabel === 'Anexo Altura') {
       const anexo = formData.anexoAltura;
@@ -416,6 +405,28 @@ function CreatePermitWizard() {
                 variant: "destructive",
                 title: "Validación Requerida en Verificación de Peligros",
                 description: "Debe seleccionar 'SI' en al menos un peligro para poder continuar.",
+            });
+            return false;
+        }
+    }
+
+    if (currentLabel === 'EPP y Emergencias') {
+        const eppData = formData.eppEmergencias?.epp || {};
+        const missingSpecFields = eppItems
+            .filter(item => item.manual && eppData[item.id] === 'si')
+            .filter(item => {
+                const specFieldKey = `${item.id}_manual`;
+                const specValue = eppData[specFieldKey] as string | undefined;
+                return !specValue || specValue.trim() === '';
+            })
+            .map(item => `'${item.label.replace(/:$/, '')}'`);
+
+        if (missingSpecFields.length > 0) {
+            toast({
+                variant: "destructive",
+                title: "Especificación de EPP Requerida",
+                description: `Por favor, complete la especificación para los siguientes EPP: ${missingSpecFields.join(', ')}.`,
+                duration: 6000,
             });
             return false;
         }
@@ -708,6 +719,12 @@ function CreatePermitWizard() {
                             </SelectContent>
                         </Select>
                     </div>
+                     {currentWorker?.rol === 'Otro' && (
+                        <div>
+                            <Label htmlFor="worker-otro-rol">Especifique el rol</Label>
+                            <Input id="worker-otro-rol" value={currentWorker?.otroRol || ''} onChange={(e) => handleWorkerInputChange('otroRol', e.target.value)} />
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label className="font-semibold">Certificado Aptitud Médica</Label>
