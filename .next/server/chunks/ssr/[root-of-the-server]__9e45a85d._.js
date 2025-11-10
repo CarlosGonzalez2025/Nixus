@@ -282,7 +282,6 @@ const workTypesMap = {
     'confinado': 'Espacios Confinados',
     'energia': 'Control de Energías',
     'izaje': 'Izaje de Cargas',
-    'caliente': 'Trabajo en Caliente',
     'excavacion': 'Excavaciones',
     'general': 'Trabajo General'
 };
@@ -292,7 +291,6 @@ const getWorkTypesString = (permit)=>{
     if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
     if (permit.controlEnergias) selectedTypes.push('Control de Energías');
     if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
-    if (permit.trabajoCaliente) selectedTypes.push('Trabajo en Caliente');
     if (permit.excavaciones) selectedTypes.push('Excavaciones');
     if (selectedTypes.length === 0) {
         if (permit.trabajoGeneral) return 'Trabajo General';

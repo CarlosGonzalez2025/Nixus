@@ -33,6 +33,9 @@ import {
   PauseCircle,
   Lock,
   Edit,
+  HeartPulse,
+  BookUser,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -692,7 +695,6 @@ export default function PermitDetailPage() {
     if (permit.selectedWorkTypes.confinado) workTypes.push('Espacios Confinados');
     if (permit.selectedWorkTypes.energia) workTypes.push('Control de Energías');
     if (permit.selectedWorkTypes.izaje) workTypes.push('Izaje de Cargas');
-    if (permit.selectedWorkTypes.caliente) workTypes.push('Trabajo en Caliente');
     if (permit.selectedWorkTypes.excavacion) workTypes.push('Excavaciones');
     if (permit.selectedWorkTypes.general) workTypes.push('Trabajo General');
     
@@ -1208,32 +1210,52 @@ export default function PermitDetailPage() {
 
                 {/* Sección de Personal */}
                 <Section title="Personal Autorizado y Externo">
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead>Cédula</TableHead>
-                                <TableHead>Rol</TableHead>
-                                <TableHead>Firma Apertura</TableHead>
-                                <TableHead>Firma Cierre</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {permit.workers?.map((worker, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{worker.nombre}</TableCell>
-                                    <TableCell>{worker.cedula}</TableCell>
-                                    <TableCell><Badge variant="secondary">{worker.rol}</Badge></TableCell>
-                                    <TableCell>
-                                        {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma" width={100} height={50} className="border rounded" /> : 'Pendiente'}
-                                    </TableCell>
-                                     <TableCell>
-                                        {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma" width={100} height={50} className="border rounded" /> : 'Pendiente'}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                     </Table>
+                     <div className="space-y-4">
+                        {permit.workers?.map((worker, index) => (
+                            <Card key={index} className="overflow-hidden">
+                                <CardHeader className="p-4 bg-gray-50/50 border-b">
+                                    <CardTitle className="text-base flex justify-between items-center">
+                                        <span>{worker.nombre}</span>
+                                        <Badge variant="outline">{worker.rol === 'Otro' ? worker.otroRol : worker.rol}</Badge>
+                                    </CardTitle>
+                                    <p className="text-xs text-muted-foreground pt-1">C.C. {worker.cedula}</p>
+                                </CardHeader>
+                                <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <HeartPulse className="h-4 w-4 text-blue-500" />
+                                            <span className="font-semibold">Aptitud Médica:</span>
+                                            <Badge variant="secondary" className="uppercase">{worker.tsaTec}</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <BookUser className="h-4 w-4 text-blue-500"/>
+                                            <span className="font-semibold">Entrenamiento:</span>
+                                            <Badge variant="secondary" className="capitalize">{worker.entrenamiento}</Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <ShieldCheck className="h-4 w-4 text-blue-500"/>
+                                            <span className="font-semibold">Seguridad Social:</span>
+                                            <div className="flex gap-2">
+                                                {worker.eps && <Badge className="bg-green-100 text-green-800">EPS</Badge>}
+                                                {worker.arl && <Badge className="bg-green-100 text-green-800">ARL</Badge>}
+                                                {worker.pensiones && <Badge className="bg-green-100 text-green-800">Pensión</Badge>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-xs font-semibold text-muted-foreground">Firma Apertura</p>
+                                            {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma" width={100} height={50} className="border rounded mt-1" /> : <p className="text-xs italic text-muted-foreground mt-1">Pendiente</p>}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-muted-foreground">Firma Cierre</p>
+                                            {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma" width={100} height={50} className="border rounded mt-1" /> : <p className="text-xs italic text-muted-foreground mt-1">Pendiente</p>}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                     </div>
                 </Section>
                 
                  {/* Sección de Firmas de Aprobación */}
@@ -1279,7 +1301,6 @@ export default function PermitDetailPage() {
                 <SignaturePad 
                     onSave={handleSaveSignature} 
                     isSaving={isSigning} 
-                    consentText={signingRole?.role === 'coordinador_alturas' ? '' : undefined} // El consentimiento específico ya está arriba
                 />
             </DialogContent>
         </Dialog>
@@ -1304,5 +1325,6 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 

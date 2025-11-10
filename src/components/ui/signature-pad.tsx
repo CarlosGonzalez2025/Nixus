@@ -17,7 +17,10 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [hasConsented, setHasConsented] = useState(false);
+  
+  // Consentimiento ahora es opcional. El componente padre decide si mostrarlo.
+  // Por defecto, se asume que no se necesita consentimiento explícito aquí.
+  const [hasConsented, setHasConsented] = useState(true);
 
   const getCanvasContext = () => {
     const canvas = canvasRef.current;
@@ -133,16 +136,6 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
-      <div className="flex items-start space-x-3 my-4">
-        <Checkbox 
-          id="terms" 
-          checked={hasConsented}
-          onCheckedChange={(checked) => setHasConsented(checked as boolean)}
-        />
-        <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
-          Autorizo el tratamiento de mis datos personales y el uso de mi firma digital, de conformidad con la Ley 1581 de 2012 de Colombia, para la validación y gestión de documentos dentro del sistema SGPT Móvil.
-        </Label>
-      </div>
       <DialogFooter className="w-full">
          <Button variant="outline" onClick={clearPad} disabled={isSaving}>
           <Eraser className="mr-2 h-4 w-4" />
