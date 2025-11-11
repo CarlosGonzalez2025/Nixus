@@ -59,7 +59,7 @@ const RadioGroupField: React.FC<{
     <div className="flex flex-col space-y-2 p-3 border rounded-md bg-white">
         <div className="flex justify-between items-center">
             <Label htmlFor={id} className="text-sm font-medium flex-1">{label}</Label>
-            <RadioGroup id={id} value={value || 'na'} onValueChange={onChange} className="flex gap-4">
+            <RadioGroup id={id} value={value || ''} onValueChange={onChange} className="flex gap-4">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="si" id={`${id}-si`} /><Label htmlFor={`${id}-si`}>SI</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="no" id={`${id}-no`} /><Label htmlFor={`${id}-no`}>NO</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="na" id={`${id}-na`} /><Label htmlFor={`${id}-na`}>N/A</Label></div>
