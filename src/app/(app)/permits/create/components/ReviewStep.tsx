@@ -75,7 +75,7 @@ export function ReviewStep() {
                             <DetailField label="Validez Hasta" value={state.generalInfo.validUntil ? format(new Date(state.generalInfo.validUntil), 'PPpp') : 'N/A'} />
                         </div>
                         <DetailField label="Tipos de Trabajo Seleccionados" value={<span className="font-medium text-primary">{getWorkTypesString()}</span>} />
-                        <DetailField label="Descripción de la Tarea / Alcance" value={<p className="whitespace-pre-wrap">{state.generalInfo.workDescription}</p>} />
+                        <DetailField label="Descripción de la Tarea / Alcance" value={<div className="whitespace-pre-wrap">{state.generalInfo.workDescription}</div>} />
                         <DetailField label="Herramientas" value={state.generalInfo.tools?.map(t => t.name).join(', ') || 'Ninguna'} />
                         <DetailField label="Número de Trabajadores" value={state.generalInfo.numTrabajadores} />
                         <DetailField label="Responsable del Trabajo" value={`${state.generalInfo.responsable?.nombre} (${state.generalInfo.responsable?.cargo})`} />
