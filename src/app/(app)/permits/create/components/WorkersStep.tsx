@@ -26,7 +26,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
             <p className="font-semibold">FIRMAS:</p>
             <ol className="list-decimal list-outside space-y-2 pl-5">
               <li>
-                Los abajo firmantes somos consientes de los riesgos relacionados con la ejecución del trabajo, así como de las medidas preventivas determinadas con el fin de realizar el trabajo de forma segura, asumiendo el compromiso de cumplir con las orientaciones de seguridad contenidas en este documento, utilizar los equipos de protección personal y ejecutar solamente los servicios o actividades cubiertos por esta autorización. Así mismo manifiesto mi buen estado de salud para el desarrollo de las actividades.
+                Al firmar, los trabajadores aceptan el tratamiento de sus datos personales, manifiestan su buen estado de salud y confirman haber comprendido los riesgos y controles de la actividad.
               </li>
               <li>
                 Se verifican certificados de aptitud médica para Trabajos en alturas y espacios confinados; según aplique, con fecha de expedición inferior a un año.

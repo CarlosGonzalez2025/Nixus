@@ -17,10 +17,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  
-  // Consentimiento ahora es opcional. El componente padre decide si mostrarlo.
-  // Por defecto, se asume que no se necesita consentimiento explícito aquí.
-  const [hasConsented, setHasConsented] = useState(true);
+  const [hasConsented, setHasConsented] = useState(false);
 
   const getCanvasContext = () => {
     const canvas = canvasRef.current;
@@ -136,6 +133,17 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
+       <div className="flex items-start space-x-3 w-full">
+        <Checkbox 
+          id="consent" 
+          checked={hasConsented}
+          onCheckedChange={(checked) => setHasConsented(Boolean(checked))}
+          className="mt-1"
+        />
+        <Label htmlFor="consent" className="text-xs text-muted-foreground">
+          Al firmar, acepto el tratamiento de mis datos personales y manifiesto que he leído y comprendido los riesgos y controles de la actividad.
+        </Label>
+      </div>
       <DialogFooter className="w-full">
          <Button variant="outline" onClick={clearPad} disabled={isSaving}>
           <Eraser className="mr-2 h-4 w-4" />
