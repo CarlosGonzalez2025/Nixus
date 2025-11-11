@@ -496,7 +496,7 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
           onUpdatePeligros={handleUpdatePeligrosAdicionales}
         />
       </SectionWrapper>
-
+      
       <div className="p-4 border-t-2 border-dashed mt-8">
         <h4 className="font-bold text-lg mb-2 text-gray-800">PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL</h4>
         <ul className="list-disc list-outside space-y-2 text-sm text-gray-600 pl-5">
@@ -538,8 +538,3 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     </div>
   );
 }
-
-// Exportar con React.memo para optimización
-export default React.memo(AtsStep);
-
-    
