@@ -497,6 +497,15 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         />
       </SectionWrapper>
 
+      <div className="p-4 border-t-2 border-dashed mt-8">
+        <h4 className="font-bold text-lg mb-2 text-gray-800">PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL</h4>
+        <ul className="list-disc list-outside space-y-2 text-sm text-gray-600 pl-5">
+            <li>Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación.</li>
+            <li>Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área.</li>
+            <li>Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario.</li>
+        </ul>
+      </div>
+
       <SectionWrapper title="2. EPP Requeridos" sectionId="epp">
          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             {Object.entries(eppOptions).map(([category, items]) => (
@@ -532,3 +541,5 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
 
 // Exportar con React.memo para optimización
 export default React.memo(AtsStep);
+
+    

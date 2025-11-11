@@ -11734,7 +11734,7 @@ function CreatePermitWizard() {
         },
         {
             label: "Verificación Peligros",
-            condition: true
+            condition: false
         },
         {
             label: "EPP y Emergencias",
