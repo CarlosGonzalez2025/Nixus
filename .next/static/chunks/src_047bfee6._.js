@@ -3073,6 +3073,53 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                 lineNumber: 442,
                 columnNumber: 7
             }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "p-4 border-t-2 border-dashed mt-8",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
+                        className: "font-bold text-lg mb-2 text-gray-800",
+                        children: "PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                        lineNumber: 501,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
+                        className: "list-disc list-outside space-y-2 text-sm text-gray-600 pl-5",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                lineNumber: 503,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                lineNumber: 504,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                children: "Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario."
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                lineNumber: 505,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                        lineNumber: 502,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                lineNumber: 500,
+                columnNumber: 7
+            }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
                 title: "2. EPP Requeridos",
                 sectionId: "epp",
@@ -3085,17 +3132,17 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                             onEppChange: handleEppChange
                         }, category, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 503,
+                            lineNumber: 512,
                             columnNumber: 15
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 501,
+                    lineNumber: 510,
                     columnNumber: 10
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 500,
+                lineNumber: 509,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3112,7 +3159,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     onCheckedChange: (checked)=>handleJustificacionChange(option.id, !!checked)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 518,
+                                    lineNumber: 527,
                                     columnNumber: 21
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -3121,23 +3168,23 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     children: option.label
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 523,
+                                    lineNumber: 532,
                                     columnNumber: 21
                                 }, this)
                             ]
                         }, option.id, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 517,
+                            lineNumber: 526,
                             columnNumber: 17
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 515,
+                    lineNumber: 524,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 514,
+                lineNumber: 523,
                 columnNumber: 7
             }, this)
         ]
