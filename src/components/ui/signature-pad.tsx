@@ -141,7 +141,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
           className="mt-1"
         />
         <Label htmlFor="consent" className="text-xs text-muted-foreground">
-          Al firmar, acepto el tratamiento de mis datos personales y manifiesto que he leído y comprendido los riesgos y controles de la actividad.
+          Al firmar, doy mi consentimiento y estoy de acuerdo con la información relacionada dentro del permiso de trabajo y sus anexos. Adicionalmente, autorizo el tratamiento de mis datos personales conforme a lo establecido en la Ley 1581 de 2012 y su Decreto Reglamentario 1377 de 2013, para las finalidades descritas en la política de tratamiento de datos de la organización.
         </Label>
       </div>
       <DialogFooter className="w-full">
