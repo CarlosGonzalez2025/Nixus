@@ -629,7 +629,7 @@ const SignaturePad = ({ onSave, isSaving = false })=>{
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Label"], {
                         htmlFor: "consent",
                         className: "text-xs text-muted-foreground",
-                        children: "Al firmar, acepto el tratamiento de mis datos personales y manifiesto que he leído y comprendido los riesgos y controles de la actividad."
+                        children: "Al firmar, doy mi consentimiento y estoy de acuerdo con la información relacionada dentro del permiso de trabajo y sus anexos. Adicionalmente, autorizo el tratamiento de mis datos personales conforme a lo establecido en la Ley 1581 de 2012 y su Decreto Reglamentario 1377 de 2013, para las finalidades descritas en la política de tratamiento de datos de la organización."
                     }, void 0, false, {
                         fileName: "[project]/src/components/ui/signature-pad.tsx",
                         lineNumber: 143,

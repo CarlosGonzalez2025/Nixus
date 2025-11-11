@@ -290,7 +290,7 @@ function CreatePermitWizard() {
     { label: "Anexo Energías", condition: formData.selectedWorkTypes.energia},
     { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
     { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
-    { label: "Verificación Peligros", condition: true },
+    { label: "Verificación Peligros", condition: false },
     { label: "EPP y Emergencias", condition: true },
     { label: "Trabajadores", condition: true },
     { label: "Revisión", condition: true }
