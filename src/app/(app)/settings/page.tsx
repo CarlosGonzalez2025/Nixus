@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -170,7 +171,7 @@ export default function SettingsPage() {
                   </div>
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField control={profileForm.control} name="empresa" render={({ field }) => (
-                        <FormItem><FormLabel>Empresa</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Empresa</FormLabel><FormControl><Input {...field} readOnly disabled /></FormControl><FormMessage /></FormItem>
                     )} />
                      <FormField control={profileForm.control} name="ciudad" render={({ field }) => (
                         <FormItem><FormLabel>Ciudad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
