@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -218,11 +217,7 @@ const EppItem = React.memo(({
 }) => {
   const handleCheckedChange = React.useCallback((checkedValue: boolean) => {
     onCheckedChange(checkedValue);
-    // If unchecking a text field, clear its value
-    if (!checkedValue && item.type === 'text') {
-      onTextChange('');
-    }
-  }, [onCheckedChange, onTextChange, item.type]);
+  }, [onCheckedChange]);
 
   return (
     <div className="flex flex-col gap-1">
@@ -386,9 +381,18 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   }, [anexoATS.peligros, onUpdateATS]);
   
   const handleEppChange = React.useCallback((id: string, value: boolean | string) => {
-    onUpdateATS({ 
-      epp: { ...anexoATS.epp, [id]: value } 
-    });
+    const newEpp = { ...anexoATS.epp, [id]: value };
+
+    // Si se desmarca un checkbox de un EPP con texto, borrar el texto.
+    if (value === false) {
+      const allEppItems = Object.values(eppOptions).flat();
+      const item = allEppItems.find(i => i.id === id);
+      if (item && item.type === 'text') {
+        delete newEpp[`${id}_spec`];
+      }
+    }
+    
+    onUpdateATS({ epp: newEpp });
   }, [anexoATS.epp, onUpdateATS]);
 
   const handleJustificacionChange = React.useCallback((id: string, value: boolean) => {
