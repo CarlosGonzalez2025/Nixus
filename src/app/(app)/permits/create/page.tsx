@@ -349,7 +349,7 @@ function CreatePermitWizard() {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
-                description: "El recuadro rojo para obligatoriedad de “Escoja o seleccione los EPP´S requeridos, para continuar”",
+                description: "Escoja o seleccione los EPP´S requeridos, para continuar”",
             });
             return false;
         }

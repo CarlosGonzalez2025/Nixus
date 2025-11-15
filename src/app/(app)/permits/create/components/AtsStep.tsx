@@ -270,10 +270,9 @@ const EppCategory = React.memo(({
               if (item.type === 'boolean') {
                 onEppChange(item.id, checked);
               } else if (item.type === 'text') {
-                if (checked) {
-                  onEppChange(item.id, true);
-                } else {
-                  onEppChange(item.id, false);
+                onEppChange(item.id, checked);
+                if (!checked) {
+                  // If unchecked, also clear the text field value
                   onEppChange(`${item.id}_spec`, '');
                 }
               }
