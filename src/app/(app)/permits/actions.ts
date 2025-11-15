@@ -364,3 +364,37 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     return { success: false, error: 'No se pudo guardar la firma de validación.' };
   }
 }
+
+export async function addWorkerSignature(permitId: string, workerIndex: number, signatureType: 'firmaApertura' | 'firmaCierre', signatureDataUrl: string) {
+    if (!permitId || workerIndex < 0 || !signatureType || !signatureDataUrl) {
+        return { success: false, error: 'Faltan parámetros.' };
+    }
+
+    const docRef = adminDb.collection('permits').doc(permitId);
+    try {
+        const permitSnap = await docRef.get();
+        if (!permitSnap.exists) {
+            return { success: false, error: 'El permiso no existe.' };
+        }
+
+        const permitData = permitSnap.data() as Permit;
+        const workers = permitData.workers ? [...permitData.workers] : [];
+
+        if (workerIndex >= workers.length) {
+            return { success: false, error: 'Índice de trabajador inválido.' };
+        }
+
+        workers[workerIndex] = {
+            ...workers[workerIndex],
+            [signatureType]: signatureDataUrl,
+        };
+
+        await docRef.update({ workers: workers });
+
+        revalidatePath(`/permits/${permitId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error al guardar la firma del trabajador:", error);
+        return { success: false, error: 'No se pudo guardar la firma.' };
+    }
+}

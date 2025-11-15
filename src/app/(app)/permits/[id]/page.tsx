@@ -64,7 +64,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature } from '../actions';
+import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature } from '../actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -209,6 +209,9 @@ export default function PermitDetailPage() {
   const [dailyValidationTarget, setDailyValidationTarget] = useState<{anexo: string, type: 'autoridad' | 'responsable', index: number} | null>(null);
   const [dailyValidationName, setDailyValidationName] = useState('');
   const [dailyValidationDate, setDailyValidationDate] = useState('');
+
+  const [isWorkerSignatureOpen, setIsWorkerSignatureOpen] = useState(false);
+  const [workerSignatureTarget, setWorkerSignatureTarget] = useState<{ index: number; type: 'firmaApertura' | 'firmaCierre'; } | null>(null);
 
 
   useEffect(() => {
@@ -691,6 +694,8 @@ export default function PermitDetailPage() {
       case 'suspendido':
         return status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
       case 'cerrado':
+        const allWorkersSignedClosure = permit.workers?.every(w => w.firmaCierre);
+        if (!allWorkersSignedClosure) return false;
         return (status === 'en_ejecucion' || status === 'suspendido') && (role === 'lider_tarea' || role === 'admin');
       default:
         return false;
@@ -748,6 +753,35 @@ export default function PermitDetailPage() {
 
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const openWorkerSignatureDialog = (index: number, type: 'firmaApertura' | 'firmaCierre') => {
+    setWorkerSignatureTarget({ index, type });
+    setIsWorkerSignatureOpen(true);
+  };
+
+  const handleSaveWorkerSignature = async (signature: string) => {
+    if (!permit || workerSignatureTarget === null) return;
+    
+    setIsSigning(true);
+    try {
+      const result = await addWorkerSignature(
+        permit.id,
+        workerSignatureTarget.index,
+        workerSignatureTarget.type,
+        signature
+      );
+      if (result.success) {
+        toast({ title: 'Firma de trabajador guardada.' });
+        setIsWorkerSignatureOpen(false);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error al guardar firma', description: error.message });
     } finally {
       setIsSigning(false);
     }
@@ -1122,30 +1156,46 @@ export default function PermitDetailPage() {
                          {isStatusChanging ? <Loader2 className="animate-spin" /> : <PauseCircle className="mr-2"/>} Suspender
                      </Button>
                  )}
-                 {canChangeStatus('cerrado') && (
-                     <AlertDialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button style={{backgroundColor: '#007bff'}}><Lock className="mr-2"/>Cerrar Permiso</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Cerrar Permiso de Trabajo</AlertDialogTitle></AlertDialogHeader>
-                            <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
-                                <h4 className="font-semibold text-sm">Verificación de Cierre:</h4>
-                                <RadioCheck label="Se ha diligenciado el informe de culminación de trabajo?" value={permit.closure.informeCulminacion} onValueChange={(val) => handleClosureFieldChange('informeCulminacion', val)} />
-                                <RadioCheck label="Se ha dejado el área en condiciones seguras y ordenadas?" value={permit.closure.areaDespejada} onValueChange={(val) => handleClosureFieldChange('areaDespejada', val)} />
-                                <RadioCheck label="Se ha realizado la disposición de residuos?" value={permit.closure.evidenciaParticulas} onValueChange={(val) => handleClosureFieldChange('evidenciaParticulas', val)} />
-                                <RadioCheck label="Se retiraron los sistemas de bloqueo y aseguramiento de energías?" value={permit.closure.dispositivosRetirados} onValueChange={(val) => handleClosureFieldChange('dispositivosRetirados', val)} />
-                                <RadioCheck label="Continúa la labor?" value={permit.closure.continuaLabor} onValueChange={(val) => handleClosureFieldChange('continuaLabor', val)} />
-                            </div>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}>
-                                    {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Confirmar Cierre
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                     </AlertDialog>
-                 )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block">
+                        <Button 
+                          onClick={() => setIsClosureDialogOpen(true)} 
+                          disabled={!canChangeStatus('cerrado')}
+                          style={canChangeStatus('cerrado') ? {backgroundColor: '#007bff'} : {}}
+                        >
+                          <Lock className="mr-2"/>Cerrar Permiso
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!canChangeStatus('cerrado') && (
+                      <TooltipContent>
+                        <p>Todas las firmas de cierre de los trabajadores son requeridas.</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+
+                 <AlertDialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Cerrar Permiso de Trabajo</AlertDialogTitle></AlertDialogHeader>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+                            <h4 className="font-semibold text-sm">Verificación de Cierre:</h4>
+                            <RadioCheck label="Se ha diligenciado el informe de culminación de trabajo?" value={permit.closure.informeCulminacion} onValueChange={(val) => handleClosureFieldChange('informeCulminacion', val)} />
+                            <RadioCheck label="Se ha dejado el área en condiciones seguras y ordenadas?" value={permit.closure.areaDespejada} onValueChange={(val) => handleClosureFieldChange('areaDespejada', val)} />
+                            <RadioCheck label="Se ha realizado la disposición de residuos?" value={permit.closure.evidenciaParticulas} onValueChange={(val) => handleClosureFieldChange('evidenciaParticulas', val)} />
+                            <RadioCheck label="Se retiraron los sistemas de bloqueo y aseguramiento de energías?" value={permit.closure.dispositivosRetirados} onValueChange={(val) => handleClosureFieldChange('dispositivosRetirados', val)} />
+                            <RadioCheck label="Continúa la labor?" value={permit.closure.continuaLabor} onValueChange={(val) => handleClosureFieldChange('continuaLabor', val)} />
+                        </div>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}>
+                                {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Confirmar Cierre
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
             </div>
           </div>
         </div>
@@ -1426,7 +1476,15 @@ export default function PermitDetailPage() {
                               {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="border rounded" /> : <span className="text-xs italic text-muted-foreground">Pendiente</span>}
                             </TableCell>
                             <TableCell>
-                              {worker.firmaCierre ? <Image src={worker.firmaCierre} alt="Firma Cierre" width={80} height={40} className="border rounded" /> : <span className="text-xs italic text-muted-foreground">Pendiente</span>}
+                              {worker.firmaCierre ? (
+                                <Image src={worker.firmaCierre} alt="Firma Cierre" width={80} height={40} className="border rounded" />
+                              ) : (
+                                (permit.status === 'en_ejecucion' || permit.status === 'suspendido') && (
+                                  <Button size="sm" variant="outline" onClick={() => openWorkerSignatureDialog(index, 'firmaCierre')}>
+                                    <SignatureIcon className="mr-2 h-4 w-4" /> Firmar Cierre
+                                  </Button>
+                                )
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1536,6 +1594,15 @@ export default function PermitDetailPage() {
                     isSaving={isSigning} 
                 />
             </DialogContent>
+        </Dialog>
+
+        <Dialog open={isWorkerSignatureOpen} onOpenChange={setIsWorkerSignatureOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Registrar Firma de Trabajador</DialogTitle>
+            </DialogHeader>
+            <SignaturePad onSave={handleSaveWorkerSignature} isSaving={isSigning} />
+          </DialogContent>
         </Dialog>
         
         <AlertDialog open={isSolicitanteSignAlertOpen} onOpenChange={setIsSolicitanteSignAlertOpen}>
