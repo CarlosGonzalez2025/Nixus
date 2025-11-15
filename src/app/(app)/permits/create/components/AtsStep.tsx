@@ -218,7 +218,11 @@ const EppItem = React.memo(({
 }) => {
   const handleCheckedChange = React.useCallback((checkedValue: boolean) => {
     onCheckedChange(checkedValue);
-  }, [onCheckedChange]);
+    // If unchecking a text field, clear its value
+    if (!checkedValue && item.type === 'text') {
+      onTextChange('');
+    }
+  }, [onCheckedChange, onTextChange, item.type]);
 
   return (
     <div className="flex flex-col gap-1">
@@ -266,17 +270,7 @@ const EppCategory = React.memo(({
             item={item}
             checked={!!eppData?.[item.id]}
             textValue={typeof eppData?.[`${item.id}_spec`] === 'string' ? (eppData[`${item.id}_spec`] as string) : ''}
-            onCheckedChange={(checked) => {
-              if (item.type === 'boolean') {
-                onEppChange(item.id, checked);
-              } else if (item.type === 'text') {
-                onEppChange(item.id, checked);
-                if (!checked) {
-                  // If unchecked, also clear the text field value
-                  onEppChange(`${item.id}_spec`, '');
-                }
-              }
-            }}
+            onCheckedChange={(checked) => onEppChange(item.id, checked)}
             onTextChange={(value) => onEppChange(`${item.id}_spec`, value)}
           />
         ))}
