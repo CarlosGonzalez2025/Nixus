@@ -12082,7 +12082,7 @@ function CreatePermitWizard() {
                 toast({
                     variant: "destructive",
                     title: "Validación Requerida en ATS",
-                    description: "Debe seleccionar 'SI' en al menos un peligro o agregar un peligro adicional para continuar."
+                    description: "Debe seleccionar los peligros asociados e identificados para la actividad, para continuar."
                 });
                 return false;
             }
