@@ -490,7 +490,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
             // Si es el solicitante quien firma, cambiamos el estado y generamos el número.
             if (role === 'solicitante') {
                 const permitDocBefore = await docRef.get();
-                if (permitDocBefore.exists() && permitDocBefore.data()?.status === 'borrador') {
+                if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
                     const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                     updateData['number'] = permitNumber;
                     updateData['status'] = 'pendiente_revision';

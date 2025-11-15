@@ -339,8 +339,8 @@ export default function PermitDetailPage() {
               w.nombre,
               w.cedula,
               w.rol === 'Otro' ? w.otroRol : w.rol,
-              w.tsaTec?.toUpperCase(),
-              w.entrenamiento,
+              [w.tsaTec?.tec ? 'TEC' : '', w.tsaTec?.tsa ? 'TSA' : ''].filter(Boolean).join(', '),
+              [w.entrenamiento?.tec ? 'TEC' : '', w.entrenamiento?.tsa ? 'TSA' : '', w.entrenamiento?.otro ? w.entrenamiento?.otroCual : ''].filter(Boolean).join(', '),
               [w.eps ? 'EPS' : '', w.arl ? 'ARL' : '', w.pensiones ? 'P' : ''].filter(Boolean).join(', ')
             ]);
             
@@ -951,6 +951,13 @@ export default function PermitDetailPage() {
         <Card className="flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
+            {role === 'solicitante' && permit.generalInfo?.responsable && (
+                <div className="text-xs text-muted-foreground pt-2 border-t">
+                    <p className="font-semibold">Responsable del Trabajo:</p>
+                    <p>{permit.generalInfo.responsable.nombre}</p>
+                    <p>{permit.generalInfo.responsable.cargo} - {permit.generalInfo.responsable.compania}</p>
+                </div>
+            )}
           </CardHeader>
           <CardContent className="flex-grow flex flex-col justify-between gap-4">
             <div className="flex-grow">
@@ -1396,10 +1403,17 @@ export default function PermitDetailPage() {
                               <Badge variant="outline">{worker.rol === 'Otro' ? worker.otroRol : worker.rol}</Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="secondary" className="uppercase">{worker.tsaTec}</Badge>
+                               <div className="flex gap-1">
+                                {worker.tsaTec?.tec && <Badge variant="secondary" className="uppercase">TEC</Badge>}
+                                {worker.tsaTec?.tsa && <Badge variant="secondary" className="uppercase">TSA</Badge>}
+                               </div>
                             </TableCell>
                             <TableCell>
-                               <Badge variant="secondary" className="capitalize">{worker.entrenamiento}</Badge>
+                                <div className="flex flex-col gap-1">
+                                    {worker.entrenamiento?.tec && <Badge variant="secondary" className="capitalize">TEC</Badge>}
+                                    {worker.entrenamiento?.tsa && <Badge variant="secondary" className="capitalize">TSA</Badge>}
+                                    {worker.entrenamiento?.otro && worker.entrenamiento?.otroCual && <Badge variant="secondary" className="capitalize">{worker.entrenamiento.otroCual}</Badge>}
+                                </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
