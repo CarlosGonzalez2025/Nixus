@@ -36,9 +36,16 @@ export interface ExternalWorker {
   cedula: string;
   rol: string;
   otroRol?: string;
-  tsaTec: 'tsa' | 'tec' | 'otro' | 'na';
-  entrenamiento: 'tsa' | 'tec' | 'otro';
-  otroEntrenamiento?: string;
+  tsaTec: {
+    tec: boolean;
+    tsa: boolean;
+  };
+  entrenamiento: {
+    tec: boolean;
+    tsa: boolean;
+    otro: boolean;
+    otroCual?: string;
+  };
   eps: string;
   arl: string;
   pensiones: string;
@@ -409,4 +416,5 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
+
 

@@ -56,7 +56,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { PermitFormProvider, usePermitForm } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
-import { AtsStep, eppOptions as atsEppOptions } from './components/AtsStep';
+import { AtsStep } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
 import { AnexoConfinadoStep } from './components/AnexoConfinadoStep';
 import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
@@ -167,8 +167,8 @@ function CreatePermitWizard() {
       eps: '',
       arl: '',
       pensiones: '',
-      tsaTec: 'na',
-      entrenamiento: 'otro',
+      tsaTec: { tec: false, tsa: false },
+      entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
       firmaApertura: '',
       firmaCierre: ''
     });
@@ -220,7 +220,7 @@ function CreatePermitWizard() {
     dispatch({ type: 'SET_WORKERS', payload: updatedWorkers });
   };
   
-  const handleWorkerInputChange = (field: keyof ExternalWorker, value: string | boolean) => {
+  const handleWorkerInputChange = (field: keyof ExternalWorker, value: any) => {
     setCurrentWorker(prev => prev ? { ...prev, [field]: value } : null);
   };
 
@@ -349,7 +349,7 @@ function CreatePermitWizard() {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
-                description: "Escoja o seleccione los EPP´S requeridos, para continuar”",
+                description: "El recuadro rojo para obligatoriedad de “Escoja o seleccione los EPP´S requeridos, para continuar",
             });
             return false;
         }
@@ -359,26 +359,6 @@ function CreatePermitWizard() {
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
                 description: "Debe seleccionar al menos una 'Justificación para el uso del ATS' para continuar.",
-            });
-            return false;
-        }
-        
-        const eppData = epp || {};
-        const allEppItems = Object.values(atsEppOptions).flat();
-        const missingAtsEppSpec = allEppItems
-            .filter(item => item.type === 'text' && eppData[item.id])
-            .filter(item => {
-                const specValue = eppData[`${item.id}_spec`] as string | undefined;
-                return !specValue || specValue.trim() === '';
-            })
-            .map(item => `'${item.label.replace(/:$/, '')}'`);
-
-        if (missingAtsEppSpec.length > 0) {
-            toast({
-                variant: "destructive",
-                title: "Especificación de EPP Requerida en ATS",
-                description: `Por favor, complete la especificación para los siguientes EPP: ${missingAtsEppSpec.join(', ')}.`,
-                duration: 6000,
             });
             return false;
         }
@@ -773,17 +753,58 @@ function CreatePermitWizard() {
                     <div className="space-y-2">
                         <Label className="font-semibold">Certificado Aptitud Médica</Label>
                         <div className="flex gap-4">
-                            <div className="flex items-center gap-2"><Checkbox id="cert-tec" checked={currentWorker?.tsaTec === 'tec'} onCheckedChange={checked => handleWorkerInputChange('tsaTec', checked ? 'tec' : 'na')} /> <Label htmlFor="cert-tec">TEC</Label></div>
-                            <div className="flex items-center gap-2"><Checkbox id="cert-tsa" checked={currentWorker?.tsaTec === 'tsa'} onCheckedChange={checked => handleWorkerInputChange('tsaTec', checked ? 'tsa' : 'na')} /> <Label htmlFor="cert-tsa">TSA</Label></div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox 
+                                    id="cert-tec" 
+                                    checked={currentWorker?.tsaTec?.tec || false} 
+                                    onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tec: !!checked })} 
+                                /> 
+                                <Label htmlFor="cert-tec">TEC</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox 
+                                    id="cert-tsa" 
+                                    checked={currentWorker?.tsaTec?.tsa || false} 
+                                    onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tsa: !!checked })} 
+                                /> 
+                                <Label htmlFor="cert-tsa">TSA</Label>
+                            </div>
                         </div>
                     </div>
                      <div className="space-y-2">
                         <Label className="font-semibold">Entrenamiento / Capacitación</Label>
                         <div className="flex gap-4">
-                             <div className="flex items-center gap-2"><Checkbox id="ent-tec" checked={currentWorker?.entrenamiento === 'tec'} onCheckedChange={checked => handleWorkerInputChange('entrenamiento', checked ? 'tec' : 'otro')} /> <Label htmlFor="ent-tec">TEC</Label></div>
-                            <div className="flex items-center gap-2"><Checkbox id="ent-tsa" checked={currentWorker?.entrenamiento === 'tsa'} onCheckedChange={checked => handleWorkerInputChange('entrenamiento', checked ? 'tsa' : 'otro')} /> <Label htmlFor="ent-tsa">TSA</Label></div>
+                             <div className="flex items-center gap-2">
+                                <Checkbox 
+                                    id="ent-tec" 
+                                    checked={currentWorker?.entrenamiento?.tec || false} 
+                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tec: !!checked })} 
+                                /> 
+                                <Label htmlFor="ent-tec">TEC</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox 
+                                    id="ent-tsa" 
+                                    checked={currentWorker?.entrenamiento?.tsa || false} 
+                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tsa: !!checked })} 
+                                /> 
+                                <Label htmlFor="ent-tsa">TSA</Label>
+                            </div>
+                             <div className="flex items-center gap-2">
+                                <Checkbox 
+                                    id="ent-otro" 
+                                    checked={currentWorker?.entrenamiento?.otro || false} 
+                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otro: !!checked })} 
+                                /> 
+                                <Label htmlFor="ent-otro">Otro</Label>
+                            </div>
                         </div>
-                         <Input placeholder="Otro" value={currentWorker?.entrenamiento === 'otro' ? (currentWorker as any).otroEntrenamiento || '' : ''} onChange={e => handleWorkerInputChange('otroEntrenamiento' as any, e.target.value)} disabled={currentWorker?.entrenamiento !== 'otro'} />
+                         <Input 
+                            placeholder="Especificar otro entrenamiento" 
+                            value={currentWorker?.entrenamiento?.otroCual || ''} 
+                            onChange={e => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otroCual: e.target.value })}
+                            disabled={!currentWorker?.entrenamiento?.otro} 
+                         />
                     </div>
                      <div className="space-y-2">
                         <Label className="font-semibold">Afiliación a Seguridad Social</Label>
