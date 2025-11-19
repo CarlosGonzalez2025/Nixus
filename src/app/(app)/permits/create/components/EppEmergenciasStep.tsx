@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -172,15 +171,24 @@ export function EppEmergenciasStep({ eppEmergencias, onUpdate }: EppEmergenciasS
 
             <SectionWrapper title="Notificaciones y Manejo de Emergencias" defaultOpen>
                 <div className="space-y-2">
-                    {emergenciasItems.map(item => (
-                        <RadioGroupField
-                            key={item.id}
-                            id={`emergencia-${item.id}`}
-                            label={item.label}
-                            value={eppEmergencias.emergencias?.[item.id] as string}
-                            onChange={(value) => handleUpdate('emergencias', item.id, value)}
-                        />
-                    ))}
+                    {emergenciasItems.map(item => {
+                        if (item.id === 'recordarVerificar') {
+                            return (
+                                <h3 key={item.id} className="font-semibold text-gray-800 pt-4 pb-2">
+                                    {item.label}
+                                </h3>
+                            );
+                        }
+                        return (
+                            <RadioGroupField
+                                key={item.id}
+                                id={`emergencia-${item.id}`}
+                                label={item.label}
+                                value={eppEmergencias.emergencias?.[item.id] as string}
+                                onChange={(value) => handleUpdate('emergencias', item.id, value)}
+                            />
+                        );
+                    })}
                 </div>
             </SectionWrapper>
         </div>
