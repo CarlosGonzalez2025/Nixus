@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -79,7 +80,7 @@ const hazardCategories = {
     { id: 'derrame_productos_quimicos', label: 'Derrame o fugas de productos Químicos', control: 'Definir un plan de emergencia en caso de derrame o fuga de productos químicos, contar con kit antiderrames y elementos de protección personal aocrdes al producto químico que se este usando' },
   ],
   MECÁNICOS: [
-    { id: 'proyeccion_particulas', label: 'Proyección de particulas y fracmentos', control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual' },
+    { id: 'proyeccion_particulas', label: 'Proyección de particulas y fragmentos', control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual' },
     { id: 'mecanismo_movimiento', label: 'Mecanismo en movimiento', control: 'Mantener protecciones como guardas y dispositivos instalados en el equipo, no posicionar segmentos corporales en áreas de peligros, por ningún motivo violar una guarda de seguridad' },
     { id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos', control: 'Uso de equipos y herramientas eléctricas en condiciones operativas que no exponen al trabajador a riesgos, realizar inspección preoperacional' },
     { id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio', control: 'Señalización en sitio de trabajo, personal con paleta de pare y siga acompañando el desplazamiento por vías internas, manejo de trafico y control de senderos peatonas' },
@@ -106,57 +107,47 @@ const hazardCategories = {
 };
 
 export const eppOptions = {
-    'Equipos Especiales': [
-        { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
-        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+    'Protección Cabeza y Cara': [
+        { id: 'casco_seguridad', label: 'Casco de seguridad Tipo/Clase/Barbuquejo', type: 'text' },
+        { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
+        { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
+        { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
+        { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
     ],
-    'Protección Corporal': [
-        { id: 'traje_tyvek', label: 'Traje tyvek', type: 'boolean' },
+    'Protección Auditiva y Respiratoria': [
+        { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
+        { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+        { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
+    ],
+    'Protección Corporal y Manos': [
+        { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
+        { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
         { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
         { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
         { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
         { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
-        { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
-        { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
         { id: 'polainas', label: 'Polainas', type: 'boolean' },
-    ],
-    'Protección para Pies': [
-        { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
-        { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
-        { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
-    ],
-    'Protección Contra Caídas': [
-        { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
-        { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
-        { id: 'arnes', label: 'Arnés', type: 'boolean' },
-        { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
-    ],
-    'Protección para la Cabeza': [
-        { id: 'casco_seguridad', label: 'Casco de seguridad Tipo/Clase/Barbuquejo', type: 'text' },
-    ],
-    'Protección para Manos': [
         { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
         { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
         { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
         { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
     ],
-    'Protección Respiratoria': [
-        { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
-        { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
+    'Protección para Pies y Contra Caídas': [
+        { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
+        { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
+        { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
+        { id: 'arnes', label: 'Arnés', type: 'boolean' },
+        { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
+        { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
+        { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
     ],
-    'Protección Auditiva': [
-        { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
-    ],
-    'Protección Visual y Facial': [
-        { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
-        { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
-        { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
-        { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
-    ],
-    'Otro': [
+    'Equipos Especiales y Otros': [
+        { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
+        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
         { id: 'otro_epp', label: 'Otro:', type: 'text' },
     ],
 };
+
 
 const justificacionOptions = [
     { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
@@ -381,17 +372,23 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   }, [anexoATS.peligros, onUpdateATS]);
   
   const handleEppChange = React.useCallback((id: string, value: boolean | string) => {
-    const newEpp = { ...anexoATS.epp, [id]: value };
-
-    // Si se desmarca un checkbox de un EPP con texto, borrar el texto.
-    if (value === false) {
-      const allEppItems = Object.values(eppOptions).flat();
-      const item = allEppItems.find(i => i.id === id);
-      if (item && item.type === 'text') {
-        delete newEpp[`${id}_spec`];
-      }
-    }
+    const newEpp = { ...anexoATS.epp };
     
+    // If the value is a boolean (from a checkbox)
+    if (typeof value === 'boolean') {
+      newEpp[id] = value;
+      // If unchecking a text-based EPP, clear its spec field
+      if (value === false) {
+        const allEppItems = Object.values(eppOptions).flat();
+        const item = allEppItems.find(i => i.id === id);
+        if (item && item.type === 'text') {
+          delete newEpp[`${id}_spec`];
+        }
+      }
+    } else { // If the value is a string (from a text input)
+      newEpp[id] = value;
+    }
+  
     onUpdateATS({ epp: newEpp });
   }, [anexoATS.epp, onUpdateATS]);
 
