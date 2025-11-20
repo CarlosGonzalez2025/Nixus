@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,47 +14,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { AnexoATS } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Props del componente
 interface AtsStepProps {
   anexoATS: AnexoATS;
   onUpdateATS: (updates: Partial<AnexoATS>) => void;
-}
-
-// Hook personalizado para debounce
-function useDebounce(value: string, delay: number) {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
-
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
-// Hook para input con estado local y debounce
-function useLocalInput(initialValue: string, onUpdate: (value: string) => void, delay: number = 300) {
-  const [localValue, setLocalValue] = React.useState(initialValue);
-  const debouncedValue = useDebounce(localValue, delay);
-
-  React.useEffect(() => {
-    if (debouncedValue !== initialValue) {
-      onUpdate(debouncedValue);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedValue, onUpdate]);
-
-  React.useEffect(() => {
-    setLocalValue(initialValue);
-  }, [initialValue]);
-
-  return [localValue, setLocalValue] as const;
 }
 
 const hazardCategories = {
@@ -87,128 +51,133 @@ const hazardCategories = {
     { id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos', control: 'Pausas activas durante la jornada laboral, rotación de personal para realizar la labor en jornada prolongadas donde se exponga a vibraciones' },
   ],
   BIOLÓGICOS: [
-      { id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades', control: 'Orden y aseo en el lugar de trabajo, evitar la acumulación de agua que pueda ser foco de proliferación de vectores' },
-      { id: 'contaminacion_biologica', label: 'Contaminación biológica', control: 'Prevenir y contener derrames de productos peligros, ubicación y disposición de kit de contención de derrames' },
+    { id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades', control: 'Orden y aseo en el lugar de trabajo, evitar la acumulación de agua que pueda ser foco de proliferación de vectores' },
+    { id: 'contaminacion_biologica', label: 'Contaminación biológica', control: 'Prevenir y contener derrames de productos peligros, ubicación y disposición de kit de contención de derrames' },
   ],
   VIAL: [
-      { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento seguro' },
-      { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
+    { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento seguro' },
+    { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
   ],
   BIOMECÁNICOS: [
-      { id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)', control: 'Realizar calentamiento previo al inicio de las actividades (ejercicios pre-laborales); Tomar pausas activas. Higiene postural. Realizar cambios periódicos de actividad dentro de la tarea a ejecutar.' },
-      { id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzo, Movilización de cargas, Movimientos repetitivos / repetidos)', control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.' },
+    { id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)', control: 'Realizar calentamiento previo al inicio de las actividades (ejercicios pre-laborales); Tomar pausas activas. Higiene postural. Realizar cambios periódicos de actividad dentro de la tarea a ejecutar.' },
+    { id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzo, Movilización de cargas, Movimientos repetitivos / repetidos)', control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.' },
   ],
   AMBIENTALES: [
-      { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
-      { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
-      { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
-      { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
+    { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
+    { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
+    { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
+    { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
   ],
 };
 
 export const eppOptions = {
-    'Protección Cabeza y Cara': [
-        { id: 'casco_seguridad', label: 'Casco de seguridad Tipo/Clase/Barbuquejo', type: 'text' },
-        { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
-        { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
-        { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
-        { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
-    ],
-    'Protección Auditiva y Respiratoria': [
-        { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
-        { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
-        { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
-    ],
-    'Protección Corporal y Manos': [
-        { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
-        { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
-        { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
-        { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
-        { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
-        { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
-        { id: 'polainas', label: 'Polainas', type: 'boolean' },
-        { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
-        { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
-        { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
-        { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
-    ],
-    'Protección para Pies y Contra Caídas': [
-        { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
-        { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
-        { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
-        { id: 'arnes', label: 'Arnés', type: 'boolean' },
-        { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
-        { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
-        { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
-    ],
-    'Equipos Especiales y Otros': [
-        { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
-        { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
-        { id: 'otro_epp', label: 'Otro:', type: 'text' },
-    ],
+  'Protección Cabeza, Visual, Auditiva y Respiratoria': [
+    { id: 'casco_seguridad', label: 'Casco de seguridad', type: 'custom_casco' },
+    { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
+    { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
+    { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
+    { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
+    { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
+    { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+    { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
+  ],
+  'Protección Corporal, Manos y Pies': [
+    { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
+    { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
+    { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
+    { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
+    { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
+    { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
+    { id: 'polainas', label: 'Polainas', type: 'boolean' },
+    { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
+    { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
+    { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
+    { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
+    { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
+    { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
+    { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
+  ],
+  'Protección Contra Caídas y Equipos Especiales': [
+    { id: 'arnes', label: 'Arnés', type: 'boolean' },
+    { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
+    { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
+    { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
+    { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
+    { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+    { id: 'otro_epp', label: 'Otro:', type: 'text' },
+  ],
 };
 
 
 const justificacionOptions = [
-    { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
-    { id: 'no_rutinario_emergencia', label: 'TRABAJO NO RUTINARIO (EMERGENCIA)' },
-    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
-    { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
-    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
+  { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
+  { id: 'no_rutinario_emergencia', label: 'TRABAJO NO RUTINARIO (EMERGENCIA)' },
+  { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
+  { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
+  { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
 ];
 
-// Componente para input de texto con estado local y debounce
-const DebouncedTextInput = React.memo(({ 
-  id, 
-  value, 
-  onChange, 
-  placeholder,
-  className = "h-8 text-xs ml-6"
-}: { 
-  id: string; 
-  value: string; 
-  onChange: (value: string) => void; 
-  placeholder: string;
-  className?: string;
-}) => {
-  const updateValue = React.useCallback((newValue: string) => {
-    onChange(newValue);
-  }, [onChange]);
-
-  const [localValue, setLocalValue] = useLocalInput(value || '', updateValue, 500);
-
-  return (
-    <Input 
-      id={id}
-      className={className}
-      placeholder={placeholder}
-      value={localValue}
-      onChange={(e) => setLocalValue(e.target.value)}
-      autoComplete="off"
-      type="text"
-    />
-  );
-});
-
-DebouncedTextInput.displayName = 'DebouncedTextInput';
-
-// Componente optimizado para items de EPP con debounce
-const EppItem = React.memo(({ 
+// Componente para items de EPP
+const EppItem = ({ 
   item, 
   checked, 
-  textValue, 
   onCheckedChange, 
-  onTextChange 
+  eppData,
+  onEppChange,
 }: { 
   item: { id: string; label: string; type: string };
   checked: boolean;
-  textValue: string;
   onCheckedChange: (checked: boolean) => void;
-  onTextChange: (value: string) => void;
+  eppData: any;
+  onEppChange: (id: string, value: any) => void;
 }) => {
-  const handleCheckedChange = React.useCallback((checkedValue: boolean) => {
-    onCheckedChange(checkedValue);
-  }, [onCheckedChange]);
+
+  const handleSpecChange = (field: string, value: string) => {
+    onEppChange(field, value);
+  };
+  
+  if (item.type === 'custom_casco') {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id={item.id} 
+            checked={checked} 
+            onCheckedChange={onCheckedChange}
+          />
+          <Label htmlFor={item.id} className="text-sm font-bold">{item.label}</Label>
+        </div>
+        {checked && (
+          <div className="ml-6 space-y-2">
+            <Input 
+              placeholder="Tipo" 
+              value={eppData?.casco_seguridad_tipo || ''}
+              onChange={(e) => handleSpecChange('casco_seguridad_tipo', e.target.value)}
+              className="h-8 text-xs"
+            />
+            <Input 
+              placeholder="Clase" 
+              value={eppData?.casco_seguridad_clase || ''}
+              onChange={(e) => handleSpecChange('casco_seguridad_clase', e.target.value)}
+              className="h-8 text-xs"
+            />
+            <Select 
+              value={eppData?.casco_seguridad_barbuquejo || ''}
+              onValueChange={(value) => handleSpecChange('casco_seguridad_barbuquejo', value)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Barbuquejo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="con_barbuquejo">Con barbuquejo</SelectItem>
+                <SelectItem value="sin_barbuquejo">Sin barbuquejo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-1">
@@ -216,26 +185,26 @@ const EppItem = React.memo(({
         <Checkbox 
           id={item.id} 
           checked={checked} 
-          onCheckedChange={handleCheckedChange}
+          onCheckedChange={onCheckedChange}
         />
         <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
       </div>
       {item.type === 'text' && checked && (
-        <DebouncedTextInput
+        <Input
           id={`${item.id}_spec`}
-          value={textValue}
-          onChange={onTextChange}
+          className="h-8 text-xs ml-6"
           placeholder="Especificar..."
+          value={eppData?.[`${item.id}_spec`] || ''}
+          onChange={(e) => onEppChange(`${item.id}_spec`, e.target.value)}
         />
       )}
     </div>
   );
-});
+};
 
-EppItem.displayName = 'EppItem';
 
-// Componente optimizado para categorías de EPP
-const EppCategory = React.memo(({ 
+// Componente para categorías de EPP
+const EppCategory = ({ 
   category, 
   items, 
   eppData, 
@@ -244,8 +213,35 @@ const EppCategory = React.memo(({
   category: string;
   items: Array<{ id: string; label: string; type: string }>;
   eppData: any;
-  onEppChange: (id: string, value: boolean | string) => void;
+  onEppChange: (id: string, value: any) => void;
 }) => {
+  
+  const handleCheckedChange = (id: string, type: string, checked: boolean) => {
+    const newEpp = { ...(eppData || {}) };
+    
+    if (checked) {
+      newEpp[id] = true;
+    } else {
+      delete newEpp[id];
+      if (type === 'text' || type === 'custom_casco') {
+        // Clean up spec fields when unchecked
+        if (type === 'custom_casco') {
+          delete newEpp[`${id}_tipo`];
+          delete newEpp[`${id}_clase`];
+          delete newEpp[`${id}_barbuquejo`];
+        } else {
+          delete newEpp[`${id}_spec`];
+        }
+      }
+    }
+    onEppChange('epp', newEpp);
+  };
+  
+  const handleSpecChange = (field: string, value: string) => {
+    const newEpp = { ...(eppData || {}), [field]: value };
+    onEppChange('epp', newEpp);
+  }
+
   return (
     <div className="space-y-3">
       <h4 className="font-semibold text-md text-gray-700">{category}</h4>
@@ -255,19 +251,17 @@ const EppCategory = React.memo(({
             key={item.id}
             item={item}
             checked={!!eppData?.[item.id]}
-            textValue={typeof eppData?.[`${item.id}_spec`] === 'string' ? (eppData[`${item.id}_spec`] as string) : ''}
-            onCheckedChange={(checked) => onEppChange(item.id, checked)}
-            onTextChange={(value) => onEppChange(`${item.id}_spec`, value)}
+            onCheckedChange={(checked) => handleCheckedChange(item.id, item.type, checked)}
+            eppData={eppData}
+            onEppChange={handleSpecChange}
           />
         ))}
       </div>
     </div>
   );
-});
+};
 
-EppCategory.displayName = 'EppCategory';
-
-// Componente optimizado para "Otros Peligros"
+// Componente para "Otros Peligros"
 const OtrosPeligrosSection = React.memo(({ 
   peligrosAdicionales, 
   onUpdatePeligros 
@@ -299,7 +293,6 @@ const OtrosPeligrosSection = React.memo(({
     <div className="mt-6">
       <h4 className="font-semibold text-lg text-gray-700 mb-2">Otros Peligros</h4>
       <div className="p-4 border rounded-lg space-y-4">
-        {/* Lista de peligros existentes */}
         {peligrosAdicionales?.map((item, index) => (
           <div key={`peligro-${index}`} className="flex items-start gap-2 p-3 bg-gray-50 rounded-md">
             <div className="flex-1">
@@ -317,7 +310,6 @@ const OtrosPeligrosSection = React.memo(({
           </div>
         ))}
         
-        {/* Formulario para nuevo peligro */}
         <div className="space-y-3">
           <div>
             <Label htmlFor="nuevo-peligro-nombre">Nombre del nuevo peligro</Label>
@@ -357,13 +349,44 @@ const OtrosPeligrosSection = React.memo(({
 
 OtrosPeligrosSection.displayName = 'OtrosPeligrosSection';
 
+// SectionWrapper fuera del componente principal
+const SectionWrapper = React.memo(({ 
+  title, 
+  children, 
+  sectionId,
+  isOpen,
+  onToggle
+}: { 
+  title: string; 
+  children: React.ReactNode; 
+  sectionId: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}) => (
+  <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <CollapsibleTrigger asChild>
+      <Button 
+        variant="ghost" 
+        className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border"
+      >
+        <h3 className="text-lg font-bold text-gray-700">{title}</h3>
+        <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+      </Button>
+    </CollapsibleTrigger>
+    <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+      {children}
+    </CollapsibleContent>
+  </Collapsible>
+));
+
+SectionWrapper.displayName = "SectionWrapper";
+
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
-  
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
 
-  const toggleSection = (section: string) => {
+  const toggleSection = React.useCallback((section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
+  }, []);
 
   const handlePeligroChange = React.useCallback((id: string, value: 'si' | 'no') => {
     onUpdateATS({ 
@@ -371,26 +394,9 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     });
   }, [anexoATS.peligros, onUpdateATS]);
   
-  const handleEppChange = React.useCallback((id: string, value: boolean | string) => {
-    const newEpp = { ...anexoATS.epp };
-    
-    // If the value is a boolean (from a checkbox)
-    if (typeof value === 'boolean') {
-      newEpp[id] = value;
-      // If unchecking a text-based EPP, clear its spec field
-      if (value === false) {
-        const allEppItems = Object.values(eppOptions).flat();
-        const item = allEppItems.find(i => i.id === id);
-        if (item && item.type === 'text') {
-          delete newEpp[`${id}_spec`];
-        }
-      }
-    } else { // If the value is a string (from a text input)
-      newEpp[id] = value;
-    }
-  
-    onUpdateATS({ epp: newEpp });
-  }, [anexoATS.epp, onUpdateATS]);
+  const handleEppChange = useCallback((field: string, value: any) => {
+    onUpdateATS({ [field]: value });
+  }, [onUpdateATS]);
 
   const handleJustificacionChange = React.useCallback((id: string, value: boolean) => {
     onUpdateATS({ 
@@ -398,29 +404,9 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     });
   }, [anexoATS.justificacion, onUpdateATS]);
 
-  // Handler optimizado para peligros adicionales
   const handleUpdatePeligrosAdicionales = React.useCallback((peligros: Array<{peligro: string, descripcion: string}>) => {
     onUpdateATS({ peligrosAdicionales: peligros });
   }, [onUpdateATS]);
-
-  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string; }> = React.memo(({ title, children, sectionId }) => (
-    <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
-        <CollapsibleTrigger asChild>
-            <Button 
-                variant="ghost" 
-                className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border"
-            >
-                <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-                <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-            </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-            {children}
-        </CollapsibleContent>
-    </Collapsible>
-  ));
-  SectionWrapper.displayName = "SectionWrapper";
-
 
   return (
     <div className="space-y-8">
@@ -433,17 +419,26 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
         </p>
       </div>
 
-      <SectionWrapper title="1. Identificación de Peligros, Riesgos y Controles" sectionId="peligros">
+      <SectionWrapper 
+        title="1. Identificación de Peligros, Riesgos y Controles" 
+        sectionId="peligros"
+        isOpen={!!openSections.peligros}
+        onToggle={() => toggleSection('peligros')}
+      >
         <p className="text-xs text-muted-foreground mb-4">
           Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.
         </p>
         <div className="space-y-2">
           {Object.entries(hazardCategories).map(([category, hazards]) => (
-            <Collapsible key={category} open={openSections[category]} onOpenChange={() => toggleSection(category)}>
+            <Collapsible 
+              key={category} 
+              open={!!openSections[category]} 
+              onOpenChange={() => toggleSection(category)}
+            >
               <CollapsibleTrigger asChild>
                 <Button 
-                    variant="ghost" 
-                    className="w-full justify-between p-4 border rounded-lg"
+                  variant="ghost" 
+                  className="w-full justify-between p-4 border rounded-lg"
                 >
                   <span className="font-semibold">{category}</span>
                   <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
@@ -484,7 +479,6 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
           ))}
         </div>
         
-        {/* Sección de Otros Peligros optimizada */}
         <OtrosPeligrosSection 
           peligrosAdicionales={anexoATS.peligrosAdicionales}
           onUpdatePeligros={handleUpdatePeligrosAdicionales}
@@ -494,41 +488,50 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
       <div className="p-4 border-t-2 border-dashed mt-8">
         <h4 className="font-bold text-lg mb-2 text-gray-800">PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL</h4>
         <ul className="list-disc list-outside space-y-2 text-sm text-gray-600 pl-5">
-            <li>Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación.</li>
-            <li>Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área.</li>
-            <li>Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario.</li>
+          <li>Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación.</li>
+          <li>Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área.</li>
+          <li>Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario.</li>
         </ul>
       </div>
 
-      <SectionWrapper title="2. EPP Requeridos" sectionId="epp">
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            {Object.entries(eppOptions).map(([category, items]) => (
-              <EppCategory
-                key={category}
-                category={category}
-                items={items}
-                eppData={anexoATS.epp}
-                onEppChange={handleEppChange}
-              />
-            ))}
-         </div>
-      </SectionWrapper>
-      
-      <SectionWrapper title="3. Justificación para el uso del ATS" sectionId="justificacion">
-        <div className="space-y-3 p-4 border rounded-lg">
-            {justificacionOptions.map(option => (
-                <div key={option.id} className="flex items-center space-x-3">
-                    <Checkbox
-                        id={option.id}
-                        checked={!!anexoATS.justificacion?.[option.id]}
-                        onCheckedChange={(checked) => handleJustificacionChange(option.id, !!checked)}
-                    />
-                    <Label htmlFor={option.id} className="text-sm font-normal">{option.label}</Label>
-                </div>
-            ))}
+      <SectionWrapper 
+        title="2. EPP Requeridos" 
+        sectionId="epp"
+        isOpen={!!openSections.epp}
+        onToggle={() => toggleSection('epp')}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          {Object.entries(eppOptions).map(([category, items]) => (
+            <EppCategory
+              key={category}
+              category={category}
+              items={items}
+              eppData={anexoATS.epp}
+              onEppChange={handleEppChange}
+            />
+          ))}
         </div>
       </SectionWrapper>
-
+      
+      <SectionWrapper 
+        title="3. Justificación para el uso del ATS" 
+        sectionId="justificacion"
+        isOpen={!!openSections.justificacion}
+        onToggle={() => toggleSection('justificacion')}
+      >
+        <div className="space-y-3 p-4 border rounded-lg">
+          {justificacionOptions.map(option => (
+            <div key={option.id} className="flex items-center space-x-3">
+              <Checkbox
+                id={option.id}
+                checked={!!anexoATS.justificacion?.[option.id]}
+                onCheckedChange={(checked) => handleJustificacionChange(option.id, !!checked)}
+              />
+              <Label htmlFor={option.id} className="text-sm font-normal">{option.label}</Label>
+            </div>
+          ))}
+        </div>
+      </SectionWrapper>
     </div>
   );
 }

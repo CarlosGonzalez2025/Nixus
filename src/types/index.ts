@@ -85,7 +85,12 @@ export type JustificacionATS = {
 export type AnexoATS = {
   peligros?: { [key: string]: 'si' | 'no' };
   controles?: { [key: string]: 'si' | 'no' | 'na' };
-  epp?: { [key: string]: boolean | string };
+  epp?: { 
+    [key: string]: boolean | string;
+    casco_seguridad_tipo?: string;
+    casco_seguridad_clase?: string;
+    casco_seguridad_barbuquejo?: 'con_barbuquejo' | 'sin_barbuquejo' | '';
+  };
   justificacion?: { [key: string]: boolean };
   peligrosAdicionales?: { peligro: string, descripcion: string }[];
 };
@@ -416,5 +421,3 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
-
-
