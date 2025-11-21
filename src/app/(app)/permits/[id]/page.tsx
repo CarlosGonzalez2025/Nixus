@@ -252,259 +252,450 @@ export default function PermitDetailPage() {
     return () => unsubscribe();
   }, [permitId]);
   
- const handleExportToPDF = async () => {
+  const handleExportToPDF = async () => {
     if (!permit) return;
-
+  
     toast({
         title: 'Generando PDF...',
-        description: 'Este proceso puede tardar un momento.',
+        description: 'Preparando formato oficial Italcol.',
     });
-
+  
     try {
-        const doc = new jsPDF();
-        let yPos = 20;
+        const doc = new jsPDF('p', 'mm', 'letter'); // Carta: 215.9 x 279.4 mm
+        const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
-        const margin = 15;
-
-        // Función para añadir nueva página si es necesario
-        const checkPageBreak = (height: number) => {
-            if (yPos + height > pageHeight - margin) {
+        const margin = 10;
+        let yPos = 10;
+  
+        // COLORES OFICIALES ITALCOL (Basado en screenshots)
+        const italcolOrange = [239, 123, 0]; // Aproximado naranja corporativo
+        const headerBg = [255, 255, 255];
+        const sectionBg = [239, 123, 0]; // Naranja para títulos de sección
+  
+        // ----------------------------------------------------------------------
+        // 1. HELPERS
+        // ----------------------------------------------------------------------
+  
+        const checkPageBreak = (heightNeeded: number) => {
+            if (yPos + heightNeeded > pageHeight - margin) {
                 doc.addPage();
                 yPos = margin;
+                return true;
             }
+            return false;
         };
-        
-        const addSectionTitle = (title: string) => {
-          checkPageBreak(15);
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text(title, margin, yPos);
-          yPos += 8;
-        }
-
-        // --- ENCABEZADO ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('FORMATO DE PERMISO DE TRABAJO', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
-        yPos += 10;
-
+  
+        // Dibuja el encabezado estándar (Logo, Título, Caja ISO)
+        const drawHeader = (title: string, code: string = "DN-FR-SST-016", version: string = "04") => {
+            doc.setFillColor(255, 255, 255);
+            doc.rect(margin, 10, pageWidth - (2 * margin), 25, 'F'); // Limpiar área header
+  
+            // Logo Placeholder (Izquierda)
+            // En producción: doc.addImage(base64Logo, 'PNG', margin + 2, 12, 40, 20);
+            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.circle(margin + 12, 22, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Italcol', margin + 6, 23);
+  
+            // Título (Centro)
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title.toUpperCase(), pageWidth / 2, 22, { align: 'center' });
+  
+            // Caja ISO (Derecha) - Sin bordes visibles en screenshot, solo texto organizado
+            /*
+               Código: DN-FR-SST-016
+               Versión: 04
+            */
+           doc.setFontSize(8);
+           doc.setFont('helvetica', 'normal');
+           doc.text(`Código: ${code}`, pageWidth - margin - 5, 18, { align: 'right' });
+           doc.text(`Versión: ${version}`, pageWidth - margin - 5, 23, { align: 'right' });
+  
+             // Línea separadora naranja gruesa
+           doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+           doc.setLineWidth(1);
+           doc.line(margin, 36, pageWidth - margin, 36);
+  
+            yPos = 40;
+        };
+  
+        const drawSectionTitle = (title: string) => {
+            checkPageBreak(15);
+            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title.toUpperCase(), pageWidth / 2, yPos + 4, { align: 'center' });
+            yPos += 8;
+            doc.setTextColor(0, 0, 0);
+        };
+  
+        const drawDailyValidationTable = (validationData: any, anexoId: string) => {
+            checkPageBreak(40);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setFillColor(230, 230, 230);
+            doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
+            doc.text("VALIDACIÓN DIARIA (CONDICIONES DE SEGURIDAD Y CIERRE)", pageWidth / 2, yPos + 4, { align: 'center' });
+            yPos += 8;
+  
+            // Headers para las dos tablas (Autoridad vs Ejecutor)
+            // Vamos a hacer una sola tabla con columnas dobles para ahorrar espacio horizontal o split
+            // Screenshot muestra: Fecha | Dia 1 | Dia 2... para Autoridad y luego otra para Responsable
+            // Pero el layout excel suele ser: Autoridad (Firma/Fecha) | Ejecutor (Firma/Fecha) por día.
+  
+            const days = [1, 2, 3, 4, 5, 6, 7];
+            const bodyData = days.map((day, idx) => {
+               const valAut = validationData?.autoridad?.[idx];
+               const valRes = validationData?.responsable?.[idx];
+               return [
+                   `DÍA ${day}`,
+                   valAut?.nombre || '',
+                   valAut?.fecha || '',
+                   valRes?.nombre || '',
+                   valRes?.fecha || ''
+               ];
+            });
+  
+             autoTable(doc, {
+                startY: yPos,
+                head: [[
+                    { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle' } },
+                    { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } },
+                    { content: 'RESPONSABLE DEL TRABAJO', colSpan: 2, styles: { halign: 'center' } }
+                ], [
+                    'NOMBRE', 'FECHA', 'NOMBRE', 'FECHA'
+                ]],
+                body: bodyData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: [0, 0, 0],
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
+                },
+                styles: {
+                    fontSize: 7,
+                    textColor: [0, 0, 0],
+                    lineColor: [0, 0, 0],
+                    lineWidth: 0.1
+                },
+                columnStyles: {
+                    0: { cellWidth: 20, fontStyle: 'bold' },
+                }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+        };
+  
+        // ----------------------------------------------------------------------
+        // PAGINA 1: PERMISO PRINCIPAL
+        // ----------------------------------------------------------------------
+        drawHeader('PERMISO DE TRABAJO');
+  
+        // 1. Info General Grid
         autoTable(doc, {
+            startY: yPos,
             body: [
-                ['Código', 'SST-FOR-12', 'Versión', '4', 'Fecha Vigencia', '23-01-2023'],
+                [
+                    { content: 'Fecha de Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy') : '',
+                    { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    permit.generalInfo?.planta || ''
+                ],
+                [
+                    { content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    permit.generalInfo?.empresa || '',
+                    { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    permit.user?.displayName || ''
+                ],
+                [
+                    { content: 'Duración Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    `Desde: ${permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yy HH:mm') : ''}\nHasta: ${permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yy HH:mm') : ''}`,
+                    { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    permit.generalInfo?.contrato || ''
+                ]
             ],
-            startY: yPos,
             theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 1 },
+            styles: { fontSize: 7, cellPadding: 1, lineColor: [0, 0, 0], lineWidth: 0.1, textColor: [0,0,0] },
         });
-        yPos = (doc as any).lastAutoTable.finalY + 10;
-        
-        // --- INFORMACIÓN GENERAL ---
-        addSectionTitle('Información General');
-        
-        const generalInfoData = [
-            ['Número de Permiso', permit.number || permit.id.substring(0,8)],
-            ['Solicitante', permit.user?.displayName || 'N/A'],
-            ['Fecha Creación', permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy HH:mm') : 'N/A'],
-            ['Área Específica', permit.generalInfo?.areaEspecifica || 'N/A'],
-            ['Planta', permit.generalInfo?.planta || 'N/A'],
-            ['Proceso', permit.generalInfo?.proceso || 'N/A'],
-            ['Empresa', permit.generalInfo?.empresa || 'N/A'],
-            ['Contrato', permit.generalInfo?.contrato || 'N/A'],
-            ['Validez Desde', permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yyyy HH:mm') : 'N/A'],
-            ['Validez Hasta', permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yyyy HH:mm') : 'N/A'],
-            ['Tipos de Trabajo', getWorkTypesString(permit) || 'N/A'],
-        ];
-
+        yPos = (doc as any).lastAutoTable.finalY;
+  
+        // 2. Alcance
         autoTable(doc, {
-            head: [['Campo', 'Valor']],
-            body: generalInfoData,
             startY: yPos,
-            theme: 'striped',
-            headStyles: { fillColor: [22, 160, 133] },
-            didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
+            head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220, 220, 220], textColor: [0,0,0], fontStyle: 'bold' } }]],
+            body: [[permit.generalInfo?.workDescription || '']],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1, textColor: [0,0,0] }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 2;
+  
+        // 3. ATS Checklist (Simplificado para caber)
+        drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
+        const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
+  
+        // Organizar riesgos en columnas de 3
+        const riskRows = [];
+        for (let i = 0; i < activeRisks.length; i += 3) {
+            riskRows.push([
+                activeRisks[i] ? `[X] ${activeRisks[i].label}` : '',
+                activeRisks[i+1] ? `[X] ${activeRisks[i+1].label}` : '',
+                activeRisks[i+2] ? `[X] ${activeRisks[i+2].label}` : ''
+            ]);
+        }
+  
+        if (riskRows.length > 0) {
+            autoTable(doc, {
+                startY: yPos,
+                body: riskRows,
+                theme: 'plain',
+                styles: { fontSize: 6, cellPadding: 1 }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 2;
+        } else {
+            doc.setFontSize(7);
+            doc.text("No se identificaron peligros específicos marcados como SI.", margin + 2, yPos + 4);
+            yPos += 8;
+        }
+  
+        // 4. Personal Autorizado
+        drawSectionTitle('PERSONAL AUTORIZADO');
+        const workerRows = permit.workers?.map(w => [
+            w.nombre,
+            w.cedula,
+            w.rol,
+            w.firmaApertura ? 'FIRMADO' : 'PENDIENTE'
+        ]) || [];
+  
+        autoTable(doc, {
+            startY: yPos,
+            head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']],
+            body: workerRows,
+            theme: 'grid',
+            headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], lineWidth: 0.1, lineColor: [0,0,0] },
+            styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
-        
-        checkPageBreak(20);
-        doc.text('Descripción de la Tarea:', margin, yPos);
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        const descLines = doc.splitTextToSize(permit.generalInfo?.workDescription || 'N/A', 180);
-        doc.text(descLines, margin, yPos);
-        yPos += descLines.length * 4 + 5;
-
-
-        // --- PERSONAL AUTORIZADO ---
-        if (permit.workers && permit.workers.length > 0) {
-            addSectionTitle('Personal Autorizado');
-            
-            const workersBody = permit.workers.map(w => [
-              w.nombre,
-              w.cedula,
-              w.rol === 'Otro' ? w.otroRol : w.rol,
-              [w.tsaTec?.tec ? 'TEC' : '', w.tsaTec?.tsa ? 'TSA' : ''].filter(Boolean).join(', '),
-              [w.entrenamiento?.tec ? 'TEC' : '', w.entrenamiento?.tsa ? 'TSA' : '', w.entrenamiento?.otro ? w.entrenamiento?.otroCual : ''].filter(Boolean).join(', '),
-              [w.eps ? 'EPS' : '', w.arl ? 'ARL' : '', w.pensiones ? 'P' : ''].filter(Boolean).join(', ')
-            ]);
-            
-            autoTable(doc, {
-                head: [['Nombre', 'Cédula', 'Rol', 'Aptitud', 'Entrenamiento', 'Seg. Social']],
-                body: workersBody,
-                startY: yPos,
-                theme: 'grid',
-                headStyles: { fillColor: [22, 160, 133] },
-                didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 10;
-        }
-        
-        // --- ANEXO ATS ---
-        if (permit.anexoATS) {
-            addSectionTitle('Análisis de Trabajo Seguro (ATS)');
-            
-            const atsPeligrosBody = atsPeligros.map(peligro => {
-              const value = (permit.anexoATS?.peligros as any)?.[peligro.id];
-              let status = value === 'si' ? 'SI' : (value === 'no' ? 'NO' : 'N/A');
-              return [peligro.seccion, peligro.label, status];
-            }).filter(row => row[2] === 'SI');
-
-            if(atsPeligrosBody.length > 0) {
-              doc.setFontSize(10);
-              doc.text('Peligros Identificados', margin, yPos);
-              yPos += 5;
-              autoTable(doc, {
-                  head: [['Sección', 'Peligro', 'Aplica']],
-                  body: atsPeligrosBody,
-                  startY: yPos,
-                  theme: 'striped',
-                  headStyles: { fillColor: [41, 128, 185] },
-                  didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
-              });
-              yPos = (doc as any).lastAutoTable.finalY + 5;
-            }
-            
-            const eppBody = Object.entries(eppOptions)
-                .flatMap(([category, items]) => items.map(item => ({...item, category})))
-                .filter(item => (permit.anexoATS?.epp as any)?.[item.id])
-                .map(item => {
-                    const spec = (permit.anexoATS?.epp as any)?.[`${item.id}_spec`] || '';
-                    return [item.category, `${item.label} ${spec}`.trim()];
-                });
-
-            if (eppBody.length > 0) {
-                addSectionTitle('EPP Requeridos');
-                autoTable(doc, {
-                    head: [['Categoría', 'Elemento']],
-                    body: eppBody,
-                    startY: yPos,
-                    theme: 'striped',
-                    headStyles: { fillColor: [41, 128, 185] },
-                    didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
-                });
-                yPos = (doc as any).lastAutoTable.finalY + 10;
-            }
-        }
-        
-        // --- ANEXOS ESPECÍFICOS (Función genérica para no repetir código) ---
-        const drawAnexo = (anexoName: string, anexoTitle: string, anexoData: any) => {
-            if (!anexoData) return;
-            addSectionTitle(anexoTitle);
-
-            // Podrías añadir tablas específicas para cada anexo aquí
-            // Ejemplo simple:
-            const aspects = Object.entries(anexoData.aspectosSeguridad || {})
-              .filter(([, value]) => value === 'si')
-              .map(([key]) => [key.replace(/([A-Z])/g, ' $1').trim()]);
-              
-            if(aspects.length > 0) {
-              autoTable(doc, {
-                  head: [['Aspectos de Seguridad Verificados']],
-                  body: aspects,
-                  startY: yPos,
-                  theme: 'grid',
-                  headStyles: { fillColor: [243, 156, 18] },
-                  didDrawPage: (data) => { yPos = data.cursor?.y || yPos; }
-              });
-              yPos = (doc as any).lastAutoTable.finalY + 5;
-            }
-        };
-        
-        if (permit.selectedWorkTypes?.alturas) drawAnexo('anexoAltura', 'Anexo: Trabajo en Alturas', permit.anexoAltura);
-        if (permit.selectedWorkTypes?.confinado) drawAnexo('anexoConfinado', 'Anexo: Espacios Confinados', permit.anexoConfinado);
-        if (permit.selectedWorkTypes?.izaje) drawAnexo('anexoIzaje', 'Anexo: Izaje de Cargas', permit.anexoIzaje);
-        if (permit.selectedWorkTypes?.energia) drawAnexo('anexoEnergias', 'Anexo: Control de Energías', permit.anexoEnergias);
-        if (permit.selectedWorkTypes?.excavacion) drawAnexo('anexoExcavaciones', 'Anexo: Excavaciones', permit.anexoExcavaciones);
-
-
-        // --- FIRMAS DE APROBACIÓN ---
-         addSectionTitle('Aprobaciones del Permiso');
-
-         let xPos = margin;
-         const signatureWidth = 40;
-         const signatureHeight = 20;
-         const cardWidth = (doc.internal.pageSize.width - (margin * 3)) / 2;
-
-         for (const role of Object.keys(signatureRoles) as SignatureRole[]) {
-             const approval = permit.approvals?.[role as keyof typeof permit.approvals];
-             if (!approval || approval.status !== 'aprobado') continue;
-             
-             checkPageBreak(55);
-
-             doc.setFillColor(248, 249, 250);
-             doc.roundedRect(xPos, yPos, cardWidth, 45, 3, 3, 'FD');
-             
-             let innerY = yPos + 7;
-
-             doc.setFont('helvetica', 'bold');
-             doc.setFontSize(8);
-             doc.text(signatureRoles[role], xPos + 5, innerY, { maxWidth: cardWidth - 10 });
-             innerY += 8;
-
-             doc.setFont('helvetica', 'normal');
-             doc.setFontSize(9);
-             doc.setTextColor(40, 167, 69);
-             doc.text('APROBADO', xPos + 5, innerY);
-             doc.setTextColor(0, 0, 0);
-             innerY += 5;
-             doc.text(`Por: ${approval.userName || 'N/A'}`, xPos + 5, innerY);
-             innerY += 5;
-             doc.text(`Fecha: ${approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}`, xPos + 5, innerY);
-             innerY += 5;
-
-             if (approval.firmaApertura) {
-                try {
-                    doc.addImage(approval.firmaApertura, 'PNG', xPos + 5, innerY, signatureWidth, signatureHeight);
-                } catch (e) {
-                    doc.text('[Firma no válida]', xPos + 5, innerY + 10);
+  
+        // 5. Firmas Autorización (Cuadrícula Inferior)
+        checkPageBreak(40);
+        drawSectionTitle('AUTORIZACIONES');
+  
+        // Crear cuadrícula manual para firmas
+        const sigBoxW = (pageWidth - (2 * margin)) / 3;
+        const sigBoxH = 25;
+        let currentX = margin;
+  
+        const drawSigBox = (roleTitle: string, approval: any) => {
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.1);
+            doc.rect(currentX, yPos, sigBoxW, sigBoxH);
+  
+            doc.setFontSize(6);
+            doc.setFont('helvetica', 'bold');
+            doc.text(roleTitle, currentX + 2, yPos + 3);
+  
+             if (approval?.status === 'aprobado') {
+                doc.setFont('helvetica', 'normal');
+                doc.text(approval.userName || '', currentX + 2, yPos + 8);
+                if (approval.firmaApertura) {
+                     try {
+                        doc.addImage(approval.firmaApertura, 'PNG', currentX + 5, yPos + 10, 30, 10);
+                     } catch(e) {}
                 }
-             }
-
-             if (xPos + cardWidth + margin < doc.internal.pageSize.width - margin) {
-                 xPos += cardWidth + margin;
-             } else {
-                 xPos = margin;
-                 yPos += 55;
-             }
-         }
-         yPos = Math.max(yPos, yPos); // Resetea la Y si se quedó a la mitad de una fila.
-
-
-        doc.save(`permiso_${permit?.number || permitId.substring(0,8)}.pdf`);
-        
+                doc.text(approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy') : '', currentX + 2, yPos + 23);
+            }
+            currentX += sigBoxW;
+        };
+  
+        drawSigBox('SOLICITANTE', permit.approvals?.solicitante);
+        drawSigBox('AUTORIZANTE / DUEÑO ÁREA', permit.approvals?.autorizante);
+        drawSigBox('SST', permit.approvals?.lider_sst);
+  
+        yPos += sigBoxH + 10;
+  
+          // ----------------------------------------------------------------------
+        // PAGINA 2: ANEXO 1 - TRABAJOS EN ALTURA
+        // ----------------------------------------------------------------------
+        if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
+            doc.addPage();
+            drawHeader('ANEXO 1 - TRABAJOS EN ALTURA');
+  
+            // Info Específica
+            autoTable(doc, {
+                startY: yPos,
+                body: [
+                    ['Altura Aproximada:', permit.anexoAltura.alturaAproximada || 'N/A'],
+                    ['Sistema de Acceso:', Object.keys(permit.anexoAltura.tipoEstructura || {}).filter(k => (permit.anexoAltura?.tipoEstructura as any)[k]).join(', ')]
+                ],
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+             // Checklist Alturas
+            drawSectionTitle('ASPECTOS DE SEGURIDAD (ALTURAS)');
+            const alturaChecks = anexoAlturaAspectos.map(asp => [
+                asp.label,
+                (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA'
+            ]);
+  
+             autoTable(doc, {
+                startY: yPos,
+                body: alturaChecks,
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
+                columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+             // Validación Diaria
+            drawDailyValidationTable(permit.anexoAltura.validacion, 'anexoAltura');
+        }
+  
+        // ----------------------------------------------------------------------
+        // PAGINA 3: ANEXO 2 - ESPACIOS CONFINADOS
+        // ----------------------------------------------------------------------
+        if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
+            doc.addPage();
+            drawHeader('ANEXO 2 - ESPACIOS CONFINADOS');
+  
+            // Gases Iniciales
+            drawSectionTitle('PRUEBAS DE GASES INICIALES');
+            autoTable(doc, {
+                startY: yPos,
+                head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
+                body: [[
+                    permit.anexoConfinado.resultadosPruebasGases?.lel || '-',
+                    permit.anexoConfinado.resultadosPruebasGases?.o2 || '-',
+                    permit.anexoConfinado.resultadosPruebasGases?.h2s || '-',
+                    permit.anexoConfinado.resultadosPruebasGases?.co || '-'
+                ]],
+                theme: 'grid',
+                headStyles: { fillColor: [200, 200, 200], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.1 },
+                styles: { halign: 'center', fontSize: 8, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+             // Monitoreo Periódico
+            drawSectionTitle('MONITOREO PERIÓDICO DE ATMÓSFERA');
+            const periodicas = permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas || [];
+            const periodData = periodicas.map(p => [p.hora, p.lel, p.o2, p.h2s, p.co]);
+  
+            // Rellenar líneas vacías si hay pocas para que parezca un formato impreso
+            while(periodData.length < 4) periodData.push(['', '', '', '', '']);
+  
+             autoTable(doc, {
+                startY: yPos,
+                head: [['HORA', 'LEL', 'O2', 'H2S', 'CO']],
+                body: periodData,
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0], halign: 'center' }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+              // Validación Diaria
+             drawDailyValidationTable(permit.anexoConfinado.validacion, 'anexoConfinado');
+        }
+  
+        // ----------------------------------------------------------------------
+        // PAGINA 4: ANEXO 3 - CONTROL DE ENERGÍAS
+        // ----------------------------------------------------------------------
+        if (permit.selectedWorkTypes?.energia && permit.anexoEnergias) {
+            doc.addPage();
+            drawHeader('ANEXO 3 - CONTROL DE ENERGÍAS');
+  
+            drawSectionTitle('ENERGÍAS IDENTIFICADAS Y CONTROLES');
+            const energias = Object.entries(permit.anexoEnergias.energiasPeligrosas || {})
+                .filter(([,v]) => v)
+                .map(([k]) => [k.replace(/([A-Z])/g, ' $1').toUpperCase(), 'SI (BLOQUEADO)']);
+  
+            autoTable(doc, {
+                startY: yPos,
+                body: energias,
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+            // Validación Diaria
+            // drawDailyValidationTable(permit.anexoEnergias.validacion, 'anexoEnergias');
+        }
+  
+          // ----------------------------------------------------------------------
+        // PAGINA 5: ANEXO 4 - IZAJE
+        // ----------------------------------------------------------------------
+        if (permit.selectedWorkTypes?.izaje && permit.anexoIzaje) {
+            doc.addPage();
+            drawHeader('ANEXO 4 - IZAJE DE CARGAS');
+  
+            autoTable(doc, {
+                startY: yPos,
+                body: [
+                    ['Peso Carga:', Object.keys(permit.anexoIzaje.informacionGeneral?.pesoCarga || {}).filter(k => (permit.anexoIzaje?.informacionGeneral?.pesoCarga as any)[k]).join(' / ')],
+                    ['Equipo:', Object.keys(permit.anexoIzaje.informacionGeneral?.equipoUtilizar || {}).filter(k => (permit.anexoIzaje?.informacionGeneral?.equipoUtilizar as any)[k]).join(' / ')]
+                ],
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+             drawDailyValidationTable(permit.anexoIzaje.validacion, 'anexoIzaje');
+        }
+  
+        // ----------------------------------------------------------------------
+        // PAGINA 6: ANEXO 5 - EXCAVACIONES
+        // ----------------------------------------------------------------------
+        if (permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones) {
+            doc.addPage();
+            drawHeader('ANEXO 5 - EXCAVACIONES');
+  
+            autoTable(doc, {
+                startY: yPos,
+                body: [
+                    ['Profundidad:', permit.anexoExcavaciones.informacionGeneral?.profundidad || ''],
+                    ['Ancho:', permit.anexoExcavaciones.informacionGeneral?.ancho || ''],
+                    ['Largo:', permit.anexoExcavaciones.informacionGeneral?.largo || '']
+                ],
+                theme: 'grid',
+                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+            });
+            yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+             drawDailyValidationTable(permit.anexoExcavaciones.validacion, 'anexoExcavaciones');
+        }
+  
+        // Footer Final
+        const totalPages = doc.getNumberOfPages();
+        for(let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(6);
+            doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+        }
+  
+        doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0,6)}.pdf`);
+  
         toast({
-            title: 'PDF Generado Exitosamente',
-            description: 'El documento se ha descargado.',
+            title: '✓ PDF Generado',
+            description: 'Se ha descargado el formato oficial.',
+            className: 'bg-green-50 border-green-200',
         });
-
-    } catch (error: any) {
-        console.error("PDF Generation Error: ", error);
+  
+     } catch (error: any) {
+        console.error('PDF Error:', error);
         toast({
             variant: 'destructive',
-            title: 'Error al Generar PDF',
-            description: error.message || 'No se pudo generar el documento.',
+            title: 'Error',
+            description: 'No se pudo generar el PDF. ' + error.message,
         });
     }
-};
+  };
 
   const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
       setSigningRole({role, type: signatureType});
@@ -1645,3 +1836,4 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
