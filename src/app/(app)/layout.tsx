@@ -46,6 +46,7 @@ import {
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { IdleTimerProvider } from '@/components/IdleTimerProvider';
 import type { UserRole } from '@/types';
+import { AlertsBell } from '@/components/AlertsBell';
 
 
 const getRoleName = (role?: UserRole) => {
@@ -199,12 +200,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <SidebarFooter>
             <SidebarSeparator />
-            <div className="p-2">
+            <div className="p-2 flex items-center justify-center gap-2 group-data-[collapsible=icon]:flex-col">
+              <AlertsBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-auto w-full justify-start p-2 hover:bg-sidebar-accent"
+                    className="h-auto w-full justify-start p-2 hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center"
                   >
                     <div className="flex w-full items-center gap-2">
                       <Avatar className="h-8 w-8">
