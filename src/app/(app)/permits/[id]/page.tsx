@@ -213,6 +213,62 @@ export default function PermitDetailPage() {
   const [isWorkerSignatureOpen, setIsWorkerSignatureOpen] = useState(false);
   const [workerSignatureTarget, setWorkerSignatureTarget] = useState<{ index: number; type: 'firmaApertura' | 'firmaCierre'; } | null>(null);
 
+  const atsPeligros = [
+    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
+    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
+    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
+    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
+    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
+    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
+    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
+    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
+    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
+    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
+    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
+    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
+    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
+    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
+    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
+    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
+    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos' },
+    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
+    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
+    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
+    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
+    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
+    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
+    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
+    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
+    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
+    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
+ ];
+
+ const anexoAlturaAspectos = [
+    { id: 'afiliacionVigente', label: 'A. EL PERSONAL EJECUTANTE DE LA ACTIVIDAD TIENE LA AFILIACIÓN VIGENTE A SEGURIDAD SOCIAL? '},
+    { id: 'procedimientoActividad', label: 'B. SE CUENTA CON EL PROCEDIMIENTO DE LA ACTIVIDAD A EJECUTAR?' },
+    { id: 'medidasPrevencion', label: 'C. SE HAN DETERMINADO LAS MEDIDAS DE PREVENCIÓN CONTRA CAÍDAS?' },
+    { id: 'conocenMedidas', label: 'D. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?'},
+    { id: 'entrenadosCertificados', label: 'E. ESTÁN LOS EJECUTANTES ENTRENADOS Y SE ENCUENTRAN LOS CERTIFICADOS EN SITIO PARA REALIZAR   TRABAJOS EN ALTURA?'},
+    { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO Y CERTIFICADOS?' },
+    { id: 'sistemaAseguramientoVerificado', label: 'G. SE VERIFICO EL SISTEMA DE ASEGURAMIENTO DE LA ESCALERA , ANDAMIO O PLATAFORMA A UNA ESTRUCTURA FIJA' },
+    { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
+    { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
+    { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
+    { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+    { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
+    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
+    { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
+    { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
+    { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
+    { id: 'supervisorConstante', label: 'Q.EXISTE UN SUPERVISOR O ACOMPAÑANTE CONSTASTE DURANTE EL TRABAJO' },
+    { id: 'andamiosCompletos', label: 'R. EN CASO DE TRABAJOS SOBRE ANDAMIOS, ESTOS ESTAN COMPLETOS Y ADECUADAMENTE ARMADOS (RODAPIES, BARANDAS, ETC.)' },
+    { id: 'condicionesClimaticasAdecuadas', label: 'S.LAS CONDICIONES CLIMATICAS SON ADECUADAS PARA REALIZAR EL TRABAJO' },
+    { id: 'metodoSubirHerramientasSeguro', label: 'T.EL METODO DE SUBIR HERRAMIENTAS ES SEGURO' },
+    { id: 'sistemasRestriccion', label: 'U. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE RESTRICCIÓN' },
+    { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
+];
 
   useEffect(() => {
     if (!permitId) {
@@ -261,20 +317,13 @@ export default function PermitDetailPage() {
     });
   
     try {
-        const doc = new jsPDF('p', 'mm', 'letter'); // Carta: 215.9 x 279.4 mm
+        const doc = new jsPDF('p', 'mm', 'letter');
         const pageWidth = doc.internal.pageSize.width;
         const pageHeight = doc.internal.pageSize.height;
         const margin = 10;
         let yPos = 10;
   
-        // COLORES OFICIALES ITALCOL (Basado en screenshots)
-        const italcolOrange = [239, 123, 0]; // Aproximado naranja corporativo
-        const headerBg = [255, 255, 255];
-        const sectionBg = [239, 123, 0]; // Naranja para títulos de sección
-  
-        // ----------------------------------------------------------------------
-        // 1. HELPERS
-        // ----------------------------------------------------------------------
+        const italcolOrange = [239, 123, 0];
   
         const checkPageBreak = (heightNeeded: number) => {
             if (yPos + heightNeeded > pageHeight - margin) {
@@ -285,12 +334,11 @@ export default function PermitDetailPage() {
             return false;
         };
   
-        // Dibuja el encabezado estándar (Logo, Título, Caja ISO)
         const drawHeader = (title: string, code: string = "DN-FR-SST-016", version: string = "04") => {
+            yPos = 10; 
             doc.setFillColor(255, 255, 255);
-            doc.rect(margin, 10, pageWidth - (2 * margin), 25, 'F'); // Limpiar área header
+            doc.rect(margin, 10, pageWidth - (2 * margin), 25, 'F');
   
-            // Logo Placeholder (Izquierda)
             doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
             doc.circle(margin + 12, 22, 8, 'F');
             doc.setTextColor(255, 255, 255);
@@ -298,22 +346,19 @@ export default function PermitDetailPage() {
             doc.setFont('helvetica', 'bold');
             doc.text('Italcol', margin + 6, 23);
   
-            // Título (Centro)
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text(title.toUpperCase(), pageWidth / 2, 22, { align: 'center' });
   
-            // Caja ISO (Derecha) 
-           doc.setFontSize(8);
-           doc.setFont('helvetica', 'normal');
-           doc.text(`Código: ${code}`, pageWidth - margin - 5, 18, { align: 'right' });
-           doc.text(`Versión: ${version}`, pageWidth - margin - 5, 23, { align: 'right' });
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Código: ${code}`, pageWidth - margin - 5, 18, { align: 'right' });
+            doc.text(`Versión: ${version}`, pageWidth - margin - 5, 23, { align: 'right' });
   
-            // Línea separadora naranja gruesa
-           doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-           doc.setLineWidth(1);
-           doc.line(margin, 36, pageWidth - margin, 36);
+            doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.setLineWidth(1);
+            doc.line(margin, 36, pageWidth - margin, 36);
   
             yPos = 40;
         };
@@ -329,7 +374,7 @@ export default function PermitDetailPage() {
             yPos += 8;
             doc.setTextColor(0, 0, 0);
         };
-  
+
         const drawDailyValidationTable = (validationData: any, anexoId: string) => {
             checkPageBreak(40);
             doc.setFontSize(9);
@@ -338,7 +383,7 @@ export default function PermitDetailPage() {
             doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
             doc.text("VALIDACIÓN DIARIA (CONDICIONES DE SEGURIDAD Y CIERRE)", pageWidth / 2, yPos + 4, { align: 'center' });
             yPos += 8;
-  
+
             const days = [1, 2, 3, 4, 5, 6, 7];
             const bodyData = days.map((day, idx) => {
                const valAut = validationData?.autoridad?.[idx];
@@ -351,7 +396,7 @@ export default function PermitDetailPage() {
                    valRes?.fecha || ''
                ];
             });
-  
+
              autoTable(doc, {
                 startY: yPos,
                 head: [[
@@ -364,58 +409,33 @@ export default function PermitDetailPage() {
                 body: bodyData,
                 theme: 'grid',
                 headStyles: {
-                    fillColor: [255, 255, 255],
-                    textColor: [0, 0, 0],
-                    lineWidth: 0.1,
+                    fillColor: [255, 255, 255], textColor: [0, 0, 0], lineWidth: 0.1,
                     lineColor: [0, 0, 0]
                 },
-                styles: {
-                    fontSize: 7,
-                    textColor: [0, 0, 0],
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.1
-                },
-                columnStyles: {
-                    0: { cellWidth: 20, fontStyle: 'bold' },
-                }
+                styles: { fontSize: 7, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
+                columnStyles: { 0: { cellWidth: 20, fontStyle: 'bold' } }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
         };
-  
-        // ----------------------------------------------------------------------
-        // PAGINA 1: PERMISO PRINCIPAL
-        // ----------------------------------------------------------------------
+
+        // --- PÁGINA 1: PERMISO PRINCIPAL ---
         drawHeader('PERMISO DE TRABAJO');
   
-        // 1. Info General Grid
         autoTable(doc, {
             startY: yPos,
             body: [
-                [
-                    { content: 'Fecha de Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy') : '',
-                    { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    permit.generalInfo?.planta || ''
-                ],
-                [
-                    { content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    permit.generalInfo?.empresa || '',
-                    { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    permit.user?.displayName || ''
-                ],
-                [
-                    { content: 'Duración Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    `Desde: ${permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yy HH:mm') : ''}\nHasta: ${permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yy HH:mm') : ''}`,
-                    { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-                    permit.generalInfo?.contrato || ''
-                ]
+                [{ content: 'Fecha de Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.createdAt ? format(parseFirestoreDate(permit.createdAt)!, 'dd/MM/yyyy') : '',
+                 { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.planta || ''],
+                [{ content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.empresa || '',
+                 { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.user?.displayName || ''],
+                [{ content: 'Duración Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, `Desde: ${permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yy HH:mm') : ''}\nHasta: ${permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yy HH:mm') : ''}`,
+                 { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.contrato || '']
             ],
             theme: 'grid',
             styles: { fontSize: 7, cellPadding: 1, lineColor: [0, 0, 0], lineWidth: 0.1, textColor: [0,0,0] },
         });
         yPos = (doc as any).lastAutoTable.finalY;
   
-        // 2. Alcance
         autoTable(doc, {
             startY: yPos,
             head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220, 220, 220], textColor: [0,0,0], fontStyle: 'bold' } }]],
@@ -425,10 +445,8 @@ export default function PermitDetailPage() {
         });
         yPos = (doc as any).lastAutoTable.finalY + 2;
   
-        // 3. ATS Checklist (Simplificado para caber)
         drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
         const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
-  
         const riskRows = [];
         for (let i = 0; i < activeRisks.length; i += 3) {
             riskRows.push([
@@ -437,232 +455,127 @@ export default function PermitDetailPage() {
                 activeRisks[i+2] ? `[X] ${activeRisks[i+2].label}` : ''
             ]);
         }
-  
         if (riskRows.length > 0) {
-            autoTable(doc, {
-                startY: yPos,
-                body: riskRows,
-                theme: 'plain',
-                styles: { fontSize: 6, cellPadding: 1 }
-            });
+            autoTable(doc, { startY: yPos, body: riskRows, theme: 'plain', styles: { fontSize: 6, cellPadding: 1 } });
             yPos = (doc as any).lastAutoTable.finalY + 2;
-        } else {
-            doc.setFontSize(7);
-            doc.text("No se identificaron peligros específicos marcados como SI.", margin + 2, yPos + 4);
-            yPos += 8;
         }
   
-        // 4. Personal Autorizado
         drawSectionTitle('PERSONAL AUTORIZADO');
-        const workerRows = permit.workers?.map(w => [
-            w.nombre,
-            w.cedula,
-            w.rol,
-            w.firmaApertura ? 'FIRMADO' : 'PENDIENTE'
-        ]) || [];
-  
+        const workerRows = permit.workers?.map(w => [w.nombre, w.cedula, w.rol, w.firmaApertura ? 'FIRMADO' : 'PENDIENTE']) || [];
         autoTable(doc, {
-            startY: yPos,
-            head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']],
-            body: workerRows,
-            theme: 'grid',
-            headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], lineWidth: 0.1, lineColor: [0,0,0] },
+            startY: yPos, head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']], body: workerRows,
+            theme: 'grid', headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], lineWidth: 0.1, lineColor: [0,0,0] },
             styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
   
-        // 5. Firmas Autorización (Cuadrícula Inferior)
         checkPageBreak(40);
         drawSectionTitle('AUTORIZACIONES');
-  
         const sigBoxW = (pageWidth - (2 * margin)) / 3;
         const sigBoxH = 25;
         let currentX = margin;
-  
         const drawSigBox = (roleTitle: string, approval: any) => {
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.1);
-            doc.rect(currentX, yPos, sigBoxW, sigBoxH);
-  
-            doc.setFontSize(6);
-            doc.setFont('helvetica', 'bold');
-            doc.text(roleTitle, currentX + 2, yPos + 3);
-  
-             if (approval?.status === 'aprobado') {
+            doc.setDrawColor(0); doc.setLineWidth(0.1); doc.rect(currentX, yPos, sigBoxW, sigBoxH);
+            doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.text(roleTitle, currentX + 2, yPos + 3);
+            if (approval?.status === 'aprobado') {
                 doc.setFont('helvetica', 'normal');
                 doc.text(approval.userName || '', currentX + 2, yPos + 8);
-                if (approval.firmaApertura) {
-                     try {
-                        doc.addImage(approval.firmaApertura, 'PNG', currentX + 5, yPos + 10, 30, 10);
-                     } catch(e) {}
-                }
+                if (approval.firmaApertura) { try { doc.addImage(approval.firmaApertura, 'PNG', currentX + 5, yPos + 10, 30, 10); } catch(e) {} }
                 doc.text(approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy') : '', currentX + 2, yPos + 23);
             }
             currentX += sigBoxW;
         };
-  
         drawSigBox('SOLICITANTE', permit.approvals?.solicitante);
         drawSigBox('AUTORIZANTE / DUEÑO ÁREA', permit.approvals?.autorizante);
         drawSigBox('SST', permit.approvals?.lider_sst);
-  
         yPos += sigBoxH + 10;
   
-        // ----------------------------------------------------------------------
-        // PAGINA 2: ANEXO 1 - TRABAJOS EN ALTURA
-        // ----------------------------------------------------------------------
+        // --- ANEXOS ---
+  
         if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
             doc.addPage();
-            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 1 - TRABAJOS EN ALTURA');
-  
             autoTable(doc, {
-                startY: yPos,
-                body: [
+                startY: yPos, body: [
                     ['Altura Aproximada:', permit.anexoAltura.alturaAproximada || 'N/A'],
                     ['Sistema de Acceso:', Object.keys(permit.anexoAltura.tipoEstructura || {}).filter(k => (permit.anexoAltura?.tipoEstructura as any)[k]).join(', ')]
                 ],
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
+                theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
                 columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-             drawSectionTitle('ASPECTOS DE SEGURIDAD (ALTURAS)');
-            const alturaChecks = anexoAlturaAspectos.map(asp => [
-                asp.label,
-                (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA'
-            ]);
-  
-             autoTable(doc, {
-                startY: yPos,
-                body: alturaChecks,
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
+            drawSectionTitle('ASPECTOS DE SEGURIDAD (ALTURAS)');
+            const alturaChecks = anexoAlturaAspectos.map(asp => [ asp.label, (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA' ]);
+            autoTable(doc, {
+                startY: yPos, body: alturaChecks, theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] },
                 columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-            if(permit.anexoAltura.validacion) {
-                drawDailyValidationTable(permit.anexoAltura.validacion, 'anexoAltura');
-            }
+            if(permit.anexoAltura.validacion) { drawDailyValidationTable(permit.anexoAltura.validacion, 'anexoAltura'); }
         }
   
-        // ----------------------------------------------------------------------
-        // PAGINA 3: ANEXO 2 - ESPACIOS CONFINADOS
-        // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
             doc.addPage();
-            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 2 - ESPACIOS CONFINADOS');
-  
             drawSectionTitle('PRUEBAS DE GASES INICIALES');
             autoTable(doc, {
-                startY: yPos,
-                head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
-                body: [[
-                    permit.anexoConfinado.resultadosPruebasGases?.lel || '-',
-                    permit.anexoConfinado.resultadosPruebasGases?.o2 || '-',
-                    permit.anexoConfinado.resultadosPruebasGases?.h2s || '-',
-                    permit.anexoConfinado.resultadosPruebasGases?.co || '-'
-                ]],
-                theme: 'grid',
-                headStyles: { fillColor: [200, 200, 200], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.1 },
+                startY: yPos, head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
+                body: [[ permit.anexoConfinado.resultadosPruebasGases?.lel || '-', permit.anexoConfinado.resultadosPruebasGases?.o2 || '-', permit.anexoConfinado.resultadosPruebasGases?.h2s || '-', permit.anexoConfinado.resultadosPruebasGases?.co || '-' ]],
+                theme: 'grid', headStyles: { fillColor: [200, 200, 200], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.1 },
                 styles: { halign: 'center', fontSize: 8, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
             drawSectionTitle('MONITOREO PERIÓDICO DE ATMÓSFERA');
             const periodicas = permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas || [];
             const periodData = periodicas.map(p => [p.hora, p.lel, p.o2, p.h2s, p.co]);
-  
             while(periodData.length < 4) periodData.push(['', '', '', '', '']);
-  
-             autoTable(doc, {
-                startY: yPos,
-                head: [['HORA', 'LEL', 'O2', 'H2S', 'CO']],
-                body: periodData,
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0], halign: 'center' }
+            autoTable(doc, {
+                startY: yPos, head: [['HORA', 'LEL', 'O2', 'H2S', 'CO']], body: periodData,
+                theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0], halign: 'center' }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-            if(permit.anexoConfinado.validacion) {
-                drawDailyValidationTable(permit.anexoConfinado.validacion, 'anexoConfinado');
-            }
+            if(permit.anexoConfinado.validacion) { drawDailyValidationTable(permit.anexoConfinado.validacion, 'anexoConfinado'); }
         }
-  
-        // ----------------------------------------------------------------------
-        // PAGINA 4: ANEXO 3 - CONTROL DE ENERGÍAS
-        // ----------------------------------------------------------------------
+
         if (permit.selectedWorkTypes?.energia && permit.anexoEnergias) {
             doc.addPage();
-            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 3 - CONTROL DE ENERGÍAS');
-  
             drawSectionTitle('ENERGÍAS IDENTIFICADAS Y CONTROLES');
-            const energias = Object.entries(permit.anexoEnergias.energiasPeligrosas || {})
-                .filter(([,v]) => v)
-                .map(([k]) => [k.replace(/([A-Z])/g, ' $1').toUpperCase(), 'SI (BLOQUEADO)']);
-  
-            autoTable(doc, {
-                startY: yPos,
-                body: energias,
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
-            });
+            const energias = Object.entries(permit.anexoEnergias.energiasPeligrosas || {}).filter(([,v]) => v).map(([k]) => [k.replace(/([A-Z])/g, ' $1').toUpperCase(), 'SI (BLOQUEADO)']);
+            autoTable(doc, { startY: yPos, body: energias, theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] } });
             yPos = (doc as any).lastAutoTable.finalY + 5;
         }
-  
-        // ----------------------------------------------------------------------
-        // PAGINA 5: ANEXO 4 - IZAJE
-        // ----------------------------------------------------------------------
+
         if (permit.selectedWorkTypes?.izaje && permit.anexoIzaje) {
             doc.addPage();
-            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 4 - IZAJE DE CARGAS');
-  
             autoTable(doc, {
-                startY: yPos,
-                body: [
+                startY: yPos, body: [
                     ['Peso Carga:', Object.keys(permit.anexoIzaje.informacionGeneral?.pesoCarga || {}).filter(k => (permit.anexoIzaje?.informacionGeneral?.pesoCarga as any)[k]).join(' / ')],
                     ['Equipo:', Object.keys(permit.anexoIzaje.informacionGeneral?.equipoUtilizar || {}).filter(k => (permit.anexoIzaje?.informacionGeneral?.equipoUtilizar as any)[k]).join(' / ')]
                 ],
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+                theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-             if(permit.anexoIzaje.validacion) {
-                drawDailyValidationTable(permit.anexoIzaje.validacion, 'anexoIzaje');
-            }
+            if(permit.anexoIzaje.validacion) { drawDailyValidationTable(permit.anexoIzaje.validacion, 'anexoIzaje'); }
         }
-  
-        // ----------------------------------------------------------------------
-        // PAGINA 6: ANEXO 5 - EXCAVACIONES
-        // ----------------------------------------------------------------------
+
         if (permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones) {
             doc.addPage();
-            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 5 - EXCAVACIONES');
-  
             autoTable(doc, {
-                startY: yPos,
-                body: [
+                startY: yPos, body: [
                     ['Profundidad:', permit.anexoExcavaciones.informacionGeneral?.profundidad || ''],
                     ['Ancho:', permit.anexoExcavaciones.informacionGeneral?.ancho || ''],
                     ['Largo:', permit.anexoExcavaciones.informacionGeneral?.largo || '']
                 ],
-                theme: 'grid',
-                styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
+                theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-             if(permit.anexoExcavaciones.validacion) {
-                drawDailyValidationTable(permit.anexoExcavaciones.validacion, 'anexoExcavaciones');
-            }
+            if(permit.anexoExcavaciones.validacion) { drawDailyValidationTable(permit.anexoExcavaciones.validacion, 'anexoExcavaciones'); }
         }
   
-        // Footer Final
+        // --- FOOTER FINAL ---
         const totalPages = doc.getNumberOfPages();
         for(let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -1015,37 +928,7 @@ export default function PermitDetailPage() {
     return workTypes.length > 0 ? workTypes.join(', ') : 'Trabajo General';
   };
 
- const atsPeligros = [
-    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
-    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
-    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
-    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
-    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
-    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
-    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
-    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
-    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
-    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
-    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
-    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
-    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
-    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
-    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
-    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
-    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos' },
-    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
-    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
-    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
-    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
-    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
-    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
-    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
-    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
-    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
-    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
-    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
-    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
- ];
+ 
 
  const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {
     if (!acc[peligro.seccion]) {
@@ -1127,30 +1010,7 @@ export default function PermitDetailPage() {
       { id: 'otros', label: 'Otros' },
     ];
 
-    const anexoAlturaAspectos = [
-        { id: 'afiliacionVigente', label: 'A. EL PERSONAL EJECUTANTE DE LA ACTIVIDAD TIENE LA AFILIACIÓN VIGENTE A SEGURIDAD SOCIAL? '},
-        { id: 'procedimientoActividad', label: 'B. SE CUENTA CON EL PROCEDIMIENTO DE LA ACTIVIDAD A EJECUTAR?' },
-        { id: 'medidasPrevencion', label: 'C. SE HAN DETERMINADO LAS MEDIDAS DE PREVENCIÓN CONTRA CAÍDAS?' },
-        { id: 'conocenMedidas', label: 'D. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?'},
-        { id: 'entrenadosCertificados', label: 'E. ESTÁN LOS EJECUTANTES ENTRENADOS Y SE ENCUENTRAN LOS CERTIFICADOS EN SITIO PARA REALIZAR   TRABAJOS EN ALTURA?'},
-        { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO Y CERTIFICADOS?' },
-        { id: 'sistemaAseguramientoVerificado', label: 'G. SE VERIFICO EL SISTEMA DE ASEGURAMIENTO DE LA ESCALERA , ANDAMIO O PLATAFORMA A UNA ESTRUCTURA FIJA' },
-        { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
-        { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
-        { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
-        { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
-        { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
-        { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
-        { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
-        { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
-        { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
-        { id: 'supervisorConstante', label: 'Q.EXISTE UN SUPERVISOR O ACOMPAÑANTE CONSTASTE DURANTE EL TRABAJO' },
-        { id: 'andamiosCompletos', label: 'R. EN CASO DE TRABAJOS SOBRE ANDAMIOS, ESTOS ESTAN COMPLETOS Y ADECUADAMENTE ARMADOS (RODAPIES, BARANDAS, ETC.)' },
-        { id: 'condicionesClimaticasAdecuadas', label: 'S.LAS CONDICIONES CLIMATICAS SON ADECUADAS PARA REALIZAR EL TRABAJO' },
-        { id: 'metodoSubirHerramientasSeguro', label: 'T.EL METODO DE SUBIR HERRAMIENTAS ES SEGURO' },
-        { id: 'sistemasRestriccion', label: 'U. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE RESTRICCIÓN' },
-        { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
-    ];
+    
     
     const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
       const approval = permit.approvals?.[role as keyof typeof permit.approvals];
@@ -1405,7 +1265,7 @@ export default function PermitDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                         <Field label="Número de Permiso" value={<span className="font-bold text-primary">{permit.number || permit.id.substring(0,8)}</span>} />
                         <Field label="Solicitante" value={permit.user?.displayName} />
-                        <Field label="Fecha Creación" value={permit.createdAt ? format(permit.createdAt, 'dd/MM/yyyy HH:mm') : 'N/A'} />
+                        <Field label="Fecha Creación" value={permit.createdAt ? format(parseFirestoreDate(permit.createdAt)!, 'dd/MM/yyyy HH:mm') : 'N/A'} />
                         <Field label="Área Específica" value={permit.generalInfo?.areaEspecifica} />
                         <Field label="Planta" value={permit.generalInfo?.planta} />
                         <Field label="Proceso" value={permit.generalInfo?.proceso} />
@@ -1827,6 +1687,7 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 
 
