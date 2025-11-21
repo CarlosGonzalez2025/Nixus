@@ -291,7 +291,6 @@ export default function PermitDetailPage() {
             doc.rect(margin, 10, pageWidth - (2 * margin), 25, 'F'); // Limpiar área header
   
             // Logo Placeholder (Izquierda)
-            // En producción: doc.addImage(base64Logo, 'PNG', margin + 2, 12, 40, 20);
             doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
             doc.circle(margin + 12, 22, 8, 'F');
             doc.setTextColor(255, 255, 255);
@@ -305,17 +304,13 @@ export default function PermitDetailPage() {
             doc.setFont('helvetica', 'bold');
             doc.text(title.toUpperCase(), pageWidth / 2, 22, { align: 'center' });
   
-            // Caja ISO (Derecha) - Sin bordes visibles en screenshot, solo texto organizado
-            /*
-               Código: DN-FR-SST-016
-               Versión: 04
-            */
+            // Caja ISO (Derecha) 
            doc.setFontSize(8);
            doc.setFont('helvetica', 'normal');
            doc.text(`Código: ${code}`, pageWidth - margin - 5, 18, { align: 'right' });
            doc.text(`Versión: ${version}`, pageWidth - margin - 5, 23, { align: 'right' });
   
-             // Línea separadora naranja gruesa
+            // Línea separadora naranja gruesa
            doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
            doc.setLineWidth(1);
            doc.line(margin, 36, pageWidth - margin, 36);
@@ -343,11 +338,6 @@ export default function PermitDetailPage() {
             doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
             doc.text("VALIDACIÓN DIARIA (CONDICIONES DE SEGURIDAD Y CIERRE)", pageWidth / 2, yPos + 4, { align: 'center' });
             yPos += 8;
-  
-            // Headers para las dos tablas (Autoridad vs Ejecutor)
-            // Vamos a hacer una sola tabla con columnas dobles para ahorrar espacio horizontal o split
-            // Screenshot muestra: Fecha | Dia 1 | Dia 2... para Autoridad y luego otra para Responsable
-            // Pero el layout excel suele ser: Autoridad (Firma/Fecha) | Ejecutor (Firma/Fecha) por día.
   
             const days = [1, 2, 3, 4, 5, 6, 7];
             const bodyData = days.map((day, idx) => {
@@ -439,7 +429,6 @@ export default function PermitDetailPage() {
         drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
         const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
   
-        // Organizar riesgos en columnas de 3
         const riskRows = [];
         for (let i = 0; i < activeRisks.length; i += 3) {
             riskRows.push([
@@ -486,7 +475,6 @@ export default function PermitDetailPage() {
         checkPageBreak(40);
         drawSectionTitle('AUTORIZACIONES');
   
-        // Crear cuadrícula manual para firmas
         const sigBoxW = (pageWidth - (2 * margin)) / 3;
         const sigBoxH = 25;
         let currentX = margin;
@@ -519,14 +507,14 @@ export default function PermitDetailPage() {
   
         yPos += sigBoxH + 10;
   
-          // ----------------------------------------------------------------------
+        // ----------------------------------------------------------------------
         // PAGINA 2: ANEXO 1 - TRABAJOS EN ALTURA
         // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
             doc.addPage();
+            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 1 - TRABAJOS EN ALTURA');
   
-            // Info Específica
             autoTable(doc, {
                 startY: yPos,
                 body: [
@@ -539,8 +527,7 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-             // Checklist Alturas
-            drawSectionTitle('ASPECTOS DE SEGURIDAD (ALTURAS)');
+             drawSectionTitle('ASPECTOS DE SEGURIDAD (ALTURAS)');
             const alturaChecks = anexoAlturaAspectos.map(asp => [
                 asp.label,
                 (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA'
@@ -555,8 +542,9 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-             // Validación Diaria
-            drawDailyValidationTable(permit.anexoAltura.validacion, 'anexoAltura');
+            if(permit.anexoAltura.validacion) {
+                drawDailyValidationTable(permit.anexoAltura.validacion, 'anexoAltura');
+            }
         }
   
         // ----------------------------------------------------------------------
@@ -564,9 +552,9 @@ export default function PermitDetailPage() {
         // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
             doc.addPage();
+            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 2 - ESPACIOS CONFINADOS');
   
-            // Gases Iniciales
             drawSectionTitle('PRUEBAS DE GASES INICIALES');
             autoTable(doc, {
                 startY: yPos,
@@ -583,12 +571,10 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-             // Monitoreo Periódico
             drawSectionTitle('MONITOREO PERIÓDICO DE ATMÓSFERA');
             const periodicas = permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas || [];
             const periodData = periodicas.map(p => [p.hora, p.lel, p.o2, p.h2s, p.co]);
   
-            // Rellenar líneas vacías si hay pocas para que parezca un formato impreso
             while(periodData.length < 4) periodData.push(['', '', '', '', '']);
   
              autoTable(doc, {
@@ -600,8 +586,9 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-              // Validación Diaria
-             drawDailyValidationTable(permit.anexoConfinado.validacion, 'anexoConfinado');
+            if(permit.anexoConfinado.validacion) {
+                drawDailyValidationTable(permit.anexoConfinado.validacion, 'anexoConfinado');
+            }
         }
   
         // ----------------------------------------------------------------------
@@ -609,6 +596,7 @@ export default function PermitDetailPage() {
         // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.energia && permit.anexoEnergias) {
             doc.addPage();
+            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 3 - CONTROL DE ENERGÍAS');
   
             drawSectionTitle('ENERGÍAS IDENTIFICADAS Y CONTROLES');
@@ -623,16 +611,14 @@ export default function PermitDetailPage() {
                 styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1, textColor: [0,0,0] }
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
-  
-            // Validación Diaria
-            // drawDailyValidationTable(permit.anexoEnergias.validacion, 'anexoEnergias');
         }
   
-          // ----------------------------------------------------------------------
+        // ----------------------------------------------------------------------
         // PAGINA 5: ANEXO 4 - IZAJE
         // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.izaje && permit.anexoIzaje) {
             doc.addPage();
+            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 4 - IZAJE DE CARGAS');
   
             autoTable(doc, {
@@ -646,7 +632,9 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-             drawDailyValidationTable(permit.anexoIzaje.validacion, 'anexoIzaje');
+             if(permit.anexoIzaje.validacion) {
+                drawDailyValidationTable(permit.anexoIzaje.validacion, 'anexoIzaje');
+            }
         }
   
         // ----------------------------------------------------------------------
@@ -654,6 +642,7 @@ export default function PermitDetailPage() {
         // ----------------------------------------------------------------------
         if (permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones) {
             doc.addPage();
+            yPos = margin; // Reset Y position for new page
             drawHeader('ANEXO 5 - EXCAVACIONES');
   
             autoTable(doc, {
@@ -668,7 +657,9 @@ export default function PermitDetailPage() {
             });
             yPos = (doc as any).lastAutoTable.finalY + 5;
   
-             drawDailyValidationTable(permit.anexoExcavaciones.validacion, 'anexoExcavaciones');
+             if(permit.anexoExcavaciones.validacion) {
+                drawDailyValidationTable(permit.anexoExcavaciones.validacion, 'anexoExcavaciones');
+            }
         }
   
         // Footer Final
@@ -1836,4 +1827,6 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
+
 
