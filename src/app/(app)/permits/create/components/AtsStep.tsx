@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import {
   Collapsible,
@@ -223,15 +223,13 @@ const EppCategory = ({
       newEpp[id] = true;
     } else {
       delete newEpp[id];
-      if (type === 'text' || type === 'custom_casco') {
-        // Clean up spec fields when unchecked
-        if (type === 'custom_casco') {
-          delete newEpp[`${id}_tipo`];
-          delete newEpp[`${id}_clase`];
-          delete newEpp[`${id}_barbuquejo`];
-        } else {
-          delete newEpp[`${id}_spec`];
-        }
+      if (type === 'text') {
+        delete newEpp[`${id}_spec`];
+      }
+      if (type === 'custom_casco') {
+        delete newEpp[`casco_seguridad_tipo`];
+        delete newEpp[`casco_seguridad_clase`];
+        delete newEpp[`casco_seguridad_barbuquejo`];
       }
     }
     onEppChange('epp', newEpp);
