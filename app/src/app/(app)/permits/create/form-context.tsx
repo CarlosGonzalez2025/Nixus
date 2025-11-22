@@ -1,5 +1,7 @@
 
-import { createContext, useReducer, useContext, Dispatch } from 'react';
+'use client';
+
+import React, { createContext, useReducer, useContext, Dispatch } from 'react';
 import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes } from '@/types';
 
 // Define the shape of the form data
@@ -26,6 +28,7 @@ type FormAction =
   | { type: 'SET_ENTIRE_STATE', payload: Partial<Permit> }
   | { type: 'RESET_FORM' };
 
+
 // Initial state
 const initialState: FormState = {
   generalInfo: {
@@ -43,10 +46,7 @@ const initialState: FormState = {
     numTrabajadores: '',
     reunionInicio: 'na',
     atsVerificado: 'na',
-    responsable: { nombre: '', cargo: '', compania: '', alcance: '' },
-    task: '',
-    otherTaskName: '',
-    otherTaskDescription: '',
+    responsable: { nombre: '', cargo: '', compania: '', alcance: '' }
   },
   selectedWorkTypes: {
     alturas: false,
@@ -81,6 +81,10 @@ const initialState: FormState = {
         personalNotificado: 'na',
         observaciones: '',
     },
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+    },
   },
   anexoConfinado: {
     identificacionPeligros: {},
@@ -96,8 +100,8 @@ const initialState: FormState = {
       fechaCalibracion: '',
     },
     validacion: {
-        autoridad: [],
-        responsable: [],
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
   },
   anexoEnergias: {
@@ -124,6 +128,10 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+    },
   },
   anexoExcavaciones: {
     informacionGeneral: {
@@ -134,6 +142,10 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+    },
   },
   verificacionPeligros: {
     fisicos: {},
@@ -197,4 +209,72 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'UPDATE_VERIFICACION_PELIGROS':
         return {
             ...state,
-            verificacionPeligros: { ...state.verificacionPeligros, ...action.p
+            verificacionPeligros: { ...state.verificacionPeligros, ...action.payload },
+        }
+    case 'UPDATE_EPP_EMERGENCIAS':
+        return {
+            ...state,
+            eppEmergencias: { ...state.eppEmergencias, ...action.payload },
+        }
+    case 'SET_WORKERS':
+        return {
+            ...state,
+            workers: action.payload,
+        }
+    case 'ADD_WORKER':
+        return {
+            ...state,
+            workers: [...(state.workers || []), action.payload]
+        }
+    case 'UPDATE_SIGNATURE':
+      // Complex logic for updating signatures in nested annexes can be handled here
+      // This is a simplified example
+      console.log('Signature update needs to be implemented in reducer:', action.payload);
+      return state;
+    case 'SET_ENTIRE_STATE':
+        const { payload } = action;
+        // Reconstruct the state from the payload, providing defaults for any missing pieces
+        return {
+            generalInfo: { ...initialState.generalInfo, ...payload.generalInfo },
+            selectedWorkTypes: { ...initialState.selectedWorkTypes, ...payload.selectedWorkTypes },
+            anexoATS: { ...initialState.anexoATS, ...payload.anexoATS },
+            anexoAltura: { ...initialState.anexoAltura, ...payload.anexoAltura },
+            anexoConfinado: { ...initialState.anexoConfinado, ...payload.anexoConfinado },
+            anexoEnergias: { ...initialState.anexoEnergias, ...payload.anexoEnergias },
+            anexoIzaje: { ...initialState.anexoIzaje, ...payload.anexoIzaje },
+            anexoExcavaciones: { ...initialState.anexoExcavaciones, ...payload.anexoExcavaciones },
+            verificacionPeligros: { ...initialState.verificacionPeligros, ...payload.verificacionPeligros },
+            eppEmergencias: { ...initialState.eppEmergencias, ...payload.eppEmergencias },
+            workers: payload.workers || initialState.workers,
+        };
+    case 'RESET_FORM':
+      return initialState;
+    default:
+      return state;
+  }
+}
+
+// Create the context
+const PermitFormContext = createContext<{ state: FormState; dispatch: Dispatch<FormAction> } | undefined>(undefined);
+
+// Create the provider component
+export function PermitFormProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(formReducer, initialState);
+
+  return (
+    <PermitFormContext.Provider value={{ state, dispatch }}>
+      {children}
+    </PermitFormContext.Provider>
+  );
+}
+
+// Custom hook to use the context
+export function usePermitForm() {
+  const context = useContext(PermitFormContext);
+  if (!context) {
+    throw new Error('usePermitForm must be used within a PermitFormProvider');
+  }
+  return context;
+}
+
+  

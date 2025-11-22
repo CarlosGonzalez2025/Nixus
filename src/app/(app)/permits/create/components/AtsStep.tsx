@@ -2,11 +2,7 @@
 
 import React, { useCallback } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible,CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -74,11 +70,16 @@ export const eppOptions = {
   'Protección Cabeza, Visual, Auditiva y Respiratoria': [
     { id: 'casco_seguridad', label: 'Casco de seguridad', type: 'custom_casco' },
     { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
+    { id: 'gafas_oxicorte', label: 'Gafas de oxicorte', type: 'boolean' },
+    { id: 'monogafas', label: 'Monogafas', type: 'boolean' },
+    { id: 'careta_soldador', label: 'Careta de soldador', type: 'boolean' },
+    { id: 'careta_proteccion_total', label: 'Careta de protección total', type: 'boolean' },
     { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
     { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
     { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
-    { id: 'protector_auditivo', label: 'Protector auditivo tipo', type: 'text' },
+    { id: 'protector_auditivo', label: 'Protector auditivo tipo:', type: 'select', selectOptions: ['Copa', 'Inserción'] },
     { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+    { id: 'chavo_en_tela_o_carnaza', label: 'Chavo en tela o carnaza', type: 'boolean' },
     { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
   ],
   'Protección Corporal, Manos y Pies': [
@@ -87,23 +88,31 @@ export const eppOptions = {
     { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
     { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
     { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
-    { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },
+    { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },    
     { id: 'polainas', label: 'Polainas', type: 'boolean' },
     { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
     { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
     { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
     { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
+    { id: 'guante_temperatura', label: 'Guante temperatura', type: 'boolean' },
     { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
     { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
     { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
+    { id: 'proteccion_metatarso', label: 'Protección Metatarso', type: 'boolean' },
   ],
   'Protección Contra Caídas y Equipos Especiales': [
-    { id: 'arnes', label: 'Arnés', type: 'boolean' },
+    { id: 'arnes', label: 'Arnés', type: 'text' },
+    { id: 'mosqueton', label: 'Mosquetón', type: 'boolean' },
+    { id: 'punto_de_anclaje', label: 'Punto de anclaje (cual)', type: 'text' },
     { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
     { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
     { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
     { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
     { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+    { id: 'senalizacion', label: 'Señalización', type: 'boolean' },
+    { id: 'barandas', label: 'Barandas', type: 'boolean' },
+    { id: 'delimitacion_perimetral', label: 'Delimitación perímetro', type: 'boolean' },
+    { id: 'control_acceso', label: 'Control acceso', type: 'boolean' },
     { id: 'otro_epp', label: 'Otro:', type: 'text' },
   ],
 };
@@ -125,7 +134,7 @@ const EppItem = ({
   eppData,
   onEppChange,
 }: { 
-  item: { id: string; label: string; type: string };
+  item: { id: string; label: string; type: string; selectOptions?: string[] };
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   eppData: any;
@@ -136,6 +145,7 @@ const EppItem = ({
     onEppChange(field, value);
   };
   
+  // Manejo especial para casco de seguridad
   if (item.type === 'custom_casco') {
     return (
       <div className="flex flex-col gap-2">
@@ -179,6 +189,42 @@ const EppItem = ({
     );
   }
 
+  // Manejo para campos con select (como protector auditivo)
+  if (item.type === 'select' && item.selectOptions) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id={item.id} 
+            checked={checked} 
+            onCheckedChange={onCheckedChange}
+          />
+          <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
+        </div>
+        {checked && (
+          <div className="ml-6">
+            <Select 
+              value={eppData?.[`${item.id}_tipo`] || ''}
+              onValueChange={(value) => handleSpecChange(`${item.id}_tipo`, value)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Seleccione tipo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {item.selectOptions.map((option) => (
+                  <SelectItem key={option} value={option.toLowerCase()}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Manejo para campos de texto y boolean
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center space-x-2">
@@ -211,7 +257,7 @@ const EppCategory = ({
   onEppChange 
 }: { 
   category: string;
-  items: Array<{ id: string; label: string; type: string }>;
+  items: Array<{ id: string; label: string; type: string; selectOptions?: string[] }>;
   eppData: any;
   onEppChange: (id: string, value: any) => void;
 }) => {
@@ -225,6 +271,9 @@ const EppCategory = ({
       delete newEpp[id];
       if (type === 'text') {
         delete newEpp[`${id}_spec`];
+      }
+      if (type === 'select') {
+        delete newEpp[`${id}_tipo`];
       }
       if (type === 'custom_casco') {
         delete newEpp[`casco_seguridad_tipo`];

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -30,6 +29,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { AutorizacionPersona, ValidacionDiaria, AnexoAltura } from '@/types';
 
 const anexoAlturaEstructuras = [
@@ -40,6 +46,94 @@ const anexoAlturaEstructuras = [
   { id: 'plataforma', label: 'Plataforma' },
   { id: 'manLift', label: 'Man Lift o Camion Canasta' },
   { id: 'otros', label: 'Otros' },
+];
+
+const tareasTrabajoAltura = [
+  { 
+    id: 'mantenimiento-aires', 
+    nombre: 'Mantenimiento de aires', 
+    descripcion: 'Realización de mantenimiento, reparación y limpieza de aires acondicionados' 
+  },
+  { 
+    id: 'cambio-estanterias', 
+    nombre: 'Cambio y reparación de estanterías', 
+    descripcion: 'Reparación, inspección y cambio de elementos de la estantería' 
+  },
+  { 
+    id: 'instalacion-luminarias', 
+    nombre: 'Instalación y cambio de luminarias', 
+    descripcion: 'Reparación y cambio de luminaria' 
+  },
+  { 
+    id: 'desnidacion-palomas', 
+    nombre: 'Des nidación de palomas', 
+    descripcion: 'Retiro de nidos generados con palomas' 
+  },
+  { 
+    id: 'instalacion-carpas', 
+    nombre: 'Instalación de carpas', 
+    descripcion: 'Instalar carpas (lona) de carpas móviles' 
+  },
+  { 
+    id: 'modificacion-equipos-oficina', 
+    nombre: 'Modificación y adecuación de equipos de oficina', 
+    descripcion: 'Cambio de módulos, divisiones de oficina' 
+  },
+  { 
+    id: 'instalacion-avisos', 
+    nombre: 'Instalación de avisos', 
+    descripcion: 'Instalar vallas, pendones, avisos' 
+  },
+  { 
+    id: 'estudios-isocineticos', 
+    nombre: 'Estudios isocinéticos', 
+    descripcion: 'Instalación y desmonte equipo, en chimenea de caldera' 
+  },
+  { 
+    id: 'cargue-graneleros', 
+    nombre: 'Cargue de graneleros', 
+    descripcion: 'Abrir compuertas superiores de graneleros y realizar cargue' 
+  },
+  { 
+    id: 'mantenimiento-antena', 
+    nombre: 'Instalación y mantenimiento de antena de telefonía', 
+    descripcion: 'Revisión de antena de telecomunicaciones' 
+  },
+  { 
+    id: 'impermeabilizacion-cubierta', 
+    nombre: 'Impermeabilización de cubierta y limpieza (sobre losa)', 
+    descripcion: 'Aplicar impermeabilizante a cubierta' 
+  },
+  { 
+    id: 'poda-arboles', 
+    nombre: 'Poda de árboles (si se encuentra retirado de líneas con tensión)', 
+    descripcion: 'Realización de poda de árboles' 
+  },
+  { 
+    id: 'instalacion-malla', 
+    nombre: 'Instalación de malla y/o poli sombra', 
+    descripcion: 'Instalación y desmonte de mallas y poli sombra' 
+  },
+  { 
+    id: 'polarizacion-ventanas', 
+    nombre: 'Polarización de ventanas, instalación de cortinas', 
+    descripcion: 'Colocar papel polarizado en ventanas e instalación de cortinas' 
+  },
+  { 
+    id: 'cambio-piezas-equipos', 
+    nombre: 'Cambio de piezas y mantenimiento en mástil de montacargas, retroexcavadora, etc.', 
+    descripcion: 'Instalación de sensores, luces, cámaras, etc., en los equipos' 
+  },
+  { 
+    id: 'mantenimiento-camaras', 
+    nombre: 'Mantenimiento e instalación de cámaras', 
+    descripcion: 'Instalar cámaras de seguridad en puntos de la planta' 
+  },
+  { 
+    id: 'instalacion-tuberia', 
+    nombre: 'Instalación de tubería eléctrica', 
+    descripcion: 'Instalar tubería y sondear cableado, instalar soportes de tubería' 
+  },
 ];
 
 const anexoAlturaAspectos = [
@@ -132,6 +226,40 @@ export function AnexoAlturaStep() {
     handleUpdate({ [section]: { ...currentSection, [field]: value } });
   };
 
+  // Handler para el cambio de tarea
+  const handleTareaChange = (tareaId: string) => {
+    if (tareaId === 'otro') {
+      handleUpdate({ 
+        tareaRealizar: {
+          id: 'otro',
+          nombre: '',
+          descripcion: ''
+        }
+      });
+    } else {
+      const tareaSeleccionada = tareasTrabajoAltura.find(t => t.id === tareaId);
+      if (tareaSeleccionada) {
+        handleUpdate({ 
+          tareaRealizar: {
+            id: tareaSeleccionada.id,
+            nombre: tareaSeleccionada.nombre,
+            descripcion: tareaSeleccionada.descripcion
+          }
+        });
+      }
+    }
+  };
+
+  // Obtener la descripción de la tarea seleccionada
+  const getDescripcionTarea = () => {
+    if (!anexoAltura.tareaRealizar?.id) return '';
+    if (anexoAltura.tareaRealizar.id === 'otro') {
+      return anexoAltura.tareaRealizar.descripcion || '';
+    }
+    const tarea = tareasTrabajoAltura.find(t => t.id === anexoAltura.tareaRealizar?.id);
+    return tarea?.descripcion || '';
+  };
+
   return (
     <>
     <div className="space-y-8">
@@ -150,6 +278,83 @@ export function AnexoAlturaStep() {
             <div><Label>Área de Trabajo:</Label><Input value={generalInfo.areaEspecifica || ''} readOnly disabled /></div>
             <div><Label>Equipo o Área Específica:</Label><Input value={generalInfo.proceso || ''} readOnly disabled /></div>
         </div>
+        
+        {/* Nueva Sección: Tarea a Realizar */}
+        <div className="mt-4 space-y-4">
+          <div>
+            <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+              Tarea a Realizar:
+            </Label>
+            <Select 
+              value={anexoAltura.tareaRealizar?.id || ''} 
+              onValueChange={handleTareaChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccione la tarea a realizar" />
+              </SelectTrigger>
+              <SelectContent>
+                {tareasTrabajoAltura.map(tarea => (
+                  <SelectItem key={tarea.id} value={tarea.id}>
+                    {tarea.nombre}
+                  </SelectItem>
+                ))}
+                <SelectItem value="otro">Otro (especificar)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mostrar descripción de la tarea seleccionada */}
+          {anexoAltura.tareaRealizar?.id && anexoAltura.tareaRealizar.id !== 'otro' && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <Label className="text-sm font-semibold text-blue-900">Descripción de la Tarea:</Label>
+              <p className="text-sm text-blue-800 mt-1">{getDescripcionTarea()}</p>
+            </div>
+          )}
+
+          {/* Campos adicionales si selecciona "Otro" */}
+          {anexoAltura.tareaRealizar?.id === 'otro' && (
+            <div className="space-y-4 p-4 border border-amber-200 rounded-md bg-amber-50">
+              <div>
+                <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                  Nombre de la Actividad:
+                </Label>
+                <Input 
+                  placeholder="Ingrese el nombre de la actividad" 
+                  value={anexoAltura.tareaRealizar?.nombre || ''} 
+                  onChange={(e) => handleUpdate({ 
+                    tareaRealizar: {
+                      ...anexoAltura.tareaRealizar,
+                      id: 'otro',
+                      nombre: e.target.value,
+                      descripcion: anexoAltura.tareaRealizar?.descripcion || ''
+                    }
+                  })}
+                  required
+                />
+              </div>
+              <div>
+                <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                  Descripción de la Actividad:
+                </Label>
+                <Textarea 
+                  placeholder="Ingrese la descripción de la actividad" 
+                  value={anexoAltura.tareaRealizar?.descripcion || ''} 
+                  onChange={(e) => handleUpdate({ 
+                    tareaRealizar: {
+                      ...anexoAltura.tareaRealizar,
+                      id: 'otro',
+                      nombre: anexoAltura.tareaRealizar?.nombre || '',
+                      descripcion: e.target.value
+                    }
+                  })}
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div><Label>Responsable (Nombre):</Label><Input value={generalInfo.responsable?.nombre || ''} readOnly disabled /></div>
             <div><Label>Cargo:</Label><Input value={generalInfo.responsable?.cargo || ''} readOnly disabled /></div>

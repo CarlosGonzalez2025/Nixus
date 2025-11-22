@@ -82,6 +82,10 @@ const initialState: FormState = {
         personalNotificado: 'na',
         observaciones: '',
     },
+    validacion: { // <-- LÍNEA AGREGADA
+      autoridad: [],
+      responsable: [],
+    },
   },
   anexoConfinado: {
     identificacionPeligros: {},
@@ -96,9 +100,9 @@ const initialState: FormState = {
       marca: '',
       fechaCalibracion: '',
     },
-    validacion: {
-        autoridad: [],
-        responsable: [],
+    validacion: { // <-- LÍNEA AGREGADA
+      autoridad: [],
+      responsable: [],
     },
   },
   anexoEnergias: {
@@ -125,6 +129,10 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
+    validacion: { // <-- LÍNEA AGREGADA
+      autoridad: [],
+      responsable: [],
+    },
   },
   anexoExcavaciones: {
     informacionGeneral: {
@@ -135,6 +143,10 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
+    validacion: { // <-- LÍNEA AGREGADA
+      autoridad: [],
+      responsable: [],
+    },
   },
   verificacionPeligros: {
     fisicos: {},

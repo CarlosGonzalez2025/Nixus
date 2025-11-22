@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -55,7 +54,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Input } from '@/components/ui/input';
@@ -316,45 +315,34 @@ export default function PermitDetailPage() {
         description: 'Preparando formato oficial Italcol.',
     });
   
-     try {
+    try {
+        const img = new (window as any).Image();
+        img.src = 'https://i.postimg.cc/jC2W9bJ4/logo-sm.png';
+        img.crossOrigin = 'Anonymous'; 
+
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
+
         const doc = new jsPDF('p', 'mm', 'letter');
         const pageWidth = doc.internal.pageSize.width;
         const margin = 10;
-        let yPos = margin; // Start position for content
-
-        const italcolOrange = [239, 123, 0];
-
-        // Helper to add a new page if content overflows
-        const checkPageBreak = (neededHeight: number) => {
-            if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
-                doc.addPage();
-                yPos = margin;
-            }
-        };
+        let yPos = margin; 
 
         const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
-            // Placeholder for Italcol Logo
-            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-            doc.circle(margin + 12, yPos + 12, 8, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Italcol', margin + 6, yPos + 13);
-            doc.setTextColor(0, 0, 0);
+            doc.addImage(img, 'PNG', margin, 5, 30, 20);
 
-            // Title
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
 
-            // ISO Code Box
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
             doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
             doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
 
-            // Orange Separator Line
-            doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.setDrawColor(255, 102, 0);
             doc.setLineWidth(1);
             doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
             
@@ -362,8 +350,11 @@ export default function PermitDetailPage() {
         };
 
         const drawSectionTitle = (title: string) => {
-            checkPageBreak(12);
-            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            if (yPos > 250) { 
+                doc.addPage();
+                yPos = margin;
+            }
+            doc.setFillColor(255, 102, 0);
             doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
@@ -373,12 +364,8 @@ export default function PermitDetailPage() {
             doc.setTextColor(0, 0, 0);
         };
         
-        // --- START OF PDF CONTENT ---
-
-        // PERMIT HEADER
         drawHeader('PERMISO DE TRABAJO');
 
-        // General Info Table
         autoTable(doc, {
             startY: yPos,
             body: [
@@ -394,7 +381,6 @@ export default function PermitDetailPage() {
         });
         yPos = (doc as any).lastAutoTable.finalY;
 
-        // Scope
         autoTable(doc, {
             startY: yPos,
             head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220,220,220], textColor: [0,0,0], fontStyle: 'bold' } }]],
@@ -403,7 +389,6 @@ export default function PermitDetailPage() {
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
-        // ATS
         drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
         const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
         const riskRows = activeRisks.map(r => [`[X] ${r.label}`]);
@@ -412,13 +397,11 @@ export default function PermitDetailPage() {
             yPos = (doc as any).lastAutoTable.finalY + 2;
         }
 
-        // Authorized Personnel
         drawSectionTitle('PERSONAL AUTORIZADO');
         const workerRows = permit.workers?.map(w => [w.nombre, w.cedula, w.rol, w.firmaApertura ? 'FIRMADO' : 'PENDIENTE']) || [];
         autoTable(doc, { startY: yPos, head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']], body: workerRows, theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] } });
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
-        // Approvals
         drawSectionTitle('AUTORIZACIONES');
         const sigBoxW = (pageWidth - (2 * margin)) / 3;
         const sigBoxH = 30;
@@ -438,8 +421,13 @@ export default function PermitDetailPage() {
         drawSigBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos);
         yPos += sigBoxH + 5;
         
-        // --- ANNEXES ---
-        
+        const checkPageBreak = (neededHeight: number) => {
+            if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
+                doc.addPage();
+                yPos = margin;
+            }
+        };
+
         const drawDailyValidationTable = (validationData: any) => {
             checkPageBreak(50);
             drawSectionTitle("VALIDACIÓN DIARIA");
@@ -459,7 +447,7 @@ export default function PermitDetailPage() {
         };
 
         if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
-            checkPageBreak(yPos + 50); // check if space for header
+            checkPageBreak(200); 
             drawSectionTitle('ANEXO 1 - TRABAJOS EN ALTURA');
             
             autoTable(doc, {
@@ -484,7 +472,7 @@ export default function PermitDetailPage() {
         }
 
         if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
-            checkPageBreak(yPos + 50);
+            checkPageBreak(100);
             drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
 
             autoTable(doc, {
@@ -496,9 +484,6 @@ export default function PermitDetailPage() {
             if(permit.anexoConfinado.validacion) { drawDailyValidationTable(permit.anexoConfinado.validacion); }
         }
         
-        // Add other annexes similarly...
-
-        // --- FOOTER ---
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -519,10 +504,8 @@ export default function PermitDetailPage() {
   const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
       setSigningRole({role, type: signatureType});
       if (role === 'coordinador_alturas') {
-          // No pre-llenar el nombre para que el coordinador lo ingrese
           setSignerName('');
       } else {
-          // Para otros roles, usar el nombre del usuario actual
           setSignerName(currentUser?.displayName || '');
       }
       setIsSignatureDialogOpen(true);
@@ -531,7 +514,6 @@ export default function PermitDetailPage() {
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
     
-    // Validar nombre si es el coordinador
     if (signingRole.role === 'coordinador_alturas' && !signerName.trim()) {
         toast({
             variant: 'destructive',
@@ -684,12 +666,10 @@ export default function PermitDetailPage() {
 
     if (!approvals) return false;
 
-    // Verifica que todas las firmas requeridas estén completas
     let allRequiredSignaturesDone = 
       approvals.solicitante?.status === 'aprobado' &&
       approvals.autorizante?.status === 'aprobado';
       
-    // Si es trabajo de energía, también se requiere la firma de mantenimiento
     if(permit.controlEnergia){
         allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.mantenimiento?.status === 'aprobado';
     }
@@ -1003,8 +983,15 @@ export default function PermitDetailPage() {
     };
 
     const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
+        let durationInDays = 1;
+        if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
+            const startDate = parseISO(permit.generalInfo.validFrom);
+            const endDate = parseISO(permit.generalInfo.validUntil);
+            durationInDays = differenceInCalendarDays(endDate, startDate) + 1;
+        }
+
         const renderRows = (type: 'autoridad' | 'responsable') => {
-            return Array(7).fill(0).map((_, i) => {
+            return Array(durationInDays).fill(0).map((_, i) => {
                 const v = validationData?.[type]?.[i];
                 const canSignValidation = currentUser?.uid === permit.createdBy && !v?.firma;
 
@@ -1602,3 +1589,5 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
+  
