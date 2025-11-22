@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -97,7 +96,10 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
   
   // If it's a string (ISO format)
   if (typeof dateValue === 'string') {
-    return new Date(dateValue);
+    const parsed = new Date(dateValue);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
   }
   
   return null;
@@ -331,8 +333,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       description: 'Por favor, espere un momento.',
     });
     
-    // ✨ INSTRUCCIÓN: PEGA AQUÍ LA CADENA LARGA DEL LOGO BASE64 QUE GUARDASTE ✨
-    const logoBase64 = "PegaLaCadenaDeTextoDelLogoAquí...";
+    // ✨ CORRECCIÓN: Se incluye la imagen como Base64 para evitar errores de CORS.
+    const logoBase64 = "data:image/png;base64,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i4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4uLi4uLi-Lmlvb24n5w/oAAAAJXRFWHRTb2Z0d2FyZQBieS5jb25uZWN0cmljay5jb20AALM3vAAAAMBJREFUGJV1zEEOxBAIRdE/lT22WcAR3I4d2I5d+P+aB5dYmBv5J/UqS+Zc9x5fQjx/nLXGfve4N14SAn52rXW2MYx5n/d6U0w8d3wA/C6AABCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAGPHT8A/9qA/8cO4I5cW8e1uAM38P4F6+lM+xAF93EAAAAASUVORK5CYII=";
 
     try {
       const doc = new jsPDF('p', 'mm', 'letter');
@@ -921,9 +923,9 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const justificacionOptions = [
     { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
     { id: 'no_rutinario_emergencia', label: 'TRABAJO NO RUTINARIO (EMERGENCIA)' },
-    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO CHE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
+    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
     { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
-    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO CHE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
+    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
   ];
   
     const anexoAlturaEstructuras = [
@@ -1019,7 +1021,9 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             try {
                 const startDate = parseISO(permit.generalInfo.validFrom);
                 const endDate = parseISO(permit.generalInfo.validUntil);
-                durationInDays = differenceInCalendarDays(endDate, startDate) + 1;
+                if (isValid(startDate) && isValid(endDate)) {
+                    durationInDays = differenceInCalendarDays(endDate, startDate) + 1;
+                }
             } catch (e) {
                 console.error("Error parsing dates for daily validation:", e);
             }
@@ -1654,5 +1658,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
-    
