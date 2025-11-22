@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -88,6 +89,7 @@ const RadioGroupField: React.FC<{
     </div>
 );
 
+// ✅ MANTENIDO: Array de EPP items (oculto en UI pero disponible para futuro uso)
 export const eppItems = [
     { id: 'ropaTrabajo', label: 'Ropa de trabajo', manual: false },
     { id: 'overolIgnifugo', label: 'Overol Ignífugo, Categoría:', manual: true },
@@ -142,32 +144,12 @@ export function EppEmergenciasStep({ eppEmergencias, onUpdate }: EppEmergenciasS
         <div className="space-y-8">
             <div className="text-center">
                 <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
-                    EPP y Manejo de Emergencias
+                    Manejo de Emergencias
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                    Especifique los equipos de protección personal y verificaciones de emergencia.
+                    Verifique las notificaciones y procedimientos de emergencia.
                 </p>
             </div>
-
-            <SectionWrapper title="Equipos de Protección Personal Requeridos" defaultOpen>
-                <div className="space-y-2">
-                    {eppItems.map(item => (
-                        <RadioGroupField
-                            key={item.id}
-                            id={`epp-${item.id}`}
-                            label={item.label}
-                            value={eppEmergencias.epp?.[item.id] as string}
-                            onChange={(value) => handleUpdate('epp', item.id, value)}
-                            showInput={item.manual}
-                            isSelect={item.isSelect}
-                            selectOptions={item.selectOptions}
-                            inputValue={eppEmergencias.epp?.[`${item.id}_manual`] as string || ''}
-                            onInputChange={(value) => handleUpdate('epp', `${item.id}_manual`, value)}
-                            placeholder={item.isSelect ? 'Seleccione tipo' : "Especificar..."}
-                        />
-                    ))}
-                </div>
-            </SectionWrapper>
 
             <SectionWrapper title="Notificaciones y Manejo de Emergencias" defaultOpen>
                 <div className="space-y-2">

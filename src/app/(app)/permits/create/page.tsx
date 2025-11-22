@@ -291,7 +291,7 @@ function CreatePermitWizard() {
     { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
     { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
     { label: "Verificación Peligros", condition: false },
-    { label: "EPP y Emergencias", condition: true },
+    { label: "Emergencias", condition: true },
     { label: "Trabajadores", condition: true },
     { label: "Revisión", condition: true }
   ];
@@ -410,7 +410,7 @@ function CreatePermitWizard() {
         }
     }
 
-    if (currentLabel === 'EPP y Emergencias') {
+    if (currentLabel === 'Emergencias') {
       const eppData = formData.eppEmergencias?.epp || {};
       const missingSpecFields = eppItems
         .filter(item => item.manual && eppData[item.id] === 'si')
@@ -531,7 +531,7 @@ function CreatePermitWizard() {
         return <AnexoExcavacionesStep />;
       case "Verificación Peligros":
         return <VerificacionPeligrosStep />;
-      case "EPP y Emergencias":
+      case "Emergencias":
         return <EppEmergenciasStep eppEmergencias={formData.eppEmergencias as EppEmergencias} onUpdate={handleUpdateEppEmergencias} />;
       case "Trabajadores":
         return <WorkersStep 
