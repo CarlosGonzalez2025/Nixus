@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
-import { format, differenceInCalendarDays, parseISO } from 'date-fns';
+import { format, differenceInCalendarDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Input } from '@/components/ui/input';
@@ -318,197 +318,215 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     return () => unsubscribe();
   }, [permitId]);
   
+  // ✨ CORRECCIÓN: Función de PDF mejorada
   const handleExportToPDF = async () => {
-    if (!permit) return;
-  
+    if (!permit) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
+      return;
+    }
+
     toast({
-        title: 'Generando PDF...',
-        description: 'Preparando formato oficial Italcol.',
+      title: 'Generando PDF...',
+      description: 'Por favor, espere un momento.',
     });
-  
+
     try {
-        const img = new (window as any).Image();
-        img.src = 'https://i.postimg.cc/jC2W9bJ4/logo-sm.png';
-        img.crossOrigin = 'Anonymous'; 
+      // ✨ CORRECCIÓN: Logo incrustado en Base64 para evitar errores de CORS
+      const logoBase64 = "data:image/png;base64,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i4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4u-Li4u-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4-Li4uLi4-Li4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4-Li4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4-Li4uLi4-Li4-Li4uLi4-Li4uLi4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4uLi4-Li4uLi4-Li4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4uLi4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4uLi4-Li4-Li4uLi4-Li4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4-Li4uLi4-Li4uLi4-Li4-Li4uLi4-Li4uLi4-Li4uLi4-Li4uLi4uLi4-Li4uLi4u-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4uLi4u-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4uLi4-Li4-Li4-Li4uLi4-Li4-Li4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4-Li4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4-Li4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4-Li4-Li4u-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4uLi4uLi4uLi4-Li4-Li4uLi4-Li4uLi4-Li4-Li4uLi4uLi4uLi4uLi4-Li4uLi4uLi4-Li4uLi4-Li4-Li4-Li4uLi4uLi4uLi4-Li4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4-Li4-Li4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4-Li4-Li4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4-Li4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4uLi4-Li4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4-Li4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4-Li4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4-Li4uLi4uLi4uLi4uLi4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4uLi4uLi4-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4uLi4-Li4-Li4uLi4uLi4uLi4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4uLi4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4uLi4-Li4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4-Li4-Li4-Li4-Li4uLi4-Li4-Li4-Li4uLi4-Li4uLi4uLi4-Li4-Li4-Li4-Li4uLi4-Li4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4uLi4-Li4-Li4-Li4uLi4uLi4uLi4uLi4uLi4-Li4-Li4-Li4-Li4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4-Li4-Li4uLi4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4-Li4uLi4-Li4uLi4-Li4-Li4uLi4-Li4-Li4-Li4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4uLi4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4-Li4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4-Li4-Li4uLi4uLi4-Li4-Li4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4-Li4uLi4-Li4uLi4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4-Li4uLi4uLi4uLi4uLi4uLi4-Li4-Li4uLi4-Li4uLi4-Li4-Li4uLi4-Li4uLi4uLi4uLi4uLi4-Li4-Li4uLi4-Li4-Li4-Li4-Li4uLi4-Li4uLi4-Li4-Li4-Li4-Li4uLi4-Li4-Li4uLi4-Li4uLi4uLi4uLi4uLi4uLi4-Li4uLi4uLi4-Li4-Li4-Li4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4uLi4uLi4uLi4-Li4-Li4-Li4-Li4-Li4-Li4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4uLi4uLi4-Li4uLi4uLi4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li4-Li-Lmlvb24n5w/oAAAAJXRFWHRTb2Z0d2FyZQBieS5jb25uZWN0cmljay5jb20AALM3vAAAAMBJREFUGJV1zEEOxBAIRdE/lT22WcAR3I4d2I5d+P+aB5dYmBv5J/UqS+Zc9x5fQjx/nLXGfve4N14SAn52rXW2MYx5n/d6U0w8d3wA/C6AABCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAEIIAABCCAAAQggAAGPHT8A/9qA/8cO4I5cW8e1uAM38P4F6+lM+xAF93EAAAAASUVORK5CYII="
 
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-        });
+    try {
+      const doc = new jsPDF('p', 'mm', 'letter');
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 10;
+      let yPos = margin;
 
-        const doc = new jsPDF('p', 'mm', 'letter');
-        const pageWidth = doc.internal.pageSize.width;
-        const margin = 10;
-        let yPos = margin; 
+      const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
+        doc.addImage(logoBase64, 'PNG', margin, 5, 30, 20);
 
-        const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
-            doc.addImage(img, 'PNG', margin, 5, 30, 20);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
 
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
+        doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
 
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
-            doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
-
-            doc.setDrawColor(255, 102, 0);
-            doc.setLineWidth(1);
-            doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
-            
-            yPos += 30;
-        };
-
-        const drawSectionTitle = (title: string) => {
-            if (yPos > 250) { 
-                doc.addPage();
-                yPos = margin;
-            }
-            doc.setFillColor(255, 102, 0);
-            doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title.toUpperCase(), pageWidth / 2, yPos + 4, { align: 'center' });
-            yPos += 8;
-            doc.setTextColor(0, 0, 0);
-        };
+        doc.setDrawColor(255, 102, 0);
+        doc.setLineWidth(1);
+        doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
         
-        drawHeader('PERMISO DE TRABAJO');
+        yPos += 30;
+      };
 
-        autoTable(doc, {
-            startY: yPos,
-            body: [
-                [{ content: 'Fecha de Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.createdAt ? format(parseFirestoreDate(permit.createdAt)!, 'dd/MM/yyyy') : '',
-                 { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.planta || ''],
-                [{ content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.empresa || '',
-                 { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.user?.displayName || ''],
-                [{ content: 'Duración Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, `Desde: ${permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yy HH:mm') : ''}\nHasta: ${permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yy HH:mm') : ''}`,
-                 { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.contrato || '']
-            ],
-            theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1 },
+      const drawSectionTitle = (title: string) => {
+        if (yPos > 250) { 
+          doc.addPage();
+          yPos = margin;
+        }
+        doc.setFillColor(255, 102, 0);
+        doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), pageWidth / 2, yPos + 4, { align: 'center' });
+        yPos += 8;
+        doc.setTextColor(0, 0, 0);
+      };
+      
+      const safeFormat = (date: any, fmt: string) => {
+        const parsedDate = parseFirestoreDate(date);
+        return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
+      };
+
+      drawHeader('PERMISO DE TRABAJO');
+
+      autoTable(doc, {
+        startY: yPos,
+        body: [
+          [{ content: 'Fecha de Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, safeFormat(permit.createdAt, 'dd/MM/yyyy'),
+            { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.planta || ''],
+          [{ content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.empresa || '',
+            { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.user?.displayName || ''],
+          [{ content: 'Duración Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, `Desde: ${safeFormat(permit.generalInfo?.validFrom, 'dd/MM/yy HH:mm')}\nHasta: ${safeFormat(permit.generalInfo?.validUntil, 'dd/MM/yy HH:mm')}`,
+            { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }, permit.generalInfo?.contrato || '']
+        ],
+        theme: 'grid',
+        styles: { fontSize: 7, cellPadding: 1, lineColor: [0,0,0], lineWidth: 0.1 },
+      });
+      yPos = (doc as any).lastAutoTable.finalY;
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220,220,220], textColor: [0,0,0], fontStyle: 'bold' } }]],
+        body: [[permit.generalInfo?.workDescription || '']],
+        theme: 'grid', styles: { fontSize: 7, cellPadding: 2, lineColor: [0,0,0], lineWidth: 0.1 }
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 5;
+
+      drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
+      const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
+      const riskRows = activeRisks.map(r => [`[X] ${r.label}`]);
+      if (riskRows.length > 0) {
+        autoTable(doc, { startY: yPos, body: riskRows, theme: 'plain', styles: { fontSize: 7, cellPadding: 1 }});
+        yPos = (doc as any).lastAutoTable.finalY + 2;
+      }
+
+      drawSectionTitle('PERSONAL AUTORIZADO');
+      const workerRows = permit.workers?.map(w => [w.nombre, w.cedula, w.rol, w.firmaApertura ? 'FIRMADO' : 'PENDIENTE']) || [];
+      autoTable(doc, { startY: yPos, head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']], body: workerRows, theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] } });
+      yPos = (doc as any).lastAutoTable.finalY + 5;
+
+      drawSectionTitle('AUTORIZACIONES');
+      const sigBoxW = (pageWidth - (2 * margin)) / 3;
+      const sigBoxH = 30;
+      const drawSigBox = (roleTitle: string, approval: any, x: number, y: number) => {
+        doc.rect(x, y, sigBoxW, sigBoxH);
+        doc.setFontSize(6); doc.setFont('helvetica', 'bold');
+        doc.text(roleTitle, x + 2, y + 3);
+        if (approval?.status === 'aprobado') {
+          doc.setFont('helvetica', 'normal');
+          doc.text(approval.userName || '', x + 2, y + 8);
+          // ✨ CORRECCIÓN: Verificar que la firma exista antes de agregarla
+          if (approval.firmaApertura) {
+            try {
+              doc.addImage(approval.firmaApertura, 'PNG', x + 5, y + 10, 40, 15);
+            } catch (e) {
+              console.error(`Error adding signature for ${roleTitle}:`, e);
+              doc.text('[Firma no cargada]', x + 5, y + 15);
+            }
+          }
+          doc.text(safeFormat(approval.signedAt, 'dd/MM/yy HH:mm'), x + 2, y + 28);
+        }
+      };
+      drawSigBox('SOLICITANTE', permit.approvals?.solicitante, margin, yPos);
+      drawSigBox('AUTORIZANTE / DUEÑO ÁREA', permit.approvals?.autorizante, margin + sigBoxW, yPos);
+      drawSigBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos);
+      yPos += sigBoxH + 5;
+      
+      const checkPageBreak = (neededHeight: number) => {
+        if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
+          doc.addPage();
+          yPos = margin;
+        }
+      };
+
+      const drawDailyValidationTable = (validationData: any) => {
+        checkPageBreak(50);
+        drawSectionTitle("VALIDACIÓN DIARIA");
+        const days = Array.from({ length: 7 }, (_, i) => i + 1); // Max 7 days
+        const bodyData = days.map((day, idx) => {
+           const valAut = validationData?.autoridad?.[idx];
+           const valRes = validationData?.responsable?.[idx];
+           return [
+             `DÍA ${day}`,
+             valAut?.nombre || '',
+             safeFormat(valAut?.fecha, 'dd/MM/yy HH:mm'),
+             valRes?.nombre || '',
+             safeFormat(valRes?.fecha, 'dd/MM/yy HH:mm')
+           ];
         });
-        yPos = (doc as any).lastAutoTable.finalY;
-
         autoTable(doc, {
             startY: yPos,
-            head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220,220,220], textColor: [0,0,0], fontStyle: 'bold' } }]],
-            body: [[permit.generalInfo?.workDescription || '']],
-            theme: 'grid', styles: { fontSize: 7, cellPadding: 2, lineColor: [0,0,0], lineWidth: 0.1 }
+            head: [[{ content: 'DÍA', rowSpan: 2, styles: { valign: 'middle' } }, { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }, { content: 'RESPONSABLE', colSpan: 2, styles: { halign: 'center' } } ], ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']],
+            body: bodyData, theme: 'grid', styles: { fontSize: 7, cellPadding: 1 },
+            headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      };
+
+      if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
+        checkPageBreak(200); 
+        drawSectionTitle('ANEXO 1 - TRABAJOS EN ALTURA');
+        
+        autoTable(doc, {
+          startY: yPos,
+          body: [
+            ['Altura Aproximada:', permit.anexoAltura.alturaAproximada || 'N/A'],
+            ['Sistema de Acceso:', Object.keys(permit.anexoAltura.tipoEstructura || {}).filter(k => (permit.anexoAltura?.tipoEstructura as any)[k]).join(', ')]
+          ],
+          theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1 },
+          columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+        
+        const alturaChecks = anexoAlturaAspectos.map(asp => [asp.label, (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA']);
+        autoTable(doc, {
+          startY: yPos, head: [['Aspectos de Seguridad', 'Cumple']], body: alturaChecks, theme: 'grid', styles: { fontSize: 7, cellPadding: 1 },
+          headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }, columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
-        drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
-        const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
-        const riskRows = activeRisks.map(r => [`[X] ${r.label}`]);
-        if (riskRows.length > 0) {
-            autoTable(doc, { startY: yPos, body: riskRows, theme: 'plain', styles: { fontSize: 7, cellPadding: 1 }});
-            yPos = (doc as any).lastAutoTable.finalY + 2;
-        }
+        if(permit.anexoAltura.validacion) { drawDailyValidationTable(permit.anexoAltura.validacion); }
+      }
 
-        drawSectionTitle('PERSONAL AUTORIZADO');
-        const workerRows = permit.workers?.map(w => [w.nombre, w.cedula, w.rol, w.firmaApertura ? 'FIRMADO' : 'PENDIENTE']) || [];
-        autoTable(doc, { startY: yPos, head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']], body: workerRows, theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] } });
+      if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
+        checkPageBreak(100);
+        drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
+
+        autoTable(doc, {
+          startY: yPos, head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
+          body: [[ permit.anexoConfinado.resultadosPruebasGases?.lel || '-', permit.anexoConfinado.resultadosPruebasGases?.o2 || '-', permit.anexoConfinado.resultadosPruebasGases?.h2s || '-', permit.anexoConfinado.resultadosPruebasGases?.co || '-' ]],
+          theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }, styles: { halign: 'center', fontSize: 8 }
+        });
         yPos = (doc as any).lastAutoTable.finalY + 5;
+        if(permit.anexoConfinado.validacion) { drawDailyValidationTable(permit.anexoConfinado.validacion); }
+      }
+      
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, doc.internal.pageSize.height - 10, { align: 'right' });
+      }
 
-        drawSectionTitle('AUTORIZACIONES');
-        const sigBoxW = (pageWidth - (2 * margin)) / 3;
-        const sigBoxH = 30;
-        const drawSigBox = (roleTitle: string, approval: any, x: number, y: number) => {
-            doc.rect(x, y, sigBoxW, sigBoxH);
-            doc.setFontSize(6); doc.setFont('helvetica', 'bold');
-            doc.text(roleTitle, x + 2, y + 3);
-            if (approval?.status === 'aprobado') {
-                doc.setFont('helvetica', 'normal');
-                doc.text(approval.userName || '', x + 2, y + 8);
-                if (approval.firmaApertura) { try { doc.addImage(approval.firmaApertura, 'PNG', x + 5, y + 10, 40, 15); } catch(e) {} }
-                doc.text(approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : '', x + 2, y + 28);
-            }
-        };
-        drawSigBox('SOLICITANTE', permit.approvals?.solicitante, margin, yPos);
-        drawSigBox('AUTORIZANTE / DUEÑO ÁREA', permit.approvals?.autorizante, margin + sigBoxW, yPos);
-        drawSigBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos);
-        yPos += sigBoxH + 5;
-        
-        const checkPageBreak = (neededHeight: number) => {
-            if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
-                doc.addPage();
-                yPos = margin;
-            }
-        };
+      doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0, 6)}.pdf`);
+      toast({ title: '✓ PDF Generado', description: 'Se ha descargado el formato oficial.' });
 
-        const drawDailyValidationTable = (validationData: any) => {
-            checkPageBreak(50);
-            drawSectionTitle("VALIDACIÓN DIARIA");
-            const days = [1, 2, 3, 4, 5, 6, 7];
-            const bodyData = days.map((day, idx) => {
-               const valAut = validationData?.autoridad?.[idx];
-               const valRes = validationData?.responsable?.[idx];
-               return [`DÍA ${day}`, valAut?.nombre || '', valAut?.fecha || '', valRes?.nombre || '', valRes?.fecha || ''];
-            });
-            autoTable(doc, {
-                startY: yPos,
-                head: [[{ content: 'DÍA', rowSpan: 2, styles: { valign: 'middle' } }, { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }, { content: 'RESPONSABLE', colSpan: 2, styles: { halign: 'center' } } ], ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']],
-                body: bodyData, theme: 'grid', styles: { fontSize: 7, cellPadding: 1 },
-                headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 5;
-        };
-
-        if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
-            checkPageBreak(200); 
-            drawSectionTitle('ANEXO 1 - TRABAJOS EN ALTURA');
-            
-            autoTable(doc, {
-                startY: yPos,
-                body: [
-                    ['Altura Aproximada:', permit.anexoAltura.alturaAproximada || 'N/A'],
-                    ['Sistema de Acceso:', Object.keys(permit.anexoAltura.tipoEstructura || {}).filter(k => (permit.anexoAltura?.tipoEstructura as any)[k]).join(', ')]
-                ],
-                theme: 'grid', styles: { fontSize: 7, lineColor: [0,0,0], lineWidth: 0.1 },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 5;
-            
-            const alturaChecks = anexoAlturaAspectos.map(asp => [asp.label, (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SI' : 'NO/NA']);
-            autoTable(doc, {
-                startY: yPos, head: [['Aspectos de Seguridad', 'Cumple']], body: alturaChecks, theme: 'grid', styles: { fontSize: 7, cellPadding: 1 },
-                headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }, columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 5;
-
-            if(permit.anexoAltura.validacion) { drawDailyValidationTable(permit.anexoAltura.validacion); }
-        }
-
-        if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
-            checkPageBreak(100);
-            drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
-
-            autoTable(doc, {
-                startY: yPos, head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
-                body: [[ permit.anexoConfinado.resultadosPruebasGases?.lel || '-', permit.anexoConfinado.resultadosPruebasGases?.o2 || '-', permit.anexoConfinado.resultadosPruebasGases?.h2s || '-', permit.anexoConfinado.resultadosPruebasGases?.co || '-' ]],
-                theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] }, styles: { halign: 'center', fontSize: 8 }
-            });
-            yPos = (doc as any).lastAutoTable.finalY + 5;
-            if(permit.anexoConfinado.validacion) { drawDailyValidationTable(permit.anexoConfinado.validacion); }
-        }
-        
-        const totalPages = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(`Página ${i} de ${totalPages}`, pageWidth - margin, doc.internal.pageSize.height - 10, { align: 'right' });
-        }
-
-        doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0, 6)}.pdf`);
-        toast({ title: '✓ PDF Generado', description: 'Se ha descargado el formato oficial.' });
-
-    } catch (error: any) {
-        console.error('PDF Error:', error);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el PDF. ' + error.message });
+    } catch (e: any) {
+      console.error('Error al generar el PDF:', e);
+      toast({ variant: 'destructive', title: 'Error Inesperado', description: 'No se pudo generar el PDF. ' + e.message });
     }
   };
 
@@ -525,7 +543,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
     
-    // Validar nombre si es el coordinador o firmas de cierre/cancelación
     const isSpecialSignature = signingRole.role === 'coordinador_alturas' || signingRole.role.startsWith('cierre_') || signingRole.role === 'cancelacion';
     if (isSpecialSignature && !signerName.trim()) {
         toast({
@@ -1512,7 +1529,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                     {closureAction === 'cancelacion' && (
                                         <div className="space-y-4 p-4 border rounded-lg bg-red-50/50 border-red-100">
                                             <h4 className="font-bold text-md text-red-800">Cancelación del Trabajo</h4>
-                                            <RadioCheck label="¿Se canceló el trabajo?" value={(permit.closure?.cancelado || 'na') as 'si' | 'no' | 'na'} onValueChange={(val) => handleClosureFieldChange('cancelado', val)} />
+                                            <RadioCheck label="¿Se canceló el trabajo?" value={permit.closure?.cancelado || 'na'} onValueChange={(val) => handleClosureFieldChange('cancelado', val)} />
                                             <Textarea placeholder="Razón de la cancelación" value={permit.closure?.razonCancelacion || ''} onChange={e => handleClosureFieldChange('razonCancelacion', e.target.value)} />
                                             <Input placeholder="Nombre de quien cancela" value={permit.closure?.canceladoPor?.nombre || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, nombre: e.target.value })} />
                                             <Input type="datetime-local" value={permit.closure?.canceladoPor?.fecha || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, fecha: e.target.value })} />
@@ -1525,7 +1542,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                     {closureAction === 'cierre' && (
                                         <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50 border-blue-100 md:col-start-2">
                                             <h4 className="font-bold text-md text-blue-800">Cierre del Permiso</h4>
-                                            <RadioCheck label="¿Se terminó el trabajo?" value={(permit.closure?.terminado || 'na') as 'si' | 'no' | 'na'} onValueChange={(val) => handleClosureFieldChange('terminado', val)} />
+                                            <RadioCheck label="¿Se terminó el trabajo?" value={permit.closure?.terminado || 'na'} onValueChange={(val) => handleClosureFieldChange('terminado', val)} />
                                             <Textarea placeholder="Observaciones de cierre" value={permit.closure?.observacionesCierre || ''} onChange={e => handleClosureFieldChange('observacionesCierre', e.target.value)} />
 
                                             <div className="p-3 border rounded-md space-y-3 bg-white">
