@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback } from 'react';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import type { AnexoATS } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 // Props del componente
 interface AtsStepProps {
@@ -530,16 +532,17 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
           peligrosAdicionales={anexoATS.peligrosAdicionales}
           onUpdatePeligros={handleUpdatePeligrosAdicionales}
         />
+
+        {/* Movido aquí */}
+        <div className="p-4 border-t-2 border-dashed mt-8">
+            <h4 className="font-bold text-lg mb-2 text-gray-800">PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL</h4>
+            <ul className="list-disc list-outside space-y-2 text-sm text-gray-600 pl-5">
+              <li>Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación.</li>
+              <li>Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área.</li>
+              <li>Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario.</li>
+            </ul>
+        </div>
       </SectionWrapper>
-      
-      <div className="p-4 border-t-2 border-dashed mt-8">
-        <h4 className="font-bold text-lg mb-2 text-gray-800">PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL</h4>
-        <ul className="list-disc list-outside space-y-2 text-sm text-gray-600 pl-5">
-          <li>Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación.</li>
-          <li>Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área.</li>
-          <li>Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario.</li>
-        </ul>
-      </div>
 
       <SectionWrapper 
         title="2. EPP Requeridos" 
@@ -582,3 +585,4 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     </div>
   );
 }
+
