@@ -261,7 +261,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     { id: 'medidasPrevencion', label: 'C. SE HAN DETERMINADO LAS MEDIDAS DE PREVENCIÓN CONTRA CAÍDAS?' },
     { id: 'conocenMedidas', label: 'D. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?'},
     { id: 'entrenadosCertificados', label: 'E. ESTÁN LOS EJECUTANTES ENTRENADOS Y SE ENCUENTRAN LOS CERTIFICADOS EN SITIO PARA REALIZAR   TRABAJOS EN ALTURA?'},
-    { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO Y CERTIFICADOS?' },
+    { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO E CERTIFICADOS?' },
     { id: 'sistemaAseguramientoVerificado', label: 'G. SE VERIFICO EL SISTEMA DE ASEGURAMIENTO DE LA ESCALERA , ANDAMIO O PLATAFORMA A UNA ESTRUCTURA FIJA' },
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
@@ -903,9 +903,9 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const justificacionOptions = [
     { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
     { id: 'no_rutinario_emergencia', label: 'TRABAJO NO RUTINARIO (EMERGENCIA)' },
-    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
+    { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO CHE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
     { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
-    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
+    { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO CHE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
   ];
   
     const anexoAlturaEstructuras = [
@@ -1010,7 +1010,17 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         const renderRows = (type: 'autoridad' | 'responsable') => {
             return Array.from({ length: durationInDays }, (_, i) => {
                 const v = validationData?.[type]?.[i];
-                const canSignValidation = isApproved && currentUser?.uid === permit.createdBy && !v?.firma;
+                // ✨ CORRECCIÓN: Lógica de firma diferenciada por rol
+                let canSignValidation = false;
+                let tooltipContent = "No tienes permiso para firmar.";
+                
+                if (type === 'autoridad') {
+                    canSignValidation = isApproved && (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
+                    tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
+                } else if (type === 'responsable') {
+                    canSignValidation = isApproved && currentUser?.uid === permit.createdBy && !v?.firma;
+                    tooltipContent = "Solo el creador del permiso puede firmar.";
+                }
 
                 return (
                     <TableRow key={`${type}-${i}`}>
@@ -1032,7 +1042,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                                 <SignatureIcon className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
-                                        {!canSignValidation && <TooltipContent><p>Solo el creador puede firmar o el permiso no está aprobado.</p></TooltipContent>}
+                                        {!canSignValidation && <TooltipContent><p>{tooltipContent}</p></TooltipContent>}
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
@@ -1468,7 +1478,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                     </div>
                 </Section>
 
-                {/* ✨ CORRECCIÓN: Sección de Cancelación y Cierre mejorada y funcional */}
+                {/* ✨ CORRECCIÓN: Sección de Cancelación y Cierre ahora es funcional */}
                 {isApproved && (
                     <Collapsible>
                         <CollapsibleTrigger className="w-full">
