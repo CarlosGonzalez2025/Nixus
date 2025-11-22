@@ -117,12 +117,12 @@ function Home() {
             className: "h-8 w-8 animate-spin text-primary"
         }, void 0, false, {
             fileName: "[project]/src/app/page.tsx",
-            lineNumber: 24,
+            lineNumber: 23,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/app/page.tsx",
-        lineNumber: 23,
+        lineNumber: 22,
         columnNumber: 5
     }, this);
 }

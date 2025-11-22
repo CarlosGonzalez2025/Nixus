@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -55,7 +53,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
-import { format } from 'date-fns';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Input } from '@/components/ui/input';
@@ -134,7 +132,7 @@ const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: bool
 );
 
 const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueChange?: (value: 'si' | 'no' | 'na') => void, readOnly?: boolean }> = ({ label, value, onValueChange, readOnly = false }) => {
-    let checkValue: string;
+    let checkValue: 'si' | 'no' | 'na';
     if (value === true || value === 'si') {
         checkValue = 'si';
     } else if (value === false || value === 'no') {
@@ -157,11 +155,20 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, onValueCha
     return (
         <div className={`${baseClasses} ${readOnly ? readOnlyClasses : interactiveClasses}`}>
             <span className="text-xs flex-1">{label}</span>
-            <div className="flex gap-2 items-center text-xs font-mono">
-              <span className={getOptionClasses('si')}>SI</span>
-              <span className={getOptionClasses('no')}>NO</span>
-              <span className={getOptionClasses('na')}>NA</span>
-            </div>
+            <RadioGroup value={checkValue} onValueChange={onValueChange as any} className="flex gap-2 items-center text-xs font-mono" disabled={readOnly}>
+                <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="si" id={`${label}-si`} />
+                    <Label htmlFor={`${label}-si`} className={getOptionClasses('si')}>SI</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="no" id={`${label}-no`} />
+                    <Label htmlFor={`${label}-no`} className={getOptionClasses('no')}>NO</Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="na" id={`${label}-na`} />
+                    <Label htmlFor={`${label}-na`} className={getOptionClasses('na')}>NA</Label>
+                </div>
+            </RadioGroup>
         </div>
     );
 };
@@ -182,11 +189,10 @@ const signatureConsents: { [key in SignatureRole]?: string } = {
 };
 
 
-export default function PermitDetailPage() {
-  const params = useParams();
+export default function PermitDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user: currentUser, loading: userLoading } = useUser();
-  const permitId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const permitId = params.id;
   
   const [permit, setPermit] = useState<Permit | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,7 +200,7 @@ export default function PermitDetailPage() {
   const { toast } = useToast();
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [signingRole, setSigningRole] = useState<{role: SignatureRole, type: 'firmaApertura' | 'firmaCierre'} | null>(null);
+  const [signingRole, setSigningRole] = useState<{role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', type: 'firmaApertura' | 'firmaCierre'} | null>(null);
   const [signerName, setSignerName] = useState('');
   const [isSigning, setIsSigning] = useState(false);
 
@@ -212,6 +218,10 @@ export default function PermitDetailPage() {
 
   const [isWorkerSignatureOpen, setIsWorkerSignatureOpen] = useState(false);
   const [workerSignatureTarget, setWorkerSignatureTarget] = useState<{ index: number; type: 'firmaApertura' | 'firmaCierre'; } | null>(null);
+  
+  // ✨ NUEVO: Estado para controlar la acción de cierre o cancelación
+  const [closureAction, setClosureAction] = useState<'cierre' | 'cancelacion' | null>(null);
+
 
   const atsPeligros = [
     { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
@@ -316,45 +326,34 @@ export default function PermitDetailPage() {
         description: 'Preparando formato oficial Italcol.',
     });
   
-     try {
+    try {
+        const img = new (window as any).Image();
+        img.src = 'https://i.postimg.cc/jC2W9bJ4/logo-sm.png';
+        img.crossOrigin = 'Anonymous'; 
+
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
+
         const doc = new jsPDF('p', 'mm', 'letter');
         const pageWidth = doc.internal.pageSize.width;
         const margin = 10;
-        let yPos = margin; // Start position for content
-
-        const italcolOrange = [239, 123, 0];
-
-        // Helper to add a new page if content overflows
-        const checkPageBreak = (neededHeight: number) => {
-            if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
-                doc.addPage();
-                yPos = margin;
-            }
-        };
+        let yPos = margin; 
 
         const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
-            // Placeholder for Italcol Logo
-            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-            doc.circle(margin + 12, yPos + 12, 8, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Italcol', margin + 6, yPos + 13);
-            doc.setTextColor(0, 0, 0);
+            doc.addImage(img, 'PNG', margin, 5, 30, 20);
 
-            // Title
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
 
-            // ISO Code Box
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
             doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
             doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
 
-            // Orange Separator Line
-            doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.setDrawColor(255, 102, 0);
             doc.setLineWidth(1);
             doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
             
@@ -362,8 +361,11 @@ export default function PermitDetailPage() {
         };
 
         const drawSectionTitle = (title: string) => {
-            checkPageBreak(12);
-            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            if (yPos > 250) { 
+                doc.addPage();
+                yPos = margin;
+            }
+            doc.setFillColor(255, 102, 0);
             doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
@@ -373,12 +375,8 @@ export default function PermitDetailPage() {
             doc.setTextColor(0, 0, 0);
         };
         
-        // --- START OF PDF CONTENT ---
-
-        // PERMIT HEADER
         drawHeader('PERMISO DE TRABAJO');
 
-        // General Info Table
         autoTable(doc, {
             startY: yPos,
             body: [
@@ -394,7 +392,6 @@ export default function PermitDetailPage() {
         });
         yPos = (doc as any).lastAutoTable.finalY;
 
-        // Scope
         autoTable(doc, {
             startY: yPos,
             head: [[{ content: 'ALCANCE (Descripción del Trabajo y Área/Equipo)', styles: { fillColor: [220,220,220], textColor: [0,0,0], fontStyle: 'bold' } }]],
@@ -403,7 +400,6 @@ export default function PermitDetailPage() {
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
-        // ATS
         drawSectionTitle('VERIFICACIÓN DE PELIGROS (ATS)');
         const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
         const riskRows = activeRisks.map(r => [`[X] ${r.label}`]);
@@ -412,13 +408,11 @@ export default function PermitDetailPage() {
             yPos = (doc as any).lastAutoTable.finalY + 2;
         }
 
-        // Authorized Personnel
         drawSectionTitle('PERSONAL AUTORIZADO');
         const workerRows = permit.workers?.map(w => [w.nombre, w.cedula, w.rol, w.firmaApertura ? 'FIRMADO' : 'PENDIENTE']) || [];
         autoTable(doc, { startY: yPos, head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']], body: workerRows, theme: 'grid', headStyles: { fillColor: [240,240,240], textColor: [0,0,0] } });
         yPos = (doc as any).lastAutoTable.finalY + 5;
 
-        // Approvals
         drawSectionTitle('AUTORIZACIONES');
         const sigBoxW = (pageWidth - (2 * margin)) / 3;
         const sigBoxH = 30;
@@ -430,7 +424,7 @@ export default function PermitDetailPage() {
                 doc.setFont('helvetica', 'normal');
                 doc.text(approval.userName || '', x + 2, y + 8);
                 if (approval.firmaApertura) { try { doc.addImage(approval.firmaApertura, 'PNG', x + 5, y + 10, 40, 15); } catch(e) {} }
-                doc.text(approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy') : '', x + 2, y + 28);
+                doc.text(approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : '', x + 2, y + 28);
             }
         };
         drawSigBox('SOLICITANTE', permit.approvals?.solicitante, margin, yPos);
@@ -438,8 +432,13 @@ export default function PermitDetailPage() {
         drawSigBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos);
         yPos += sigBoxH + 5;
         
-        // --- ANNEXES ---
-        
+        const checkPageBreak = (neededHeight: number) => {
+            if (yPos + neededHeight > doc.internal.pageSize.height - margin) {
+                doc.addPage();
+                yPos = margin;
+            }
+        };
+
         const drawDailyValidationTable = (validationData: any) => {
             checkPageBreak(50);
             drawSectionTitle("VALIDACIÓN DIARIA");
@@ -459,7 +458,7 @@ export default function PermitDetailPage() {
         };
 
         if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
-            checkPageBreak(yPos + 50); // check if space for header
+            checkPageBreak(200); 
             drawSectionTitle('ANEXO 1 - TRABAJOS EN ALTURA');
             
             autoTable(doc, {
@@ -484,7 +483,7 @@ export default function PermitDetailPage() {
         }
 
         if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
-            checkPageBreak(yPos + 50);
+            checkPageBreak(100);
             drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
 
             autoTable(doc, {
@@ -496,9 +495,6 @@ export default function PermitDetailPage() {
             if(permit.anexoConfinado.validacion) { drawDailyValidationTable(permit.anexoConfinado.validacion); }
         }
         
-        // Add other annexes similarly...
-
-        // --- FOOTER ---
         const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
@@ -516,13 +512,11 @@ export default function PermitDetailPage() {
     }
   };
 
-  const openSignatureDialog = (role: SignatureRole, signatureType: 'firmaApertura' | 'firmaCierre') => {
+  const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
       setSigningRole({role, type: signatureType});
-      if (role === 'coordinador_alturas') {
-          // No pre-llenar el nombre para que el coordinador lo ingrese
+      if (role === 'coordinador_alturas' || role.startsWith('cierre_') || role === 'cancelacion') {
           setSignerName('');
       } else {
-          // Para otros roles, usar el nombre del usuario actual
           setSignerName(currentUser?.displayName || '');
       }
       setIsSignatureDialogOpen(true);
@@ -531,12 +525,13 @@ export default function PermitDetailPage() {
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
     
-    // Validar nombre si es el coordinador
-    if (signingRole.role === 'coordinador_alturas' && !signerName.trim()) {
+    // Validar nombre si es el coordinador o firmas de cierre/cancelación
+    const isSpecialSignature = signingRole.role === 'coordinador_alturas' || signingRole.role.startsWith('cierre_') || signingRole.role === 'cancelacion';
+    if (isSpecialSignature && !signerName.trim()) {
         toast({
             variant: 'destructive',
             title: 'Nombre Requerido',
-            description: 'Por favor, ingrese el nombre del coordinador.',
+            description: 'Por favor, ingrese el nombre.',
         });
         return;
     }
@@ -545,8 +540,8 @@ export default function PermitDetailPage() {
 
     try {
         const userToSign = {
-            uid: signingRole.role === 'coordinador_alturas' ? 'N/A_COORDINADOR' : currentUser.uid,
-            displayName: signingRole.role === 'coordinador_alturas' ? signerName : currentUser.displayName || null,
+            uid: isSpecialSignature ? 'N/A_SPECIAL' : currentUser.uid,
+            displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
         };
 
         const result = await addSignatureAndNotify(
@@ -559,8 +554,8 @@ export default function PermitDetailPage() {
 
         if (result.success) {
             toast({
-                title: 'Permiso Firmado',
-                description: `${userToSign.displayName} ha firmado como ${signatureRoles[signingRole.role]}`,
+                title: 'Firma Registrada',
+                description: `${userToSign.displayName} ha firmado exitosamente.`,
             });
             setIsSignatureDialogOpen(false);
             setSigningRole(null);
@@ -684,12 +679,10 @@ export default function PermitDetailPage() {
 
     if (!approvals) return false;
 
-    // Verifica que todas las firmas requeridas estén completas
     let allRequiredSignaturesDone = 
       approvals.solicitante?.status === 'aprobado' &&
       approvals.autorizante?.status === 'aprobado';
       
-    // Si es trabajo de energía, también se requiere la firma de mantenimiento
     if(permit.controlEnergia){
         allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.mantenimiento?.status === 'aprobado';
     }
@@ -729,7 +722,7 @@ export default function PermitDetailPage() {
   const openDailyValidationSignatureDialog = (anexo: string, type: 'autoridad' | 'responsable', index: number) => {
     setDailyValidationTarget({ anexo, type, index });
     setDailyValidationName('');
-    setDailyValidationDate(format(new Date(), 'yyyy-MM-dd'));
+    setDailyValidationDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
     setIsDailyValidationSignatureOpen(true);
   };
   
@@ -1003,10 +996,21 @@ export default function PermitDetailPage() {
     };
 
     const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
+        let durationInDays = 1;
+        if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
+            try {
+                const startDate = parseISO(permit.generalInfo.validFrom);
+                const endDate = parseISO(permit.generalInfo.validUntil);
+                durationInDays = differenceInCalendarDays(endDate, startDate) + 1;
+            } catch (e) {
+                console.error("Error parsing dates for daily validation:", e);
+            }
+        }
+
         const renderRows = (type: 'autoridad' | 'responsable') => {
-            return Array(7).fill(0).map((_, i) => {
+            return Array.from({ length: durationInDays }, (_, i) => {
                 const v = validationData?.[type]?.[i];
-                const canSignValidation = currentUser?.uid === permit.createdBy && !v?.firma;
+                const canSignValidation = isApproved && currentUser?.uid === permit.createdBy && !v?.firma;
 
                 return (
                     <TableRow key={`${type}-${i}`}>
@@ -1028,12 +1032,12 @@ export default function PermitDetailPage() {
                                                 <SignatureIcon className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
-                                        {!canSignValidation && <TooltipContent>Solo el creador del permiso puede registrar esta firma.</TooltipContent>}
+                                        {!canSignValidation && <TooltipContent><p>Solo el creador puede firmar o el permiso no está aprobado.</p></TooltipContent>}
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
                         </TableCell>
-                        <TableCell>{v?.fecha || 'N/A'}</TableCell>
+                        <TableCell>{v?.fecha ? format(parseFirestoreDate(v.fecha)!, 'dd/MM/yy HH:mm') : 'N/A'}</TableCell>
                     </TableRow>
                 );
             });
@@ -1430,7 +1434,11 @@ export default function PermitDetailPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="border rounded" /> : <span className="text-xs italic text-muted-foreground">Pendiente</span>}
+                              {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="border rounded" /> : (
+                                <Button size="sm" variant="outline" onClick={() => openWorkerSignatureDialog(index, 'firmaApertura')} disabled={!isApproved || !!worker.firmaApertura}>
+                                    <SignatureIcon className="mr-2 h-4 w-4" />Firmar
+                                </Button>
+                              )}
                             </TableCell>
                             <TableCell>
                               {worker.firmaCierre ? (
@@ -1460,7 +1468,7 @@ export default function PermitDetailPage() {
                     </div>
                 </Section>
 
-                 {/* Sección de Cancelación y Cierre */}
+                {/* ✨ CORRECCIÓN: Sección de Cancelación y Cierre mejorada y funcional */}
                 {isApproved && (
                     <Collapsible>
                         <CollapsibleTrigger className="w-full">
@@ -1470,55 +1478,69 @@ export default function PermitDetailPage() {
                            </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Columna de Cancelación */}
-                                <div className="space-y-4 p-4 border rounded-lg">
-                                    <h4 className="font-bold text-md">Cancelación del Trabajo</h4>
-                                    <div className="flex justify-between items-center p-3 border rounded-md bg-white">
-                                        <Label className="text-sm font-medium">¿Se canceló el trabajo?</Label>
-                                        <RadioGroup className="flex gap-4">
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" /><Label>SI</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" /><Label>NO</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="na" /><Label>N/A</Label></div>
-                                        </RadioGroup>
+                            <div className="space-y-4">
+                                <Label className="font-semibold">¿Qué acción desea realizar?</Label>
+                                <RadioGroup 
+                                    value={closureAction || ''} 
+                                    onValueChange={(value: 'cierre' | 'cancelacion') => setClosureAction(value)} 
+                                    className="flex gap-4"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="cierre" id="action-cierre" />
+                                        <Label htmlFor="action-cierre">Cerrar Permiso</Label>
                                     </div>
-                                    <Textarea placeholder="Razón de la cancelación" />
-                                    <Input placeholder="Nombre de quien cancela" />
-                                    <Input type="date" />
-                                    <Button variant="outline" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cancelación</Button>
-                                </div>
-                                
-                                {/* Columna de Cierre */}
-                                <div className="space-y-4 p-4 border rounded-lg">
-                                    <h4 className="font-bold text-md">Cierre del Permiso</h4>
-                                     <div className="flex justify-between items-center p-3 border rounded-md bg-white">
-                                        <Label className="text-sm font-medium">¿Se terminó el trabajo?</Label>
-                                        <RadioGroup className="flex gap-4">
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="si" /><Label>SI</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="no" /><Label>NO</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="na" /><Label>N/A</Label></div>
-                                        </RadioGroup>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="cancelacion" id="action-cancelacion" />
+                                        <Label htmlFor="action-cancelacion">Cancelar Permiso</Label>
                                     </div>
-                                    <Textarea placeholder="Observaciones de cierre" />
-
-                                    <div className="p-3 border rounded-md space-y-3">
-                                        <h5 className="text-sm font-semibold">Autoridad del Área</h5>
-                                        <Input placeholder="Nombre" />
-                                        <Input type="date" />
-                                        <Button variant="outline" size="sm" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
-                                    </div>
-
-                                    <div className="p-3 border rounded-md space-y-3">
-                                        <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
-                                        <Input placeholder="Nombre" />
-                                        <Input type="date" />
-                                        <Button variant="outline" size="sm" className="w-full"><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
-                                    </div>
-                                </div>
+                                </RadioGroup>
                             </div>
+                            
+                            {closureAction && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 pt-6 border-t">
+                                    {/* Columna de Cancelación (Condicional) */}
+                                    {closureAction === 'cancelacion' && (
+                                        <div className="space-y-4 p-4 border rounded-lg bg-red-50/50 border-red-100">
+                                            <h4 className="font-bold text-md text-red-800">Cancelación del Trabajo</h4>
+                                            <RadioCheck label="¿Se canceló el trabajo?" value={(permit.closure?.cancelado || 'na') as 'si' | 'no' | 'na'} onValueChange={(val) => handleClosureFieldChange('cancelado', val)} />
+                                            <Textarea placeholder="Razón de la cancelación" value={permit.closure?.razonCancelacion || ''} onChange={e => handleClosureFieldChange('razonCancelacion', e.target.value)} />
+                                            <Input placeholder="Nombre de quien cancela" value={permit.closure?.canceladoPor?.nombre || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, nombre: e.target.value })} />
+                                            <Input type="datetime-local" value={permit.closure?.canceladoPor?.fecha || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, fecha: e.target.value })} />
+                                            <Button variant="destructive" className="w-full" onClick={() => openSignatureDialog('cancelacion', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cancelación</Button>
+                                            {permit.closure?.canceladoPor?.firma && <Image src={permit.closure.canceladoPor.firma} alt="Firma Cancelación" width={100} height={50} className="border rounded mt-2"/>}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Columna de Cierre (Condicional) */}
+                                    {closureAction === 'cierre' && (
+                                        <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50 border-blue-100 md:col-start-2">
+                                            <h4 className="font-bold text-md text-blue-800">Cierre del Permiso</h4>
+                                            <RadioCheck label="¿Se terminó el trabajo?" value={(permit.closure?.terminado || 'na') as 'si' | 'no' | 'na'} onValueChange={(val) => handleClosureFieldChange('terminado', val)} />
+                                            <Textarea placeholder="Observaciones de cierre" value={permit.closure?.observacionesCierre || ''} onChange={e => handleClosureFieldChange('observacionesCierre', e.target.value)} />
+
+                                            <div className="p-3 border rounded-md space-y-3 bg-white">
+                                                <h5 className="text-sm font-semibold">Autoridad del Área</h5>
+                                                <Input placeholder="Nombre" value={permit.closure?.autoridad?.nombre || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, nombre: e.target.value })} />
+                                                <Input type="datetime-local" value={permit.closure?.autoridad?.fecha || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, fecha: e.target.value })} />
+                                                <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                                {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2"/>}
+                                            </div>
+
+                                            <div className="p-3 border rounded-md space-y-3 bg-white">
+                                                <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
+                                                <Input placeholder="Nombre" value={permit.closure?.responsable?.nombre || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, nombre: e.target.value })}/>
+                                                <Input type="datetime-local" value={permit.closure?.responsable?.fecha || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, fecha: e.target.value })}/>
+                                                <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                                {permit.closure?.responsable?.firma && <Image src={permit.closure.responsable.firma} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2"/>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </CollapsibleContent>
                     </Collapsible>
                 )}
+
 
             </div>
              <footer className="text-center text-xs text-gray-400 py-4 mt-8">
@@ -1530,18 +1552,20 @@ export default function PermitDetailPage() {
         <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Registrar Firma para {signingRole ? signatureRoles[signingRole.role] : ''}</DialogTitle>
+                    <DialogTitle>Registrar Firma</DialogTitle>
                 </DialogHeader>
-                 {signingRole?.role === 'coordinador_alturas' && (
+                 {(signingRole?.role === 'coordinador_alturas' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
                     <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">{signatureConsents.coordinador_alturas}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {signingRole?.role === 'coordinador_alturas' ? signatureConsents.coordinador_alturas : "Confirmo que la información proporcionada para esta acción es correcta."}
+                        </p>
                         <div className="space-y-1">
-                            <Label htmlFor="signerName">Nombre del Coordinador</Label>
+                            <Label htmlFor="signerName">Su Nombre Completo</Label>
                             <Input 
                                 id="signerName" 
                                 value={signerName} 
                                 onChange={(e) => setSignerName(e.target.value)} 
-                                placeholder="Ingrese el nombre completo"
+                                placeholder="Ingrese su nombre completo"
                             />
                         </div>
                     </div>
@@ -1591,8 +1615,8 @@ export default function PermitDetailPage() {
                 <Input id="daily-validation-name" value={dailyValidationName} onChange={(e) => setDailyValidationName(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="daily-validation-date">Fecha</Label>
-                <Input id="daily-validation-date" type="date" value={dailyValidationDate} onChange={(e) => setDailyValidationDate(e.target.value)} />
+                <Label htmlFor="daily-validation-date">Fecha y Hora</Label>
+                <Input id="daily-validation-date" type="datetime-local" value={dailyValidationDate} onChange={(e) => setDailyValidationDate(e.target.value)} />
               </div>
             </div>
             <SignaturePad onSave={handleSaveDailyValidationSignature} isSaving={isSigning} />

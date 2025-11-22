@@ -1,4 +1,3 @@
-
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin';
@@ -185,7 +184,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 
 export async function addSignatureAndNotify(
   permitId: string, 
-  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas', 
+  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: { uid: string, displayName: string | null }
@@ -197,29 +196,46 @@ export async function addSignatureAndNotify(
     try {
         const docRef = adminDb.collection('permits').doc(permitId);
         
-        const signaturePath = `approvals.${role}.${signatureType}`;
-        const statusPath = `approvals.${role}.status`;
-        const userIdPath = `approvals.${role}.userId`;
-        const userNamePath = `approvals.${role}.userName`;
-        const signedAtPath = `approvals.${role}.signedAt`;
+        let updateData: { [key: string]: any } = {};
 
-        const updateData: { [key: string]: any } = {
-            [signaturePath]: signatureDataUrl,
-            [`${userNamePath}`]: user.displayName,
-            [`${userIdPath}`]: user.uid,
-        };
+        // ✨ CORRECCIÓN: Lógica para manejar firmas de aprobación y de cierre/cancelación
+        if (role.startsWith('cierre_') || role === 'cancelacion') {
+            const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
+            const closurePath = `closure.${closureRole}`;
+            
+            const existingClosureData = (await docRef.get()).data()?.closure?.[closureRole] || {};
 
-        if (signatureType === 'firmaApertura') {
-            updateData[statusPath] = 'aprobado';
-            updateData[signedAtPath] = FieldValue.serverTimestamp();
+            updateData[closurePath] = {
+                ...existingClosureData,
+                firma: signatureDataUrl,
+                nombre: user.displayName,
+                fecha: FieldValue.serverTimestamp() // Guardar fecha y hora del servidor
+            };
 
-            // Si es el solicitante quien firma, cambiamos el estado y generamos el número.
-            if (role === 'solicitante') {
-                const permitDocBefore = await docRef.get();
-                if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
-                  const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
-                  updateData['number'] = permitNumber;
-                  updateData['status'] = 'pendiente_revision';
+        } else {
+            const signaturePath = `approvals.${role}.${signatureType}`;
+            const statusPath = `approvals.${role}.status`;
+            const userIdPath = `approvals.${role}.userId`;
+            const userNamePath = `approvals.${role}.userName`;
+            const signedAtPath = `approvals.${role}.signedAt`;
+
+            updateData = {
+                [signaturePath]: signatureDataUrl,
+                [`${userNamePath}`]: user.displayName,
+                [`${userIdPath}`]: user.uid,
+                [signedAtPath]: FieldValue.serverTimestamp(), // ✨ CORRECCIÓN: Siempre guardar fecha y hora
+            };
+
+            if (signatureType === 'firmaApertura') {
+                updateData[statusPath] = 'aprobado';
+
+                if (role === 'solicitante') {
+                    const permitDocBefore = await docRef.get();
+                    if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
+                      const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
+                      updateData['number'] = permitNumber;
+                      updateData['status'] = 'pendiente_revision';
+                    }
                 }
             }
         }
@@ -229,7 +245,7 @@ export async function addSignatureAndNotify(
         const permitDoc = await docRef.get();
         const permitData = permitDoc.data() as Permit;
         
-        const signatureRoleName = (signatureRoles as any)[role] || role;
+        const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
         
@@ -285,13 +301,12 @@ export async function updatePermitStatus(permitId: string, status: PermitStatus,
         if (status === 'cerrado') {
             updateData.closure = {
                 ...(closureData || {}),
-                fechaCierre: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                fechaCierre: FieldValue.serverTimestamp(), // ✨ CORRECCIÓN: Usar hora del servidor
             };
         }
 
         await docRef.update(updateData);
 
-        // Fetch permit for notification
         const permitDoc = await docRef.get();
         const permitData = permitDoc.data() as Permit;
 
@@ -327,8 +342,9 @@ ${permitUrl}`;
     }
 }
 
+// ✨ CORRECCIÓN: Se ajustó la función para ser más robusta y "reparar" datos antiguos.
 export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria) {
-  if (!permitId || !anexoName || !validationType || index === undefined || !data) {
+  if (!permitId || !anexoName || !validationType || index < 0 || !data) {
     return { success: false, error: 'Parámetros inválidos.' };
   }
 
@@ -340,14 +356,23 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     }
     const permitData = permitSnap.data() as Permit;
 
-    const anexoData = permitData[anexoName as keyof Permit] as any;
-    if (!anexoData || !anexoData.validacion) {
-      return { success: false, error: `El anexo ${anexoName} no está configurado para validación diaria.` };
+    const anexoData = (permitData as any)[anexoName] || {};
+    
+    // ✨ CORRECCIÓN: Si `validacion` no existe, crearlo.
+    if (!anexoData.validacion) {
+      anexoData.validacion = { autoridad: [], responsable: [] };
+    }
+    
+    // ✨ CORRECCIÓN: Si el array específico (autoridad/responsable) no existe, crearlo.
+    if (!anexoData.validacion[validationType]) {
+        anexoData.validacion[validationType] = [];
     }
 
     const validationArray = anexoData.validacion[validationType] as ValidacionDiaria[];
-    if (!validationArray || index < 0 || index >= validationArray.length) {
-      return { success: false, error: `Índice de validación fuera de rango.` };
+    
+    // ✨ CORRECCIÓN: Asegurarse de que el array tenga suficientes elementos.
+    while (validationArray.length <= index) {
+        validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
     }
 
     validationArray[index] = data;
@@ -384,9 +409,14 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
             return { success: false, error: 'Índice de trabajador inválido.' };
         }
 
+        // ✨ CORRECCIÓN: Añadir fecha y hora a la firma del trabajador
+        const signatureField = signatureType === 'firmaApertura' ? 'firmaApertura' : 'firmaCierre';
+        const dateField = signatureType === 'firmaApertura' ? 'fechaFirmaApertura' : 'fechaFirmaCierre';
+
         workers[workerIndex] = {
             ...workers[workerIndex],
-            [signatureType]: signatureDataUrl,
+            [signatureField]: signatureDataUrl,
+            [dateField]: new Date().toISOString(), // Guardar fecha y hora actual
         };
 
         await docRef.update({ workers: workers });

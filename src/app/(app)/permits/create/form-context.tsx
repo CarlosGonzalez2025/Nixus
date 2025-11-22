@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch } from 'react';
@@ -82,9 +81,9 @@ const initialState: FormState = {
         personalNotificado: 'na',
         observaciones: '',
     },
-    validacion: { // <-- LÍNEA AGREGADA
-      autoridad: [],
-      responsable: [],
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
   },
   anexoConfinado: {
@@ -100,9 +99,9 @@ const initialState: FormState = {
       marca: '',
       fechaCalibracion: '',
     },
-    validacion: { // <-- LÍNEA AGREGADA
-      autoridad: [],
-      responsable: [],
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
   },
   anexoEnergias: {
@@ -129,9 +128,9 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
-    validacion: { // <-- LÍNEA AGREGADA
-      autoridad: [],
-      responsable: [],
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
   },
   anexoExcavaciones: {
@@ -143,9 +142,9 @@ const initialState: FormState = {
     },
     aspectosRequeridos: {},
     precauciones: {},
-    validacion: { // <-- LÍNEA AGREGADA
-      autoridad: [],
-      responsable: [],
+    validacion: {
+      autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
+      responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
   },
   verificacionPeligros: {
