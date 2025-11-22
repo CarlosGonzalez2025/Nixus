@@ -557,6 +557,10 @@ body {
   top: 0;
 }
 
+.top-1 {
+  top: .25rem;
+}
+
 .top-1\.5 {
   top: .375rem;
 }
@@ -587,10 +591,6 @@ body {
 
 .top-\[68px\] {
   top: 68px;
-}
-
-.top-1 {
-  top: .25rem;
 }
 
 .z-10 {
@@ -969,6 +969,10 @@ body {
   width: 2rem;
 }
 
+.w-80 {
+  width: 20rem;
+}
+
 .w-9 {
   width: 2.25rem;
 }
@@ -999,10 +1003,6 @@ body {
 
 .w-px {
   width: 1px;
-}
-
-.w-80 {
-  width: 20rem;
 }
 
 .min-w-0 {
@@ -2097,6 +2097,11 @@ body {
   color: rgb(0 0 0 / var(--tw-text-opacity, 1));
 }
 
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+
 .text-blue-600 {
   --tw-text-opacity: 1;
   color: rgb(37 99 235 / var(--tw-text-opacity, 1));
@@ -2279,6 +2284,11 @@ body {
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
+.text-yellow-500 {
+  --tw-text-opacity: 1;
+  color: rgb(234 179 8 / var(--tw-text-opacity, 1));
+}
+
 .text-yellow-600 {
   --tw-text-opacity: 1;
   color: rgb(202 138 4 / var(--tw-text-opacity, 1));
@@ -2292,16 +2302,6 @@ body {
 .text-yellow-800 {
   --tw-text-opacity: 1;
   color: rgb(133 77 14 / var(--tw-text-opacity, 1));
-}
-
-.text-blue-500 {
-  --tw-text-opacity: 1;
-  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
-}
-
-.text-yellow-500 {
-  --tw-text-opacity: 1;
-  color: rgb(234 179 8 / var(--tw-text-opacity, 1));
 }
 
 .text-opacity-80 {

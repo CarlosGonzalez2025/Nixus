@@ -1,0 +1,200 @@
+
+import { createContext, useReducer, useContext, Dispatch } from 'react';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes } from '@/types';
+
+// Define the shape of the form data
+type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
+
+// Define the shape of the state
+interface FormState extends PermitFormData {}
+
+// Define the actions
+type FormAction =
+  | { type: 'UPDATE_GENERAL_INFO'; payload: Partial<FormState['generalInfo']> }
+  | { type: 'UPDATE_WORK_TYPES'; payload: { type: keyof FormState['selectedWorkTypes'], value: boolean } }
+  | { type: 'UPDATE_ATS'; payload: Partial<FormState['anexoATS']> }
+  | { type: 'UPDATE_ANEXO_ALTURA'; payload: Partial<FormState['anexoAltura']> }
+  | { type: 'UPDATE_ANEXO_CONFINADO'; payload: Partial<FormState['anexoConfinado']> }
+  | { type: 'UPDATE_ANEXO_ENERGIA'; payload: Partial<FormState['anexoEnergias']> }
+  | { type: 'UPDATE_ANEXO_IZAJE'; payload: Partial<FormState['anexoIzaje']> }
+  | { type: 'UPDATE_ANEXO_EXCAVACIONES'; payload: Partial<FormState['anexoExcavaciones']> }
+  | { type: 'UPDATE_VERIFICACION_PELIGROS'; payload: Partial<FormState['verificacionPeligros']> }
+  | { type: 'UPDATE_EPP_EMERGENCIAS'; payload: Partial<FormState['eppEmergencias']> }
+  | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
+  | { type: 'ADD_WORKER'; payload: ExternalWorker }
+  | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
+  | { type: 'SET_ENTIRE_STATE', payload: Partial<Permit> }
+  | { type: 'RESET_FORM' };
+
+// Initial state
+const initialState: FormState = {
+  generalInfo: {
+    areaEspecifica: '',
+    planta: '',
+    proceso: '',
+    contrato: '',
+    empresa: '',
+    nombreSolicitante: '',
+    fechaCreacion: new Date().toISOString(),
+    validFrom: '',
+    validUntil: '',
+    workDescription: '',
+    tools: [],
+    numTrabajadores: '',
+    reunionInicio: 'na',
+    atsVerificado: 'na',
+    responsable: { nombre: '', cargo: '', compania: '', alcance: '' },
+    task: '',
+    otherTaskName: '',
+    otherTaskDescription: '',
+  },
+  selectedWorkTypes: {
+    alturas: false,
+    confinado: false,
+    energia: false,
+    izaje: false,
+    excavacion: false,
+    general: false,
+  },
+  anexoATS: {
+    peligros: {},
+    controles: {},
+    epp: {},
+    justificacion: {},
+  },
+  anexoAltura: {
+    tipoEstructura: {
+        escaleraCuerpo: false,
+        escaleraDosCuerpos: false,
+        andamioTubular: false,
+        andamioColgante: false,
+        plataforma: false,
+        manLift: false,
+        otros: false,
+        otrosCual: '',
+    },
+    aspectosSeguridad: {},
+    precauciones: {},
+    afectaciones: {
+        riesgoOtrasAreas: 'na',
+        otrasAreasRiesgo: 'na',
+        personalNotificado: 'na',
+        observaciones: '',
+    },
+  },
+  anexoConfinado: {
+    identificacionPeligros: {},
+    precauciones: {},
+    resultadosPruebasGases: {},
+    requerimientosEquipos: {},
+    pruebasGasesPeriodicas: {
+      intervalo: '',
+      pruebas: [],
+      pruebaRealizadaPor: '',
+      serialMonitor: '',
+      marca: '',
+      fechaCalibracion: '',
+    },
+    validacion: {
+        autoridad: [],
+        responsable: [],
+    },
+  },
+  anexoEnergias: {
+    trabajosEnCaliente: {},
+    energiasPeligrosas: {},
+    procedimientoLOTO: {},
+    trabajosConEnergiaElectrica: {},
+    tensionExpuesta: {},
+    planeacion: {},
+    metodoTrabajo: {
+      sinTension: false,
+      conTension: false,
+    },
+    trabajoConTension: {},
+    trabajoSinTension: {},
+    observaciones: '',
+  },
+  anexoIzaje: {
+    informacionGeneral: {
+        accion: {},
+        pesoCarga: {},
+        equipoUtilizar: {},
+        capacidadEquipo: '',
+    },
+    aspectosRequeridos: {},
+    precauciones: {},
+  },
+  anexoExcavaciones: {
+    informacionGeneral: {
+      dimensiones: '',
+      profundidad: '',
+      ancho: '',
+      largo: '',
+    },
+    aspectosRequeridos: {},
+    precauciones: {},
+  },
+  verificacionPeligros: {
+    fisicos: {},
+    quimicos: {},
+    seguridad: {},
+    locativos: {},
+    biologicoAmbiental: {},
+    biomecanicos: {},
+    psicosocial: {},
+  },
+  eppEmergencias: {
+    epp: {},
+    emergencias: {},
+  },
+  workers: [],
+};
+
+// Reducer function
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case 'UPDATE_GENERAL_INFO':
+      return {
+        ...state,
+        generalInfo: { ...state.generalInfo, ...action.payload },
+      };
+    case 'UPDATE_WORK_TYPES':
+        return {
+            ...state,
+            selectedWorkTypes: { ...state.selectedWorkTypes, [action.payload.type]: action.payload.value }
+        }
+    case 'UPDATE_ATS':
+        return {
+            ...state,
+            anexoATS: { ...state.anexoATS, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_ALTURA':
+        return {
+            ...state,
+            anexoAltura: { ...state.anexoAltura, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_CONFINADO':
+        return {
+            ...state,
+            anexoConfinado: { ...state.anexoConfinado, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_ENERGIA':
+        return {
+            ...state,
+            anexoEnergias: { ...state.anexoEnergias, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_IZAJE':
+        return {
+            ...state,
+            anexoIzaje: { ...state.anexoIzaje, ...action.payload },
+        }
+    case 'UPDATE_ANEXO_EXCAVACIONES':
+        return {
+            ...state,
+            anexoExcavaciones: { ...state.anexoExcavaciones, ...action.payload },
+        }
+    case 'UPDATE_VERIFICACION_PELIGROS':
+        return {
+            ...state,
+            verificacionPeligros: { ...state.verificacionPeligros, ...action.p
