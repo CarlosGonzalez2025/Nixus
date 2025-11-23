@@ -258,7 +258,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
     { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
-    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR CHEQUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
+    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
     { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
     { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
@@ -894,7 +894,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       case 'rechazado':
         return (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
       case 'en_ejecucion':
-        return status === 'aprobado' && (role === 'lider_tarea' || role === 'admin');
+        return status === 'aprobado' && (role === 'lider_tarea' || role === 'admin' || role === 'solicitante');
       case 'suspendido':
         return status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
       case 'cerrado':
@@ -1220,8 +1220,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                     canSignValidation = isApproved && (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
                     tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
                 } else if (type === 'responsable') {
-                    canSignValidation = isApproved && currentUser?.uid === permit.createdBy && !v?.firma;
-                    tooltipContent = "Solo el creador del permiso puede firmar.";
+                    canSignValidation = isApproved && (currentUser?.uid === permit.createdBy || currentUser?.role === 'lider_tarea') && !v?.firma;
+                    tooltipContent = "Solo el creador o líder de la tarea puede firmar.";
                 }
 
                 return (
@@ -1833,3 +1833,4 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
+```

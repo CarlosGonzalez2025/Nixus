@@ -1,5 +1,50 @@
 {
-  "node": {},
+  "node": {
+    "7873b9c7850e737568a6f6f7a4e17cda15a8f18e15": {
+      "workers": {
+        "app/(app)/permits/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/[id]/page": "action-browser"
+      }
+    },
+    "7c15bdb6ac388e78a59299d5091891127d63de7bc6": {
+      "workers": {
+        "app/(app)/permits/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/[id]/page": "action-browser"
+      }
+    },
+    "7cdc6233c637b331b2fa6dba912da67e147424b389": {
+      "workers": {
+        "app/(app)/permits/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/[id]/page": "action-browser"
+      }
+    },
+    "78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4": {
+      "workers": {
+        "app/(app)/permits/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": true
+        }
+      },
+      "layer": {
+        "app/(app)/permits/[id]/page": "action-browser"
+      }
+    }
+  },
   "edge": {},
   "encryptionKey": "UOMR6nx7+STFbmvmqCQZnhvUX2/6GvSRYfaBi9CrKcs="
 }
