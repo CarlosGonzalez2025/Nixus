@@ -832,7 +832,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
     const { status, approvals, selectedWorkTypes, createdBy } = permit;
 
-    if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
+    if (['rechazado', 'cerrado', 'suspendido', 'en_ejecucion', 'aprobado'].includes(status)) {
         return { can: false, reason: `El permiso está ${status}.` };
     }
     
@@ -883,7 +883,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
         case 'lider_sst':
             if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'No tienes el rol requerido.' };
-            if (!hasSigned(solicitante) || !hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Solicitante y Autorizante.' };
+            if (!hasSigned(solicitante) && !hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Solicitante y Autorizante.' };
             return { can: true };
 
         default:
@@ -909,11 +909,11 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
     switch (targetStatus) {
       case 'aprobado':
-        return status === 'pendiente_revision' && allRequiredSignaturesDone && (role === 'autorizante' || role === 'admin');
+        return false; // Lógica movida a addSignatureAndNotify
       case 'rechazado':
         return (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
       case 'en_ejecucion':
-        return status === 'aprobado' && (role === 'lider_tarea' || role === 'admin' || role === 'solicitante');
+        return false; // Lógica movida a addSignatureAndNotify
       case 'suspendido':
         return status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
       case 'cerrado':
@@ -1321,11 +1321,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
             <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
                  <Button variant="outline" onClick={handleExportToPDF}><FileDown className="mr-2"/>Exportar a PDF</Button>
-                {canChangeStatus('aprobado') && (
-                     <Button style={{backgroundColor: '#28a745'}} onClick={() => handleChangeStatus('aprobado')} disabled={isStatusChanging}>
-                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <CheckCircle className="mr-2"/>} Aprobar
-                     </Button>
-                 )}
                  {canChangeStatus('rechazado') && (
                     <AlertDialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
                         <AlertDialogTrigger asChild>
@@ -1343,56 +1338,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                         </AlertDialogContent>
                     </AlertDialog>
                  )}
-                 {canChangeStatus('en_ejecucion') && (
-                      <Button style={{backgroundColor: '#6f42c1'}} onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}>
-                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <PlayCircle className="mr-2"/>} Iniciar Ejecución
-                     </Button>
-                 )}
-                 {canChangeStatus('suspendido') && (
-                      <Button variant="destructive" style={{backgroundColor: '#fd7e14'}} onClick={() => handleChangeStatus('suspendido')} disabled={isStatusChanging}>
-                         {isStatusChanging ? <Loader2 className="animate-spin" /> : <PauseCircle className="mr-2"/>} Suspender
-                     </Button>
-                 )}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="inline-block">
-                        <Button 
-                          onClick={() => setIsClosureDialogOpen(true)} 
-                          disabled={!canChangeStatus('cerrado')}
-                          style={canChangeStatus('cerrado') ? {backgroundColor: '#007bff'} : {}}
-                        >
-                          <Lock className="mr-2"/>Cerrar Permiso
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    {!canChangeStatus('cerrado') && (
-                      <TooltipContent>
-                        <p>Todas las firmas de cierre de los trabajadores son requeridas.</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-
-                 <AlertDialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>Cerrar Permiso de Trabajo</AlertDialogTitle></AlertDialogHeader>
-                        <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1">
-                            <h4 className="font-semibold text-sm">Verificación de Cierre:</h4>
-                            <RadioCheck label="Se ha diligenciado el informe de culminación de trabajo?" value={permit.closure.informeCulminacion} onValueChange={(val) => handleClosureFieldChange('informeCulminacion', val)} />
-                            <RadioCheck label="Se ha dejado el área en condiciones seguras y ordenadas?" value={permit.closure.areaDespejada} onValueChange={(val) => handleClosureFieldChange('areaDespejada', val)} />
-                            <RadioCheck label="Se ha realizado la disposición de residuos?" value={permit.closure.evidenciaParticulas} onValueChange={(val) => handleClosureFieldChange('evidenciaParticulas', val)} />
-                            <RadioCheck label="Se retiraron los sistemas de bloqueo y aseguramiento de energías?" value={permit.closure.dispositivosRetirados} onValueChange={(val) => handleClosureFieldChange('dispositivosRetirados', val)} />
-                            <RadioCheck label="Continúa la labor?" value={permit.closure.continuaLabor} onValueChange={(val) => handleClosureFieldChange('continuaLabor', val)} />
-                        </div>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleChangeStatus('cerrado')} disabled={isStatusChanging}>
-                                {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Confirmar Cierre
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                 </AlertDialog>
             </div>
           </div>
         </div>

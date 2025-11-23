@@ -281,38 +281,53 @@ export async function addSignatureAndNotify(
             }
             
             updateData[`approvals.${role}`] = approvalData;
-
+            
+            const permitDocBefore = await docRef.get();
+            const permitBeforeData = permitDocBefore.data() as Permit | undefined;
+            
             if (signatureType === 'firmaApertura') {
+                const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
+                
                 if (role === 'solicitante') {
-                    const permitDocBefore = await docRef.get();
-                    const permitBeforeData = permitDocBefore.data();
                     if (permitBeforeData && permitBeforeData.status === 'borrador') {
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
                     }
 
-                    // Auto-llenar validación diaria
-                    const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
+                    // Auto-llenar validación diaria del responsable
                     ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
-                        if (permitBeforeData && permitBeforeData[anexo]) {
-                            const currentValidations = permitBeforeData[anexo].validacion?.responsable || [];
+                        if ((permitBeforeData as any)?.[anexo]) {
+                            const currentValidations = (permitBeforeData as any)[anexo].validacion?.responsable || [];
                             currentValidations[0] = validationPayload;
                             updateData[`${anexo}.validacion.responsable`] = currentValidations;
                         }
                     });
 
                 } else if (role === 'autorizante') {
-                    const permitBeforeData = (await docRef.get()).data();
-                     // Auto-llenar validación diaria
-                    const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
-                    ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
-                        if (permitBeforeData && permitBeforeData[anexo]) {
-                            const currentValidations = permitBeforeData[anexo].validacion?.autoridad || [];
+                    // Auto-llenar validación diaria de la autoridad
+                     ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
+                        if ((permitBeforeData as any)?.[anexo]) {
+                            const currentValidations = (permitBeforeData as any)[anexo].validacion?.autoridad || [];
                             currentValidations[0] = validationPayload;
                             updateData[`${anexo}.validacion.autoridad`] = currentValidations;
                         }
                     });
+
+                    // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
+                    const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
+                    let allRequiredSignaturesDone = 
+                        updatedApprovals.solicitante?.status === 'aprobado';
+                    
+                    if (permitBeforeData?.controlEnergia) {
+                        allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.mantenimiento?.status === 'aprobado';
+                    }
+                    
+                    // Se asume que si el autorizante firma, el solicitante ya lo hizo.
+                    // Si se cumplen las condiciones, se pone en ejecución.
+                    if (allRequiredSignaturesDone) {
+                        updateData['status'] = 'en_ejecucion';
+                    }
                 }
             }
         }
@@ -333,6 +348,16 @@ export async function addSignatureAndNotify(
           }
         }
         
+        // Notificación adicional si el permiso se puso en ejecución
+        if (updateData['status'] === 'en_ejecucion') {
+            const executionMessage = `El permiso #${permitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
+            for (const uid of involvedUsers) {
+                 if (uid !== user.uid) {
+                    await createNotification(uid, permitData, executionMessage, 'approval', user);
+                }
+            }
+        }
+
         revalidatePath(`/permits/${permitId}`);
         return { success: true };
 
@@ -380,7 +405,6 @@ export async function updatePermitStatus(
         const triggeredBy = currentUser;
         
         let notificationType: Notification['type'] = 'status_change';
-        const statusText = getStatusText(status);
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
 
         if (status === 'aprobado') {

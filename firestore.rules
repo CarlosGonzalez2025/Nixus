@@ -53,68 +53,54 @@ service cloud.firestore {
 
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      // Un admin puede listar todos los usuarios, un usuario autenticado puede leer su propio perfil.
       allow read: if isAdmin() || isOwner(userId);
       allow list: if isAdmin();
-      
-      // Un usuario puede actualizar su propio perfil, un admin puede actualizar cualquier perfil.
       allow update: if isOwner(userId) || isAdmin();
+      allow create, delete: if false;
+    }
+    
+    // --- Colección de Notificaciones (notifications) ---
+    match /notifications/{notificationId} {
+      // Un usuario puede leer y listar sus propias notificaciones.
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
 
-      // La creación de usuarios se hace desde el servidor (Admin SDK), no desde el cliente.
-      allow create: if false;
-
-      // Nadie puede borrar perfiles de usuario desde la app.
-      allow delete: if false;
+      // La creación y eliminación de notificaciones solo se hace desde el servidor.
+      allow create, delete: if false;
     }
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      // LECTURA: Admins, Autorizantes y Líderes SST pueden leer todos. Solicitantes solo los suyos.
       allow read: if isAdmin() || isAutorizante() || isLiderSST() || isCreator(resource.data);
-
-      // LIST: Admins, Autorizantes y Líderes SST pueden listar. Solicitantes usan query filtrada.
       allow list: if isAdmin() || isAutorizante() || isLiderSST();
-
-      // CREACIÓN/ELIMINACIÓN: Protegidas, solo se hacen desde el servidor.
       allow create, delete: if false;
-
-      // ACTUALIZACIÓN: Lógica de negocio compleja para los diferentes roles y estados.
       allow update: if 
-        // Regla 1: Un admin puede hacer cualquier cambio.
         isAdmin() ||
-        
-        // Regla 2: El creador del permiso (solicitante/lider_tarea) puede modificarlo si está en estado borrador.
         (isCreator(resource.data) && resource.data.status == 'borrador') ||
-
-        // Regla 3: Un usuario puede firmar su propia aprobación si se cumple la secuencia.
         (
           isSignedIn() &&
           (
-            // Coordinador de Alturas firma primero (si aplica)
             (
                 resource.data.trabajoAlturas == true && isCoordinadorAlturas() &&
                 request.resource.data.approvals.coordinador_alturas.status == 'aprobado' &&
                 resource.data.approvals.coordinador_alturas.status == 'pendiente'
             ) ||
-            
-            // Solicitante firma (después del coordinador de alturas si aplica)
             (
                 isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' &&
                 resource.data.approvals.solicitante.status == 'pendiente' &&
                 (resource.data.trabajoAlturas == false || resource.data.approvals.coordinador_alturas.status == 'aprobado') &&
-                // Al firmar el solicitante, el estado cambia
                 request.resource.data.status == 'pendiente_revision'
             ) ||
-            
-            // Autorizante firma DESPUÉS del solicitante
             (
                 resource.data.status == 'pendiente_revision' && isAutorizante() &&
                 resource.data.approvals.solicitante.status == 'aprobado' &&
                 request.resource.data.approvals.autorizante.status == 'aprobado' &&
-                resource.data.approvals.autorizante.status == 'pendiente'
+                resource.data.approvals.autorizante.status == 'pendiente' &&
+                // NUEVA REGLA: Permite cambiar a en_ejecucion directamente
+                (request.resource.data.status == 'en_ejecucion' || request.resource.data.status == 'pendiente_revision')
             ) ||
-            
-            // Mantenimiento firma DESPUÉS del autorizante (y solo si es trabajo de energía)
             (
                 resource.data.status == 'pendiente_revision' && isMantenimiento() &&
                 resource.data.controlEnergia == true &&
@@ -122,8 +108,6 @@ service cloud.firestore {
                 request.resource.data.approvals.mantenimiento.status == 'aprobado' &&
                 resource.data.approvals.mantenimiento.status == 'pendiente'
             ) ||
-            
-            // SST firma DESPUÉS del autorizante
             (
                 resource.data.status == 'pendiente_revision' && isLiderSST() &&
                 resource.data.approvals.solicitante.status == 'aprobado' &&
@@ -133,20 +117,11 @@ service cloud.firestore {
             )
           )
         ) ||
-        
-        // Regla 4: Cambiar el estado del permiso.
         (
           isSignedIn() && 
           (
-            // Aprobar: Solo el autorizante puede hacerlo si el permiso está pendiente y las firmas requeridas están listas.
-            (request.resource.data.status == 'aprobado' && resource.data.status == 'pendiente_revision' && isAutorizante() && resource.data.approvals.solicitante.status == 'aprobado' && resource.data.approvals.autorizante.status == 'aprobado') ||
-            // Rechazar: Autorizante o SST pueden rechazar si está pendiente.
             (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && (isAutorizante() || isLiderSST())) ||
-            // Iniciar Ejecución: El líder de la tarea puede iniciar si está aprobado.
-            (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'aprobado' && isLiderTarea()) ||
-            // Suspender: El líder SST puede suspender si está en ejecución.
             (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && isLiderSST()) ||
-             // Cerrar: El líder de la tarea puede cerrar si está en ejecución o suspendido.
             (request.resource.data.status == 'cerrado' && (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') && isLiderTarea())
           )
         );
@@ -154,16 +129,12 @@ service cloud.firestore {
 
     // --- Colección de Listas Dinámicas (dynamic_lists) ---
     match /dynamic_lists/{listName} {
-      // Cualquier usuario autenticado puede leer las listas (para los desplegables).
       allow read: if isSignedIn();
-
-      // Solo los administradores pueden crear, actualizar o eliminar listas.
       allow write: if isAdmin();
     }
 
     // --- Colección de Prueba (test) ---
     match /test/{docId} {
-      // Cualquiera puede leer, pero solo usuarios autenticados pueden escribir.
       allow read: if true;
       allow write: if isSignedIn();
     }

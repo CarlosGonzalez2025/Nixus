@@ -527,7 +527,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
     try {
         const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
         let updateData = {};
-        // ✨ CORRECCIÓN: Lógica para manejar firmas de aprobación y de cierre/cancelación
+        // Lógica para manejar firmas de aprobación y de cierre/cancelación
         if (role.startsWith('cierre_') || role === 'cancelacion') {
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : role === 'cierre_responsable' ? 'responsable' : 'canceladoPor';
             const closurePath = `closure.${closureRole}`;
@@ -536,31 +536,70 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 ...existingClosureData,
                 firma: signatureDataUrl,
                 nombre: user.displayName,
-                fecha: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp() // Guardar fecha y hora del servidor
+                fecha: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
             };
         } else {
-            const signaturePath = `approvals.${role}.${signatureType}`;
-            const statusPath = `approvals.${role}.status`;
             const approvalData = {
-                [signatureType]: signatureDataUrl,
+                status: 'aprobado',
+                firmaApertura: signatureDataUrl,
                 userName: user.displayName,
                 userId: user.uid,
                 signedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
                 userRole: user.role,
                 userEmpresa: user.empresa
             };
+            updateData[`approvals.${role}`] = approvalData;
             if (signatureType === 'firmaApertura') {
-                approvalData.status = 'aprobado';
                 if (role === 'solicitante') {
                     const permitDocBefore = await docRef.get();
-                    if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
+                    const permitBeforeData = permitDocBefore.data();
+                    if (permitBeforeData && permitBeforeData.status === 'borrador') {
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
                     }
+                    // Auto-llenar validación diaria
+                    const validationPayload = {
+                        dia: 1,
+                        nombre: user.displayName || '',
+                        firma: signatureDataUrl,
+                        fecha: new Date().toISOString()
+                    };
+                    [
+                        'anexoAltura',
+                        'anexoConfinado',
+                        'anexoIzaje',
+                        'anexoExcavaciones'
+                    ].forEach((anexo)=>{
+                        if (permitBeforeData && permitBeforeData[anexo]) {
+                            const currentValidations = permitBeforeData[anexo].validacion?.responsable || [];
+                            currentValidations[0] = validationPayload;
+                            updateData[`${anexo}.validacion.responsable`] = currentValidations;
+                        }
+                    });
+                } else if (role === 'autorizante') {
+                    const permitBeforeData = (await docRef.get()).data();
+                    // Auto-llenar validación diaria
+                    const validationPayload = {
+                        dia: 1,
+                        nombre: user.displayName || '',
+                        firma: signatureDataUrl,
+                        fecha: new Date().toISOString()
+                    };
+                    [
+                        'anexoAltura',
+                        'anexoConfinado',
+                        'anexoIzaje',
+                        'anexoExcavaciones'
+                    ].forEach((anexo)=>{
+                        if (permitBeforeData && permitBeforeData[anexo]) {
+                            const currentValidations = permitBeforeData[anexo].validacion?.autoridad || [];
+                            currentValidations[0] = validationPayload;
+                            updateData[`${anexo}.validacion.autoridad`] = currentValidations;
+                        }
+                    });
                 }
             }
-            updateData[`approvals.${role}`] = approvalData;
         }
         await docRef.update(updateData);
         const permitDoc = await docRef.get();
@@ -615,9 +654,9 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
             id: permitDoc.id,
             ...permitDoc.data()
         };
-        const statusText = getStatusText(status);
         const triggeredBy = currentUser;
         let notificationType = 'status_change';
+        const statusText = getStatusText(status);
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
         if (status === 'aprobado') {
             notificationType = 'approval';
@@ -629,7 +668,7 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
                 message += ` Motivo: ${reason}`;
             }
         } else if (status === 'cerrado') {
-            notificationType = 'cancellation'; // Using cancellation for close as per request
+            notificationType = 'cancellation'; // Using cancellation for close
             message = `${currentUser.displayName || 'Un usuario'} ha cerrado el permiso #${permitData.number}.`;
         }
         const involvedUsers = await getInvolvedUsers(permitData);
@@ -683,19 +722,16 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
         }
         const permitData = permitSnap.data();
         const anexoData = permitData[anexoName] || {};
-        // ✨ CORRECCIÓN: Si `validacion` no existe, crearlo.
         if (!anexoData.validacion) {
             anexoData.validacion = {
                 autoridad: [],
                 responsable: []
             };
         }
-        // ✨ CORRECCIÓN: Si el array específico (autoridad/responsable) no existe, crearlo.
         if (!anexoData.validacion[validationType]) {
             anexoData.validacion[validationType] = [];
         }
         const validationArray = anexoData.validacion[validationType];
-        // ✨ CORRECCIÓN: Asegurarse de que el array tenga suficientes elementos.
         while(validationArray.length <= index){
             validationArray.push({
                 dia: validationArray.length + 1,
@@ -746,7 +782,6 @@ async function addWorkerSignature(permitId, workerIndex, signatureType, signatur
                 error: 'Índice de trabajador inválido.'
             };
         }
-        // ✨ CORRECCIÓN: Añadir fecha y hora a la firma del trabajador
         const signatureField = signatureType === 'firmaApertura' ? 'firmaApertura' : 'firmaCierre';
         const dateField = signatureType === 'firmaApertura' ? 'fechaFirmaApertura' : 'fechaFirmaCierre';
         workers[workerIndex] = {
