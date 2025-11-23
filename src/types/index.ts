@@ -428,7 +428,7 @@ export type Notification = {
   permitId: string;
   permitNumber?: string;
   message: string;
-  type: 'creation' | 'signature' | 'status_change';
+  type: 'creation' | 'signature' | 'status_change' | 'approval' | 'rejection' | 'cancellation';
   isRead: boolean;
   createdAt: Timestamp;
   triggeredBy: {

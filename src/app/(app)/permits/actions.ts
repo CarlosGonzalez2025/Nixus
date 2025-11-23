@@ -3,7 +3,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
@@ -37,7 +37,7 @@ const createNotification = async (
   userId: string,
   permit: Permit,
   message: string,
-  type: 'creation' | 'signature' | 'status_change',
+  type: Notification['type'],
   triggeredBy: { uid: string, displayName: string | null }
 ) => {
   const notification = {
@@ -326,7 +326,13 @@ export async function addSignatureAndNotify(
 }
 
 
-export async function updatePermitStatus(permitId: string, status: PermitStatus, reason?: string, closureData?: Partial<PermitClosure>) {
+export async function updatePermitStatus(
+  permitId: string,
+  status: PermitStatus,
+  currentUser: { uid: string, displayName: string | null },
+  reason?: string,
+  closureData?: Partial<PermitClosure>
+) {
     if (!permitId) {
         return { success: false, error: 'Permit ID is required.' };
     }
@@ -342,7 +348,7 @@ export async function updatePermitStatus(permitId: string, status: PermitStatus,
         if (status === 'cerrado') {
             updateData.closure = {
                 ...(closureData || {}),
-                fechaCierre: FieldValue.serverTimestamp(), // ✨ CORRECCIÓN: Usar hora del servidor
+                fechaCierre: FieldValue.serverTimestamp(),
             };
         }
 
@@ -352,16 +358,31 @@ export async function updatePermitStatus(permitId: string, status: PermitStatus,
         const permitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
 
         const statusText = getStatusText(status);
+        const triggeredBy = currentUser;
         
-        // Asumiendo que el usuario que cambia el estado se puede obtener de alguna manera
-        // Para este ejemplo, lo dejaremos como 'Sistema'
-        const triggeredBy = { uid: 'system', displayName: 'Sistema' }; // Esto debería mejorarse para obtener el usuario real
+        let notificationType: Notification['type'] = 'status_change';
+        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
+
+        if (status === 'aprobado') {
+            notificationType = 'approval';
+            message = `${currentUser.displayName || 'Un usuario'} ha aprobado el permiso #${permitData.number}.`;
+        } else if (status === 'rechazado') {
+            notificationType = 'rejection';
+            message = `${currentUser.displayName || 'Un usuario'} ha rechazado el permiso #${permitData.number}.`;
+            if (reason) {
+                message += ` Motivo: ${reason}`;
+            }
+        } else if (status === 'cerrado') {
+            notificationType = 'cancellation'; // Using cancellation for close as per request
+            message = `${currentUser.displayName || 'Un usuario'} ha cerrado el permiso #${permitData.number}.`;
+        }
         
-        const message = `El estado del permiso #${permitData.number} ha cambiado a: ${statusText}.`;
         const involvedUsers = await getInvolvedUsers(permitData);
 
         for (const uid of involvedUsers) {
-            await createNotification(uid, permitData, message, 'status_change', triggeredBy);
+             if (uid !== currentUser.uid) { // No notificar al usuario sobre su propia acción
+                await createNotification(uid, permitData, message, notificationType, triggeredBy);
+            }
         }
 
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';

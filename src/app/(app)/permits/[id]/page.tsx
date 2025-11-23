@@ -137,7 +137,7 @@ const Field: React.FC<{ label: string, value?: React.ReactNode, fullWidth?: bool
 );
 
 // ✨ CORRECCIÓN: Nuevo componente RadioCheck con íconos
-const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: string }> = ({ label, value, spec }) => {
+const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: string, onValueChange?: (value: any) => void }> = ({ label, value, spec, onValueChange }) => {
     let status: 'si' | 'no' | 'na';
     if (value === true || value === 'si') {
         status = 'si';
@@ -158,7 +158,15 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
             <span className="text-xs flex-1 pr-2">{label}</span>
             <div className="flex items-center gap-2">
                 {spec && <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">{spec}</span>}
-                {iconMap[status]}
+                {onValueChange ? (
+                    <RadioGroup value={status} onValueChange={onValueChange} className="flex gap-2">
+                        <RadioGroupItem value="si" /> <Label>Sí</Label>
+                        <RadioGroupItem value="no" /> <Label>No</Label>
+                        <RadioGroupItem value="na" /> <Label>N/A</Label>
+                    </RadioGroup>
+                ) : (
+                    iconMap[status]
+                )}
             </div>
         </div>
     );
@@ -777,10 +785,10 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   }
 
   const handleChangeStatus = async (newStatus: PermitStatus, reason?: string) => {
-    if (!permit) return;
+    if (!permit || !currentUser) return;
     setIsStatusChanging(true);
     try {
-      const result = await updatePermitStatus(permit.id, newStatus, reason, permit.closure);
+      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName }, reason, permit.closure);
       if (result.success) {
         toast({
           title: 'Estado Actualizado',
