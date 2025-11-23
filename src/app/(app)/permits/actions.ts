@@ -1,12 +1,59 @@
+
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { config } from 'dotenv';
 config();
+
+// --- Funciones Auxiliares para Notificaciones ---
+
+const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
+  const userIds = new Set<string>();
+
+  // 1. Creador del permiso
+  if (permit.createdBy) {
+    userIds.add(permit.createdBy);
+  }
+
+  // 2. Usuarios que han firmado
+  Object.values(permit.approvals || {}).forEach(approval => {
+    if (approval && approval.userId) {
+      userIds.add(approval.userId);
+    }
+  });
+
+  // 3. Roles administrativos o de supervisión que deberían ser notificados
+  const adminsQuery = await adminDb.collection('users').where('role', 'in', ['admin', 'autorizante', 'lider_sst']).get();
+  adminsQuery.forEach(doc => userIds.add(doc.id));
+
+  return Array.from(userIds);
+};
+
+const createNotification = async (
+  userId: string,
+  permit: Permit,
+  message: string,
+  type: 'creation' | 'signature' | 'status_change',
+  triggeredBy: { uid: string, displayName: string | null }
+) => {
+  const notification = {
+    userId,
+    permitId: permit.id,
+    permitNumber: permit.number || '',
+    message,
+    type,
+    isRead: false,
+    createdAt: FieldValue.serverTimestamp(),
+    triggeredBy,
+  };
+  await adminDb.collection('notifications').add(notification);
+};
+
+// --- Fin de Funciones de Notificaciones ---
 
 const workTypesMap: {[key: string]: string} = {
   'alturas': 'Trabajo en Alturas',
@@ -100,6 +147,16 @@ export async function createPermit(data: PermitCreateData) {
     await docRef.update({ number: permitNumber });
     
     console.log('✅ [Action] Permiso creado con éxito en Firestore:', docRef.id);
+
+    const createdPermit = { ...permitPayload, id: docRef.id, number: permitNumber } as Permit;
+    const involvedUsers = await getInvolvedUsers(createdPermit);
+    const message = `Se creó un nuevo permiso de trabajo: #${permitNumber}`;
+    
+    for (const uid of involvedUsers) {
+      if (uid !== userId) { // No notificar al creador sobre su propia acción
+        await createNotification(uid, createdPermit, message, 'creation', { uid: userId, displayName: userDisplayName });
+      }
+    }
 
     const workTypesText = getWorkTypesString(permitPayload);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
@@ -243,35 +300,19 @@ export async function addSignatureAndNotify(
         await docRef.update(updateData);
         
         const permitDoc = await docRef.get();
-        const permitData = permitDoc.data() as Permit;
+        const permitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
         
         const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
-        const permitUrl = `${baseUrl}/permits/${permitId}`;
         
-        let messageBody = `*Notificación de Firma - SGPT* 🖋️
-El permiso *${permitData.number || permitId}* ha sido firmado.
-
-👤 *Quién firmó:* ${user.displayName || 'N/A'}
-✨ *Rol:* ${signatureRoleName}
-✍️ *Tipo de firma:* ${signatureType === 'firmaApertura' ? 'Apertura' : 'Cierre'}
-
-Puede ver los detalles aquí:
-${permitUrl}`;
-
-        if (role === 'solicitante' && signatureType === 'firmaApertura') {
-            messageBody = `*Permiso listo para Autorización - SGPT* ⏳
-El permiso *${permitData.number || permitId}* ha sido firmado por el solicitante y está listo para su revisión.
-
-👤 *Solicitante:* ${user.displayName || 'N/A'}
-
-Por favor, ingrese para revisarlo y autorizarlo:
-${permitUrl}`;
+        const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${permitData.number} como ${signatureRoleName}.`;
+        const involvedUsers = await getInvolvedUsers(permitData);
+        
+        for (const uid of involvedUsers) {
+          if (uid !== user.uid) { // No notificar al usuario sobre su propia acción
+            await createNotification(uid, permitData, message, 'signature', user);
+          }
         }
         
-        await sendWhatsAppNotification(messageBody);
-        console.log(`[Action] Notificación de firma enviada para el permiso ${permitId}`);
-
         revalidatePath(`/permits/${permitId}`);
         return { success: true };
 
@@ -308,9 +349,21 @@ export async function updatePermitStatus(permitId: string, status: PermitStatus,
         await docRef.update(updateData);
 
         const permitDoc = await docRef.get();
-        const permitData = permitDoc.data() as Permit;
+        const permitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
 
         const statusText = getStatusText(status);
+        
+        // Asumiendo que el usuario que cambia el estado se puede obtener de alguna manera
+        // Para este ejemplo, lo dejaremos como 'Sistema'
+        const triggeredBy = { uid: 'system', displayName: 'Sistema' }; // Esto debería mejorarse para obtener el usuario real
+        
+        const message = `El estado del permiso #${permitData.number} ha cambiado a: ${statusText}.`;
+        const involvedUsers = await getInvolvedUsers(permitData);
+
+        for (const uid of involvedUsers) {
+            await createNotification(uid, permitData, message, 'status_change', triggeredBy);
+        }
+
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
 

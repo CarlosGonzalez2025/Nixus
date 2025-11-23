@@ -421,3 +421,18 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
 }
+
+export type Notification = {
+  id: string;
+  userId: string;
+  permitId: string;
+  permitNumber?: string;
+  message: string;
+  type: 'creation' | 'signature' | 'status_change';
+  isRead: boolean;
+  createdAt: Timestamp;
+  triggeredBy: {
+    uid: string;
+    displayName: string | null;
+  };
+};

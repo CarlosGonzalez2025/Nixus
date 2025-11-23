@@ -885,6 +885,10 @@ body {
   max-height: 100vh;
 }
 
+.max-h-80 {
+  max-height: 20rem;
+}
+
 .min-h-0 {
   min-height: 0;
 }
@@ -1370,6 +1374,10 @@ body {
   margin-bottom: calc(2rem * var(--tw-space-y-reverse));
 }
 
+.self-center {
+  align-self: center;
+}
+
 .overflow-auto {
   overflow: auto;
 }
@@ -1390,6 +1398,10 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.whitespace-normal {
+  white-space: normal;
 }
 
 .whitespace-nowrap {
@@ -1773,6 +1785,11 @@ body {
 .bg-yellow-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(254 252 232 / var(--tw-bg-opacity, 1));
+}
+
+.bg-blue-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
 }
 
 .bg-opacity-20 {
@@ -3351,6 +3368,10 @@ body {
   background-color: rgb(20 83 45 / var(--tw-bg-opacity, 1));
 }
 
+.dark\:bg-blue-900\/20:is(.dark *) {
+  background-color: #1e3a8a33;
+}
+
 .dark\:text-gray-400:is(.dark *) {
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity, 1));
@@ -3561,6 +3582,10 @@ body {
 
   .md\:w-10 {
     width: 2.5rem;
+  }
+
+  .md\:w-96 {
+    width: 24rem;
   }
 
   .md\:max-w-\[420px\] {

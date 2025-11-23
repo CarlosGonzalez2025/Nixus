@@ -1,9 +1,10 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { collection, query, where, onSnapshot, QueryConstraint, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit } from '@/types';
+import type { Notification } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,134 +15,124 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { Bell, FileWarning, Hourglass, Edit3 } from 'lucide-react';
+import { Bell, FileSignature, CheckCircle, XCircle, FilePlus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+const getNotificationIcon = (type: Notification['type']) => {
+  switch (type) {
+    case 'creation':
+      return <FilePlus className="mr-2 h-4 w-4 text-blue-500" />;
+    case 'signature':
+      return <FileSignature className="mr-2 h-4 w-4 text-yellow-500" />;
+    case 'status_change':
+      return <Sparkles className="mr-2 h-4 w-4 text-green-500" />;
+    default:
+      return <Bell className="mr-2 h-4 w-4 text-gray-500" />;
+  }
+};
 
 export function AlertsBell() {
   const { user } = useUser();
-  const [alerts, setAlerts] = useState<Permit[]>([]);
-  const [drafts, setDrafts] = useState<Permit[]>([]);
-
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  
   useEffect(() => {
-    if (!user || !user.uid) return;
-
-    let unsubscribeAlerts = () => {};
-    let unsubscribeDrafts = () => {};
-
-    // --- Alertas para permisos que requieren acción (firma/aprobación) ---
-    // Solo para roles que aprueban.
-    const isApprover = ['autorizante', 'lider_sst', 'mantenimiento', 'admin'].includes(user.role || '');
-
-    if (isApprover) {
-      // ✨ CORRECCIÓN: Se elimina el `orderBy` para evitar el error de índice compuesto.
-      // La ordenación se hará en el cliente.
-      const alertsQuery = query(
-        collection(db, 'permits'), 
-        where('status', '==', 'pendiente_revision'),
-        limit(10)
-      );
-      unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
-        const pendingPermits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Permit));
-        
-        // ✨ CORRECCIÓN: Ordenar los resultados en el cliente por fecha de creación descendente.
-        pendingPermits.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-
-        setAlerts(pendingPermits);
-      });
-    } else {
-      setAlerts([]); // No hay alertas de este tipo para otros roles
+    if (!user?.uid) {
+      setNotifications([]);
+      return;
     }
 
-    // --- Alertas para borradores pendientes del usuario actual ---
-    // Para roles que pueden crear permisos.
-    const canCreate = ['solicitante', 'lider_tarea', 'admin'].includes(user.role || '');
-    if (canCreate) {
-      const draftsQuery = query(
-          collection(db, 'permits'), 
-          where('createdBy', '==', user.uid), 
-          where('status', '==', 'borrador'),
-          orderBy('createdAt', 'desc'),
-          limit(5)
-      );
-      unsubscribeDrafts = onSnapshot(draftsQuery, (snapshot) => {
-        const pendingDrafts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Permit));
-        setDrafts(pendingDrafts);
-      });
-    } else {
-        setDrafts([]);
-    }
+    const notifsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(20) // Limitar a las 20 notificaciones más recientes
+    );
 
-    return () => {
-      unsubscribeAlerts();
-      unsubscribeDrafts();
-    };
+    const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
+      const notifsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Notification));
+      setNotifications(notifsData);
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
-  const totalAlerts = alerts.length + drafts.length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    const notifRef = doc(db, 'notifications', notificationId);
+    await updateDoc(notifRef, { isRead: true });
+  };
+  
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount === 0) return;
+    const batch = writeBatch(db);
+    notifications.forEach(n => {
+      if (!n.isRead) {
+        const notifRef = doc(db, 'notifications', n.id);
+        batch.update(notifRef, { isRead: true });
+      }
+    });
+    await batch.commit();
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative text-sidebar-foreground hover:bg-sidebar-accent">
           <Bell className="h-5 w-5" />
-          {totalAlerts > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-              {totalAlerts}
+              {unreadCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
-        <DropdownMenuLabel>
-          {totalAlerts > 0 ? `Tienes ${totalAlerts} alerta(s)` : 'No hay alertas nuevas'}
+      <DropdownMenuContent className="w-80 md:w-96" align="end">
+        <DropdownMenuLabel className="flex justify-between items-center">
+            <span>Notificaciones</span>
+             {unreadCount > 0 && (
+                 <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={handleMarkAllAsRead}>
+                     Marcar todas como leídas
+                 </Button>
+             )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {totalAlerts === 0 ? (
-          <DropdownMenuItem disabled className="text-center justify-center">
-            Todo está al día
-          </DropdownMenuItem>
-        ) : (
-          <>
-            {alerts.length > 0 && (
-                <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Pendientes de Firma/Aprobación</DropdownMenuLabel>
-                    {alerts.map((permit) => (
-                      <Link key={permit.id} href={`/permits/${permit.id}`} passHref>
-                        <DropdownMenuItem className="cursor-pointer">
-                          <Hourglass className="mr-2 h-4 w-4 text-yellow-500" />
-                          <div className="flex-1 truncate">
-                            <span className="font-semibold">{permit.number || `ID: ...${permit.id.slice(-4)}`}</span>
-                            <p className="text-xs text-muted-foreground truncate">{permit.generalInfo?.workDescription}</p>
-                          </div>
-                        </DropdownMenuItem>
-                      </Link>
-                    ))}
-                </DropdownMenuGroup>
+        <DropdownMenuGroup className="max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <DropdownMenuItem disabled className="text-center justify-center">
+                No hay notificaciones nuevas
+              </DropdownMenuItem>
+            ) : (
+              notifications.map((notif) => (
+                <Link key={notif.id} href={`/permits/${notif.permitId}`} passHref onClick={() => handleMarkAsRead(notif.id)}>
+                  <DropdownMenuItem className={`cursor-pointer flex items-start gap-2 ${!notif.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}>
+                    <div className="mt-1">
+                        {getNotificationIcon(notif.type)}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm whitespace-normal">{notif.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {notif.createdAt ? 
+                          `hace ${formatDistanceToNow(notif.createdAt.toDate(), { addSuffix: false, locale: es })}`
+                          : 'justo ahora'}
+                      </p>
+                    </div>
+                     {!notif.isRead && (
+                        <div className="mt-1 h-2 w-2 rounded-full bg-blue-500 self-center" aria-label="No leído" />
+                     )}
+                  </DropdownMenuItem>
+                </Link>
+              ))
             )}
-            
-            {drafts.length > 0 && (
-                <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground">Borradores por Completar</DropdownMenuLabel>
-                    {drafts.map((permit) => (
-                        <Link key={permit.id} href={`/permits/create?edit=${permit.id}`} passHref>
-                            <DropdownMenuItem className="cursor-pointer">
-                                <Edit3 className="mr-2 h-4 w-4 text-blue-500" />
-                                 <div className="flex-1 truncate">
-                                    <span className="font-semibold">Borrador #{permit.id.slice(-4)}</span>
-                                    <p className="text-xs text-muted-foreground truncate">{permit.generalInfo?.workDescription || "Sin descripción"}</p>
-                                </div>
-                            </DropdownMenuItem>
-                        </Link>
-                    ))}
-                </DropdownMenuGroup>
-            )}
-          </>
-        )}
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
