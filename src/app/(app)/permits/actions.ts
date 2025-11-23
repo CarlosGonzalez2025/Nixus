@@ -68,7 +68,7 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   const selectedTypes: string[] = [];
   if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
   if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
-  if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+  if (permit.controlEnergia) selectedTypes.push('Control de Energías');
   if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
   if (permit.excavaciones) selectedTypes.push('Excavaciones');
   
@@ -244,7 +244,8 @@ export async function addSignatureAndNotify(
   role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
-  user: User
+  user: User,
+  comments?: string
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
@@ -277,7 +278,8 @@ export async function addSignatureAndNotify(
                 userId: user.uid,
                 signedAt: FieldValue.serverTimestamp() as any,
                 userRole: user.role,
-                userEmpresa: user.empresa
+                userEmpresa: user.empresa,
+                comments: comments || '',
             }
             
             updateData[`approvals.${role}`] = approvalData;
@@ -405,7 +407,7 @@ export async function updatePermitStatus(
         const triggeredBy = currentUser;
         
         let notificationType: Notification['type'] = 'status_change';
-        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
+        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
 
         if (status === 'aprobado') {
             notificationType = 'approval';
@@ -435,7 +437,7 @@ export async function updatePermitStatus(
         let messageBody = `*Actualización de Estado - SGPT* 🔄
 El estado del permiso *${permitData.number || permitId}* ha cambiado.
 
-*Nuevo Estado:* ${statusText}
+*Nuevo Estado:* ${getStatusText(status)}
 
 Puede ver los detalles aquí:
 ${permitUrl}`;

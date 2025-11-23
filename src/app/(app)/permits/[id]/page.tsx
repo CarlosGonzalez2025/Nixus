@@ -36,6 +36,7 @@ import {
   BookUser,
   ShieldCheck,
   Circle,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -202,6 +203,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const [signingRole, setSigningRole] = useState<{role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', type: 'firmaApertura' | 'firmaCierre'} | null>(null);
   const [signerName, setSignerName] = useState('');
   const [isSigning, setIsSigning] = useState(false);
+  const [signatureObservation, setSignatureObservation] = useState("");
 
   const [isStatusChanging, setIsStatusChanging] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -436,8 +438,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         drawSectionTitle("VALIDACIÓN DIARIA");
 
         const bodyData = Array.from({ length: permitDuration }, (_, idx) => {
-            const valAut = validationData?.autoridad?.[idx];
             const valRes = validationData?.responsable?.[idx];
+            const valAut = validationData?.autoridad?.[idx];
             return [
                 `DÍA ${idx + 1}`,
                 valRes?.nombre || '',
@@ -446,9 +448,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                 safeFormat(valAut?.fecha, 'dd/MM/yy')
             ];
         });
-
-        const tableWidth = pageWidth - (2 * margin);
-        const colWidths = [tableWidth * 0.1, tableWidth * 0.225, tableWidth * 0.225, tableWidth * 0.225, tableWidth * 0.225];
 
         // Responsable a la izquierda, Autoridad a la derecha
         autoTable(doc, {
@@ -464,7 +463,19 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             body: bodyData,
             theme: 'grid',
             styles: { fontSize: 7, cellPadding: 1 },
-            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+            didDrawCell: (data) => {
+              if (data.section === 'body') {
+                const valRes = validationData?.responsable?.[data.row.index];
+                const valAut = validationData?.autoridad?.[data.row.index];
+                if (data.column.index === 1 && valRes?.firma) { // Columna de Nombre Responsable
+                  try { doc.addImage(valRes.firma, 'PNG', data.cell.x + 2, data.cell.y + 2, 15, 7); } catch(e){}
+                }
+                if (data.column.index === 3 && valAut?.firma) { // Columna de Nombre Autoridad
+                   try { doc.addImage(valAut.firma, 'PNG', data.cell.x + 2, data.cell.y + 2, 15, 7); } catch(e){}
+                }
+              }
+            }
         });
         yPos = (doc as any).lastAutoTable.finalY + 5;
     };
@@ -735,6 +746,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser) return;
       setSigningRole({role, type: signatureType});
+      setSignatureObservation(""); // Limpiar observaciones anteriores
       if (role === 'coordinador_alturas' || role.startsWith('cierre_') || role === 'cancelacion') {
           setSignerName('');
       } else {
@@ -769,7 +781,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             signingRole.role,
             signingRole.type,
             signatureDataUrl,
-            userToSign
+            userToSign,
+            signatureObservation
         );
 
         if (result.success) {
@@ -780,6 +793,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             setIsSignatureDialogOpen(false);
             setSigningRole(null);
             setSignerName('');
+            setSignatureObservation('');
         } else {
             throw new Error(result.error || 'No se pudo guardar la firma.');
         }
@@ -1191,6 +1205,12 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                        <p>Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
                     </div>
                     {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
+                     {approval.comments && (
+                        <div className="mt-2 pt-2 border-t border-dashed">
+                            <p className="text-xs font-semibold text-gray-600 flex items-center gap-1"><MessageSquare size={12}/> Observaciones:</p>
+                            <p className="text-xs text-gray-500 italic">«{approval.comments}»</p>
+                        </div>
+                     )}
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -1740,11 +1760,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                 <DialogHeader>
                     <DialogTitle>Registrar Firma</DialogTitle>
                 </DialogHeader>
-                 {(signingRole?.role === 'coordinador_alturas' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
-                    <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            {signingRole?.role === 'coordinador_alturas' ? signatureConsents.coordinador_alturas : "Confirmo que la información proporcionada para esta acción es correcta."}
-                        </p>
+                <div className="space-y-4">
+                    {(signingRole?.role === 'coordinador_alturas' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
                         <div className="space-y-1">
                             <Label htmlFor="signerName">Su Nombre Completo</Label>
                             <Input 
@@ -1754,8 +1771,17 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                 placeholder="Ingrese su nombre completo"
                             />
                         </div>
+                    )}
+                    <div className="space-y-1">
+                        <Label htmlFor="signature-observation">Observaciones (Opcional)</Label>
+                        <Textarea 
+                            id="signature-observation"
+                            value={signatureObservation}
+                            onChange={(e) => setSignatureObservation(e.target.value)}
+                            placeholder="Añada comentarios si es necesario..."
+                        />
                     </div>
-                )}
+                </div>
                 <SignaturePad 
                     onSave={handleSaveSignature} 
                     isSaving={isSigning} 

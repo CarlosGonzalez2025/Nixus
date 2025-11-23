@@ -79,6 +79,10 @@ export type PermitClosure = {
   horaCierre: string;
   autoridad?: Partial<AutorizacionPersona>;
   responsable?: Partial<AutorizacionPersona>;
+  // Adicional para Cancelación
+  cancelado?: 'si' | 'no' | 'na';
+  razonCancelacion?: string;
+  canceladoPor?: Partial<AutorizacionPersona>;
 }
 
 export type JustificacionATS = {
@@ -444,4 +448,3 @@ export type Notification = {
     displayName: string | null;
   };
 };
-
