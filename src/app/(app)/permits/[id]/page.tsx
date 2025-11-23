@@ -35,7 +35,7 @@ import {
   HeartPulse,
   BookUser,
   ShieldCheck,
-  Circle, // ✨ AÑADIDO: Ícono para N/A
+  Circle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -330,7 +330,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   });
   
   // ✨ INSTRUCCIÓN: PEGA AQUÍ LA CADENA LARGA DEL LOGO BASE64 QUE GUARDASTE ✨
-  const logoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA50AAAL9CAYAAACorwKkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAMsAAADLAAShkWtsAAP+lSURB...";
+  const logoBase64 = "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE";
 
   try {
     const doc = new jsPDF('p', 'mm', 'letter');
@@ -354,7 +354,12 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
       // Logo
       try {
-        doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
+        if (logoBase64 !== "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE") {
+          doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
+        } else {
+           doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+           doc.rect(margin, yPos, 30, 20, 'F');
+        }
       } catch (e) {
         console.error('Error al cargar logo:', e);
         doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
@@ -1221,7 +1226,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         const renderRows = (type: 'autoridad' | 'responsable') => {
             return Array.from({ length: durationInDays }, (_, i) => {
                 const v = validationData?.[type]?.[i];
-                // ✨ CORRECCIÓN: Lógica de firma diferenciada por rol
                 let canSignValidation = false;
                 let tooltipContent = "No tienes permiso para firmar.";
                 
@@ -1268,19 +1272,19 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             <Section title="Validación Diaria">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="p-4 border rounded-lg space-y-2">
-                        <h4 className="font-semibold">Autoridad del Área</h4>
-                        <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
-                            <TableBody>{renderRows('autoridad')}</TableBody>
-                        </Table>
-                    </div>
-                    <div className="p-4 border rounded-lg space-y-2">
                         <h4 className="font-semibold">Responsable del Trabajo</h4>
                         <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
                         <Table>
                             <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
                             <TableBody>{renderRows('responsable')}</TableBody>
+                        </Table>
+                    </div>
+                    <div className="p-4 border rounded-lg space-y-2">
+                        <h4 className="font-semibold">Autoridad del Área</h4>
+                        <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Día</TableHead><TableHead>Nombre</TableHead><TableHead>Firma</TableHead><TableHead>Fecha</TableHead></TableRow></TableHeader>
+                            <TableBody>{renderRows('autoridad')}</TableBody>
                         </Table>
                     </div>
                 </div>
