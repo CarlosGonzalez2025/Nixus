@@ -759,7 +759,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     setIsSigning(true);
 
     try {
-        const userToSign = {
+        const userToSign: User = {
             ...currentUser,
             displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
         };
@@ -1161,6 +1161,16 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
           mantenimiento: 'Mantenimiento'
         };
 
+        const getRoleDisplayName = () => {
+            if (role === 'coordinador_alturas') {
+                return 'Coordinador de Trabajo en Alturas';
+            }
+            if (approval?.userRole) {
+                return roleNames[approval.userRole] || approval.userRole;
+            }
+            return null;
+        };
+
         return (
             <Card className="flex flex-col">
             <CardHeader className="pb-2">
@@ -1176,7 +1186,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                     </div>
                      <div className="text-xs space-y-1 mt-2">
                        <p>Por: <span className="font-semibold">{approval.userName}</span></p>
-                       {approval.userRole && <p>Rol: <span className="font-semibold">{roleNames[approval.userRole] || approval.userRole}</span></p>}
+                       {getRoleDisplayName() && <p>Rol: <span className="font-semibold">{getRoleDisplayName()}</span></p>}
                        {approval.userEmpresa && <p>Empresa: <span className="font-semibold">{approval.userEmpresa}</span></p>}
                        <p>Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
                     </div>
@@ -1234,7 +1244,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             }
         }
 
-        const renderRows = (type: 'autoridad' | 'responsable') => {
+        const renderRows = (type: 'responsable' | 'autoridad') => {
             return Array.from({ length: durationInDays }, (_, i) => {
                 const v = validationData?.[type]?.[i];
                 let canSignValidation = false;
