@@ -244,7 +244,7 @@ export async function addSignatureAndNotify(
   role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
-  user: { uid: string, displayName: string | null }
+  user: User
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
@@ -272,19 +272,18 @@ export async function addSignatureAndNotify(
         } else {
             const signaturePath = `approvals.${role}.${signatureType}`;
             const statusPath = `approvals.${role}.status`;
-            const userIdPath = `approvals.${role}.userId`;
-            const userNamePath = `approvals.${role}.userName`;
-            const signedAtPath = `approvals.${role}.signedAt`;
-
-            updateData = {
-                [signaturePath]: signatureDataUrl,
-                [`${userNamePath}`]: user.displayName,
-                [`${userIdPath}`]: user.uid,
-                [signedAtPath]: FieldValue.serverTimestamp(), // ✨ CORRECCIÓN: Siempre guardar fecha y hora
-            };
-
+            
+            const approvalData: Partial<Approval> = {
+                [signatureType as 'firmaApertura' | 'firmaCierre']: signatureDataUrl,
+                userName: user.displayName,
+                userId: user.uid,
+                signedAt: FieldValue.serverTimestamp() as any, // ✨ CORRECCIÓN: Siempre guardar fecha y hora
+                userRole: user.role,
+                userEmpresa: user.empresa
+            }
+            
             if (signatureType === 'firmaApertura') {
-                updateData[statusPath] = 'aprobado';
+                approvalData.status = 'aprobado';
 
                 if (role === 'solicitante') {
                     const permitDocBefore = await docRef.get();
@@ -295,6 +294,7 @@ export async function addSignatureAndNotify(
                     }
                 }
             }
+            updateData[`approvals.${role}`] = approvalData;
         }
         
         await docRef.update(updateData);

@@ -432,38 +432,43 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     };
 
     const drawDailyValidationTable = (validationData: any, permitDuration: number) => {
-      checkPageBreak(50);
-      drawSectionTitle("VALIDACIÓN DIARIA");
-      
-      const bodyData = Array.from({ length: permitDuration }, (_, idx) => {
-        const valAut = validationData?.autoridad?.[idx];
-        const valRes = validationData?.responsable?.[idx];
-        return [
-          `DÍA ${idx + 1}`,
-          valRes?.nombre || '',
-          safeFormat(valRes?.fecha, 'dd/MM/yy'),
-          valAut?.nombre || '',
-          safeFormat(valAut?.fecha, 'dd/MM/yy')
-        ];
-      });
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [
-          [
-            { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-            { content: 'RESPONSABLE', colSpan: 2, styles: { halign: 'center' } },
-            { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }
-          ],
-          ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']
-        ],
-        body: bodyData,
-        theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 1 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
+        checkPageBreak(50);
+        drawSectionTitle("VALIDACIÓN DIARIA");
+
+        const bodyData = Array.from({ length: permitDuration }, (_, idx) => {
+            const valAut = validationData?.autoridad?.[idx];
+            const valRes = validationData?.responsable?.[idx];
+            return [
+                `DÍA ${idx + 1}`,
+                valRes?.nombre || '',
+                safeFormat(valRes?.fecha, 'dd/MM/yy'),
+                valAut?.nombre || '',
+                safeFormat(valAut?.fecha, 'dd/MM/yy')
+            ];
+        });
+
+        const tableWidth = pageWidth - (2 * margin);
+        const colWidths = [tableWidth * 0.1, tableWidth * 0.225, tableWidth * 0.225, tableWidth * 0.225, tableWidth * 0.225];
+
+        // Responsable a la izquierda, Autoridad a la derecha
+        autoTable(doc, {
+            startY: yPos,
+            head: [
+                [
+                    { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+                    { content: 'RESPONSABLE DEL TRABAJO', colSpan: 2, styles: { halign: 'center' } },
+                    { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }
+                ],
+                ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']
+            ],
+            body: bodyData,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1 },
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
     };
+
 
     // Calcular duración del permiso
     let permitDuration = 1;
@@ -728,6 +733,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 };
 
   const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
+      if(!currentUser) return;
       setSigningRole({role, type: signatureType});
       if (role === 'coordinador_alturas' || role.startsWith('cierre_') || role === 'cancelacion') {
           setSignerName('');
@@ -754,7 +760,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
     try {
         const userToSign = {
-            uid: isSpecialSignature ? 'N/A_SPECIAL' : currentUser.uid,
+            ...currentUser,
             displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
         };
 
@@ -1135,78 +1141,85 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     
     
     const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
-      const approval = permit.approvals?.[role as keyof typeof permit.approvals];
-      const { can, reason } = canSign(role);
-      const consentText = signatureConsents[role];
+        const approval = permit.approvals?.[role as keyof typeof permit.approvals];
+        const { can, reason } = canSign(role);
+        const consentText = signatureConsents[role];
 
-      const SignButton = () => (
-          <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
-              {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
-          </Button>
-      );
+        const SignButton = () => (
+            <Button onClick={() => openSignatureDialog(role, 'firmaApertura')} disabled={!can || isSigning} className="flex-1">
+                {isSigning ? <Loader2 className="animate-spin" /> : <SignatureIcon className="mr-2"/>} Firmar Apertura
+            </Button>
+        );
+        
+        const roleNames: { [key in UserRole]: string } = {
+          solicitante: 'Solicitante',
+          autorizante: 'Autorizante',
+          lider_tarea: 'Líder de Tarea',
+          ejecutante: 'Ejecutante',
+          lider_sst: 'Líder SST',
+          admin: 'Administrador',
+          mantenimiento: 'Mantenimiento'
+        };
 
-      return (
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
-            {role === 'solicitante' && permit.generalInfo?.responsable && (
-                <div className="text-xs text-muted-foreground pt-2 border-t">
-                    <p className="font-semibold">Responsable del Trabajo:</p>
-                    <p>{permit.generalInfo.responsable.nombre}</p>
-                    <p>{permit.generalInfo.responsable.cargo} - {permit.generalInfo.responsable.compania}</p>
+        return (
+            <Card className="flex flex-col">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow flex flex-col justify-between gap-4">
+                <div className="flex-grow">
+                {approval?.status === 'aprobado' ? (
+                    <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="font-bold text-sm">Aprobado</span>
+                    </div>
+                     <div className="text-xs space-y-1 mt-2">
+                       <p>Por: <span className="font-semibold">{approval.userName}</span></p>
+                       {approval.userRole && <p>Rol: <span className="font-semibold">{roleNames[approval.userRole] || approval.userRole}</span></p>}
+                       {approval.userEmpresa && <p>Empresa: <span className="font-semibold">{approval.userEmpresa}</span></p>}
+                       <p>Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
+                    </div>
+                    {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-yellow-600">
+                        <Clock className="h-5 w-5" />
+                        <span className="font-bold text-sm">Pendiente de Firma</span>
+                    </div>
+                    {consentText && can && (
+                        <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
+                        {consentText}
+                        </p>
+                    )}
+                    </div>
+                )}
                 </div>
-            )}
-          </CardHeader>
-          <CardContent className="flex-grow flex flex-col justify-between gap-4">
-            <div className="flex-grow">
-              {approval?.status === 'aprobado' ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-bold text-sm">Aprobado</span>
-                  </div>
-                  <p className="text-xs">Por: <span className="font-semibold">{approval.userName}</span></p>
-                  <p className="text-xs">Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
-                  {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
+                <div className="flex flex-wrap gap-2">
+                {can ? <SignButton /> : (
+                    <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                        <div className="w-full">
+                            <Button disabled className="w-full flex-1">
+                            <SignatureIcon className="mr-2"/> Firmar Apertura
+                            </Button>
+                        </div>
+                        </TooltipTrigger>
+                        {reason && <TooltipContent><p>{reason}</p></TooltipContent>}
+                    </Tooltip>
+                    </TooltipProvider>
+                )}
+                {role === 'solicitante' && permit.status === 'borrador' && (
+                    <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
+                    <Edit className="mr-2"/> Modificar
+                    </Button>
+                )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-yellow-600">
-                    <Clock className="h-5 w-5" />
-                    <span className="font-bold text-sm">Pendiente de Firma</span>
-                  </div>
-                  {consentText && can && (
-                    <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary pl-2">
-                      {consentText}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {can ? <SignButton /> : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="w-full">
-                        <Button disabled className="w-full flex-1">
-                          <SignatureIcon className="mr-2"/> Firmar Apertura
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    {reason && <TooltipContent><p>{reason}</p></TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {role === 'solicitante' && permit.status === 'borrador' && (
-                <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
-                  <Edit className="mr-2"/> Modificar
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
+            </CardContent>
+            </Card>
+        );
     };
 
     const DailyValidationTable: React.FC<{ anexoName: string; validationData?: { autoridad: ValidacionDiaria[], responsable: ValidacionDiaria[] } }> = ({ anexoName, validationData }) => {
@@ -1268,7 +1281,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
         return (
             <Section title="Validación Diaria">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="p-4 border rounded-lg space-y-2">
                         <h4 className="font-semibold">Responsable del Trabajo</h4>
                         <p className="text-xs text-muted-foreground">Entiendo las condiciones y responsabilidad.</p>
@@ -1844,6 +1857,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
-
-    

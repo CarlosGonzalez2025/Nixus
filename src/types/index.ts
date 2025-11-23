@@ -29,6 +29,9 @@ export type Approval = {
   area?: string;
   firmaApertura?: string | null;
   firmaCierre?: string | null;
+  // ✨ CORRECCIÓN: Nuevos campos para detalles del firmante
+  userRole?: UserRole;
+  userEmpresa?: string;
 }
 
 export interface ExternalWorker {
@@ -116,6 +119,11 @@ export type AnexoAltura = {
     telefono: string;
   };
   alturaAproximada?: string;
+  tareaRealizar?: {
+    id: string;
+    nombre: string;
+    descripcion: string;
+  };
   tipoEstructura: {
     [key: string]: boolean | string;
   };
@@ -436,3 +444,4 @@ export type Notification = {
     displayName: string | null;
   };
 };
+
