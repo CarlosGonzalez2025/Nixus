@@ -33,14 +33,23 @@ export function AlertsBell() {
     const isApprover = ['autorizante', 'lider_sst', 'mantenimiento', 'admin'].includes(user.role || '');
 
     if (isApprover) {
+      // ✨ CORRECCIÓN: Se elimina el `orderBy` para evitar el error de índice compuesto.
+      // La ordenación se hará en el cliente.
       const alertsQuery = query(
         collection(db, 'permits'), 
         where('status', '==', 'pendiente_revision'),
-        orderBy('createdAt', 'desc'),
         limit(10)
       );
       unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const pendingPermits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Permit));
+        
+        // ✨ CORRECCIÓN: Ordenar los resultados en el cliente por fecha de creación descendente.
+        pendingPermits.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+
         setAlerts(pendingPermits);
       });
     } else {
