@@ -250,7 +250,7 @@ async function sendWhatsAppNotification(messageBody) {
 
 var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_context__;
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
-/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","407282eb75929b38cb56be7f0cd547a72b6c80de19":"savePermitDraft","78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4":"addWorkerSignature","7c15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify","7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7cdc6233c637b331b2fa6dba912da67e147424b389":"addDailyValidationSignature"},"",""] */ __turbopack_context__.s({
+/* __next_internal_action_entry_do_not_use__ [{"401402f01c0118016efe5c5d736d335e2f6d150079":"createPermit","407282eb75929b38cb56be7f0cd547a72b6c80de19":"savePermitDraft","78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4":"addWorkerSignature","7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15":"updatePermitStatus","7cdc6233c637b331b2fa6dba912da67e147424b389":"addDailyValidationSignature","7e15bdb6ac388e78a59299d5091891127d63de7bc6":"addSignatureAndNotify"},"",""] */ __turbopack_context__.s({
     "addDailyValidationSignature": (()=>addDailyValidationSignature),
     "addSignatureAndNotify": (()=>addSignatureAndNotify),
     "addWorkerSignature": (()=>addWorkerSignature),
@@ -327,7 +327,7 @@ const getWorkTypesString = (permit)=>{
     const selectedTypes = [];
     if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
     if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
-    if (permit.controlEnergias) selectedTypes.push('Control de Energías');
+    if (permit.controlEnergia) selectedTypes.push('Control de Energías');
     if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
     if (permit.excavaciones) selectedTypes.push('Excavaciones');
     if (selectedTypes.length === 0) {
@@ -341,7 +341,7 @@ const getWorkTypesString = (permit)=>{
     return selectedTypes.join(', ');
 };
 const getStatusText = (status)=>{
-    const statusText1 = {
+    const statusText = {
         'borrador': 'Borrador',
         'pendiente_revision': 'Pendiente de Revisión',
         'aprobado': 'Aprobado',
@@ -350,7 +350,7 @@ const getStatusText = (status)=>{
         'cerrado': 'Cerrado',
         'rechazado': 'Rechazado'
     };
-    return statusText1[status] || status;
+    return statusText[status] || status;
 };
 const signatureRoles = {
     coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
@@ -517,7 +517,7 @@ async function savePermitDraft(data) {
         };
     }
 }
-async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user) {
+async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user, comments) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return {
             success: false,
@@ -546,7 +546,8 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 userId: user.uid,
                 signedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
                 userRole: user.role,
-                userEmpresa: user.empresa
+                userEmpresa: user.empresa,
+                comments: comments || ''
             };
             updateData[`approvals.${role}`] = approvalData;
             const permitDocBefore = await docRef.get();
@@ -672,7 +673,7 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
         };
         const triggeredBy = currentUser;
         let notificationType = 'status_change';
-        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
+        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
         if (status === 'aprobado') {
             notificationType = 'approval';
             message = `${currentUser.displayName || 'Un usuario'} ha aprobado el permiso #${permitData.number}.`;
@@ -697,7 +698,7 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
         let messageBody = `*Actualización de Estado - SGPT* 🔄
 El estado del permiso *${permitData.number || permitId}* ha cambiado.
 
-*Nuevo Estado:* ${statusText}
+*Nuevo Estado:* ${getStatusText(status)}
 
 Puede ver los detalles aquí:
 ${permitUrl}`;
@@ -830,7 +831,7 @@ async function addWorkerSignature(permitId, workerIndex, signatureType, signatur
 ]);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(createPermit, "401402f01c0118016efe5c5d736d335e2f6d150079", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(savePermitDraft, "407282eb75929b38cb56be7f0cd547a72b6c80de19", null);
-(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addSignatureAndNotify, "7c15bdb6ac388e78a59299d5091891127d63de7bc6", null);
+(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addSignatureAndNotify, "7e15bdb6ac388e78a59299d5091891127d63de7bc6", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(updatePermitStatus, "7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addDailyValidationSignature, "7cdc6233c637b331b2fa6dba912da67e147424b389", null);
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$build$2f$webpack$2f$loaders$2f$next$2d$flight$2d$loader$2f$server$2d$reference$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["registerServerReference"])(addWorkerSignature, "78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4", null);
@@ -875,9 +876,9 @@ var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_contex
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
 __turbopack_context__.s({
     "78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["addWorkerSignature"]),
-    "7c15bdb6ac388e78a59299d5091891127d63de7bc6": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["addSignatureAndNotify"]),
     "7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["updatePermitStatus"]),
-    "7cdc6233c637b331b2fa6dba912da67e147424b389": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["addDailyValidationSignature"])
+    "7cdc6233c637b331b2fa6dba912da67e147424b389": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["addDailyValidationSignature"]),
+    "7e15bdb6ac388e78a59299d5091891127d63de7bc6": (()=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["addSignatureAndNotify"])
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i('[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) <locals>');
@@ -895,9 +896,9 @@ var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_contex
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
 __turbopack_context__.s({
     "78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4"]),
-    "7c15bdb6ac388e78a59299d5091891127d63de7bc6": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["7c15bdb6ac388e78a59299d5091891127d63de7bc6"]),
     "7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["7c73b9c7850e737568a6f6f7a4e17cda15a8f18e15"]),
-    "7cdc6233c637b331b2fa6dba912da67e147424b389": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["7cdc6233c637b331b2fa6dba912da67e147424b389"])
+    "7cdc6233c637b331b2fa6dba912da67e147424b389": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["7cdc6233c637b331b2fa6dba912da67e147424b389"]),
+    "7e15bdb6ac388e78a59299d5091891127d63de7bc6": (()=>__TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__["7e15bdb6ac388e78a59299d5091891127d63de7bc6"])
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i('[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) <module evaluation>');
 var __TURBOPACK__imported__module__$5b$project$5d2f2e$next$2d$internal$2f$server$2f$app$2f28$app$292f$permits$2f5b$id$5d2f$page$2f$actions$2e$js__$7b$__ACTIONS_MODULE0__$3d3e$__$225b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$actions$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$2922$__$7d$__$5b$app$2d$rsc$5d$__$28$server__actions__loader$2c$__ecmascript$29$__$3c$exports$3e$__ = __turbopack_context__.i('[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => "[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)" } [app-rsc] (server actions loader, ecmascript) <exports>');

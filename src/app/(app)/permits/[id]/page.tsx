@@ -225,36 +225,36 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
 
   const atsPeligros = [
-    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
-    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
-    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
-    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
-    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
-    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
-    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
-    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
-    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
-    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
-    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
-    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
-    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
-    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
-    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
-    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
-    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos' },
-    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
-    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
-    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
-    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
-    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
-    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
-    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
-    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
-    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
-    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
-    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
-    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
- ];
+    { id: 'superficies_irregulares', label: 'Superficies irregulares', control: 'Uso de botas de seguridad con suela antideslizante. Controlar escapes, derrames o goteras sobre los sitios de desplazamiento. Limpiar de inmediato cualquier líquido que se derrame en el piso. Caminar con precaución. No cargar piezas o equipos que limiten la vista. Respetar la señalización. Transitar con precaución verificando rutas de tránsito; no pasar donde haya presencia de materiales u obstáculos; mantener el área ordenada.' },
+    { id: 'superficies_deslizantes', label: 'Superficies deslizantes', control: 'Al subir o bajar escaleras utilizar todos los peldaños y sujetarse del pasamanos; mantener los tres puntos de apoyo; ascender y descender pausadamente.' },
+    { id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel', control: 'No caminar hacia atrás. No acercarse a los vacíos existentes cerca al área de trabajo. Informar cualquier condición de inseguridad que observe en las áreas de trabajo.' },
+    { id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado', control: 'Hacer uso de los elementos de prevención y protección contra caídas, diligenciar permiso de trabajo en alturas si se supera el 2,0 metros.' },
+    { id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo', control: 'Si esta catalogado como espacio confinado, aplica permiso de trabajo en espacio confinado, aplique las medidas de prevención y protección definidas por la empesa' },
+    { id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación', control: 'Uso de reflectores y/o lámparas en áreas con iluminación deficiente y en trabajo nocturno. Informar al dueño de área ausencia o daño de iluminación artificial. Usar gafas claras todo el tiempo en caso de luz deficiente. Permanecer únicamente en el sitio autorizado de trabajo.' },
+    { id: 'exceso_iluminacion', label: 'Exceso de iluminación', control: 'En trabajos en el exterior, uso de gafas oscuras en caso de exceso de iluminación; evitar cambios bruscos de iluminación (deslumbramientos)' },
+    { id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)', control: 'Usar de manera permanente protección auditiva tipo copa o de inserción y no retirarlo durante toda la tarea.' },
+    { id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes', control: 'Usar de manera permanente guantes de protección, uso de ropa manga larga, identificar con señalización o superficies calientes' },
+    { id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura', control: 'Utilizar yelmo de soldar o la pantalla de mano siempre que se suelde, no mira nunca directamente al arco voltaico, no pique el cordón de soldadura sin protección ocular' },
+    { id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas', control: 'Uso permanente de protección respiratoria de acuerdo al tipo de exposición. En caso de uso de mascarilla con filtros, verificar que se usen los adecuados para el tipo de agente químico (gas, vapor, humo, material particulado, polvos, nieblas, rocíos, etc.)' },
+    { id: 'material_particulado', label: 'Material particulado', control: 'Realizar mantenimiento periódico de la mascarilla y hacer el cambio cuando sea necesario. Asegurar el sello efectivo de la mascarilla media cara al contacto con la piel.' },
+    { id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas', control: 'Uso de elementos de protección personal de acuerdo a la FDS Ficha de Datos de Seguridad, disponer en sitio de las medidas de protección señaladas en la Ficha en caso de contacto accidental' },
+    { id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos', control: 'Definir un plan de emergencia en caso de derrame o fuga de productos químicos, contar con kit antiderrames y elementos de protección personal aocrdes al producto químico que se este usando' },
+    { id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos', control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual' },
+    { id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento', control: 'Mantener protecciones como guardas y dispositivos instalados en el equipo, no posicionar segmentos corporales en áreas de peligros, por ningún motivo violar una guarda de seguridad' },
+    { id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos', control: 'Uso de equipos y herramientas eléctricas en condiciones operativas que no exponen al trabajador a riesgos, realizar inspección preoperacional' },
+    { id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio', control: 'Señalización en sitio de trabajo, personal con paleta de pare y siga acompañando el desplazamiento por vías internas, manejo de trafico y control de senderos peatonas' },
+    { id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos', control: 'Pausas activas durante la jornada laboral, rotación de personal para realizar la labor en jornada prolongadas donde se exponga a vibraciones' },
+    { id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades', control: 'Orden y aseo en el lugar de trabajo, evitar la acumulación de agua que pueda ser foco de proliferación de vectores' },
+    { id: 'contaminacion_biologica', label: 'Contaminación biológica', control: 'Prevenir y contener derrames de productos peligros, ubicación y disposición de kit de contención de derrames' },
+    { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento seguro' },
+    { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
+    { id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)', control: 'Realizar calentamiento previo al inicio de las actividades (ejercicios pre-laborales); Tomar pausas activas. Higiene postural. Realizar cambios periódicos de actividad dentro de la tarea a ejecutar.' },
+    { id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)', control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.' },
+    { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
+    { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
+    { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
+    { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
+  ];
 
  const anexoAlturaAspectos = [
     { id: 'afiliacionVigente', label: 'A. EL PERSONAL EJECUTANTE DE LA ACTIVIDAD TIENE LA AFILIACIÓN VIGENTE A SEGURIDAD SOCIAL? '},
@@ -542,7 +542,14 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     drawSectionTitle('ANÁLISIS DE TRABAJO SEGURO (ATS)');
     const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
     if (activeRisks.length > 0) {
-      const riskRows = activeRisks.map(r => [`[X] ${r.label}`]);
+      const riskRows = activeRisks.map(r => {
+        return [[
+          { content: `[X] ${r.label}`, styles: { fontStyle: 'bold', fontSize: 7 } }
+        ], [
+          { content: `CONTROL: ${r.control}`, styles: { fontSize: 6, cellPadding: { top: 0, right: 1, bottom: 2, left: 1 } } }
+        ]];
+      }).flat();
+
       autoTable(doc, {
         startY: yPos,
         body: riskRows,
@@ -1073,10 +1080,18 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
  
 
  const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {
-    if (!acc[peligro.seccion]) {
-        acc[peligro.seccion] = [];
+    const categoria = atsPeligros.find(c => c.id === peligro.id)?.control ? 'CON_CONTROL' : 'SIN_CONTROL';
+    // Simplified categorization for demonstration
+    let seccion = 'OTROS';
+    const locativos = ['superficies_irregulares', 'superficies_deslizantes', 'diferencia_nivel', 'techos_mal_estado', 'espacios_reducidos'];
+    const fisicos = ['deficiencia_iluminacion', 'exceso_iluminacion', 'ruido_intermitente', 'contacto_superficies_calientes', 'exposicion_soldadura'];
+    if(locativos.includes(peligro.id)) seccion = 'LOCATIVOS';
+    if(fisicos.includes(peligro.id)) seccion = 'FÍSICOS';
+    
+    if (!acc[seccion]) {
+        acc[seccion] = [];
     }
-    acc[peligro.seccion].push(peligro);
+    acc[seccion].push(peligro);
     return acc;
  }, {} as {[key: string]: typeof atsPeligros});
 
@@ -1424,18 +1439,12 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
                             <Section title="1. Identificación de Peligros, Riesgos y Controles">
                                 <div className="space-y-4">
-                                {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
-                                    <div key={seccion}>
-                                        <h4 className="font-semibold text-gray-600 mb-2">{seccion}</h4>
-                                        <div className="pl-4 space-y-1">
-                                            {peligros.map(peligro => (
-                                                <RadioCheck 
-                                                  key={peligro.id} 
-                                                  label={peligro.label} 
-                                                  value={(permit.anexoATS?.peligros as any)?.[peligro.id]} 
-                                                />
-                                            ))}
-                                        </div>
+                                {atsPeligros.filter(p => permit.anexoATS?.peligros?.[p.id] === 'si').map(peligro => (
+                                    <div key={peligro.id} className="p-3 border rounded-md">
+                                        <p className="font-semibold">{peligro.label}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            <span className="font-bold text-primary">Control Recomendado:</span> {peligro.control}
+                                        </p>
                                     </div>
                                 ))}
                                 </div>
@@ -1838,3 +1847,4 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
+
