@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -259,7 +258,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
     { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
-    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
+    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR CHEQUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
     { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
     { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
@@ -322,7 +321,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   });
   
   // ✨ INSTRUCCIÓN: PEGA AQUÍ LA CADENA LARGA DEL LOGO BASE64 QUE GUARDASTE ✨
-  const logoBase64 = "PegaLaCadenaDeTextoDelLogoAquí...";
+  const logoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA50AAAL9CAYAAACorwKkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAMsAAADLAAShkWtsAAP+lSURB...";
 
   try {
     const doc = new jsPDF('p', 'mm', 'letter');
@@ -1487,7 +1486,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                         key={e.id}
                                         label={e.label}
                                         value={(permit.anexoAltura?.tipoEstructura as any)?.[e.id]}
-                                        spec={e.id === 'otros' ? (permit.anexoAltura?.tipoEstructura as any)?.otrosCual : undefined}
+                                        spec={e.id === 'otros' ? (permit.anexoAltura.tipoEstructura as any).otrosCual : undefined}
                                      />
                                  ))}
                              </div>
@@ -1834,4 +1833,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
