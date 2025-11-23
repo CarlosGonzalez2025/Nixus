@@ -1439,14 +1439,19 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
                             <Section title="1. Identificación de Peligros, Riesgos y Controles">
                                 <div className="space-y-4">
-                                {atsPeligros.filter(p => permit.anexoATS?.peligros?.[p.id] === 'si').map(peligro => (
-                                    <div key={peligro.id} className="p-3 border rounded-md">
-                                        <p className="font-semibold">{peligro.label}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            <span className="font-bold text-primary">Control Recomendado:</span> {peligro.control}
-                                        </p>
-                                    </div>
-                                ))}
+                                {atsPeligros.map(peligro => {
+                                    if (permit.anexoATS?.peligros?.[peligro.id] !== 'si') {
+                                        return null;
+                                    }
+                                    return (
+                                        <div key={peligro.id} className="p-3 border rounded-md bg-gray-50/50">
+                                            <p className="font-semibold text-gray-800">{peligro.label}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                <span className="font-bold text-primary">Control Recomendado:</span> {peligro.control}
+                                            </p>
+                                        </div>
+                                    );
+                                })}
                                 </div>
                             </Section>
                             <Section title="2. EPP Requeridos" className="mt-6">
@@ -1849,3 +1854,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 }
 
 
+
+
+    

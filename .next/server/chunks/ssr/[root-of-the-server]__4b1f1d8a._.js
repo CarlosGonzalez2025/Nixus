@@ -1253,7 +1253,7 @@ function PermitDetailPage({ params }) {
         },
         {
             id: 'espacios_reducidos',
-            label: 'Espacios reducidos de trabjo',
+            label: 'Espacios reducidos de trabajo',
             control: 'Si esta catalogado como espacio confinado, aplica permiso de trabajo en espacio confinado, aplique las medidas de prevención y protección definidas por la empesa'
         },
         {
@@ -1268,7 +1268,7 @@ function PermitDetailPage({ params }) {
         },
         {
             id: 'ruido_intermitente',
-            label: 'Ruido (Intermitente/Continuo/Impacto)',
+            label: 'Ruido (Intermitente/Continuo)',
             control: 'Usar de manera permanente protección auditiva tipo copa o de inserción y no retirarlo durante toda la tarea.'
         },
         {
@@ -1303,11 +1303,11 @@ function PermitDetailPage({ params }) {
         },
         {
             id: 'proyeccion_particulas',
-            label: 'Proyección de particulas y frecmentos',
+            label: 'Proyección de particulas y fragmentos',
             control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual'
         },
         {
-            id: 'mecanismos_movimiento',
+            id: 'mecanismo_movimiento',
             label: 'Mecanismos en movimiento',
             control: 'Mantener protecciones como guardas y dispositivos instalados en el equipo, no posicionar segmentos corporales en áreas de peligros, por ningún motivo violar una guarda de seguridad'
         },
@@ -1353,7 +1353,7 @@ function PermitDetailPage({ params }) {
         },
         {
             id: 'carga_dinamica',
-            label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)',
+            label: 'Carga Dinámica (Esfuerzo, Movilización de cargas, Movimientos repetitivos / repetidos)',
             control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.'
         },
         {
