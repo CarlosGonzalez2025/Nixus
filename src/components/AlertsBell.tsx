@@ -1,8 +1,7 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { collection, query, where, onSnapshot, QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, QueryConstraint, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -30,9 +29,16 @@ export function AlertsBell() {
     let unsubscribeDrafts = () => {};
 
     // --- Alertas para permisos que requieren acción (firma/aprobación) ---
-    // Solo para roles que aprueban. Solicitantes ven sus borradores.
-    if (user.role === 'autorizante' || user.role === 'lider_sst' || user.role === 'mantenimiento' || user.role === 'admin') {
-      const alertsQuery = query(collection(db, 'permits'), where('status', '==', 'pendiente_revision'));
+    // Solo para roles que aprueban.
+    const isApprover = ['autorizante', 'lider_sst', 'mantenimiento', 'admin'].includes(user.role || '');
+
+    if (isApprover) {
+      const alertsQuery = query(
+        collection(db, 'permits'), 
+        where('status', '==', 'pendiente_revision'),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
       unsubscribeAlerts = onSnapshot(alertsQuery, (snapshot) => {
         const pendingPermits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Permit));
         setAlerts(pendingPermits);
@@ -42,9 +48,16 @@ export function AlertsBell() {
     }
 
     // --- Alertas para borradores pendientes del usuario actual ---
-    // Solo para el creador del permiso.
-    if (user.role === 'solicitante' || user.role === 'lider_tarea' || user.role === 'admin') {
-      const draftsQuery = query(collection(db, 'permits'), where('createdBy', '==', user.uid), where('status', '==', 'borrador'));
+    // Para roles que pueden crear permisos.
+    const canCreate = ['solicitante', 'lider_tarea', 'admin'].includes(user.role || '');
+    if (canCreate) {
+      const draftsQuery = query(
+          collection(db, 'permits'), 
+          where('createdBy', '==', user.uid), 
+          where('status', '==', 'borrador'),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+      );
       unsubscribeDrafts = onSnapshot(draftsQuery, (snapshot) => {
         const pendingDrafts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Permit));
         setDrafts(pendingDrafts);
