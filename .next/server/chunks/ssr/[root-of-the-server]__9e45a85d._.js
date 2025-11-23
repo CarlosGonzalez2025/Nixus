@@ -341,7 +341,7 @@ const getWorkTypesString = (permit)=>{
     return selectedTypes.join(', ');
 };
 const getStatusText = (status)=>{
-    const statusText = {
+    const statusText1 = {
         'borrador': 'Borrador',
         'pendiente_revision': 'Pendiente de Revisión',
         'aprobado': 'Aprobado',
@@ -350,7 +350,7 @@ const getStatusText = (status)=>{
         'cerrado': 'Cerrado',
         'rechazado': 'Rechazado'
     };
-    return statusText[status] || status;
+    return statusText1[status] || status;
 };
 const signatureRoles = {
     coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
@@ -549,55 +549,62 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 userEmpresa: user.empresa
             };
             updateData[`approvals.${role}`] = approvalData;
+            const permitDocBefore = await docRef.get();
+            const permitBeforeData = permitDocBefore.data();
             if (signatureType === 'firmaApertura') {
+                const validationPayload = {
+                    dia: 1,
+                    nombre: user.displayName || '',
+                    firma: signatureDataUrl,
+                    fecha: new Date().toISOString()
+                };
                 if (role === 'solicitante') {
-                    const permitDocBefore = await docRef.get();
-                    const permitBeforeData = permitDocBefore.data();
                     if (permitBeforeData && permitBeforeData.status === 'borrador') {
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
                     }
-                    // Auto-llenar validación diaria
-                    const validationPayload = {
-                        dia: 1,
-                        nombre: user.displayName || '',
-                        firma: signatureDataUrl,
-                        fecha: new Date().toISOString()
-                    };
+                    // Auto-llenar validación diaria del responsable
                     [
                         'anexoAltura',
                         'anexoConfinado',
                         'anexoIzaje',
                         'anexoExcavaciones'
                     ].forEach((anexo)=>{
-                        if (permitBeforeData && permitBeforeData[anexo]) {
+                        if (permitBeforeData?.[anexo]) {
                             const currentValidations = permitBeforeData[anexo].validacion?.responsable || [];
                             currentValidations[0] = validationPayload;
                             updateData[`${anexo}.validacion.responsable`] = currentValidations;
                         }
                     });
                 } else if (role === 'autorizante') {
-                    const permitBeforeData = (await docRef.get()).data();
-                    // Auto-llenar validación diaria
-                    const validationPayload = {
-                        dia: 1,
-                        nombre: user.displayName || '',
-                        firma: signatureDataUrl,
-                        fecha: new Date().toISOString()
-                    };
+                    // Auto-llenar validación diaria de la autoridad
                     [
                         'anexoAltura',
                         'anexoConfinado',
                         'anexoIzaje',
                         'anexoExcavaciones'
                     ].forEach((anexo)=>{
-                        if (permitBeforeData && permitBeforeData[anexo]) {
+                        if (permitBeforeData?.[anexo]) {
                             const currentValidations = permitBeforeData[anexo].validacion?.autoridad || [];
                             currentValidations[0] = validationPayload;
                             updateData[`${anexo}.validacion.autoridad`] = currentValidations;
                         }
                     });
+                    // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
+                    const updatedApprovals = {
+                        ...permitBeforeData?.approvals,
+                        [role]: approvalData
+                    };
+                    let allRequiredSignaturesDone = updatedApprovals.solicitante?.status === 'aprobado';
+                    if (permitBeforeData?.controlEnergia) {
+                        allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.mantenimiento?.status === 'aprobado';
+                    }
+                    // Se asume que si el autorizante firma, el solicitante ya lo hizo.
+                    // Si se cumplen las condiciones, se pone en ejecución.
+                    if (allRequiredSignaturesDone) {
+                        updateData['status'] = 'en_ejecucion';
+                    }
                 }
             }
         }
@@ -613,6 +620,15 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         for (const uid of involvedUsers){
             if (uid !== user.uid) {
                 await createNotification(uid, permitData, message, 'signature', user);
+            }
+        }
+        // Notificación adicional si el permiso se puso en ejecución
+        if (updateData['status'] === 'en_ejecucion') {
+            const executionMessage = `El permiso #${permitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
+            for (const uid of involvedUsers){
+                if (uid !== user.uid) {
+                    await createNotification(uid, permitData, executionMessage, 'approval', user);
+                }
             }
         }
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
@@ -656,7 +672,6 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
         };
         const triggeredBy = currentUser;
         let notificationType = 'status_change';
-        const statusText = getStatusText(status);
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
         if (status === 'aprobado') {
             notificationType = 'approval';

@@ -411,22 +411,16 @@ function CreatePermitWizard() {
     }
 
     if (currentLabel === 'Emergencias') {
-      const eppData = formData.eppEmergencias?.epp || {};
-      const missingSpecFields = eppItems
-        .filter(item => item.manual && eppData[item.id] === 'si')
-        .map(item => ({ item, specValue: eppData[`${item.id}_manual`] as string | undefined }))
-        .filter(({ specValue }) => !specValue || specValue.trim() === '')
-        .map(({ item }) => `'${item.label.replace(/:$/, '')}'`);
-    
-      if (missingSpecFields.length > 0) {
-        toast({
-          variant: "destructive",
-          title: "Especificación de EPP Requerida",
-          description: `Por favor, complete la especificación para: ${missingSpecFields.join(', ')}.`,
-          duration: 6000,
-        });
-        return false;
-      }
+        const { emergencias } = formData.eppEmergencias || {};
+        if (!emergencias || !Object.values(emergencias).some(value => value === 'si')) {
+            toast({
+                variant: "destructive",
+                title: "Validación Requerida en Manejo de Emergencias",
+                description: "Debe seleccionar 'SI' en al menos una opción de 'Notificación y Manejo de Emergencias' para continuar.",
+                duration: 6000,
+            });
+            return false;
+        }
     }
     
     if (currentLabel === 'Trabajadores') {
