@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -1833,4 +1834,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-```
