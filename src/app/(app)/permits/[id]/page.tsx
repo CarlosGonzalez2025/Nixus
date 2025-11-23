@@ -329,7 +329,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     description: 'Por favor, espere un momento.',
   });
   
-  // ✨ INSTRUCCIÓN: PEGA AQUÍ LA CADENA LARGA DEL LOGO BASE64 QUE GUARDASTE ✨
   const logoBase64 = "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE";
 
   try {
@@ -441,10 +440,10 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         const valRes = validationData?.responsable?.[idx];
         return [
           `DÍA ${idx + 1}`,
-          valAut?.nombre || '',
-          safeFormat(valAut?.fecha, 'dd/MM/yy'),
           valRes?.nombre || '',
-          safeFormat(valRes?.fecha, 'dd/MM/yy')
+          safeFormat(valRes?.fecha, 'dd/MM/yy'),
+          valAut?.nombre || '',
+          safeFormat(valAut?.fecha, 'dd/MM/yy')
         ];
       });
       
@@ -453,8 +452,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         head: [
           [
             { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-            { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } },
-            { content: 'RESPONSABLE', colSpan: 2, styles: { halign: 'center' } }
+            { content: 'RESPONSABLE', colSpan: 2, styles: { halign: 'center' } },
+            { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }
           ],
           ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']
         ],
@@ -936,8 +935,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
 
   const openDailyValidationSignatureDialog = (anexo: string, type: 'autoridad' | 'responsable', index: number) => {
     setDailyValidationTarget({ anexo, type, index });
-    setDailyValidationName('');
-    // ✨ CORRECCIÓN: Usar formato de fecha y hora
+    setDailyValidationName(currentUser?.displayName || '');
     setDailyValidationDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
     setIsDailyValidationSignatureOpen(true);
   };
@@ -1846,3 +1844,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
+
+
+    
