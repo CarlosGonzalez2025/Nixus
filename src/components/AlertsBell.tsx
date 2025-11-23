@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { Bell, FileSignature, CheckCircle, XCircle, FilePlus, Sparkles } from 'lucide-react';
+import { Bell, FileSignature, Sparkles, FilePlus } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -46,8 +46,8 @@ export function AlertsBell() {
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(20) // Limitar a las 20 notificaciones más recientes
+      // orderBy('createdAt', 'desc'), // Removido para evitar error de índice compuesto
+      limit(20)
     );
 
     const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
@@ -55,6 +55,10 @@ export function AlertsBell() {
         id: doc.id,
         ...doc.data()
       } as Notification));
+      
+      // Ordenar las notificaciones en el cliente
+      notifsData.sort((a, b) => (b.createdAt?.toDate()?.getTime() || 0) - (a.createdAt?.toDate()?.getTime() || 0));
+
       setNotifications(notifsData);
     }, (error) => {
       console.error("Error fetching notifications:", error);
