@@ -255,7 +255,7 @@ export async function addSignatureAndNotify(
         
         let updateData: { [key: string]: any } = {};
 
-        // ✨ CORRECCIÓN: Lógica para manejar firmas de aprobación y de cierre/cancelación
+        // Lógica para manejar firmas de aprobación y de cierre/cancelación
         if (role.startsWith('cierre_') || role === 'cancelacion') {
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
@@ -266,35 +266,55 @@ export async function addSignatureAndNotify(
                 ...existingClosureData,
                 firma: signatureDataUrl,
                 nombre: user.displayName,
-                fecha: FieldValue.serverTimestamp() // Guardar fecha y hora del servidor
+                fecha: FieldValue.serverTimestamp() 
             };
 
         } else {
-            const signaturePath = `approvals.${role}.${signatureType}`;
-            const statusPath = `approvals.${role}.status`;
-            
             const approvalData: Partial<Approval> = {
-                [signatureType as 'firmaApertura' | 'firmaCierre']: signatureDataUrl,
+                status: 'aprobado',
+                firmaApertura: signatureDataUrl,
                 userName: user.displayName,
                 userId: user.uid,
-                signedAt: FieldValue.serverTimestamp() as any, // ✨ CORRECCIÓN: Siempre guardar fecha y hora
+                signedAt: FieldValue.serverTimestamp() as any,
                 userRole: user.role,
                 userEmpresa: user.empresa
             }
             
-            if (signatureType === 'firmaApertura') {
-                approvalData.status = 'aprobado';
+            updateData[`approvals.${role}`] = approvalData;
 
+            if (signatureType === 'firmaApertura') {
                 if (role === 'solicitante') {
                     const permitDocBefore = await docRef.get();
-                    if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
-                      const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
-                      updateData['number'] = permitNumber;
-                      updateData['status'] = 'pendiente_revision';
+                    const permitBeforeData = permitDocBefore.data();
+                    if (permitBeforeData && permitBeforeData.status === 'borrador') {
+                        const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
+                        updateData['number'] = permitNumber;
+                        updateData['status'] = 'pendiente_revision';
                     }
+
+                    // Auto-llenar validación diaria
+                    const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
+                    ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
+                        if (permitBeforeData && permitBeforeData[anexo]) {
+                            const currentValidations = permitBeforeData[anexo].validacion?.responsable || [];
+                            currentValidations[0] = validationPayload;
+                            updateData[`${anexo}.validacion.responsable`] = currentValidations;
+                        }
+                    });
+
+                } else if (role === 'autorizante') {
+                    const permitBeforeData = (await docRef.get()).data();
+                     // Auto-llenar validación diaria
+                    const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
+                    ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
+                        if (permitBeforeData && permitBeforeData[anexo]) {
+                            const currentValidations = permitBeforeData[anexo].validacion?.autoridad || [];
+                            currentValidations[0] = validationPayload;
+                            updateData[`${anexo}.validacion.autoridad`] = currentValidations;
+                        }
+                    });
                 }
             }
-            updateData[`approvals.${role}`] = approvalData;
         }
         
         await docRef.update(updateData);
@@ -356,11 +376,11 @@ export async function updatePermitStatus(
 
         const permitDoc = await docRef.get();
         const permitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
-
-        const statusText = getStatusText(status);
+        
         const triggeredBy = currentUser;
         
         let notificationType: Notification['type'] = 'status_change';
+        const statusText = getStatusText(status);
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${statusText}.`;
 
         if (status === 'aprobado') {
@@ -373,7 +393,7 @@ export async function updatePermitStatus(
                 message += ` Motivo: ${reason}`;
             }
         } else if (status === 'cerrado') {
-            notificationType = 'cancellation'; // Using cancellation for close as per request
+            notificationType = 'cancellation'; // Using cancellation for close
             message = `${currentUser.displayName || 'Un usuario'} ha cerrado el permiso #${permitData.number}.`;
         }
         
@@ -416,7 +436,6 @@ ${permitUrl}`;
     }
 }
 
-// ✨ CORRECCIÓN: Se ajustó la función para ser más robusta y "reparar" datos antiguos.
 export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria) {
   if (!permitId || !anexoName || !validationType || index < 0 || !data) {
     return { success: false, error: 'Parámetros inválidos.' };
@@ -432,19 +451,16 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
 
     const anexoData = (permitData as any)[anexoName] || {};
     
-    // ✨ CORRECCIÓN: Si `validacion` no existe, crearlo.
     if (!anexoData.validacion) {
       anexoData.validacion = { autoridad: [], responsable: [] };
     }
     
-    // ✨ CORRECCIÓN: Si el array específico (autoridad/responsable) no existe, crearlo.
     if (!anexoData.validacion[validationType]) {
         anexoData.validacion[validationType] = [];
     }
 
     const validationArray = anexoData.validacion[validationType] as ValidacionDiaria[];
     
-    // ✨ CORRECCIÓN: Asegurarse de que el array tenga suficientes elementos.
     while (validationArray.length <= index) {
         validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
     }
@@ -483,14 +499,13 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
             return { success: false, error: 'Índice de trabajador inválido.' };
         }
 
-        // ✨ CORRECCIÓN: Añadir fecha y hora a la firma del trabajador
         const signatureField = signatureType === 'firmaApertura' ? 'firmaApertura' : 'firmaCierre';
         const dateField = signatureType === 'firmaApertura' ? 'fechaFirmaApertura' : 'fechaFirmaCierre';
 
         workers[workerIndex] = {
             ...workers[workerIndex],
             [signatureField]: signatureDataUrl,
-            [dateField]: new Date().toISOString(), // Guardar fecha y hora actual
+            [dateField]: new Date().toISOString(), 
         };
 
         await docRef.update({ workers: workers });

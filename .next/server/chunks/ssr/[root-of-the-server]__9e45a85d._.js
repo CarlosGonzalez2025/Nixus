@@ -541,17 +541,16 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         } else {
             const signaturePath = `approvals.${role}.${signatureType}`;
             const statusPath = `approvals.${role}.status`;
-            const userIdPath = `approvals.${role}.userId`;
-            const userNamePath = `approvals.${role}.userName`;
-            const signedAtPath = `approvals.${role}.signedAt`;
-            updateData = {
-                [signaturePath]: signatureDataUrl,
-                [`${userNamePath}`]: user.displayName,
-                [`${userIdPath}`]: user.uid,
-                [signedAtPath]: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
+            const approvalData = {
+                [signatureType]: signatureDataUrl,
+                userName: user.displayName,
+                userId: user.uid,
+                signedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
+                userRole: user.role,
+                userEmpresa: user.empresa
             };
             if (signatureType === 'firmaApertura') {
-                updateData[statusPath] = 'aprobado';
+                approvalData.status = 'aprobado';
                 if (role === 'solicitante') {
                     const permitDocBefore = await docRef.get();
                     if (permitDocBefore.exists && permitDocBefore.data()?.status === 'borrador') {
@@ -561,6 +560,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                     }
                 }
             }
+            updateData[`approvals.${role}`] = approvalData;
         }
         await docRef.update(updateData);
         const permitDoc = await docRef.get();
