@@ -473,13 +473,13 @@ ${permitUrl}`;
     }
 }
 
-export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria) {
-  if (!permitId || !anexoName || !validationType || index < 0 || !data) {
+export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria, user: User) {
+  if (!permitId || !anexoName || !validationType || index < 0 || !data || !user) {
     return { success: false, error: 'Parámetros inválidos.' };
   }
 
+  const docRef = adminDb.collection('permits').doc(permitId);
   try {
-    const docRef = adminDb.collection('permits').doc(permitId);
     const permitSnap = await docRef.get();
     if (!permitSnap.exists) {
       return { success: false, error: 'El permiso no existe.' };
@@ -507,6 +507,39 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     await docRef.update({
       [`${anexoName}.validacion.${validationType}`]: validationArray
     });
+
+    // --- Lógica de Notificación ---
+    const fullPermitData = { id: docRef.id, ...permitData } as Permit;
+    const anexoDisplayName = anexoName.replace('anexo', 'Anexo ');
+    const validationRoleName = validationType === 'autoridad' ? 'Autoridad del Área' : 'Responsable del Trabajo';
+    const day = index + 1;
+
+    // Notificaciones en la App y por Email
+    const message = `${user.displayName || 'Un usuario'} ha realizado la validación diaria (${validationRoleName}) para el DÍA ${day} del ${anexoDisplayName} en el permiso #${fullPermitData.number}.`;
+    const involvedUsers = await getInvolvedUsers(fullPermitData);
+    for (const uid of involvedUsers) {
+      if (uid !== user.uid) {
+        await createNotification(uid, fullPermitData, message, 'status_change', user);
+      }
+    }
+
+    // Notificación por WhatsApp
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+    const permitUrl = `${baseUrl}/permits/${permitId}`;
+    const whatsappMessage = `*Validación Diaria - SGPT* ✍️
+Se ha registrado una nueva firma de validación diaria.
+
+📄 *Permiso:* ${fullPermitData.number || 'N/A'}
+🗓️ *Día:* ${day}
+👤 *Firmante:* ${user.displayName || 'N/A'}
+✅ *Rol:* ${validationRoleName}
+📋 *Anexo:* ${anexoDisplayName}
+
+Puede ver los detalles aquí:
+${permitUrl}`;
+    
+    await sendWhatsAppNotification(whatsappMessage);
+
 
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
