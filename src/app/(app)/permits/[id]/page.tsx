@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -270,7 +270,7 @@ export default function PermitDetailPage() {
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
     { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
-    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
+    { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR CHE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
     { id: 'eppSeleccionadosCorrectamente', label: 'O. ESTÁN LOS ELEMENTOS DE PROTECCIÓN PERSONAL SELECCIONADOS TENIENDO EN CUENTA LOS RIESGOS Y REQUERIMIENTOS DE LA TAREA?' },
     { id: 'plataformaSoportaCarga', label: 'P.LA PLATAFORMA O ESTRUCTURA SOPORTA LA CARGA DE TRABAJO, ES FIRME Y SE EVITA LA CAÍDA DE OBJETOS O HERRAMIENTAS?' },
@@ -992,6 +992,13 @@ export default function PermitDetailPage() {
             role: currentUser.role,
             empresa: currentUser.empresa || 'N/A'
         };
+        
+        const essentialPermitData = {
+          id: permit.id,
+          number: permit.number,
+          isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
+          controlEnergia: permit.selectedWorkTypes.energia
+        };
 
         const result = await addSignatureAndNotify(
             permit.id,
@@ -1000,10 +1007,7 @@ export default function PermitDetailPage() {
             signatureDataUrl,
             simpleUser,
             signatureObservation,
-            {
-              isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
-              controlEnergia: permit.controlEnergia
-            }
+            essentialPermitData
         );
 
         if (result.success) {
@@ -1255,17 +1259,30 @@ export default function PermitDetailPage() {
   };
 
   useEffect(() => {
+    // Evita el bucle: solo actualiza si la acción es 'cierre' y los nombres no están ya establecidos
     if (closureAction === 'cierre' && permit) {
-      handleClosureFieldChange('responsable', {
-        ...permit.closure?.responsable,
-        nombre: permit.user?.displayName || ''
-      });
-      handleClosureFieldChange('autoridad', {
-        ...permit.closure?.autoridad,
-        nombre: permit.approvals?.autorizante?.userName || ''
-      });
+      const responsableName = permit.user?.displayName || '';
+      const autoridadName = permit.approvals?.autorizante?.userName || '';
+      
+      const updates: Partial<Permit['closure']> = {};
+      let needsUpdate = false;
+
+      if (permit.closure?.responsable?.nombre !== responsableName) {
+        updates.responsable = { ...permit.closure?.responsable, nombre: responsableName };
+        needsUpdate = true;
+      }
+
+      if (permit.closure?.autoridad?.nombre !== autoridadName) {
+        updates.autoridad = { ...permit.closure?.autoridad, nombre: autoridadName };
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        handleClosureFieldChange('responsable', updates.responsable || permit.closure?.responsable);
+        handleClosureFieldChange('autoridad', updates.autoridad || permit.closure?.autoridad);
+      }
     }
-  }, [closureAction, permit]);
+  }, [closureAction, permit?.user?.displayName, permit?.approvals?.autorizante?.userName]);
 
 
   if (loading || userLoading) {
