@@ -149,7 +149,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2
 ;
 ;
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
+    apiKey: ("TURBOPACK compile-time value", "YOUR_API_KEY"),
     authDomain: "sgpt-movil.firebaseapp.com",
     projectId: "sgpt-movil",
     storageBucket: "sgpt-movil.appspot.com",

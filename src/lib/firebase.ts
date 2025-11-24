@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, type QueryConstraint } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "sgpt-movil.firebaseapp.com",
   projectId: "sgpt-movil",
   storageBucket: "sgpt-movil.appspot.com",
