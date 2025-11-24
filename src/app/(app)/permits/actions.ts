@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -127,6 +127,9 @@ export async function createPermit(data: PermitCreateData) {
   if (!data.userId) {
     return { success: false, error: 'User not authenticated' };
   }
+   if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
 
   const { userId, userDisplayName, userEmail, userPhotoURL, ...permitData } = data;
 
@@ -202,6 +205,9 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
   if (!data.userId) {
     return { success: false, error: 'User not authenticated' };
   }
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
 
   const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
 
@@ -260,6 +266,9 @@ export async function addSignatureAndNotify(
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
+    }
+    if (!isAdminReady()) {
+      return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
     }
 
     try {
@@ -394,6 +403,9 @@ export async function updatePermitStatus(
     if (!permitId) {
         return { success: false, error: 'Permit ID is required.' };
     }
+    if (!isAdminReady()) {
+      return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+    }
 
     try {
         const docRef = adminDb.collection('permits').doc(permitId);
@@ -478,6 +490,10 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     return { success: false, error: 'Parámetros inválidos.' };
   }
 
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
   const docRef = adminDb.collection('permits').doc(permitId);
   try {
     const permitSnap = await docRef.get();
@@ -486,17 +502,12 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     }
     const permitData = permitSnap.data() as Permit;
 
-    const anexoData = (permitData as any)[anexoName] || {};
-    
-    if (!anexoData.validacion) {
-      anexoData.validacion = { autoridad: [], responsable: [] };
+    const anexoData = (permitData as any)[anexoName];
+    if (!anexoData || !anexoData.validacion) {
+      return { success: false, error: `El anexo ${anexoName} o su estructura de validación no existen en el permiso.` };
     }
     
-    if (!anexoData.validacion[validationType]) {
-        anexoData.validacion[validationType] = [];
-    }
-
-    const validationArray = anexoData.validacion[validationType] as ValidacionDiaria[];
+    const validationArray = (anexoData.validacion[validationType] as ValidacionDiaria[]) || [];
     
     while (validationArray.length <= index) {
         validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
@@ -504,9 +515,10 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
 
     validationArray[index] = data;
 
-    await docRef.update({
-      [`${anexoName}.validacion.${validationType}`]: validationArray
-    });
+    const updatePayload: { [key: string]: any } = {};
+    updatePayload[`${anexoName}.validacion.${validationType}`] = validationArray;
+    
+    await docRef.update(updatePayload);
 
     // --- Lógica de Notificación ---
     const fullPermitData = { id: docRef.id, ...permitData } as Permit;
@@ -553,6 +565,9 @@ ${permitUrl}`;
 export async function addWorkerSignature(permitId: string, workerIndex: number, signatureType: 'firmaApertura' | 'firmaCierre', signatureDataUrl: string) {
     if (!permitId || workerIndex < 0 || !signatureType || !signatureDataUrl) {
         return { success: false, error: 'Faltan parámetros.' };
+    }
+    if (!isAdminReady()) {
+      return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
     }
 
     const docRef = adminDb.collection('permits').doc(permitId);
