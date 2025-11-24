@@ -1,15 +1,14 @@
-
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, type QueryConstraint } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: "sgpt-movil.firebaseapp.com",
-  projectId: "sgpt-movil",
-  storageBucket: "sgpt-movil.appspot.com",
-  messagingSenderId: "1028768283486",
-  appId: "1:1028768283486:web:60831151e5488122961d76"
+  apiKey: "AIzaSyBJg_VunUjv_1S_-qziFHkPv1CWNcxDWv0",
+  authDomain: "studio-7636781267-6dc02.firebaseapp.com",
+  projectId: "studio-7636781267-6dc02",
+  storageBucket: "studio-7636781267-6dc02.appspot.com",
+  messagingSenderId: "322397935917",
+  appId: "1:322397935917:web:61f9840427f4dfa86c5ba4"
 };
 
 
