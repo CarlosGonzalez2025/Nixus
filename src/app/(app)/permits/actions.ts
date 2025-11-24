@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -13,6 +13,7 @@ config();
 // --- Funciones Auxiliares para Notificaciones ---
 
 const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
+  if (!isAdminReady()) return [];
   const userIds = new Set<string>();
 
   // 1. Creador del permiso
@@ -41,6 +42,7 @@ const createNotification = async (
   type: Notification['type'],
   triggeredBy: { uid: string, displayName: string | null }
 ) => {
+  if (!isAdminReady()) return;
   const notification = {
     userId,
     permitId: permit.id,
@@ -124,6 +126,9 @@ type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy'
 };
 
 export async function createPermit(data: PermitCreateData) {
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
   if (!data.userId) {
     return { success: false, error: 'User not authenticated' };
   }
@@ -199,6 +204,9 @@ ${permitUrl}`;
 }
 
 export async function savePermitDraft(data: PermitCreateData & { draftId?: string }) {
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
   if (!data.userId) {
     return { success: false, error: 'User not authenticated' };
   }
@@ -258,6 +266,9 @@ export async function addSignatureAndNotify(
   user: User,
   comments?: string
 ) {
+    if (!isAdminReady()) {
+        return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+    }
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
     }
@@ -391,6 +402,9 @@ export async function updatePermitStatus(
   reason?: string,
   closureData?: Partial<PermitClosure>
 ) {
+    if (!isAdminReady()) {
+        return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+    }
     if (!permitId) {
         return { success: false, error: 'Permit ID is required.' };
     }
@@ -474,6 +488,9 @@ ${permitUrl}`;
 }
 
 export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria) {
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
   if (!permitId || !anexoName || !validationType || index < 0 || !data) {
     return { success: false, error: 'Parámetros inválidos.' };
   }
@@ -518,6 +535,9 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
 }
 
 export async function addWorkerSignature(permitId: string, workerIndex: number, signatureType: 'firmaApertura' | 'firmaCierre', signatureDataUrl: string) {
+    if (!isAdminReady()) {
+        return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+    }
     if (!permitId || workerIndex < 0 || !signatureType || !signatureDataUrl) {
         return { success: false, error: 'Faltan parámetros.' };
     }

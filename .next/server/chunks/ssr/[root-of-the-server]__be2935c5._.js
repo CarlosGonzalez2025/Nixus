@@ -43,25 +43,23 @@ if (!apps.length) {
         const projectId = process.env.FIREBASE_PROJECT_ID;
         const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
         const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-        if (!projectId || !clientEmail || !privateKey) {
-            throw new Error('Missing Firebase Admin credentials in environment variables.');
+        // Solo intentar inicializar si las credenciales existen y no son placeholders
+        if (projectId && clientEmail && privateKey && privateKey !== 'YOUR_PRIVATE_KEY' && clientEmail !== 'YOUR_CLIENT_EMAIL') {
+            // Reemplazar los literales \n con saltos de línea reales
+            const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+            (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["initializeApp"])({
+                credential: (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["cert"])({
+                    projectId,
+                    clientEmail,
+                    privateKey: formattedPrivateKey
+                })
+            });
+            console.log('✅ Firebase Admin SDK inicializado correctamente.');
+        } else {
+            console.warn('⚠️ [Firebase Admin] Credenciales de administrador no configuradas en .env. Las funciones de servidor (Server Actions) que requieren acceso de administrador no funcionarán.');
         }
-        // Reemplazar los literales \n con saltos de línea reales
-        const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
-        (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["initializeApp"])({
-            credential: (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["cert"])({
-                projectId,
-                clientEmail,
-                privateKey: formattedPrivateKey
-            })
-        });
-        console.log('✅ Firebase Admin initialized successfully');
     } catch (error) {
-        console.error('❌ Error initializing Firebase Admin:', error);
-        // Don't throw in production, just log
-        if (("TURBOPACK compile-time value", "development") !== 'production') {
-            throw error;
-        }
+        console.error('❌ Error al inicializar Firebase Admin SDK:', error.message);
     }
 }
 const adminDb = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["getFirestore"])();
@@ -420,7 +418,7 @@ const createNotification = async (userId, permit, message, type, triggeredBy)=>{
         await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$email$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["sendPermitUpdateEmail"])({
             to: userEmail,
             subject: `Actualización en Permiso SGTC: ${permit.number || permit.id}`,
-            html: `<p>${message}</p><p>Puedes ver los detalles del permiso haciendo clic <a href="${("TURBOPACK compile-time value", "https://sgpt-movil.web.app")}/permits/${permit.id}">aquí</a>.</p>`
+            html: `<p>${message}</p><p>Puedes ver los detalles del permiso haciendo clic <a href="${("TURBOPACK compile-time value", "http://localhost:9003")}/permits/${permit.id}">aquí</a>.</p>`
         });
     }
 };
@@ -530,7 +528,7 @@ async function createPermit(data) {
             }
         }
         const workTypesText = getWorkTypesString(permitPayload);
-        const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
+        const baseUrl = ("TURBOPACK compile-time value", "http://localhost:9003") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${docRef.id}`;
         const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
 Se ha creado una nueva solicitud de permiso de trabajo.
@@ -803,7 +801,7 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
                 await createNotification(uid, permitData, message, notificationType, triggeredBy);
             }
         }
-        const baseUrl = ("TURBOPACK compile-time value", "https://sgpt-movil.web.app") || 'https://sgpt-movil.web.app';
+        const baseUrl = ("TURBOPACK compile-time value", "http://localhost:9003") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
         let messageBody = `*Actualización de Estado - SGPT* 🔄
 El estado del permiso *${permitData.number || permitId}* ha cambiado.

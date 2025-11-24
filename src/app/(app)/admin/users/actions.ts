@@ -2,7 +2,7 @@
 'use server';
 
 import { getAuth } from 'firebase-admin/auth';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import * as z from 'zod';
 import type { User, UserRole } from '@/types';
 
@@ -32,6 +32,9 @@ const updateFormSchema = z.object({
 
 
 export async function createUser(data: z.infer<typeof createFormSchema>) {
+  if (!isAdminReady()) {
+    return { error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
   try {
     const auth = getAuth();
     
@@ -69,6 +72,9 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
 }
 
 export async function updateUser(data: z.infer<typeof updateFormSchema>) {
+  if (!isAdminReady()) {
+    return { error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
   try {
     const auth = getAuth();
     
@@ -90,6 +96,9 @@ export async function updateUser(data: z.infer<typeof updateFormSchema>) {
 }
 
 export async function updateUserStatus(userId: string, disabled: boolean) {
+    if (!isAdminReady()) {
+        return { error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+    }
     try {
         const auth = getAuth();
         await auth.updateUser(userId, { disabled });

@@ -1,14 +1,15 @@
+
 'use server';
 
 import { Resend } from 'resend';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const fromEmail = process.env.FROM_EMAIL;
 
 let resend: Resend | null = null;
 
-if (resendApiKey && fromEmail) {
+if (resendApiKey && fromEmail && resendApiKey !== 'YOUR_API_KEY') {
   resend = new Resend(resendApiKey);
 } else {
   console.warn('⚠️ [Resend] API Key o correo de origen no configurado. Las notificaciones por email están deshabilitadas.');
@@ -47,6 +48,7 @@ export async function sendPermitUpdateEmail({ to, subject, html }: EmailParams) 
 }
 
 export async function getEmailForUser(userId: string): Promise<string | null> {
+  if (!isAdminReady()) return null;
   try {
     const userDoc = await adminDb.collection('users').doc(userId).get();
     if (userDoc.exists) {
