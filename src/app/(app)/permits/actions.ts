@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
+import { getEmailForUser, sendPermitUpdateEmail } from '@/lib/email';
 import { config } from 'dotenv';
 config();
 
@@ -51,6 +52,16 @@ const createNotification = async (
     triggeredBy,
   };
   await adminDb.collection('notifications').add(notification);
+  
+  // Enviar correo electrónico
+  const userEmail = await getEmailForUser(userId);
+  if (userEmail) {
+    await sendPermitUpdateEmail({
+      to: userEmail,
+      subject: `Actualización en Permiso SGTC: ${permit.number || permit.id}`,
+      html: `<p>${message}</p><p>Puedes ver los detalles del permiso haciendo clic <a href="${process.env.NEXT_PUBLIC_BASE_URL}/permits/${permit.id}">aquí</a>.</p>`
+    });
+  }
 };
 
 // --- Fin de Funciones de Notificaciones ---

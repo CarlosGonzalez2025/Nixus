@@ -224,37 +224,37 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   const [closureAction, setClosureAction] = useState<'cierre' | 'cancelacion' | null>(null);
 
 
- const atsPeligros = [
-    { id: 'superficies_irregulares', label: 'Superficies irregulares', control: 'Uso de botas de seguridad con suela antideslizante. Controlar escapes, derrames o goteras sobre los sitios de desplazamiento. Limpiar de inmediato cualquier líquido que se derrame en el piso. Caminar con precaución. No cargar piezas o equipos que limiten la vista. Respetar la señalización. Transitar con precaución verificando rutas de tránsito; no pasar donde haya presencia de materiales u obstáculos; mantener el área ordenada.' },
-    { id: 'superficies_deslizantes', label: 'Superficies deslizantes', control: 'Al subir o bajar escaleras utilizar todos los peldaños y sujetarse del pasamanos; mantener los tres puntos de apoyo; ascender y descender pausadamente.' },
-    { id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel', control: 'No caminar hacia atrás. No acercarse a los vacíos existentes cerca al área de trabajo. Informar cualquier condición de inseguridad que observe en las áreas de trabajo.' },
-    { id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado', control: 'Hacer uso de los elementos de prevención y protección contra caídas, diligenciar permiso de trabajo en alturas si se supera el 2,0 metros.' },
-    { id: 'espacios_reducidos', label: 'Espacios reducidos de trabajo', control: 'Si esta catalogado como espacio confinado, aplica permiso de trabajo en espacio confinado, aplique las medidas de prevención y protección definidas por la empesa' },
-    { id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación', control: 'Uso de reflectores y/o lámparas en áreas con iluminación deficiente y en trabajo nocturno. Informar al dueño de área ausencia o daño de iluminación artificial. Usar gafas claras todo el tiempo en caso de luz deficiente. Permanecer únicamente en el sitio autorizado de trabajo.' },
-    { id: 'exceso_iluminacion', label: 'Exceso de iluminación', control: 'En trabajos en el exterior, uso de gafas oscuras en caso de exceso de iluminación; evitar cambios bruscos de iluminación (deslumbramientos)' },
-    { id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo)', control: 'Usar de manera permanente protección auditiva tipo copa o de inserción y no retirarlo durante toda la tarea.' },
-    { id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes', control: 'Usar de manera permanente guantes de protección, uso de ropa manga larga, identificar con señalización o superficies calientes' },
-    { id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura', control: 'Utilizar yelmo de soldar o la pantalla de mano siempre que se suelde, no mira nunca directamente al arco voltaico, no pique el cordón de soldadura sin protección ocular' },
-    { id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas', control: 'Uso permanente de protección respiratoria de acuerdo al tipo de exposición. En caso de uso de mascarilla con filtros, verificar que se usen los adecuados para el tipo de agente químico (gas, vapor, humo, material particulado, polvos, nieblas, rocíos, etc.)' },
-    { id: 'material_particulado', label: 'Material particulado', control: 'Realizar mantenimiento periódico de la mascarilla y hacer el cambio cuando sea necesario. Asegurar el sello efectivo de la mascarilla media cara al contacto con la piel.' },
-    { id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas', control: 'Uso de elementos de protección personal de acuerdo a la FDS Ficha de Datos de Seguridad, disponer en sitio de las medidas de protección señaladas en la Ficha en caso de contacto accidental' },
-    { id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos', control: 'Definir un plan de emergencia en caso de derrame o fuga de productos químicos, contar con kit antiderrames y elementos de protección personal aocrdes al producto químico que se este usando' },
-    { id: 'proyeccion_particulas', label: 'Proyección de particulas y fragmentos', control: 'Uso obligatorio y permanente de elementos de protección individual, protección fácil y visual' },
-    { id: 'mecanismo_movimiento', label: 'Mecanismos en movimiento', control: 'Mantener protecciones como guardas y dispositivos instalados en el equipo, no posicionar segmentos corporales en áreas de peligros, por ningún motivo violar una guarda de seguridad' },
-    { id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos', control: 'Uso de equipos y herramientas eléctricas en condiciones operativas que no exponen al trabajador a riesgos, realizar inspección preoperacional' },
-    { id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio', control: 'Señalización en sitio de trabajo, personal con paleta de pare y siga acompañando el desplazamiento por vías internas, manejo de trafico y control de senderos peatonas' },
-    { id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos', control: 'Pausas activas durante la jornada laboral, rotación de personal para realizar la labor en jornada prolongadas donde se exponga a vibraciones' },
-    { id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades', control: 'Orden y aseo en el lugar de trabajo, evitar la acumulación de agua que pueda ser foco de proliferación de vectores' },
-    { id: 'contaminacion_biologica', label: 'Contaminación biológica', control: 'Prevenir y contener derrames de productos peligros, ubicación y disposición de kit de contención de derrames' },
-    { id: 'accidente_incidente_vial', label: 'Accidente o incidente vial', control: 'Para el transito peatonal hacer uso de las vias definidas por la empresa para el desplazamiento seguro' },
-    { id: 'atropellamiento_personas', label: 'Atropellamiento a personas', control: 'Respatar los limites de velocidad definidos por Italcol de 10 Km/h, no usar dispostivos de comunicación como telefono celular.' },
-    { id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)', control: 'Realizar calentamiento previo al inicio de las actividades (ejercicios pre-laborales); Tomar pausas activas. Higiene postural. Realizar cambios periódicos de actividad dentro de la tarea a ejecutar.' },
-    { id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzo, Movilización de cargas, Movimientos repetitivos / repetidos)', control: 'No levantar cargas superiores a 25 kg (hombres) / 12.5Kg (mujeres) de peso; levantar una carga a la vez, en piezas pesadas y/o voluminosas, hacer el movimiento entre 2 personas. Aplicar técnicas de levantamiento de cargas, manteniendo la espalda recta y flexionando las piernas, busque siempre primero ayudas mecánicas.' },
-    { id: 'generacion_residuos', label: 'Generación de residuos escombros', control: 'ReaIizar la separación y disponer de acuerdo a la clasificación de colores definida por Italcol , disposición de residuos fuera de las instalaciones de acuerdo al marco normativo definido' },
-    { id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades', control: 'Uso eficiente de recursos, eliminación de fugas de agua, prevenir y contener derrames de productos peligrosos.' },
-    { id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo', control: 'Uso de mezcladora o recipiente para evitar la mezcla en piso, de no ser posible utilizar una barrera fisica que aisle los materiales de cosntroccuón de las superficies y sirvan como mecaniosmo de contención.' },
-    { id: 'emisiones_material_particulado', label: 'Emisiones de material particulado', control: 'Cubrir materiales que puedan generar material particulado o barreras fisicas que mitiguen la generación al medio ambiente' },
-  ];
+  const atsPeligros = [
+    { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
+    { seccion: 'LOCATIVOS', id: 'superficies_deslizantes', label: 'Superficies deslizantes' },
+    { seccion: 'LOCATIVOS', id: 'diferencia_nivel', label: 'Superficies con diferencia de nivel' },
+    { seccion: 'LOCATIVOS', id: 'techos_mal_estado', label: 'Techos, muros, pisos o paredes en mas estado' },
+    { seccion: 'LOCATIVOS', id: 'espacios_reducidos', label: 'Espacios reducidos de trabjo' },
+    { seccion: 'FÍSICOS', id: 'deficiencia_iluminacion', label: 'Deficiencia de iluminación' },
+    { seccion: 'FÍSICOS', id: 'exceso_iluminacion', label: 'Exceso de iluminación' },
+    { seccion: 'FÍSICOS', id: 'ruido_intermitente', label: 'Ruido (Intermitente/Continuo/Impacto)' },
+    { seccion: 'FÍSICOS', id: 'contacto_superficies_calientes', label: 'Contacto con superficies calientes' },
+    { seccion: 'FÍSICOS', id: 'exposicion_soldadura', label: 'Exposición a arco de soldadura' },
+    { seccion: 'QUÍMICOS', id: 'gases_humos_vapores', label: 'Gases, humos, vapores y neblinas' },
+    { seccion: 'QUÍMICOS', id: 'material_particulado', label: 'Material particulado' },
+    { seccion: 'QUÍMICOS', id: 'contacto_sustancias_peligrosas', label: 'Uso o contacto con materiales o sustancias peligrosas' },
+    { seccion: 'QUÍMICOS', id: 'derrame_productos_quimicos', label: 'Derrame o fugas de Productos Químicos' },
+    { seccion: 'MECÁNICOS', id: 'proyeccion_particulas', label: 'Proyección de particulas y frecmentos' },
+    { seccion: 'MECÁNICOS', id: 'mecanismos_movimiento', label: 'Mecanismos en movimiento' },
+    { seccion: 'MECÁNICOS', id: 'manejo_herramientas', label: 'Manejo de herrramienta o equipos electricos' },
+    { seccion: 'MECÁNICOS', id: 'movimiento_equipos_pesados', label: 'Movimiento de equipos de trabajo pesado en sitio' },
+    { seccion: 'MECÁNICOS', id: 'exposicion_vibraciones', label: 'Exposición a vibraciones por equipos' },
+    { seccion: 'BIOLÓGICOS', id: 'exposicion_vectores', label: 'Exposición a vectores transmisión de enfermedades' },
+    { seccion: 'BIOLÓGICOS', id: 'contaminacion_biologica', label: 'Contaminación biológica' },
+    { seccion: 'VIAL', id: 'accidente_incidente_vial', label: 'Accidente o incidente vial' },
+    { seccion: 'VIAL', id: 'atropellamiento_personas', label: 'Atropellamiento a personas' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_estatica', label: 'Carga Estática (Posturas inadecuadas, prolongadas, forzadas, antigravitación)' },
+    { seccion: 'BIOMECÁNICOS', id: 'carga_dinamica', label: 'Carga Dinámica (Esfuerzos, Movilización de cargas, Movimientos repetitivos / repetidos)' },
+    { seccion: 'AMBIENTALES', id: 'generacion_residuos', label: 'Generación de residuos escombros' },
+    { seccion: 'AMBIENTALES', id: 'consumo_agua', label: 'Consumo de agua en grandes cantidades' },
+    { seccion: 'AMBIENTALES', id: 'mezcla_concreto', label: 'Mezcla de concreto en suelo' },
+    { seccion: 'AMBIENTALES', id: 'emisiones_material_particulado', label: 'Emisiones de material particulado' },
+ ];
 
  const anexoAlturaAspectos = [
     { id: 'afiliacionVigente', label: 'A. EL PERSONAL EJECUTANTE DE LA ACTIVIDAD TIENE LA AFILIACIÓN VIGENTE A SEGURIDAD SOCIAL? '},
@@ -321,434 +321,643 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
   
   // ✅ Función handleExportToPDF corregida
   const handleExportToPDF = async () => {
-  if (!permit) {
-    toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
-    return;
-  }
-
-  toast({
-    title: 'Generando PDF...',
-    description: 'Por favor, espere un momento.',
-  });
+    if (!permit) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
+      return;
+    }
   
-  const logoBase64 = "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE";
-
-  try {
-    const doc = new jsPDF('p', 'mm', 'letter');
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 10;
-    let yPos = margin;
-
-    // Colores corporativos
-    const italcolOrange = [239, 123, 0];
-
-    // ===== FUNCIONES HELPER =====
+    toast({
+      title: 'Generando PDF...',
+      description: 'Por favor, espere un momento.',
+    });
     
-    const checkPageBreak = (neededHeight: number) => {
-      if (yPos + neededHeight > pageHeight - margin) {
-        doc.addPage();
-        yPos = margin;
-      }
-    };
-
-    const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
-      // Logo
-      try {
-        if (logoBase64 !== "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE") {
-          doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
-        } else {
-           doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-           doc.rect(margin, yPos, 30, 20, 'F');
+    const logoBase64 = "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE";
+  
+    try {
+      const doc = new jsPDF('p', 'mm', 'letter');
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 10;
+      let yPos = margin;
+  
+      // Colores corporativos
+      const italcolOrange = [239, 123, 0];
+  
+      // ===== FUNCIONES HELPER =====
+      
+      const checkPageBreak = (neededHeight: number) => {
+        if (yPos + neededHeight > pageHeight - margin) {
+          doc.addPage();
+          yPos = margin;
         }
-      } catch (e) {
-        console.error('Error al cargar logo:', e);
-        doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-        doc.rect(margin, yPos, 30, 20, 'F');
-      }
-
-      // Título
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
-
-      // Código y versión
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
-      doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
-
-      // Línea separadora naranja
-      doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-      doc.setLineWidth(1);
-      doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
-      
-      yPos += 30;
-    };
-
-    const drawSectionTitle = (title: string) => {
-      checkPageBreak(12);
-      doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-      doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title.toUpperCase(), pageWidth / 2, yPos + 4, { align: 'center' });
-      yPos += 8;
-      doc.setTextColor(0, 0, 0);
-    };
-    
-    const safeFormat = (date: any, fmt: string) => {
-      const parsedDate = parseFirestoreDate(date);
-      return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
-    };
-
-    const drawSignatureBox = (roleTitle: string, approval: any, x: number, y: number, width: number, height: number) => {
-      doc.rect(x, y, width, height);
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'bold');
-      doc.text(roleTitle, x + 2, y + 3);
-      
-      if (approval?.status === 'aprobado') {
-        doc.setFont('helvetica', 'normal');
-        doc.text(approval.userName || '', x + 2, y + 8);
-        
-        // Intentar agregar firma
-        if (approval.firmaApertura) {
-          try {
-            doc.addImage(approval.firmaApertura, 'PNG', x + 5, y + 10, 40, 15);
-          } catch (e) {
-            console.error(`Error adding signature for ${roleTitle}:`, e);
-            doc.setFontSize(5);
-            doc.text('[Firma no disponible]', x + 5, y + 15);
+      };
+  
+      const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
+        // Logo
+        try {
+          if (logoBase64 !== "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE") {
+            doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
+          } else {
+             doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+             doc.rect(margin, yPos, 30, 20, 'F');
           }
+        } catch (e) {
+          console.error('Error al cargar logo:', e);
+          doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+          doc.rect(margin, yPos, 30, 20, 'F');
         }
-        
-        doc.setFontSize(6);
-        doc.text(safeFormat(approval.signedAt, 'dd/MM/yy HH:mm'), x + 2, y + 28);
-      } else {
+  
+        // Título
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), pageWidth / 2, yPos + 12, { align: 'center' });
+  
+        // Código y versión
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
+        doc.text(`Código: ${code}`, pageWidth - margin, yPos + 8, { align: 'right' });
+        doc.text(`Versión: ${version}`, pageWidth - margin, yPos + 13, { align: 'right' });
+  
+        // Línea separadora naranja
+        doc.setDrawColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+        doc.setLineWidth(1);
+        doc.line(margin, yPos + 26, pageWidth - margin, yPos + 26);
+        
+        yPos += 30;
+      };
+  
+      const drawSectionTitle = (title: string) => {
+        checkPageBreak(12);
+        doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+        doc.rect(margin, yPos, pageWidth - (2 * margin), 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), pageWidth / 2, yPos + 4, { align: 'center' });
+        yPos += 8;
+        doc.setTextColor(0, 0, 0);
+      };
+      
+      const safeFormat = (date: any, fmt: string) => {
+        const parsedDate = parseFirestoreDate(date);
+        return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
+      };
+  
+      const drawSignatureBox = (roleTitle: string, approval: any, x: number, y: number, width: number, height: number) => {
+        doc.rect(x, y, width, height);
         doc.setFontSize(6);
-        doc.text('Pendiente', x + 2, y + 15);
-      }
-    };
-
-    const drawDailyValidationTable = (validationData: any, permitDuration: number) => {
-        checkPageBreak(50);
-        drawSectionTitle("VALIDACIÓN DIARIA");
-
-        const bodyData = Array.from({ length: permitDuration }, (_, idx) => {
-            const valRes = validationData?.responsable?.[idx];
-            const valAut = validationData?.autoridad?.[idx];
-            return [
-                `DÍA ${idx + 1}`,
-                valRes?.nombre || '',
-                safeFormat(valRes?.fecha, 'dd/MM/yy'),
-                valAut?.nombre || '',
-                safeFormat(valAut?.fecha, 'dd/MM/yy')
-            ];
-        });
-
-        // Responsable a la izquierda, Autoridad a la derecha
-        autoTable(doc, {
-            startY: yPos,
-            head: [
-                [
-                    { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
-                    { content: 'RESPONSABLE DEL TRABAJO', colSpan: 2, styles: { halign: 'center' } },
-                    { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }
-                ],
-                ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']
-            ],
-            body: bodyData,
-            theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1 },
-            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
-            didDrawCell: (data) => {
-              if (data.section === 'body') {
-                const valRes = validationData?.responsable?.[data.row.index];
-                const valAut = validationData?.autoridad?.[data.row.index];
-                if (data.column.index === 1 && valRes?.firma) { // Columna de Nombre Responsable
-                  try { doc.addImage(valRes.firma, 'PNG', data.cell.x + 2, data.cell.y + 2, 15, 7); } catch(e){}
-                }
-                if (data.column.index === 3 && valAut?.firma) { // Columna de Nombre Autoridad
-                   try { doc.addImage(valAut.firma, 'PNG', data.cell.x + 2, data.cell.y + 2, 15, 7); } catch(e){}
-                }
-              }
+        doc.setFont('helvetica', 'bold');
+        doc.text(roleTitle, x + 2, y + 3);
+        
+        if (approval?.status === 'aprobado') {
+          doc.setFont('helvetica', 'normal');
+          doc.text(approval.userName || '', x + 2, y + 8);
+          
+          // Intentar agregar firma
+          if (approval.firmaApertura) {
+            try {
+              doc.addImage(approval.firmaApertura, 'PNG', x + 5, y + 10, 40, 15);
+            } catch (e) {
+              console.error(`Error adding signature for ${roleTitle}:`, e);
+              doc.setFontSize(5);
+              doc.text('[Firma no disponible]', x + 5, y + 15);
             }
-        });
-        yPos = (doc as any).lastAutoTable.finalY + 5;
-    };
-
-
-    // Calcular duración del permiso
-    let permitDuration = 1;
-    if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
-      try {
-        const startDate = parseISO(permit.generalInfo.validFrom);
-        const endDate = parseISO(permit.generalInfo.validUntil);
-        if (isValid(startDate) && isValid(endDate)) {
-          permitDuration = differenceInCalendarDays(endDate, startDate) + 1;
+          }
+          
+          doc.setFontSize(6);
+          doc.text(safeFormat(approval.signedAt, 'dd/MM/yy HH:mm'), x + 2, y + 28);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6);
+          doc.text('Pendiente', x + 2, y + 15);
         }
-      } catch (e) {
-        console.error("Error parsing dates:", e);
+      };
+  
+      const drawDailyValidationTable = (validationData: any, permitDuration: number) => {
+          checkPageBreak(50);
+          drawSectionTitle("VALIDACIÓN DIARIA");
+  
+          const bodyData = Array.from({ length: permitDuration }, (_, idx) => {
+              const valRes = validationData?.responsable?.[idx];
+              const valAut = validationData?.autoridad?.[idx];
+              return [
+                  `DÍA ${idx + 1}`,
+                  valRes?.nombre || '',
+                  safeFormat(valRes?.fecha, 'dd/MM/yy'),
+                  valAut?.nombre || '',
+                  safeFormat(valAut?.fecha, 'dd/MM/yy')
+              ];
+          });
+  
+          autoTable(doc, {
+              startY: yPos,
+              head: [
+                  [
+                      { content: 'DÍA', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+                      { content: 'RESPONSABLE DEL TRABAJO', colSpan: 2, styles: { halign: 'center' } },
+                      { content: 'AUTORIDAD DEL ÁREA', colSpan: 2, styles: { halign: 'center' } }
+                  ],
+                  ['NOMBRE', 'FECHA', 'NOMBRE', 'FECHA']
+              ],
+              body: bodyData,
+              theme: 'grid',
+              styles: { fontSize: 7, cellPadding: 1 },
+              headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+      };
+  
+      // Calcular duración del permiso
+      let permitDuration = 1;
+      if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
+        try {
+          const startDate = parseISO(permit.generalInfo.validFrom);
+          const endDate = parseISO(permit.generalInfo.validUntil);
+          if (isValid(startDate) && isValid(endDate)) {
+            permitDuration = differenceInCalendarDays(endDate, startDate) + 1;
+          }
+        } catch (e) {
+          console.error("Error parsing dates:", e);
+        }
       }
-    }
-
-    // ===== CONTENIDO DEL PDF =====
-
-    // ENCABEZADO
-    drawHeader('PERMISO DE TRABAJO');
-
-    // INFORMACIÓN GENERAL
-    autoTable(doc, {
-      startY: yPos,
-      body: [
-        [
-          { content: 'Fecha Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          safeFormat(permit.createdAt, 'dd/MM/yyyy'),
-          { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          permit.generalInfo?.planta || ''
-        ],
-        [
-          { content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          permit.generalInfo?.empresa || '',
-          { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          permit.user?.displayName || ''
-        ],
-        [
-          { content: 'Duración:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          `Desde: ${safeFormat(permit.generalInfo?.validFrom, 'dd/MM/yy HH:mm')}\nHasta: ${safeFormat(permit.generalInfo?.validUntil, 'dd/MM/yy HH:mm')}`,
-          { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
-          permit.generalInfo?.contrato || ''
-        ]
-      ],
-      theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 1, lineColor: [0, 0, 0], lineWidth: 0.1 },
-    });
-    yPos = (doc as any).lastAutoTable.finalY + 2;
-
-    // ALCANCE
-    autoTable(doc, {
-      startY: yPos,
-      head: [[{ content: 'ALCANCE (Descripción del Trabajo)', styles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold' } }]],
-      body: [[permit.generalInfo?.workDescription || '']],
-      theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1 }
-    });
-    yPos = (doc as any).lastAutoTable.finalY + 5;
-
-    // ATS - PELIGROS IDENTIFICADOS
-    drawSectionTitle('ANÁLISIS DE TRABAJO SEGURO (ATS)');
-    const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
-    if (activeRisks.length > 0) {
-      const riskRows = activeRisks.map(r => {
-        return [[
-          { content: `[X] ${r.label}`, styles: { fontStyle: 'bold', fontSize: 7 } }
-        ], [
-          { content: `CONTROL: ${r.control}`, styles: { fontSize: 6, cellPadding: { top: 0, right: 1, bottom: 2, left: 1 } } }
-        ]];
-      }).flat();
-
-      autoTable(doc, {
-        startY: yPos,
-        body: riskRows,
-        theme: 'plain',
-        styles: { fontSize: 7, cellPadding: 1 }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-
-    // PERSONAL AUTORIZADO
-    drawSectionTitle('PERSONAL AUTORIZADO');
-    const workerRows = permit.workers?.map(w => [
-      w.nombre,
-      w.cedula,
-      w.rol,
-      w.firmaApertura ? 'FIRMADO' : 'PENDIENTE'
-    ]) || [];
-    
-    if (workerRows.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['NOMBRE', 'CÉDULA', 'ROL', 'FIRMA APERTURA']],
-        body: workerRows,
-        theme: 'grid',
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
-        styles: { fontSize: 7 }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-
-    // AUTORIZACIONES
-    checkPageBreak(40);
-    drawSectionTitle('AUTORIZACIONES');
-    const sigBoxW = (pageWidth - (2 * margin)) / 3;
-    const sigBoxH = 30;
-    
-    drawSignatureBox('SOLICITANTE', permit.approvals?.solicitante, margin, yPos, sigBoxW, sigBoxH);
-    drawSignatureBox('AUTORIZANTE', permit.approvals?.autorizante, margin + sigBoxW, yPos, sigBoxW, sigBoxH);
-    drawSignatureBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos, sigBoxW, sigBoxH);
-    yPos += sigBoxH + 5;
-
-    // ANEXO ALTURA
-    if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
-      checkPageBreak(100);
-      drawSectionTitle('ANEXO 1 - TRABAJOS EN ALTURA');
-      
-      autoTable(doc, {
-        startY: yPos,
-        body: [
-          ['Altura Aproximada:', permit.anexoAltura.alturaAproximada || 'N/A'],
-          [
-            'Sistema de Acceso:',
-            Object.keys(permit.anexoAltura.tipoEstructura || {})
-              .filter(k => (permit.anexoAltura?.tipoEstructura as any)[k])
-              .join(', ')
-          ]
-        ],
-        theme: 'grid',
-        styles: { fontSize: 7, lineColor: [0, 0, 0], lineWidth: 0.1 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-      
-      // Aspectos de seguridad
-      const alturaChecks = anexoAlturaAspectos.map(asp => [
-        asp.label,
-        (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? 'SÍ' : 'NO/NA'
-      ]);
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Aspectos de Seguridad', 'Cumple']],
-        body: alturaChecks,
-        theme: 'grid',
-        styles: { fontSize: 6, cellPadding: 1 },
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
-        columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      // Validación diaria
-      if (permit.anexoAltura.validacion) {
-        drawDailyValidationTable(permit.anexoAltura.validacion, permitDuration);
-      }
-    }
-
-    // ANEXO CONFINADO
-    if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
-      checkPageBreak(80);
-      drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
-
-      autoTable(doc, {
-        startY: yPos,
-        head: [['LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
-        body: [[
-          permit.anexoConfinado.resultadosPruebasGases?.lel || '-',
-          permit.anexoConfinado.resultadosPruebasGases?.o2 || '-',
-          permit.anexoConfinado.resultadosPruebasGases?.h2s || '-',
-          permit.anexoConfinado.resultadosPruebasGases?.co || '-'
-        ]],
-        theme: 'grid',
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
-        styles: { halign: 'center', fontSize: 8 }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      if (permit.anexoConfinado.validacion) {
-        drawDailyValidationTable(permit.anexoConfinado.validacion, permitDuration);
-      }
-    }
-
-    // ANEXO IZAJE
-    if (permit.selectedWorkTypes?.izaje && permit.anexoIzaje) {
-      checkPageBreak(80);
-      drawSectionTitle('ANEXO 3 - IZAJE DE CARGAS');
-
+  
+      // ===== CONTENIDO DEL PDF =====
+  
+      // ENCABEZADO
+      drawHeader('PERMISO DE TRABAJO');
+  
+      // ✅ INFORMACIÓN GENERAL - COMPLETO
       autoTable(doc, {
         startY: yPos,
         body: [
           [
-            'Acción:',
-            Object.entries(permit.anexoIzaje.informacionGeneral.accion || {})
-              .filter(([, v]) => v)
-              .map(([k]) => k)
-              .join(', ')
+            { content: 'Fecha Expedición:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            safeFormat(permit.createdAt, 'dd/MM/yyyy'),
+            { content: 'Planta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.generalInfo?.planta || ''
           ],
           [
-            'Peso:',
-            Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {})
-              .filter(([, v]) => v)
-              .map(([k]) => k)
-              .join(', ')
+            { content: 'Empresa:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.generalInfo?.empresa || '',
+            { content: 'Solicitante:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.user?.displayName || ''
+          ],
+          [
+            { content: 'Contrato:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.generalInfo?.contrato || '',
+            { content: 'Área Específica:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.generalInfo?.areaEspecifica || ''
+          ],
+          [
+            { content: 'Proceso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.generalInfo?.proceso || '',
+            { content: 'Número Permiso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            permit.number || permit.id.substring(0, 8)
+          ],
+          [
+            { content: 'Válido Desde:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            safeFormat(permit.generalInfo?.validFrom, 'dd/MM/yy HH:mm'),
+            { content: 'Válido Hasta:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            safeFormat(permit.generalInfo?.validUntil, 'dd/MM/yy HH:mm')
+          ],
+          [
+            { content: 'Tipos de Trabajo:', colSpan: 3, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+            getWorkTypesString(permit)
           ]
         ],
         theme: 'grid',
-        styles: { fontSize: 7 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 30 } }
+        styles: { fontSize: 7, cellPadding: 1.5, lineColor: [0, 0, 0], lineWidth: 0.1 },
+        columnStyles: { 0: { cellWidth: 40 }, 2: { cellWidth: 40 } }
       });
       yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      if (permit.anexoIzaje.validacion) {
-        drawDailyValidationTable(permit.anexoIzaje.validacion, permitDuration);
-      }
-    }
-
-    // ANEXO EXCAVACIONES
-    if (permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones) {
-      checkPageBreak(60);
-      drawSectionTitle('ANEXO 4 - EXCAVACIONES');
-
+  
+      // ✅ ALCANCE
       autoTable(doc, {
         startY: yPos,
-        body: [
-          ['Profundidad:', permit.anexoExcavaciones.informacionGeneral.profundidad || 'N/A'],
-          ['Ancho:', permit.anexoExcavaciones.informacionGeneral.ancho || 'N/A'],
-          ['Largo:', permit.anexoExcavaciones.informacionGeneral.largo || 'N/A']
-        ],
+        head: [[{ content: 'DESCRIPCIÓN DEL TRABAJO (ALCANCE)', styles: { fillColor: [220, 220, 220], textColor: [0, 0, 0], fontStyle: 'bold' } }]],
+        body: [[permit.generalInfo?.workDescription || 'No especificado']],
         theme: 'grid',
-        styles: { fontSize: 7 },
-        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 30 } }
+        styles: { fontSize: 7, cellPadding: 2, lineColor: [0, 0, 0], lineWidth: 0.1 }
       });
       yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      if (permit.anexoExcavaciones.validacion) {
-        drawDailyValidationTable(permit.anexoExcavaciones.validacion, permitDuration);
+  
+      // ✅ ATS - PELIGROS IDENTIFICADOS
+      if (permit.anexoATS?.peligros) {
+        drawSectionTitle('ANÁLISIS DE TRABAJO SEGURO (ATS) - PELIGROS IDENTIFICADOS');
+        const activeRisks = atsPeligros.filter(p => (permit.anexoATS?.peligros as any)?.[p.id] === 'si');
+        
+        if (activeRisks.length > 0) {
+          const risksBySection = activeRisks.reduce((acc, r) => {
+            if (!acc[r.seccion]) acc[r.seccion] = [];
+            acc[r.seccion].push(r.label);
+            return acc;
+          }, {} as Record<string, string[]>);
+  
+          const riskRows = Object.entries(risksBySection).flatMap(([section, risks]) => [
+            [{ content: `${section}:`, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] }, colSpan: 2 }],
+            ...risks.map(risk => [`✓ ${risk}`, ''])
+          ]);
+  
+          autoTable(doc, {
+            startY: yPos,
+            body: riskRows,
+            theme: 'grid',
+            styles: { fontSize: 6, cellPadding: 1 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
       }
+  
+      // ✅ EPP REQUERIDOS - DETALLADO
+      if (permit.anexoATS?.epp) {
+        drawSectionTitle('EQUIPOS DE PROTECCIÓN PERSONAL (EPP)');
+        
+        const eppData: Record<string, string[]> = {};
+        Object.entries(permit.anexoATS.epp).forEach(([key, value]) => {
+          if (value === 'si' || value === true) {
+            const category = Object.entries(eppOptions).find(([_, items]) => 
+              items.some(item => item.id === key)
+            )?.[0] || 'Otros';
+            
+            if (!eppData[category]) eppData[category] = [];
+            
+            const itemLabel = Object.entries(eppOptions)
+              .flatMap(([_, items]) => items)
+              .find(item => item.id === key)?.label || key;
+            
+            const spec = (permit.anexoATS.epp as any)[`${key}_spec`];
+            eppData[category].push(spec ? `${itemLabel} - ${spec}` : itemLabel);
+          }
+        });
+  
+        if (Object.keys(eppData).length > 0) {
+          const eppRows = Object.entries(eppData).flatMap(([category, items]) => [
+            [{ content: `${category}:`, styles: { fontStyle: 'bold', fillColor: [245, 245, 245] }, colSpan: 2 }],
+            ...items.map(item => [`• ${item}`, ''])
+          ]);
+  
+          autoTable(doc, {
+            startY: yPos,
+            body: eppRows,
+            theme: 'grid',
+            styles: { fontSize: 6, cellPadding: 1 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+      }
+  
+      // ✅ JUSTIFICACIÓN DE USO
+      if (permit.anexoATS?.justificacion) {
+        drawSectionTitle('JUSTIFICACIÓN DE USO DEL PERMISO');
+        const justSelected = justificacionOptions.find(j => 
+          (permit.anexoATS?.justificacion as any)?.[j.id] === 'si'
+        );
+        
+        if (justSelected) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [[justSelected.label]],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 2 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+      }
+  
+      // ✅ PERSONAL AUTORIZADO
+      if (permit.workers && permit.workers.length > 0) {
+        drawSectionTitle('PERSONAL AUTORIZADO');
+        const workerRows = permit.workers.map(w => [
+          `${w.nombre}\nC.C. ${w.cedula}`,
+          w.rol === 'Otro' ? w.otroRol : w.rol,
+          (w.eps ? 'EPS ' : '') + (w.arl ? 'ARL ' : '') + (w.pensiones ? 'AFP' : ''),
+          w.entrenamiento?.tec ? 'TEC' : w.entrenamiento?.tsa ? 'TSA' : 'Otro',
+          w.firmaApertura ? 'FIRMADO' : 'PENDIENTE'
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['NOMBRE / CÉDULA', 'ROL', 'AFILIACIÓN', 'ENTRENAMIENTO', 'FIRMA APERTURA']],
+          body: workerRows,
+          theme: 'grid',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 7 },
+          styles: { fontSize: 6, cellPadding: 1.5 }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      }
+  
+      // ✅ AUTORIZACIONES
+      checkPageBreak(40);
+      drawSectionTitle('AUTORIZACIONES Y FIRMAS APERTURA');
+      const sigBoxW = (pageWidth - (2 * margin)) / 3;
+      const sigBoxH = 35;
+      
+      drawSignatureBox('SOLICITANTE', permit.approvals?.solicitante, margin, yPos, sigBoxW, sigBoxH);
+      drawSignatureBox('AUTORIZANTE', permit.approvals?.autorizante, margin + sigBoxW, yPos, sigBoxW, sigBoxH);
+      drawSignatureBox('SST', permit.approvals?.lider_sst, margin + 2 * sigBoxW, yPos, sigBoxW, sigBoxH);
+      yPos += sigBoxH + 5;
+  
+      // ===== ANEXOS DINÁMICOS =====
+  
+      // ✅ ANEXO 1: TRABAJO EN ALTURAS (SOLO SI ESTÁ SELECCIONADO)
+      if (permit.selectedWorkTypes?.alturas && permit.anexoAltura) {
+        checkPageBreak(100);
+        drawSectionTitle('ANEXO 1 - TRABAJO EN ALTURAS');
+        
+        // Información general
+        autoTable(doc, {
+          startY: yPos,
+          body: [
+            [
+              { content: 'Altura Aproximada (m):', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              permit.anexoAltura.alturaAproximada || 'N/A'
+            ],
+            [
+              { content: 'Tipo de Estructura:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              Object.keys(permit.anexoAltura.tipoEstructura || {})
+                .filter(k => (permit.anexoAltura?.tipoEstructura as any)[k])
+                .map(k => {
+                  const label = anexoAlturaEstructuras.find(e => e.id === k)?.label || k;
+                  if (k === 'otros') {
+                    const cual = (permit.anexoAltura?.tipoEstructura as any).otrosCual;
+                    return cual ? `${label} - ${cual}` : label;
+                  }
+                  return label;
+                })
+                .join(', ')
+            ]
+          ],
+          theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 1.5 },
+          columnStyles: { 0: { cellWidth: 50 } }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 3;
+        
+        // Aspectos de seguridad
+        const alturaChecks = anexoAlturaAspectos.map(asp => [
+          asp.label,
+          (permit.anexoAltura?.aspectosSeguridad as any)?.[asp.id] === 'si' ? '✓ SÍ' : '✗ NO'
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['REQUISITOS DE SEGURIDAD', 'CUMPLE']],
+          body: alturaChecks,
+          theme: 'grid',
+          styles: { fontSize: 6, cellPadding: 1 },
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+          columnStyles: { 1: { halign: 'center', cellWidth: 20 } }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+        // Validación diaria
+        if (permit.anexoAltura.validacion?.responsable?.length || permit.anexoAltura.validacion?.autoridad?.length) {
+          drawDailyValidationTable(permit.anexoAltura.validacion, permitDuration);
+        }
+  
+        // Firma del Coordinador de Alturas
+        if (permit.approvals?.coordinador_alturas?.status === 'aprobado') {
+          checkPageBreak(15);
+          drawSectionTitle('FIRMA COORDINADOR DE TRABAJOS EN ALTURAS');
+          drawSignatureBox('COORDINADOR', permit.approvals.coordinador_alturas, margin, yPos, pageWidth - 2 * margin, 30);
+          yPos += 35;
+        }
+      }
+  
+      // ✅ ANEXO 2: ESPACIOS CONFINADOS (SOLO SI ESTÁ SELECCIONADO)
+      if (permit.selectedWorkTypes?.confinado && permit.anexoConfinado) {
+        checkPageBreak(80);
+        drawSectionTitle('ANEXO 2 - ESPACIOS CONFINADOS');
+  
+        // Pruebas de gases iniciales
+        autoTable(doc, {
+          startY: yPos,
+          head: [['PARÁMETRO', 'VALOR', 'LÍMITE PERMISIBLE', 'CUMPLE']],
+          body: [
+            ['LEL (%)', permit.anexoConfinado.resultadosPruebasGases?.lel || '-', '0%', (permit.anexoConfinado.resultadosPruebasGases?.lel === '0%') ? '✓' : '✗'],
+            ['O2 (%)', permit.anexoConfinado.resultadosPruebasGases?.o2 || '-', '19.5-22%', ((permit.anexoConfinado.resultadosPruebasGases?.o2 || '').includes('19.5') || (permit.anexoConfinado.resultadosPruebasGases?.o2 || '').includes('22')) ? '✓' : '?'],
+            ['H2S (PPM)', permit.anexoConfinado.resultadosPruebasGases?.h2s || '-', '0-10', '?'],
+            ['CO (PPM)', permit.anexoConfinado.resultadosPruebasGases?.co || '-', '0-25', '?']
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 7 },
+          styles: { halign: 'center', fontSize: 6, cellPadding: 1 }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+        // Pruebas periódicas
+        if (permit.anexoConfinado.pruebasGasesPeriodicas?.pruebas?.length) {
+          autoTable(doc, {
+            startY: yPos,
+            head: [['HORA', 'LEL %', 'O2 %', 'H2S ppm', 'CO ppm']],
+            body: permit.anexoConfinado.pruebasGasesPeriodicas.pruebas.map(p => [
+              p.hora, p.lel, p.o2, p.h2s, p.co
+            ]),
+            theme: 'grid',
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 7 },
+            styles: { halign: 'center', fontSize: 6, cellPadding: 1 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+  
+        // Validación diaria
+        if (permit.anexoConfinado.validacion?.responsable?.length || permit.anexoConfinado.validacion?.autoridad?.length) {
+          drawDailyValidationTable(permit.anexoConfinado.validacion, permitDuration);
+        }
+      }
+  
+      // ✅ ANEXO 3: CONTROL DE ENERGÍAS (SOLO SI ESTÁ SELECCIONADO)
+      if (permit.selectedWorkTypes?.energia && permit.anexoEnergias) {
+        checkPageBreak(40);
+        drawSectionTitle('ANEXO 3 - CONTROL DE ENERGÍAS');
+  
+        const energiasActivas = Object.entries(permit.anexoEnergias.energiasPeligrosas || {})
+          .filter(([_, value]) => value)
+          .map(([key]) => key.replace(/([A-Z])/g, ' $1').trim());
+  
+        if (energiasActivas.length > 0) {
+          autoTable(doc, {
+            startY: yPos,
+            head: [['TIPOS DE ENERGÍA IDENTIFICADOS']],
+            body: energiasActivas.map(e => [e]),
+            theme: 'grid',
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+            styles: { fontSize: 7, cellPadding: 1 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+  
+        // Método de control
+        if (permit.anexoEnergias.metodosControl) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              ['Método Seleccionado:', Object.keys(permit.anexoEnergias.metodosControl).filter(k => (permit.anexoEnergias?.metodosControl as any)[k]).join(', ')]
+            ],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.5 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+  
+        // Información de voltaje si aplica
+        if (permit.anexoEnergias.sistemaElectrico?.tensionNominal) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              ['Tensión Nominal Sistema:', permit.anexoEnergias.sistemaElectrico.tensionNominal],
+              ['Tensión Personal Expuesto:', permit.anexoEnergias.sistemaElectrico.tensionPersonal || '-'],
+              ['Distancia de Seguridad:', permit.anexoEnergias.sistemaElectrico.distanciaSeguridad || '-']
+            ],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1 }
+          });
+          yPos = (doc as any).lastAutoTable.finalY + 5;
+        }
+      }
+  
+      // ✅ ANEXO 4: IZAJE DE CARGAS (SOLO SI ESTÁ SELECCIONADO)
+      if (permit.selectedWorkTypes?.izaje && permit.anexoIzaje) {
+        checkPageBreak(60);
+        drawSectionTitle('ANEXO 4 - IZAJE DE CARGAS');
+  
+        autoTable(doc, {
+          startY: yPos,
+          body: [
+            [
+              { content: 'Acción:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              Object.entries(permit.anexoIzaje.informacionGeneral.accion || {})
+                .filter(([, v]) => v)
+                .map(([k]) => k)
+                .join(', ')
+            ],
+            [
+              { content: 'Rango de Peso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {})
+                .filter(([, v]) => v)
+                .map(([k]) => k)
+                .join(', ')
+            ],
+            [
+              { content: 'Equipo a Utilizar:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {})
+                .filter(([, v]) => v)
+                .map(([k]) => k)
+                .join(', ')
+            ]
+          ],
+          theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 1.5 },
+          columnStyles: { 0: { cellWidth: 50 } }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+        // Validación diaria
+        if (permit.anexoIzaje.validacion?.responsable?.length || permit.anexoIzaje.validacion?.autoridad?.length) {
+          drawDailyValidationTable(permit.anexoIzaje.validacion, permitDuration);
+        }
+      }
+  
+      // ✅ ANEXO 5: EXCAVACIONES (SOLO SI ESTÁ SELECCIONADO)
+      if (permit.selectedWorkTypes?.excavacion && permit.anexoExcavaciones) {
+        checkPageBreak(60);
+        drawSectionTitle('ANEXO 5 - EXCAVACIONES');
+  
+        autoTable(doc, {
+          startY: yPos,
+          body: [
+            [
+              { content: 'Profundidad:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              permit.anexoExcavaciones.informacionGeneral.profundidad || 'N/A'
+            ],
+            [
+              { content: 'Ancho:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              permit.anexoExcavaciones.informacionGeneral.ancho || 'N/A'
+            ],
+            [
+              { content: 'Largo:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+              permit.anexoExcavaciones.informacionGeneral.largo || 'N/A'
+            ]
+          ],
+          theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 1.5 },
+          columnStyles: { 0: { cellWidth: 30 } }
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+  
+        // Validación diaria
+        if (permit.anexoExcavaciones.validacion?.responsable?.length || permit.anexoExcavaciones.validacion?.autoridad?.length) {
+          drawDailyValidationTable(permit.anexoExcavaciones.validacion, permitDuration);
+        }
+      }
+  
+      // ✅ CIERRE Y CANCELACIÓN (SI APLICA)
+      if (permit.closure && (permit.closure.terminado || permit.closure.cancelado)) {
+        checkPageBreak(50);
+        drawSectionTitle('CIERRE O CANCELACIÓN DEL PERMISO');
+  
+        if (permit.closure.cancelado) {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: 'CANCELACIÓN', styles: { fontStyle: 'bold', fillColor: [255, 200, 200] } }],
+              ['Razón:', permit.closure.razonCancelacion || 'No especificado'],
+              ['Cancelado por:', permit.closure.canceladoPor?.nombre || 'N/A'],
+              ['Fecha:', safeFormat(permit.closure.canceladoPor?.fecha, 'dd/MM/yy HH:mm')]
+            ],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.5 }
+          });
+        } else {
+          autoTable(doc, {
+            startY: yPos,
+            body: [
+              [{ content: 'CIERRE', styles: { fontStyle: 'bold', fillColor: [200, 220, 255] } }],
+              ['Observaciones:', permit.closure.observacionesCierre || 'No especificado'],
+              ['Responsable:', permit.closure.responsable?.nombre || 'N/A'],
+              ['Autoridad:', permit.closure.autoridad?.nombre || 'N/A'],
+              ['Fecha Cierre:', safeFormat(permit.closure.responsable?.fecha, 'dd/MM/yy HH:mm')]
+            ],
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1.5 }
+          });
+        }
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+      }
+  
+      // FOOTER EN TODAS LAS PÁGINAS
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(
+          `Página ${i} de ${totalPages} | Documento: DN-FR-SST-016 V04`,
+          pageWidth / 2,
+          pageHeight - 8,
+          { align: 'center' }
+        );
+      }
+  
+      // GUARDAR PDF
+      doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0, 6)}.pdf`);
+      
+      toast({
+        title: '✓ PDF Generado',
+        description: 'Se ha descargado el formato oficial completo.',
+        className: 'bg-green-100'
+      });
+  
+    } catch (error: any) {
+      console.error('Error al generar el PDF:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al Generar PDF',
+        description: error.message || 'No se pudo generar el PDF.'
+      });
     }
-
-    // FOOTER EN TODAS LAS PÁGINAS
-    const totalPages = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Página ${i} de ${totalPages}`,
-        pageWidth - margin,
-        pageHeight - 10,
-        { align: 'right' }
-      );
-    }
-
-    // GUARDAR PDF
-    doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0, 6)}.pdf`);
-    
-    toast({
-      title: '✓ PDF Generado',
-      description: 'Se ha descargado el formato oficial.'
-    });
-
-  } catch (error: any) {
-    console.error('Error al generar el PDF:', error);
-    toast({
-      variant: 'destructive',
-      title: 'Error al Generar PDF',
-      description: error.message || 'No se pudo generar el PDF.'
-    });
-  }
-};
+  };
+ 
 
   const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser) return;
@@ -1080,18 +1289,10 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
  
 
  const atsPeligrosAgrupados = atsPeligros.reduce((acc, peligro) => {
-    const categoria = atsPeligros.find(c => c.id === peligro.id)?.control ? 'CON_CONTROL' : 'SIN_CONTROL';
-    // Simplified categorization for demonstration
-    let seccion = 'OTROS';
-    const locativos = ['superficies_irregulares', 'superficies_deslizantes', 'diferencia_nivel', 'techos_mal_estado', 'espacios_reducidos'];
-    const fisicos = ['deficiencia_iluminacion', 'exceso_iluminacion', 'ruido_intermitente', 'contacto_superficies_calientes', 'exposicion_soldadura'];
-    if(locativos.includes(peligro.id)) seccion = 'LOCATIVOS';
-    if(fisicos.includes(peligro.id)) seccion = 'FÍSICOS';
-    
-    if (!acc[seccion]) {
-        acc[seccion] = [];
+    if (!acc[peligro.seccion]) {
+        acc[peligro.seccion] = [];
     }
-    acc[seccion].push(peligro);
+    acc[peligro.seccion].push(peligro);
     return acc;
  }, {} as {[key: string]: typeof atsPeligros});
 
@@ -1439,19 +1640,20 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
                             <Section title="1. Identificación de Peligros, Riesgos y Controles">
                                 <div className="space-y-4">
-                                {atsPeligros.map(peligro => {
-                                    if (permit.anexoATS?.peligros?.[peligro.id] !== 'si') {
-                                        return null;
-                                    }
-                                    return (
-                                        <div key={peligro.id} className="p-3 border rounded-md bg-gray-50/50">
-                                            <p className="font-semibold text-gray-800">{peligro.label}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                <span className="font-bold text-primary">Control Recomendado:</span> {peligro.control}
-                                            </p>
+                                {Object.entries(atsPeligrosAgrupados).map(([seccion, peligros]) => (
+                                    <div key={seccion}>
+                                        <h4 className="font-semibold text-gray-600 mb-2">{seccion}</h4>
+                                        <div className="pl-4 space-y-1">
+                                            {peligros.map(peligro => (
+                                                <RadioCheck 
+                                                  key={peligro.id} 
+                                                  label={peligro.label} 
+                                                  value={(permit.anexoATS?.peligros as any)?.[peligro.id]} 
+                                                />
+                                            ))}
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                                 </div>
                             </Section>
                             <Section title="2. EPP Requeridos" className="mt-6">
@@ -1852,8 +2054,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
-
-
-
-    
