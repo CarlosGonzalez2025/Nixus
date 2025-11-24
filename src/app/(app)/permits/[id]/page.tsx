@@ -189,10 +189,11 @@ const signatureConsents: { [key in SignatureRole]?: string } = {
 };
 
 
-export default function PermitDetailPage({ params }: { params: { id: string } }) {
+export default function PermitDetailPage() {
+  const params = useParams();
   const router = useRouter();
   const { user: currentUser, loading: userLoading } = useUser();
-  const permitId = params.id;
+  const permitId = params.id as string;
   
   const [permit, setPermit] = useState<Permit | null>(null);
   const [loading, setLoading] = useState(true);
