@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -145,14 +146,23 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
   return badges;
 };
 
-const permitStatuses: PermitStatus[] = ['borrador', 'pendiente_revision', 'aprobado', 'en_ejecucion', 'cerrado', 'rechazado', 'suspendido'];
+type UnifiedPermitStatus = 'borrador' | 'pendiente_revision' | 'activos' | 'cerrado' | 'rechazado' | 'suspendido';
+const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
+    { key: 'borrador', label: 'Borrador' },
+    { key: 'pendiente_revision', label: 'Pendiente' },
+    { key: 'activos', label: 'Activos' },
+    { key: 'cerrado', label: 'Cerrado' },
+    { key: 'rechazado', label: 'Rechazado' },
+    { key: 'suspendido', label: 'Suspendido' },
+];
+
 
 export default function PermitsPage() {
   const { user, loading: userLoading } = useUser();
   const [allPermits, setAllPermits] = useState<Permit[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<PermitStatus>('pendiente_revision');
+  const [activeTab, setActiveTab] = useState<UnifiedPermitStatus>('pendiente_revision');
   const [workTypeFilter, setWorkTypeFilter] = useState<string>('all');
   const { toast } = useToast();
 
@@ -218,7 +228,12 @@ export default function PermitsPage() {
   const filteredPermits = useMemo(() => {
     return allPermits.filter(permit => {
       // Filtro por estado
-      const matchesStatus = permit.status === activeTab;
+      let matchesStatus = false;
+      if (activeTab === 'activos') {
+        matchesStatus = permit.status === 'aprobado' || permit.status === 'en_ejecucion';
+      } else {
+        matchesStatus = permit.status === activeTab;
+      }
       if (!matchesStatus) return false;
 
       // Filtro por tipo de trabajo
@@ -276,7 +291,7 @@ export default function PermitsPage() {
           <FileX className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-4 font-semibold">No se encontraron permisos</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {searchTerm ? `No hay resultados para "${searchTerm}" en esta categoría.` : `No hay permisos con el estado "${getStatusText(activeTab)}".`}
+            {searchTerm ? `No hay resultados para "${searchTerm}" en esta categoría.` : `No hay permisos con el estado seleccionado.`}
           </p>
         </div>
       );
@@ -416,14 +431,14 @@ export default function PermitsPage() {
       
       <Card>
         <CardContent className="p-4">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PermitStatus)}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as UnifiedPermitStatus)}>
             <div className="flex flex-col gap-4">
               {/* Tabs de estado */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <TabsList className="grid grid-cols-3 sm:flex w-full sm:w-auto overflow-x-auto">
                   {permitStatuses.map(status => (
-                    <TabsTrigger key={status} value={status} className="capitalize whitespace-nowrap">
-                      {getStatusText(status)}
+                    <TabsTrigger key={status.key} value={status.key} className="capitalize whitespace-nowrap">
+                      {status.label}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -460,12 +475,12 @@ export default function PermitsPage() {
 
               {/* Contador de resultados */}
               <div className="text-sm text-muted-foreground">
-                Mostrando {filteredPermits.length} de {allPermits.filter(p => p.status === activeTab).length} permisos
+                Mostrando {filteredPermits.length} de {allPermits.filter(p => activeTab === 'activos' ? (p.status === 'aprobado' || p.status === 'en_ejecucion') : p.status === activeTab).length} permisos
               </div>
             </div>
 
             {permitStatuses.map(status => (
-              <TabsContent key={status} value={status} className="mt-4">
+              <TabsContent key={status.key} value={status.key} className="mt-4">
                 {renderPermitList(filteredPermits)}
               </TabsContent>
             ))}

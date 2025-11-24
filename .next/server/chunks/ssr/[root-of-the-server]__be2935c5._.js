@@ -390,7 +390,6 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$dotenv$2f$lib$2f$main$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["config"])();
 // --- Funciones Auxiliares para Notificaciones ---
 const getInvolvedUsers = async (permit)=>{
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) return [];
     const userIds = new Set();
     // 1. Creador del permiso
     if (permit.createdBy) {
@@ -412,7 +411,6 @@ const getInvolvedUsers = async (permit)=>{
     return Array.from(userIds);
 };
 const createNotification = async (userId, permit, message, type, triggeredBy)=>{
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) return;
     const notification = {
         userId,
         permitId: permit.id,
@@ -480,12 +478,6 @@ const signatureRoles = {
     lider_sst: 'AREA SST (si aplica)'
 };
 async function createPermit(data) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!data.userId) {
         return {
             success: false,
@@ -574,12 +566,6 @@ ${permitUrl}`;
     }
 }
 async function savePermitDraft(data) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!data.userId) {
         return {
             success: false,
@@ -650,12 +636,6 @@ async function savePermitDraft(data) {
     }
 }
 async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user, comments) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!permitId || !role || !signatureDataUrl || !user) {
         return {
             success: false,
@@ -783,12 +763,6 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
     }
 }
 async function updatePermitStatus(permitId, status, currentUser, reason, closureData) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!permitId) {
         return {
             success: false,
@@ -865,12 +839,6 @@ ${permitUrl}`;
     }
 }
 async function addDailyValidationSignature(permitId, anexoName, validationType, index, data) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!permitId || !anexoName || !validationType || index < 0 || !data) {
         return {
             success: false,
@@ -923,12 +891,6 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
     }
 }
 async function addWorkerSignature(permitId, workerIndex, signatureType, signatureDataUrl) {
-    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
-        return {
-            success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
-        };
-    }
     if (!permitId || workerIndex < 0 || !signatureType || !signatureDataUrl) {
         return {
             success: false,
