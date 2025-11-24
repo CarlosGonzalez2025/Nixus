@@ -179,7 +179,7 @@ const signatureRoles: { [key in SignatureRole]: string } = {
   coordinador_alturas: 'COORDINADOR (ANEXO)',
   solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'MANTENIMIENTO (SI APLICA)',
-  lider_sst: 'SST (SI APLICA)',
+  lider_sst: 'Firma SST',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
 };
 
@@ -267,7 +267,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
-    { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+    { id: 'personalSaludable', label: 'K. EL PERSONAL CHE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
     { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
@@ -835,15 +835,13 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
               { content: 'Rango de Peso:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
               Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {})
                 .filter(([, v]) => v)
-                .map(([k]) => k)
-                .join(', ')
+                .map(([k]) => k.replace('menor', '< ').replace('mas', '> ').replace('entre', '')).join(', ') + ' kg'
             ],
             [
               { content: 'Equipo a Utilizar:', styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
               Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {})
                 .filter(([, v]) => v)
-                .map(([k]) => k)
-                .join(', ')
+                .map(([k]) => k.replace(/([A-Z])/g, ' $1').toUpperCase()).join(', ')
             ]
           ],
           theme: 'grid',
@@ -990,6 +988,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         const userToSign: User = {
             ...currentUser,
             displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
+            empresa: currentUser.empresa || 'N/A' // Fallback
         };
 
         const result = await addSignatureAndNotify(
@@ -1103,6 +1102,12 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             }
             return { can: true };
         
+        case 'lider_sst':
+            if (!isSSTSignatureRequired) return { can: false, reason: 'Firma de SST no requerida para esta tarea.' };
+            if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'No tienes el rol requerido.' };
+            if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
+            return { can: true };
+
         case 'autorizante':
             if (!hasCorrectRole('autorizante')) return { can: false, reason: 'No tienes el rol requerido.' };
             if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
@@ -1112,12 +1117,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             if (!permit.controlEnergia) return { can: false, reason: 'No se requiere para este trabajo.' };
             if (!hasCorrectRole('mantenimiento')) return { can: false, reason: 'No tienes el rol requerido.' };
             if (!hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Autorizante.' };
-            return { can: true };
-
-        case 'lider_sst':
-            if (!isSSTSignatureRequired) return { can: false, reason: 'Firma de SST no requerida para esta tarea.' };
-            if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'No tienes el rol requerido.' };
-            if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
             return { can: true };
 
         default:
@@ -2196,4 +2195,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
