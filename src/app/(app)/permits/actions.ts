@@ -299,7 +299,7 @@ export async function addSignatureAndNotify(
                 userId: user.uid,
                 signedAt: FieldValue.serverTimestamp() as any,
                 userRole: user.role,
-                userEmpresa: user.empresa,
+                userEmpresa: user.empresa || 'N/A',
                 comments: comments || '',
             }
             
@@ -316,6 +316,7 @@ export async function addSignatureAndNotify(
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
+                        updateData['isSSTSignatureRequired'] = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
                     }
 
                     // Auto-llenar validación diaria del responsable
@@ -341,7 +342,7 @@ export async function addSignatureAndNotify(
 
             // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
             const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
-            const isSSTRequired = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
+            const isSSTRequired = permitBeforeData?.isSSTSignatureRequired;
 
             let allRequiredSignaturesDone = 
                 updatedApprovals.solicitante?.status === 'aprobado' &&
