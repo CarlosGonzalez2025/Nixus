@@ -690,7 +690,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 userId: user.uid,
                 signedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
                 userRole: user.role,
-                userEmpresa: user.empresa,
+                userEmpresa: user.empresa || 'N/A',
                 comments: comments || ''
             };
             updateData[`approvals.${role}`] = approvalData;
@@ -749,9 +749,6 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
             }
             if (isSSTRequired) {
                 allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.lider_sst?.status === 'aprobado';
-            }
-            if (allRequiredSignaturesDone) {
-                updateData['status'] = 'en_ejecucion';
             }
         }
         await docRef.update(updateData);
@@ -815,6 +812,16 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
                 fechaCierre: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
             };
         }
+        if (status === 'en_ejecucion') {
+            const permitSnap = await docRef.get();
+            const permitData = permitSnap.data();
+            if (permitData?.status !== 'aprobado') {
+                return {
+                    success: false,
+                    error: `El permiso no se puede poner en ejecución desde el estado '${permitData?.status}'. Debe estar aprobado.`
+                };
+            }
+        }
         await docRef.update(updateData);
         const permitDoc = await docRef.get();
         const permitData = {
@@ -824,9 +831,9 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
         const triggeredBy = currentUser;
         let notificationType = 'status_change';
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
-        if (status === 'aprobado') {
+        if (status === 'en_ejecucion') {
             notificationType = 'approval';
-            message = `${currentUser.displayName || 'Un usuario'} ha aprobado el permiso #${permitData.number}.`;
+            message = `El permiso #${permitData.number} ha sido aprobado y ahora se encuentra EN EJECUCIÓN.`;
         } else if (status === 'rechazado') {
             notificationType = 'rejection';
             message = `${currentUser.displayName || 'Un usuario'} ha rechazado el permiso #${permitData.number}.`;
@@ -894,13 +901,23 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
         }
         const permitData = permitSnap.data();
         const anexoData = permitData[anexoName];
-        if (!anexoData || !anexoData.validacion) {
+        if (!anexoData) {
             return {
                 success: false,
-                error: `El anexo ${anexoName} o su estructura de validación no existen en el permiso.`
+                error: `El anexo ${anexoName} no existe en el permiso.`
             };
         }
-        const validationArray = anexoData.validacion[validationType] || [];
+        // Asegurarse de que la estructura de validación exista
+        const anexoUpdate = {
+            ...anexoData
+        };
+        if (!anexoUpdate.validacion) {
+            anexoUpdate.validacion = {
+                autoridad: [],
+                responsable: []
+            };
+        }
+        const validationArray = anexoUpdate.validacion[validationType] || [];
         while(validationArray.length <= index){
             validationArray.push({
                 dia: validationArray.length + 1,
@@ -927,7 +944,10 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
         const involvedUsers = await getInvolvedUsers(fullPermitData);
         for (const uid of involvedUsers){
             if (uid !== user.uid) {
-                await createNotification(uid, fullPermitData, message, 'status_change', user);
+                await createNotification(uid, fullPermitData, message, 'status_change', {
+                    uid: user.uid,
+                    displayName: user.displayName || null
+                });
             }
         }
         // Notificación por WhatsApp

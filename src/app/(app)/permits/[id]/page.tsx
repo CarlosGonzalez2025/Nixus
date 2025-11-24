@@ -993,13 +993,6 @@ export default function PermitDetailPage() {
             empresa: currentUser.empresa || 'N/A'
         };
         
-        const essentialPermitData = {
-          id: permit.id,
-          number: permit.number,
-          isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
-          controlEnergia: permit.selectedWorkTypes.energia
-        };
-
         const result = await addSignatureAndNotify(
             permit.id,
             signingRole.role,
@@ -1007,6 +1000,8 @@ export default function PermitDetailPage() {
             signatureDataUrl,
             simpleUser,
             signatureObservation,
+            permit.isSSTSignatureRequired,
+            permit.controlEnergia
         );
 
         if (result.success) {
@@ -1221,8 +1216,8 @@ export default function PermitDetailPage() {
       );
 
       if(result.success) {
-        toast({ title: 'Validación Diaria Guardada' });
         setIsDailyValidationSignatureOpen(false);
+        toast({ title: 'Validación Diaria Guardada' });
       } else {
         throw new Error(result.error);
       }
@@ -1263,21 +1258,23 @@ export default function PermitDetailPage() {
     }
   };
 
-  useEffect(() => {
+ useEffect(() => {
     if (closureAction === 'cierre' && permit) {
       const responsableName = permit.user?.displayName || '';
       const autoridadName = permit.approvals?.autorizante?.userName || '';
       
-      let needsUpdate = false;
       const updates: Partial<Permit['closure']> = { ...permit.closure };
 
-      if (!updates.responsable?.nombre) {
-        updates.responsable = { ...(updates.responsable || {}), nombre: responsableName };
+      if (!updates.responsable) updates.responsable = {};
+      if (!updates.autoridad) updates.autoridad = {};
+      
+      let needsUpdate = false;
+      if (updates.responsable.nombre !== responsableName) {
+        updates.responsable.nombre = responsableName;
         needsUpdate = true;
       }
-
-      if (!updates.autoridad?.nombre) {
-        updates.autoridad = { ...(updates.autoridad || {}), nombre: autoridadName };
+       if (updates.autoridad.nombre !== autoridadName) {
+        updates.autoridad.nombre = autoridadName;
         needsUpdate = true;
       }
       
