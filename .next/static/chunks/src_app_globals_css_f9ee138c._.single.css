@@ -1527,11 +1527,6 @@ body {
   border-color: rgb(254 240 138 / var(--tw-border-opacity, 1));
 }
 
-.border-green-500 {
-  --tw-border-opacity: 1;
-  border-color: rgb(34 197 94 / var(--tw-border-opacity, 1));
-}
-
 .border-l-transparent {
   border-left-color: #0000;
 }
