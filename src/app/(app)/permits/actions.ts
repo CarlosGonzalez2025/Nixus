@@ -303,7 +303,7 @@ export async function addSignatureAndNotify(
                 userId: user.uid,
                 signedAt: FieldValue.serverTimestamp() as any,
                 userRole: user.role,
-                userEmpresa: user.empresa,
+                userEmpresa: user.empresa || 'N/A',
                 comments: comments || '',
             }
             
@@ -354,10 +354,6 @@ export async function addSignatureAndNotify(
             }
             if (isSSTRequired) {
                 allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.lider_sst?.status === 'aprobado';
-            }
-            
-            if (allRequiredSignaturesDone) {
-                updateData['status'] = 'en_ejecucion';
             }
         }
         
@@ -428,6 +424,14 @@ export async function updatePermitStatus(
             };
         }
 
+        if (status === 'en_ejecucion') {
+            const permitSnap = await docRef.get();
+            const permitData = permitSnap.data() as Permit | undefined;
+            if (permitData?.status !== 'aprobado') {
+                return { success: false, error: `El permiso no se puede poner en ejecución desde el estado '${permitData?.status}'. Debe estar aprobado.` };
+            }
+        }
+
         await docRef.update(updateData);
 
         const permitDoc = await docRef.get();
@@ -438,9 +442,9 @@ export async function updatePermitStatus(
         let notificationType: Notification['type'] = 'status_change';
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
 
-        if (status === 'aprobado') {
+        if (status === 'en_ejecucion') {
             notificationType = 'approval';
-            message = `${currentUser.displayName || 'Un usuario'} ha aprobado el permiso #${permitData.number}.`;
+            message = `El permiso #${permitData.number} ha sido aprobado y ahora se encuentra EN EJECUCIÓN.`;
         } else if (status === 'rechazado') {
             notificationType = 'rejection';
             message = `${currentUser.displayName || 'Un usuario'} ha rechazado el permiso #${permitData.number}.`;
@@ -509,11 +513,17 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     const permitData = permitSnap.data() as Permit;
 
     const anexoData = (permitData as any)[anexoName];
-    if (!anexoData || !anexoData.validacion) {
-      return { success: false, error: `El anexo ${anexoName} o su estructura de validación no existen en el permiso.` };
+    if (!anexoData) {
+      return { success: false, error: `El anexo ${anexoName} no existe en el permiso.` };
     }
     
-    const validationArray = (anexoData.validacion[validationType] as ValidacionDiaria[]) || [];
+    // Asegurarse de que la estructura de validación exista
+    const anexoUpdate: any = { ...anexoData };
+    if (!anexoUpdate.validacion) {
+        anexoUpdate.validacion = { autoridad: [], responsable: [] };
+    }
+
+    const validationArray = (anexoUpdate.validacion[validationType] as ValidacionDiaria[]) || [];
     
     while (validationArray.length <= index) {
         validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
@@ -538,7 +548,7 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     const involvedUsers = await getInvolvedUsers(fullPermitData);
     for (const uid of involvedUsers) {
       if (uid !== user.uid) {
-        await createNotification(uid, fullPermitData, message, 'status_change', user);
+        await createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
       }
     }
 
@@ -609,3 +619,5 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
+
+    
