@@ -231,26 +231,6 @@ export function AnexoConfinadoStep() {
     });
   };
 
-  // Inicializar validación diaria
-  React.useEffect(() => {
-    if (!anexoConfinado?.validacion) {
-      const autoridad = Array(7).fill(0).map((_, i) => ({ 
-        dia: i + 1, 
-        nombre: '', 
-        firma: '', 
-        fecha: '' 
-      }));
-      const responsable = Array(7).fill(0).map((_, i) => ({ 
-        dia: i + 1, 
-        nombre: '', 
-        firma: '', 
-        fecha: '' 
-      }));
-      
-      handleFieldChange('validacion', { autoridad, responsable });
-    }
-  }, []); // Solo ejecutar una vez
-
   const openSignatureDialog = (section: string, field: string, index?: number) => {
     setSigningTarget({ section, field, index });
     setIsSignatureDialogOpen(true);
@@ -721,3 +701,5 @@ export function AnexoConfinadoStep() {
     </>
   );
 }
+
+    
