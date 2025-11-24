@@ -574,7 +574,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
         
         const eppData: Record<string, string[]> = {};
         Object.entries(permit.anexoATS.epp).forEach(([key, value]) => {
-          if (value === 'si' || value === true) {
+          if (value === true || value === 'si') {
             const category = Object.entries(eppOptions).find(([_, items]) => 
               items.some(item => item.id === key)
             )?.[0] || 'Otros';
@@ -631,7 +631,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
           `${w.nombre}\nC.C. ${w.cedula}`,
           w.rol === 'Otro' ? w.otroRol : w.rol,
           (w.eps ? 'EPS ' : '') + (w.arl ? 'ARL ' : '') + (w.pensiones ? 'AFP' : ''),
-          w.entrenamiento?.tec ? 'TEC' : w.entrenamiento?.tsa ? 'TSA' : 'Otro',
+          (w.entrenamiento?.tec ? 'TEC' : w.entrenamiento?.tsa ? 'TSA' : 'Otro'),
           w.firmaApertura ? 'FIRMADO' : 'PENDIENTE'
         ]);
         
@@ -1297,56 +1297,53 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
  }, {} as {[key: string]: typeof atsPeligros});
 
  const eppOptions = {
-    'Ropa': [
-      { id: 'overol_trabajo', label: 'Overol de trabajo' },
-      { id: 'overol_ignifugo', label: 'Overol Ignifugo, Categoria:' },
-      { id: 'peto', label: 'Peto' },
-      { id: 'manguillas', label: 'Manguillas' },
-      { id: 'polainas', label: 'Polainas' },
-      { id: 'otro_ropa', label: 'Otro (Cual):' },
+    'Protección Cabeza, Visual, Auditiva y Respiratoria': [
+      { id: 'casco_seguridad', label: 'Casco de seguridad', type: 'custom_casco' },
+      { id: 'gafas_seguridad', label: 'Gafas de seguridad', type: 'boolean' },
+      { id: 'gafas_oxicorte', label: 'Gafas de oxicorte', type: 'boolean' },
+      { id: 'monogafas', label: 'Monogafas', type: 'boolean' },
+      { id: 'careta_soldador', label: 'Careta de soldador', type: 'boolean' },
+      { id: 'careta_proteccion_total', label: 'Careta de protección total', type: 'boolean' },
+      { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
+      { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
+      { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
+      { id: 'protector_auditivo', label: 'Protector auditivo tipo:', type: 'select', selectOptions: ['Copa', 'Inserción'] },
+      { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+      { id: 'chavo_en_tela_o_carnaza', label: 'Chavo en tela o carnaza', type: 'boolean' },
+      { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
     ],
-    'Protección de pies y piernas': [
-      { id: 'botas_seguridad', label: 'Botas de seguridad con puntera' },
-      { id: 'botas_dielectricas', label: 'Botas dieléctricas' },
-      { id: 'otro_pies', label: 'Otro (Cual):' },
+    'Protección Corporal, Manos y Pies': [
+      { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
+      { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
+      { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
+      { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
+      { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
+      { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },    
+      { id: 'polainas', label: 'Polainas', type: 'boolean' },
+      { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
+      { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
+      { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
+      { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
+      { id: 'guante_temperatura', label: 'Guante temperatura', type: 'boolean' },
+      { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
+      { id: 'botas_caucho_seguridad', label: 'Botas de caucho de seguridad', type: 'boolean' },
+      { id: 'botas_dielectricas', label: 'Botas dieléctricas', type: 'boolean' },
+      { id: 'proteccion_metatarso', label: 'Protección Metatarso', type: 'boolean' },
     ],
-    'Protección auditiva': [
-      { id: 'tipo_insercion', label: 'Tipo Inserción' },
-      { id: 'tipo_copa', label: 'Tipo copa' },
-    ],
-    'Protección respiratoria': [
-      { id: 'respirador_cartuchos', label: 'Respirador con cartuchos para:' },
-      { id: 'mascarilla_desechable', label: 'Mascarilla desechable para:' },
-      { id: 'otro_respiratoria', label: 'Otro (Cual):' },
-    ],
-    'Protección cabeza': [
-      { id: 'casco', label: 'Casco Tipo_Clase_ SIN_CON_Barbuquejo' },
-      { id: 'chavo', label: 'Chavo en tela o carnaza' },
-    ],
-    'Protección facial y ocular': [
-      { id: 'careta_lente_neutro', label: 'Careta lente neutro' },
-      { id: 'monogafas', label: 'Monogafas / Gafas' },
-      { id: 'gafas_oxicorte', label: 'Gafas de oxicorte' },
-      { id: 'careta_soldador', label: 'Careta de soldador' },
-      { id: 'careta_dielectrica', label: 'Careta de dieléctrica, clase:' },
-      { id: 'otro_facial', label: 'Otro (Cual):' },
-    ],
-    'Barrera/Señales de advertencia': [
-      { id: 'senalizacion', label: 'Señalización' },
-      { id: 'barandas', label: 'Barandas' },
-      { id: 'delimitacion', label: 'Delimitación Perimetral' },
-      { id: 'control_acceso', label: 'Control de acceso' },
-    ],
-    'Guantes': [
-      { id: 'proteccion_mecanica', label: 'Protección mecánica:' },
-      { id: 'proteccion_dielectrica_guantes', label: 'Protección dieléctrica:' },
-      { id: 'proteccion_quimica', label: 'Protección química' },
-      { id: 'otro_guantes', label: 'Otro (Cual):' },
-    ],
-    'Otros': [
-      { id: 'tapete_dielectrico', label: 'Tapete dieléctrico' },
-      { id: 'pertiga_dielectrica', label: 'Pértiga dieléctrica' },
-      { id: 'otro_otros', label: 'Otro (Cual):' },
+    'Protección Contra Caídas y Equipos Especiales': [
+      { id: 'arnes', label: 'Arnés', type: 'text' },
+      { id: 'mosqueton', label: 'Mosquetón', type: 'boolean' },
+      { id: 'punto_de_anclaje', label: 'Punto de anclaje (cual)', type: 'text' },
+      { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
+      { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
+      { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
+      { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
+      { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+      { id: 'senalizacion', label: 'Señalización', type: 'boolean' },
+      { id: 'barandas', label: 'Barandas', type: 'boolean' },
+      { id: 'delimitacion_perimetral', label: 'Delimitación perímetro', type: 'boolean' },
+      { id: 'control_acceso', label: 'Control acceso', type: 'boolean' },
+      { id: 'otro_epp', label: 'Otro:', type: 'text' },
     ],
 };
   
@@ -1657,17 +1654,37 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                 </div>
                             </Section>
                             <Section title="2. EPP Requeridos" className="mt-6">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                                {Object.entries(eppOptions).flatMap(([category, items]) => 
-                                    items.map(item => (
-                                        <RadioCheck 
-                                            key={item.id}
-                                            label={item.label}
-                                            value={(permit.anexoATS?.epp as any)?.[item.id]}
-                                            spec={(permit.anexoATS?.epp as any)?.[`${item.id}_spec`]}
-                                        />
-                                    ))
-                                )}
+                                <div className="space-y-4">
+                                    {Object.entries(eppOptions).map(([category, items]) => (
+                                        <div key={category}>
+                                            <h4 className="font-semibold text-gray-600 mb-2">{category}</h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 pl-4">
+                                                {items.map(item => {
+                                                    const isChecked = (permit.anexoATS?.epp as any)?.[item.id] === true;
+                                                    if (!isChecked) return null;
+
+                                                    let spec = '';
+                                                    if (item.type === 'text') {
+                                                        spec = (permit.anexoATS?.epp as any)?.[`${item.id}_spec`] || '';
+                                                    } else if (item.type === 'select') {
+                                                        spec = (permit.anexoATS?.epp as any)?.[`${item.id}_tipo`] || '';
+                                                    } else if (item.type === 'custom_casco') {
+                                                        const eppData = permit.anexoATS?.epp as any;
+                                                        spec = [eppData.casco_seguridad_tipo, eppData.casco_seguridad_clase, eppData.casco_seguridad_barbuquejo].filter(Boolean).join(', ');
+                                                    }
+                                                    
+                                                    return (
+                                                        <RadioCheck 
+                                                            key={item.id}
+                                                            label={item.label}
+                                                            value={true}
+                                                            spec={spec}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </Section>
                              <Section title="3. Justificación de Uso" className="mt-6">
