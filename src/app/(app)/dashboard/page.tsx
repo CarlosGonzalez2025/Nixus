@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, CheckCircle, Clock, XCircle, PlusCircle, Activity, TrendingUp, Upload, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
-import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe, QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe, QueryConstraint, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { format } from 'date-fns';
@@ -119,83 +119,97 @@ export default function Dashboard() {
 
     try {
       const permitsCollection = collection(db, 'permits');
-      const queryConstraints: QueryConstraint[] = [];
       const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
+      const isSST = user.role === 'lider_sst';
 
-      // Si el usuario es solicitante o lider_tarea, solo puede ver sus permisos.
+      let baseQueryConstraints: QueryConstraint[] = [];
+
       if (isSolicitante) {
-        queryConstraints.push(where('createdBy', '==', user.uid));
+        baseQueryConstraints.push(where('createdBy', '==', user.uid));
       }
-
-      // Query para permisos recientes (usando las restricciones de rol)
-      const recentPermitsQueryConstraints: QueryConstraint[] = [...queryConstraints, limit(10)];
       
-      // Solo ordenar si NO es un solicitante para evitar el error de índice compuesto
+      // Nueva lógica para SST
+      if (isSST) {
+        const sstQuery1 = query(permitsCollection, where('trabajoAlturas', '==', true));
+        const sstQuery2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
+
+        const fetchSSTData = async () => {
+          try {
+            const [snapshot1, snapshot2] = await Promise.all([getDocs(sstQuery1), getDocs(sstQuery2)]);
+            const permitsMap = new Map<string, Permit>();
+
+            snapshot1.docs.forEach(doc => {
+              const data = doc.data();
+              permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
+            });
+            snapshot2.docs.forEach(doc => {
+              if (!permitsMap.has(doc.id)) {
+                const data = doc.data();
+                permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
+              }
+            });
+
+            const combinedPermits = Array.from(permitsMap.values());
+            combinedPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+
+            setPermits(combinedPermits.slice(0, 10));
+            setStats({
+              total: combinedPermits.length,
+              pendiente: combinedPermits.filter(p => p.status === 'pendiente_revision').length,
+              aprobado: combinedPermits.filter(p => p.status === 'aprobado').length,
+              enEjecucion: combinedPermits.filter(p => p.status === 'en_ejecucion').length
+            });
+            setLoading(false);
+          } catch (error) {
+            console.error('❌ Error fetching SST data:', error);
+            setLoading(false);
+          }
+        };
+
+        fetchSSTData();
+        return; // Salir del useEffect para evitar la lógica de onSnapshot
+      }
+      
+      // Lógica onSnapshot para roles que no son SST
+      const recentPermitsQueryConstraints: QueryConstraint[] = [...baseQueryConstraints, limit(10)];
       if (!isSolicitante) {
         recentPermitsQueryConstraints.push(orderBy('createdAt', 'desc'));
       }
-      
       const recentPermitsQuery = query(permitsCollection, ...recentPermitsQueryConstraints);
 
-
-      const permitsUnsubscribe = onSnapshot(
-        recentPermitsQuery,
-        (snapshot) => {
-          console.log('📊 Recent permits updated:', snapshot.size);
-          const allRecentPermits = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              createdAt: parseFirestoreDate(data.createdAt),
-            } as Permit;
-          });
-          
-          // Si es solicitante, ordenar en el cliente
-          if (isSolicitante) {
-            allRecentPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-          }
-          
-          setPermits(allRecentPermits);
-          setLoading(false);
-        },
-        (error) => {
-          console.error('❌ Error fetching recent permits:', error);
-          
-          if (error.code === 'permission-denied') {
-            console.log('🚫 Permission denied - redirecting to login');
-            router.push('/login');
-          }
-          
-          setLoading(false);
+      const permitsUnsubscribe = onSnapshot(recentPermitsQuery, (snapshot) => {
+        console.log('📊 Recent permits updated:', snapshot.size);
+        const allRecentPermits = snapshot.docs.map(doc => ({
+          id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
+        } as Permit));
+        
+        if (isSolicitante) {
+          allRecentPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         }
-      );
+        
+        setPermits(allRecentPermits);
+        setLoading(false);
+      }, (error) => {
+        console.error('❌ Error fetching recent permits:', error);
+        if (error.code === 'permission-denied') router.push('/login');
+        setLoading(false);
+      });
       unsubscribers.push(permitsUnsubscribe);
 
-      // Query para estadísticas (usando las mismas restricciones de rol)
-      const allPermitsQuery = query(permitsCollection, ...queryConstraints);
-      
-      const statsUnsubscribe = onSnapshot(
-        allPermitsQuery,
-        (statsSnapshot) => {
-          console.log('📈 Stats updated:', statsSnapshot.size);
-          const allPermits = statsSnapshot.docs.map(d => d.data() as Permit);
-          setStats({
-            total: allPermits.length,
-            pendiente: allPermits.filter(p => p.status === 'pendiente_revision').length,
-            aprobado: allPermits.filter(p => p.status === 'aprobado').length,
-            enEjecucion: allPermits.filter(p => p.status === 'en_ejecucion').length
-          });
-        },
-        (error) => {
-          console.error('❌ Error fetching stats:', error);
-          
-          if (error.code === 'permission-denied') {
-            console.log('🚫 Permission denied on stats - redirecting to login');
-            router.push('/login');
-          }
-        }
-      );
+      const allPermitsQuery = query(permitsCollection, ...baseQueryConstraints);
+      const statsUnsubscribe = onSnapshot(allPermitsQuery, (statsSnapshot) => {
+        console.log('📈 Stats updated:', statsSnapshot.size);
+        const allPermitsData = statsSnapshot.docs.map(d => d.data() as Permit);
+        setStats({
+          total: allPermitsData.length,
+          pendiente: allPermitsData.filter(p => p.status === 'pendiente_revision').length,
+          aprobado: allPermitsData.filter(p => p.status === 'aprobado').length,
+          enEjecucion: allPermitsData.filter(p => p.status === 'en_ejecucion').length
+        });
+      }, (error) => {
+        console.error('❌ Error fetching stats:', error);
+        if (error.code === 'permission-denied') router.push('/login');
+      });
       unsubscribers.push(statsUnsubscribe);
 
     } catch (error) {
@@ -205,13 +219,7 @@ export default function Dashboard() {
 
     return () => {
       console.log('🧹 Cleaning up dashboard listeners');
-      unsubscribers.forEach(unsub => {
-        try {
-          unsub();
-        } catch (error) {
-          console.error('Error unsubscribing:', error);
-        }
-      });
+      unsubscribers.forEach(unsub => unsub());
     };
   }, [user, userLoading, router]);
 
@@ -302,7 +310,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'administrador') && (
+      {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -346,7 +354,7 @@ export default function Dashboard() {
               <FileText size={64} className="mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-semibold">No hay permisos de trabajo registrados</p>
               <p className="text-sm mt-2 mb-4">Crea tu primer permiso para comenzar</p>
-              {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'administrador') && (
+              {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
                 <Button asChild style={{ backgroundColor: 'hsl(188, 75%, 43%)', color: 'white' }}>
                   <Link href="/permits/create">
                     <PlusCircle className="mr-2"/>
@@ -432,3 +440,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    

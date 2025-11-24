@@ -682,7 +682,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 userId: user.uid,
                 signedAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp(),
                 userRole: user.role,
-                userEmpresa: user.empresa,
+                userEmpresa: user.empresa || 'N/A',
                 comments: comments || ''
             };
             updateData[`approvals.${role}`] = approvalData;
@@ -700,6 +700,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
+                        updateData['isSSTSignatureRequired'] = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
                     }
                     // Auto-llenar validación diaria del responsable
                     [
@@ -735,7 +736,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 ...permitBeforeData?.approvals,
                 [role]: approvalData
             };
-            const isSSTRequired = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
+            const isSSTRequired = permitBeforeData?.isSSTSignatureRequired;
             let allRequiredSignaturesDone = updatedApprovals.solicitante?.status === 'aprobado' && updatedApprovals.autorizante?.status === 'aprobado';
             if (permitBeforeData?.controlEnergia) {
                 allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.mantenimiento?.status === 'aprobado';
