@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, use } from 'react';
@@ -37,6 +36,7 @@ import {
   ShieldCheck,
   Circle,
   MessageSquare,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1259,30 +1259,28 @@ export default function PermitDetailPage() {
   };
 
   useEffect(() => {
-    // Evita el bucle: solo actualiza si la acción es 'cierre' y los nombres no están ya establecidos
     if (closureAction === 'cierre' && permit) {
       const responsableName = permit.user?.displayName || '';
       const autoridadName = permit.approvals?.autorizante?.userName || '';
       
-      const updates: Partial<Permit['closure']> = {};
       let needsUpdate = false;
+      const updates: Partial<Permit['closure']> = { ...permit.closure };
 
-      if (permit.closure?.responsable?.nombre !== responsableName) {
-        updates.responsable = { ...permit.closure?.responsable, nombre: responsableName };
+      if (updates.responsable?.nombre !== responsableName) {
+        updates.responsable = { ...(updates.responsable || {}), nombre: responsableName };
         needsUpdate = true;
       }
 
-      if (permit.closure?.autoridad?.nombre !== autoridadName) {
-        updates.autoridad = { ...permit.closure?.autoridad, nombre: autoridadName };
+      if (updates.autoridad?.nombre !== autoridadName) {
+        updates.autoridad = { ...(updates.autoridad || {}), nombre: autoridadName };
         needsUpdate = true;
       }
-
+      
       if (needsUpdate) {
-        handleClosureFieldChange('responsable', updates.responsable || permit.closure?.responsable);
-        handleClosureFieldChange('autoridad', updates.autoridad || permit.closure?.autoridad);
+        setPermit(prev => prev ? ({ ...prev, closure: updates }) : null);
       }
     }
-  }, [closureAction, permit?.user?.displayName, permit?.approvals?.autorizante?.userName]);
+  }, [closureAction, permit?.user?.displayName, permit?.approvals?.autorizante?.userName, permit?.closure]);
 
 
   if (loading || userLoading) {
@@ -2077,6 +2075,14 @@ export default function PermitDetailPage() {
                            </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+                             <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded" role="alert">
+                                <p className="font-bold flex items-center gap-2"><Info size={16}/>Instrucciones</p>
+                                <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                                    <li>Para **Cerrar** el permiso, todos los trabajadores deben haber firmado su salida. Luego, firme como Responsable y finalmente como Autoridad del Área.</li>
+                                    <li>Para **Cancelar** el permiso, solo se requiere la firma de quien cancela.</li>
+                                </ul>
+                            </div>
+
                             <div className="space-y-4">
                                 <Label className="font-semibold">¿Qué acción desea realizar?</Label>
                                 <RadioGroup 
@@ -2118,20 +2124,43 @@ export default function PermitDetailPage() {
                                             <Textarea placeholder="Observaciones de cierre" value={permit.closure?.observacionesCierre || ''} onChange={e => handleClosureFieldChange('observacionesCierre', e.target.value)} />
 
                                             <div className="p-3 border rounded-md space-y-3 bg-white">
-                                                <h5 className="text-sm font-semibold">Autoridad del Área</h5>
-                                                <Input placeholder="Nombre" value={permit.closure?.autoridad?.nombre || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, nombre: e.target.value })} />
-                                                <Input type="datetime-local" value={permit.closure?.autoridad?.fecha || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, fecha: e.target.value })} />
-                                                <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
-                                                {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2"/>}
-                                            </div>
-
-                                            <div className="p-3 border rounded-md space-y-3 bg-white">
                                                 <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
-                                                <Input placeholder="Nombre" value={permit.closure?.responsable?.nombre || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, nombre: e.target.value })}/>
+                                                <Input readOnly disabled placeholder="Nombre" value={permit.closure?.responsable?.nombre || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, nombre: e.target.value })}/>
                                                 <Input type="datetime-local" value={permit.closure?.responsable?.fecha || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, fecha: e.target.value })}/>
                                                 <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
                                                 {permit.closure?.responsable?.firma && <Image src={permit.closure.responsable.firma} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2"/>}
                                             </div>
+                                            
+                                            <div className="p-3 border rounded-md space-y-3 bg-white">
+                                                <h5 className="text-sm font-semibold">Autoridad del Área</h5>
+                                                <Input readOnly disabled placeholder="Nombre" value={permit.closure?.autoridad?.nombre || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, nombre: e.target.value })} />
+                                                <Input type="datetime-local" value={permit.closure?.autoridad?.fecha || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, fecha: e.target.value })} />
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <div className="w-full">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm" 
+                                                                className="w-full" 
+                                                                onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')}
+                                                                disabled={!permit.closure?.responsable?.firma}
+                                                            >
+                                                                <SignatureIcon className="mr-2"/>Firmar Cierre
+                                                            </Button>
+                                                          </div>
+                                                        </TooltipTrigger>
+                                                        {!permit.closure?.responsable?.firma && (
+                                                            <TooltipContent>
+                                                                <p>Debe firmar primero el Responsable del Trabajo.</p>
+                                                            </TooltipContent>
+                                                        )}
+                                                    </Tooltip>
+                                                </TooltipProvider>
+
+                                                {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2"/>}
+                                            </div>
+
                                         </div>
                                     )}
                                 </div>
