@@ -992,13 +992,6 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             empresa: currentUser.empresa || 'N/A'
         };
 
-        const permitSimpleData = {
-          id: permit.id,
-          number: permit.number,
-          isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
-          controlEnergia: permit.controlEnergia
-        };
-
         const result = await addSignatureAndNotify(
             permit.id,
             signingRole.role,
@@ -1006,7 +999,10 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             signatureDataUrl,
             simpleUser,
             signatureObservation,
-            permitSimpleData
+            {
+              isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
+              controlEnergia: permit.controlEnergia
+            }
         );
 
         if (result.success) {
@@ -1256,6 +1252,19 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       setIsSigning(false);
     }
   };
+
+  useEffect(() => {
+    if (closureAction === 'cierre' && permit) {
+      handleClosureFieldChange('responsable', {
+        ...permit.closure?.responsable,
+        nombre: permit.user?.displayName || ''
+      });
+      handleClosureFieldChange('autoridad', {
+        ...permit.closure?.autoridad,
+        nombre: permit.approvals?.autorizante?.userName || ''
+      });
+    }
+  }, [closureAction, permit]);
 
 
   if (loading || userLoading) {

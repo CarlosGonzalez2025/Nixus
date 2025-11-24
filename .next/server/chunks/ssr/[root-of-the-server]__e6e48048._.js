@@ -700,7 +700,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
-                        updateData['isSSTSignatureRequired'] = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
+                        updateData['isSSTSignatureRequired'] = permitData?.isSSTSignatureRequired;
                     }
                     // Auto-llenar validación diaria del responsable
                     [
