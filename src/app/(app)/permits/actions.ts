@@ -261,9 +261,9 @@ export async function addSignatureAndNotify(
   role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
-  user: User,
+  user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string },
   comments?: string,
-  permitData?: Permit,
+  permitData?: { id: string, number?: string, isSSTSignatureRequired?: boolean, controlEnergia?: boolean }
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
@@ -316,7 +316,7 @@ export async function addSignatureAndNotify(
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
-                        updateData['isSSTSignatureRequired'] = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
+                        updateData['isSSTSignatureRequired'] = permitData?.isSSTSignatureRequired;
                     }
 
                     // Auto-llenar validación diaria del responsable

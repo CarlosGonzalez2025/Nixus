@@ -267,7 +267,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
-    { id: 'personalSaludable', label: 'K. EL PERSONAL CHE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+    { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
     { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR QUE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
@@ -985,10 +985,18 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     setIsSigning(true);
 
     try {
-        const userToSign: User = {
-            ...currentUser,
+        const simpleUser = {
+            uid: currentUser.uid,
             displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
-            empresa: currentUser.empresa || 'N/A' // Fallback
+            role: currentUser.role,
+            empresa: currentUser.empresa || 'N/A'
+        };
+
+        const permitSimpleData = {
+          id: permit.id,
+          number: permit.number,
+          isSSTSignatureRequired: permit.anexoAltura?.tareaRealizar?.id === 'otro',
+          controlEnergia: permit.controlEnergia
         };
 
         const result = await addSignatureAndNotify(
@@ -996,15 +1004,15 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             signingRole.role,
             signingRole.type,
             signatureDataUrl,
-            userToSign,
+            simpleUser,
             signatureObservation,
-            permit
+            permitSimpleData
         );
 
         if (result.success) {
             toast({
                 title: 'Firma Registrada',
-                description: `${userToSign.displayName} ha firmado exitosamente.`,
+                description: `${simpleUser.displayName} ha firmado exitosamente.`,
             });
             setIsSignatureDialogOpen(false);
             setSigningRole(null);

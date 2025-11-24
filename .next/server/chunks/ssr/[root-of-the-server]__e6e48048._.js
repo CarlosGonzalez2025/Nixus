@@ -475,7 +475,7 @@ const signatureRoles = {
     solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
     autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
     mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-    lider_sst: 'AREA SST (si aplica)'
+    lider_sst: 'Firma SST'
 };
 async function createPermit(data) {
     if (!data.userId) {
