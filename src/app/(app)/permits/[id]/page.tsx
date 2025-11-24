@@ -1007,7 +1007,6 @@ export default function PermitDetailPage() {
             signatureDataUrl,
             simpleUser,
             signatureObservation,
-            essentialPermitData
         );
 
         if (result.success) {
@@ -1134,43 +1133,49 @@ export default function PermitDetailPage() {
   };
 
 
-  const canChangeStatus = (targetStatus: PermitStatus) => {
-    if (!currentUser || !permit) return false;
+  const canChangeStatus = (targetStatus: PermitStatus): { can: boolean; reason?: string } => {
+    if (!currentUser || !permit) return { can: false, reason: 'Cargando datos...' };
     const { role } = currentUser;
-    const { status, approvals } = permit;
+    const { status, approvals, workers } = permit;
 
-    if (!approvals) return false;
-
-    let allRequiredSignaturesDone = 
-      approvals.solicitante?.status === 'aprobado' &&
-      approvals.autorizante?.status === 'aprobado';
-      
-    if(permit.controlEnergia){
-        allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.mantenimiento?.status === 'aprobado';
-    }
-    
-    if (isSSTSignatureRequired) {
-        allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.lider_sst?.status === 'aprobado';
-    }
-
+    if (!approvals) return { can: false, reason: 'Faltan datos de aprobación.' };
 
     switch (targetStatus) {
       case 'aprobado':
-        return false; // Lógica movida a addSignatureAndNotify
+        return { can: false, reason: 'La aprobación es automática al completar firmas.' };
       case 'rechazado':
-        return (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
+        const canRechazar = (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
+        return { can: canRechazar, reason: canRechazar ? undefined : 'No tiene permisos o el permiso no está en el estado adecuado.' };
       case 'en_ejecucion':
-        return false; // Lógica movida a addSignatureAndNotify
+        return { can: false, reason: 'El estado "En Ejecución" se activa automáticamente.' };
       case 'suspendido':
-        return status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
+        const canSuspender = status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
+        return { can: canSuspender, reason: canSuspender ? undefined : 'Solo un Líder SST o Admin puede suspender un permiso en ejecución.' };
       case 'cerrado':
-        const allWorkersSignedClosure = permit.workers?.every(w => w.firmaCierre);
-        if (!allWorkersSignedClosure) return false;
-        return (status === 'en_ejecucion' || status === 'suspendido') && (role === 'lider_tarea' || role === 'admin');
+        const canCloseRole = role === 'lider_tarea' || role === 'admin';
+        if (!canCloseRole) return { can: false, reason: 'No tiene el rol para cerrar permisos.' };
+
+        const canCloseState = status === 'en_ejecucion' || status === 'suspendido';
+        if (!canCloseState) return { can: false, reason: `El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${status}).` };
+
+        const reasons: string[] = [];
+        const allWorkersSignedClosure = workers?.every(w => w.firmaCierre);
+        if (!allWorkersSignedClosure) reasons.push('Faltan firmas de cierre de los trabajadores.');
+        
+        const responsableSigned = permit.closure?.responsable?.firma;
+        if (!responsableSigned) reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
+
+        const autoridadSigned = permit.closure?.autoridad?.firma;
+        if (!autoridadSigned) reasons.push('Falta la firma de cierre de la Autoridad del Área.');
+
+        if (reasons.length > 0) return { can: false, reason: reasons.join(' ') };
+        
+        return { can: true };
       default:
-        return false;
+        return { can: false, reason: 'Estado de destino no reconocido.' };
     }
   };
+
 
   const handleClosureFieldChange = (field: string, value: any) => {
     if (!permit) return;
@@ -1266,12 +1271,12 @@ export default function PermitDetailPage() {
       let needsUpdate = false;
       const updates: Partial<Permit['closure']> = { ...permit.closure };
 
-      if (updates.responsable?.nombre !== responsableName) {
+      if (!updates.responsable?.nombre) {
         updates.responsable = { ...(updates.responsable || {}), nombre: responsableName };
         needsUpdate = true;
       }
 
-      if (updates.autoridad?.nombre !== autoridadName) {
+      if (!updates.autoridad?.nombre) {
         updates.autoridad = { ...(updates.autoridad || {}), nombre: autoridadName };
         needsUpdate = true;
       }
@@ -1280,7 +1285,7 @@ export default function PermitDetailPage() {
         setPermit(prev => prev ? ({ ...prev, closure: updates }) : null);
       }
     }
-  }, [closureAction, permit?.user?.displayName, permit?.approvals?.autorizante?.userName, permit?.closure]);
+  }, [closureAction, permit?.user?.displayName, permit?.approvals?.autorizante?.userName]);
 
 
   if (loading || userLoading) {
@@ -1616,7 +1621,7 @@ export default function PermitDetailPage() {
 
             <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
                  <Button variant="outline" onClick={handleExportToPDF}><FileDown className="mr-2"/>Exportar a PDF</Button>
-                 {canChangeStatus('rechazado') && (
+                 {canChangeStatus('rechazado').can && (
                     <AlertDialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive"><XCircle className="mr-2"/>Rechazar</Button>
@@ -2065,7 +2070,6 @@ export default function PermitDetailPage() {
                     </div>
                 </Section>
 
-                {/* ✨ CORRECCIÓN: Sección de Cancelación y Cierre ahora es funcional y condicional */}
                 {isApproved && (
                     <Collapsible>
                         <CollapsibleTrigger className="w-full">
@@ -2075,14 +2079,6 @@ export default function PermitDetailPage() {
                            </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-                             <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded" role="alert">
-                                <p className="font-bold flex items-center gap-2"><Info size={16}/>Instrucciones</p>
-                                <ul className="list-disc list-inside text-sm mt-2 space-y-1">
-                                    <li>Para **Cerrar** el permiso, todos los trabajadores deben haber firmado su salida. Luego, firme como Responsable y finalmente como Autoridad del Área.</li>
-                                    <li>Para **Cancelar** el permiso, solo se requiere la firma de quien cancela.</li>
-                                </ul>
-                            </div>
-
                             <div className="space-y-4">
                                 <Label className="font-semibold">¿Qué acción desea realizar?</Label>
                                 <RadioGroup 
@@ -2103,64 +2099,85 @@ export default function PermitDetailPage() {
                             
                             {closureAction && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6 pt-6 border-t">
-                                    {/* Columna de Cancelación (Condicional) */}
                                     {closureAction === 'cancelacion' && (
                                         <div className="space-y-4 p-4 border rounded-lg bg-red-50/50 border-red-100">
                                             <h4 className="font-bold text-md text-red-800">Cancelación del Trabajo</h4>
                                             <RadioCheck label="¿Se canceló el trabajo?" value={permit.closure?.cancelado} onValueChange={(val) => handleClosureFieldChange('cancelado', val)} />
                                             <Textarea placeholder="Razón de la cancelación" value={permit.closure?.razonCancelacion || ''} onChange={e => handleClosureFieldChange('razonCancelacion', e.target.value)} />
-                                            <Input placeholder="Nombre de quien cancela" value={permit.closure?.canceladoPor?.nombre || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, nombre: e.target.value })} />
-                                            <Input type="datetime-local" value={permit.closure?.canceladoPor?.fecha || ''} onChange={e => handleClosureFieldChange('canceladoPor', { ...permit.closure?.canceladoPor, fecha: e.target.value })} />
+                                            <Input placeholder="Nombre de quien cancela" value={signerName} onChange={e => setSignerName(e.target.value)} />
                                             <Button variant="destructive" className="w-full" onClick={() => openSignatureDialog('cancelacion', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cancelación</Button>
                                             {permit.closure?.canceladoPor?.firma && <Image src={permit.closure.canceladoPor.firma} alt="Firma Cancelación" width={100} height={50} className="border rounded mt-2"/>}
                                         </div>
                                     )}
                                     
-                                    {/* Columna de Cierre (Condicional) */}
                                     {closureAction === 'cierre' && (
-                                        <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50 border-blue-100 md:col-start-2">
-                                            <h4 className="font-bold text-md text-blue-800">Cierre del Permiso</h4>
-                                            <RadioCheck label="¿Se terminó el trabajo?" value={permit.closure?.terminado} onValueChange={(val) => handleClosureFieldChange('terminado', val)} />
-                                            <Textarea placeholder="Observaciones de cierre" value={permit.closure?.observacionesCierre || ''} onChange={e => handleClosureFieldChange('observacionesCierre', e.target.value)} />
+                                        <div className="md:col-span-2 space-y-4">
+                                            <div className="flex flex-col md:flex-row gap-8">
+                                                <div className="flex-1 p-4 border rounded-lg bg-blue-50/50 border-blue-100 space-y-3">
+                                                    <h4 className="font-bold text-md text-blue-800">Cierre del Permiso</h4>
+                                                    <RadioCheck label="¿Se terminó el trabajo?" value={permit.closure?.terminado} onValueChange={(val) => handleClosureFieldChange('terminado', val)} />
+                                                    <Textarea placeholder="Observaciones de cierre" value={permit.closure?.observacionesCierre || ''} onChange={e => handleClosureFieldChange('observacionesCierre', e.target.value)} />
 
-                                            <div className="p-3 border rounded-md space-y-3 bg-white">
-                                                <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
-                                                <Input readOnly disabled placeholder="Nombre" value={permit.closure?.responsable?.nombre || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, nombre: e.target.value })}/>
-                                                <Input type="datetime-local" value={permit.closure?.responsable?.fecha || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, fecha: e.target.value })}/>
-                                                <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
-                                                {permit.closure?.responsable?.firma && <Image src={permit.closure.responsable.firma} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2"/>}
+                                                    <div className="p-3 border rounded-md space-y-3 bg-white">
+                                                        <h5 className="text-sm font-semibold">Responsable del Trabajo</h5>
+                                                        <Input readOnly disabled value={permit.closure?.responsable?.nombre || ''} />
+                                                        <Input type="datetime-local" value={permit.closure?.responsable?.fecha || ''} onChange={e => handleClosureFieldChange('responsable', { ...permit.closure?.responsable, fecha: e.target.value })}/>
+                                                        <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                                        {permit.closure?.responsable?.firma && <Image src={permit.closure.responsable.firma} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2"/>}
+                                                    </div>
+                                                    
+                                                    <div className="p-3 border rounded-md space-y-3 bg-white">
+                                                        <h5 className="text-sm font-semibold">Autoridad del Área</h5>
+                                                        <Input readOnly disabled value={permit.closure?.autoridad?.nombre || ''} />
+                                                        <Input type="datetime-local" value={permit.closure?.autoridad?.fecha || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, fecha: e.target.value })} />
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div className="w-full">
+                                                                        <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')} disabled={!permit.closure?.responsable?.firma}><SignatureIcon className="mr-2"/>Firmar Cierre</Button>
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                {!permit.closure?.responsable?.firma && <TooltipContent><p>Debe firmar primero el Responsable del Trabajo.</p></TooltipContent>}
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                        {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2"/>}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex-1 space-y-4">
+                                                     <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded" role="alert">
+                                                        <p className="font-bold flex items-center gap-2"><Info size={16}/>Instrucciones para Cerrar</p>
+                                                        <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                                                            <li>Todos los trabajadores deben haber firmado su salida.</li>
+                                                            <li>El Responsable del Trabajo debe firmar el cierre.</li>
+                                                            <li>La Autoridad del Área debe firmar el cierre.</li>
+                                                            <li>Una vez cumplido, el botón "Cerrar Permiso" se activará.</li>
+                                                        </ul>
+                                                    </div>
+                                                    <TooltipProvider>
+                                                        <Tooltip open={canChangeStatus('cerrado').can ? false : undefined}>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="w-full">
+                                                                    <Button 
+                                                                        onClick={() => handleChangeStatus('cerrado')} 
+                                                                        disabled={!canChangeStatus('cerrado').can || isStatusChanging}
+                                                                        className="w-full text-lg py-6"
+                                                                    >
+                                                                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <Lock />} 
+                                                                        Cerrar Permiso
+                                                                    </Button>
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            {!canChangeStatus('cerrado').can && (
+                                                                <TooltipContent side="bottom" className="max-w-xs">
+                                                                    <p className="font-semibold">No se puede cerrar el permiso:</p>
+                                                                    <p className="text-xs">{canChangeStatus('cerrado').reason}</p>
+                                                                </TooltipContent>
+                                                            )}
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
                                             </div>
-                                            
-                                            <div className="p-3 border rounded-md space-y-3 bg-white">
-                                                <h5 className="text-sm font-semibold">Autoridad del Área</h5>
-                                                <Input readOnly disabled placeholder="Nombre" value={permit.closure?.autoridad?.nombre || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, nombre: e.target.value })} />
-                                                <Input type="datetime-local" value={permit.closure?.autoridad?.fecha || ''} onChange={e => handleClosureFieldChange('autoridad', { ...permit.closure?.autoridad, fecha: e.target.value })} />
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                          <div className="w-full">
-                                                            <Button 
-                                                                variant="outline" 
-                                                                size="sm" 
-                                                                className="w-full" 
-                                                                onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')}
-                                                                disabled={!permit.closure?.responsable?.firma}
-                                                            >
-                                                                <SignatureIcon className="mr-2"/>Firmar Cierre
-                                                            </Button>
-                                                          </div>
-                                                        </TooltipTrigger>
-                                                        {!permit.closure?.responsable?.firma && (
-                                                            <TooltipContent>
-                                                                <p>Debe firmar primero el Responsable del Trabajo.</p>
-                                                            </TooltipContent>
-                                                        )}
-                                                    </Tooltip>
-                                                </TooltipProvider>
-
-                                                {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2"/>}
-                                            </div>
-
                                         </div>
                                     )}
                                 </div>

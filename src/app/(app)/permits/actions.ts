@@ -262,8 +262,7 @@ export async function addSignatureAndNotify(
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string },
-  comments?: string,
-  permitData?: { id: string, number?: string, isSSTSignatureRequired?: boolean, controlEnergia?: boolean }
+  comments?: string
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
@@ -274,6 +273,11 @@ export async function addSignatureAndNotify(
 
     try {
         const docRef = adminDb.collection('permits').doc(permitId);
+        const permitDocBefore = await docRef.get();
+        const permitBeforeData = permitDocBefore.data() as Permit | undefined;
+        if (!permitBeforeData) {
+            return { success: false, error: 'El permiso no existe.' };
+        }
         
         let updateData: { [key: string]: any } = {};
 
@@ -282,7 +286,7 @@ export async function addSignatureAndNotify(
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
             
-            const existingClosureData = (await docRef.get()).data()?.closure?.[closureRole] || {};
+            const existingClosureData = permitBeforeData.closure?.[closureRole] || {};
 
             updateData[closurePath] = {
                 ...existingClosureData,
@@ -299,14 +303,11 @@ export async function addSignatureAndNotify(
                 userId: user.uid,
                 signedAt: FieldValue.serverTimestamp() as any,
                 userRole: user.role,
-                userEmpresa: user.empresa || 'N/A',
+                userEmpresa: user.empresa,
                 comments: comments || '',
             }
             
             updateData[`approvals.${role}`] = approvalData;
-            
-            const permitDocBefore = await docRef.get();
-            const permitBeforeData = permitDocBefore.data() as Permit | undefined;
             
             if (signatureType === 'firmaApertura') {
                 const validationPayload: ValidacionDiaria = { dia: 1, nombre: user.displayName || '', firma: signatureDataUrl, fecha: new Date().toISOString() };
@@ -316,7 +317,7 @@ export async function addSignatureAndNotify(
                         const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                         updateData['number'] = permitNumber;
                         updateData['status'] = 'pendiente_revision';
-                        updateData['isSSTSignatureRequired'] = permitData?.isSSTSignatureRequired;
+                        updateData['isSSTSignatureRequired'] = permitBeforeData?.anexoAltura?.tareaRealizar?.id === 'otro';
                     }
 
                     // Auto-llenar validación diaria del responsable
@@ -340,7 +341,7 @@ export async function addSignatureAndNotify(
                 }
             }
 
-            // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
+            // *** LÓGICA DE APROBACIÓN AUTOMÁTICA ***
             const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
             const isSSTRequired = permitBeforeData?.isSSTSignatureRequired;
 
@@ -355,7 +356,6 @@ export async function addSignatureAndNotify(
                 allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.lider_sst?.status === 'aprobado';
             }
             
-            // Si se cumplen las condiciones, se pone en ejecución.
             if (allRequiredSignaturesDone) {
                 updateData['status'] = 'en_ejecucion';
             }
@@ -377,7 +377,6 @@ export async function addSignatureAndNotify(
           }
         }
         
-        // Notificación adicional si el permiso se puso en ejecución
         if (updateData['status'] === 'en_ejecucion') {
             const executionMessage = `El permiso #${updatedPermitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
             for (const uid of involvedUsers) {
