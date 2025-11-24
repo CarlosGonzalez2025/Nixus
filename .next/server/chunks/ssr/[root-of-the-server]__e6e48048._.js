@@ -484,6 +484,12 @@ async function createPermit(data) {
             error: 'User not authenticated'
         };
     }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
+        };
+    }
     const { userId, userDisplayName, userEmail, userPhotoURL, ...permitData } = data;
     const initialApprovals = {
         solicitante: {
@@ -572,6 +578,12 @@ async function savePermitDraft(data) {
             error: 'User not authenticated'
         };
     }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
+        };
+    }
     const { userId, userDisplayName, userEmail, userPhotoURL, draftId, ...permitData } = data;
     const initialApprovals = {
         solicitante: {
@@ -640,6 +652,12 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         return {
             success: false,
             error: 'Faltan parámetros para guardar la firma.'
+        };
+    }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
         };
     }
     try {
@@ -769,6 +787,12 @@ async function updatePermitStatus(permitId, status, currentUser, reason, closure
             error: 'Permit ID is required.'
         };
     }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
+        };
+    }
     try {
         const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
         const updateData = {
@@ -845,6 +869,12 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
             error: 'Parámetros inválidos.'
         };
     }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
+        };
+    }
     const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
     try {
         const permitSnap = await docRef.get();
@@ -855,17 +885,14 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
             };
         }
         const permitData = permitSnap.data();
-        const anexoData = permitData[anexoName] || {};
-        if (!anexoData.validacion) {
-            anexoData.validacion = {
-                autoridad: [],
-                responsable: []
+        const anexoData = permitData[anexoName];
+        if (!anexoData || !anexoData.validacion) {
+            return {
+                success: false,
+                error: `El anexo ${anexoName} o su estructura de validación no existen en el permiso.`
             };
         }
-        if (!anexoData.validacion[validationType]) {
-            anexoData.validacion[validationType] = [];
-        }
-        const validationArray = anexoData.validacion[validationType];
+        const validationArray = anexoData.validacion[validationType] || [];
         while(validationArray.length <= index){
             validationArray.push({
                 dia: validationArray.length + 1,
@@ -875,9 +902,9 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
             });
         }
         validationArray[index] = data;
-        await docRef.update({
-            [`${anexoName}.validacion.${validationType}`]: validationArray
-        });
+        const updatePayload = {};
+        updatePayload[`${anexoName}.validacion.${validationType}`] = validationArray;
+        await docRef.update(updatePayload);
         // --- Lógica de Notificación ---
         const fullPermitData = {
             id: docRef.id,
@@ -926,6 +953,12 @@ async function addWorkerSignature(permitId, workerIndex, signatureType, signatur
         return {
             success: false,
             error: 'Faltan parámetros.'
+        };
+    }
+    if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
+        return {
+            success: false,
+            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
         };
     }
     const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);

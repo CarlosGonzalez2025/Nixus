@@ -262,7 +262,8 @@ export async function addSignatureAndNotify(
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: User,
-  comments?: string
+  comments?: string,
+  permitData?: Permit,
 ) {
     if (!permitId || !role || !signatureDataUrl || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
@@ -335,47 +336,52 @@ export async function addSignatureAndNotify(
                             updateData[`${anexo}.validacion.autoridad`] = currentValidations;
                         }
                     });
-
-                    // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
-                    const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
-                    let allRequiredSignaturesDone = 
-                        updatedApprovals.solicitante?.status === 'aprobado';
-                    
-                    if (permitBeforeData?.controlEnergia) {
-                        allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.mantenimiento?.status === 'aprobado';
-                    }
-                    
-                    // Se asume que si el autorizante firma, el solicitante ya lo hizo.
-                    // Si se cumplen las condiciones, se pone en ejecución.
-                    if (allRequiredSignaturesDone) {
-                        updateData['status'] = 'en_ejecucion';
-                    }
                 }
+            }
+
+            // *** NUEVA LÓGICA DE APROBACIÓN AUTOMÁTICA ***
+            const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
+            const isSSTRequired = permitData?.anexoAltura?.tareaRealizar?.id === 'otro';
+
+            let allRequiredSignaturesDone = 
+                updatedApprovals.solicitante?.status === 'aprobado' &&
+                updatedApprovals.autorizante?.status === 'aprobado';
+            
+            if (permitBeforeData?.controlEnergia) {
+                allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.mantenimiento?.status === 'aprobado';
+            }
+            if (isSSTRequired) {
+                allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.lider_sst?.status === 'aprobado';
+            }
+            
+            // Si se cumplen las condiciones, se pone en ejecución.
+            if (allRequiredSignaturesDone) {
+                updateData['status'] = 'en_ejecucion';
             }
         }
         
         await docRef.update(updateData);
         
         const permitDoc = await docRef.get();
-        const permitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
+        const updatedPermitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
         
         const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         
-        const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${permitData.number} como ${signatureRoleName}.`;
-        const involvedUsers = await getInvolvedUsers(permitData);
+        const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${updatedPermitData.number} como ${signatureRoleName}.`;
+        const involvedUsers = await getInvolvedUsers(updatedPermitData);
         
         for (const uid of involvedUsers) {
           if (uid !== user.uid) { // No notificar al usuario sobre su propia acción
-            await createNotification(uid, permitData, message, 'signature', user);
+            await createNotification(uid, updatedPermitData, message, 'signature', user);
           }
         }
         
         // Notificación adicional si el permiso se puso en ejecución
         if (updateData['status'] === 'en_ejecucion') {
-            const executionMessage = `El permiso #${permitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
+            const executionMessage = `El permiso #${updatedPermitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
             for (const uid of involvedUsers) {
                  if (uid !== user.uid) {
-                    await createNotification(uid, permitData, executionMessage, 'approval', user);
+                    await createNotification(uid, updatedPermitData, executionMessage, 'approval', user);
                 }
             }
         }
@@ -514,11 +520,12 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
     }
 
     validationArray[index] = data;
-
-    const updatePayload: { [key: string]: any } = {};
-    updatePayload[`${anexoName}.validacion.${validationType}`] = validationArray;
     
-    await docRef.update(updatePayload);
+    const updatePath = `${anexoName}.validacion.${validationType}`;
+    
+    await docRef.update({
+      [updatePath]: validationArray,
+    });
 
     // --- Lógica de Notificación ---
     const fullPermitData = { id: docRef.id, ...permitData } as Permit;

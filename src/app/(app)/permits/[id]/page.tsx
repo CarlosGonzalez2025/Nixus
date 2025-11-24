@@ -998,7 +998,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             signingRole.type,
             signatureDataUrl,
             userToSign,
-            signatureObservation
+            signatureObservation,
+            permit
         );
 
         if (result.success) {
@@ -1058,6 +1059,8 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
   
+  const isSSTSignatureRequired = permit?.anexoAltura?.tareaRealizar?.id === 'otro';
+  
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
     const { status, approvals, selectedWorkTypes, createdBy } = permit;
@@ -1112,8 +1115,9 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
             return { can: true };
 
         case 'lider_sst':
+            if (!isSSTSignatureRequired) return { can: false, reason: 'Firma de SST no requerida para esta tarea.' };
             if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'No tienes el rol requerido.' };
-            if (!hasSigned(solicitante) && !hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Solicitante y Autorizante.' };
+            if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
             return { can: true };
 
         default:
@@ -1136,6 +1140,11 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
     if(permit.controlEnergia){
         allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.mantenimiento?.status === 'aprobado';
     }
+    
+    if (isSSTSignatureRequired) {
+        allRequiredSignaturesDone = allRequiredSignaturesDone && approvals.lider_sst?.status === 'aprobado';
+    }
+
 
     switch (targetStatus) {
       case 'aprobado':
@@ -2018,9 +2027,9 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {permit.selectedWorkTypes?.alturas && <SignatureCard role="coordinador_alturas" />}
                         <SignatureCard role="solicitante" />
+                        {isSSTSignatureRequired && <SignatureCard role="lider_sst" />}
                         <SignatureCard role="autorizante" />
                         {permit.controlEnergia && <SignatureCard role="mantenimiento" />}
-                        <SignatureCard role="lider_sst" />
                     </div>
                 </Section>
 
@@ -2187,3 +2196,4 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
+

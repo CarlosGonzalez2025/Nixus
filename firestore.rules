@@ -50,6 +50,11 @@ service cloud.firestore {
       // Por ahora, asumimos que el Líder SST puede actuar como coordinador
       return isLiderSST();
     }
+    
+    // Nueva función para verificar si la firma de SST es requerida
+    function isSSTSignatureRequired(permit) {
+      return permit.anexoAltura.tareaRealizar.id == 'otro';
+    }
 
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
@@ -98,7 +103,6 @@ service cloud.firestore {
                 resource.data.approvals.solicitante.status == 'aprobado' &&
                 request.resource.data.approvals.autorizante.status == 'aprobado' &&
                 resource.data.approvals.autorizante.status == 'pendiente' &&
-                // NUEVA REGLA: Permite cambiar a en_ejecucion directamente
                 (request.resource.data.status == 'en_ejecucion' || request.resource.data.status == 'pendiente_revision')
             ) ||
             (
@@ -111,7 +115,6 @@ service cloud.firestore {
             (
                 resource.data.status == 'pendiente_revision' && isLiderSST() &&
                 resource.data.approvals.solicitante.status == 'aprobado' &&
-                resource.data.approvals.autorizante.status == 'aprobado' &&
                 request.resource.data.approvals.lider_sst.status == 'aprobado' &&
                 resource.data.approvals.lider_sst.status == 'pendiente'
             )
