@@ -1364,7 +1364,17 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       { id: 'manLift', label: 'Man Lift o Camion Canasta' },
       { id: 'otros', label: 'Otros' },
     ];
-
+    
+    const emergenciasItems = [
+        { id: 'notificacion', label: 'NOTIFICACIÓN: El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados del trabajo a realizar' },
+        { id: 'recordarVerificar', label: 'EMERGENCIAS: Recordar y verificar' },
+        { id: 'potenciales', label: 'A.- Las emergencias potenciales que pueden ocurrir' },
+        { id: 'procedimientos', label: 'B.- Los procedimientos establecidos para tales situaciones.' },
+        { id: 'rutasEvacuacion', label: 'C.- Rutas de Evacuación' },
+        { id: 'puntosEncuentro', label: 'D.- Puntos de encuentro' },
+        { id: 'equiposEmergencia', label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo' },
+        { id: 'ubicacionBrigadistas', label: 'F.- Ubicación de Brigadistas cercanos' },
+    ];
     
     
     const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
@@ -1660,16 +1670,16 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                             <h4 className="font-semibold text-gray-600 mb-2">{category}</h4>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 pl-4">
                                                 {items.map(item => {
-                                                    const isChecked = (permit.anexoATS?.epp as any)?.[item.id] === true;
+                                                    const eppData = permit.anexoATS?.epp as any;
+                                                    const isChecked = eppData?.[item.id] === true || eppData?.[item.id] === 'si';
                                                     if (!isChecked) return null;
 
                                                     let spec = '';
-                                                    if (item.type === 'text') {
-                                                        spec = (permit.anexoATS?.epp as any)?.[`${item.id}_spec`] || '';
-                                                    } else if (item.type === 'select') {
-                                                        spec = (permit.anexoATS?.epp as any)?.[`${item.id}_tipo`] || '';
+                                                    if (item.type === 'text' && eppData[`${item.id}_spec`]) {
+                                                        spec = eppData[`${item.id}_spec`];
+                                                    } else if (item.type === 'select' && eppData[`${item.id}_tipo`]) {
+                                                        spec = eppData[`${item.id}_tipo`];
                                                     } else if (item.type === 'custom_casco') {
-                                                        const eppData = permit.anexoATS?.epp as any;
                                                         spec = [eppData.casco_seguridad_tipo, eppData.casco_seguridad_clase, eppData.casco_seguridad_barbuquejo].filter(Boolean).join(', ');
                                                     }
                                                     
@@ -1678,7 +1688,7 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                                             key={item.id}
                                                             label={item.label}
                                                             value={true}
-                                                            spec={spec}
+                                                            spec={spec || undefined}
                                                         />
                                                     );
                                                 })}
@@ -1696,6 +1706,31 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                     />
                                 ))}
                             </Section>
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
+
+                {/* Sección de Manejo de Emergencias */}
+                {permit.eppEmergencias?.emergencias && (
+                    <Collapsible>
+                        <CollapsibleTrigger className="w-full">
+                           <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg cursor-pointer">
+                              <h3 className="text-lg font-bold text-red-700 flex items-center gap-2"><Siren /> Manejo de Emergencias</h3>
+                              <ChevronDown className="h-5 w-5" />
+                           </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-red-100">
+                           <Section title="Verificación de Notificaciones y Procedimientos">
+                                <div className="space-y-2">
+                                {emergenciasItems.map(item => (
+                                    <RadioCheck 
+                                      key={item.id} 
+                                      label={item.label} 
+                                      value={(permit.eppEmergencias?.emergencias as any)?.[item.id]} 
+                                    />
+                                ))}
+                                </div>
+                           </Section>
                         </CollapsibleContent>
                     </Collapsible>
                 )}
@@ -2071,3 +2106,4 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
+
