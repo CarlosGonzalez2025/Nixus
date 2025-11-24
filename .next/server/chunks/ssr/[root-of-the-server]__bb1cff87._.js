@@ -36,7 +36,8 @@ __turbopack_async_result__();
 var { g: global, __dirname, a: __turbopack_async_module__ } = __turbopack_context__;
 __turbopack_async_module__(async (__turbopack_handle_async_dependencies__, __turbopack_async_result__) => { try {
 __turbopack_context__.s({
-    "adminDb": (()=>adminDb)
+    "adminDb": (()=>adminDb),
+    "isAdminReady": (()=>isAdminReady)
 });
 var __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__ = __turbopack_context__.i("[externals]/firebase-admin/app [external] (firebase-admin/app, esm_import)");
 var __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__ = __turbopack_context__.i("[externals]/firebase-admin/firestore [external] (firebase-admin/firestore, esm_import)");
@@ -47,34 +48,40 @@ var __turbopack_async_dependencies__ = __turbopack_handle_async_dependencies__([
 ([__TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__] = __turbopack_async_dependencies__.then ? (await __turbopack_async_dependencies__)() : __turbopack_async_dependencies__);
 ;
 ;
-const apps = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["getApps"])();
-if (!apps.length) {
+let adminApp;
+let adminFirestoreDb;
+function initializeAdminApp() {
+    const apps = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["getApps"])();
+    if (apps.length > 0) {
+        adminApp = apps[0];
+        adminFirestoreDb = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["getFirestore"])(adminApp);
+        return;
+    }
     try {
         const projectId = process.env.FIREBASE_PROJECT_ID;
         const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
         const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-        if (!projectId || !clientEmail || !privateKey) {
-            throw new Error('Missing Firebase Admin credentials in environment variables.');
+        if (projectId && clientEmail && privateKey && privateKey !== 'YOUR_PRIVATE_KEY' && clientEmail !== 'YOUR_CLIENT_EMAIL') {
+            const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+            adminApp = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["initializeApp"])({
+                credential: (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["cert"])({
+                    projectId,
+                    clientEmail,
+                    privateKey: formattedPrivateKey
+                })
+            });
+            adminFirestoreDb = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["getFirestore"])(adminApp);
+            console.log('✅ Firebase Admin SDK inicializado correctamente.');
+        } else {
+            console.warn('⚠️ [Firebase Admin] Credenciales de administrador no configuradas en .env. Las funciones de servidor (Server Actions) que requieren acceso de administrador no funcionarán.');
         }
-        // Reemplazar los literales \n con saltos de línea reales
-        const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
-        (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["initializeApp"])({
-            credential: (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$app__$5b$external$5d$__$28$firebase$2d$admin$2f$app$2c$__esm_import$29$__["cert"])({
-                projectId,
-                clientEmail,
-                privateKey: formattedPrivateKey
-            })
-        });
-        console.log('✅ Firebase Admin initialized successfully');
     } catch (error) {
-        console.error('❌ Error initializing Firebase Admin:', error);
-        // Don't throw in production, just log
-        if (("TURBOPACK compile-time value", "development") !== 'production') {
-            throw error;
-        }
+        console.error('❌ Error al inicializar Firebase Admin SDK:', error.message);
     }
 }
-const adminDb = (0, __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["getFirestore"])();
+initializeAdminApp();
+const isAdminReady = ()=>!!adminApp;
+const adminDb = adminFirestoreDb;
 __turbopack_async_result__();
 } catch(e) { __turbopack_async_result__(e); } }, false);}),
 "[project]/src/app/(app)/admin/users/actions.ts [app-rsc] (ecmascript)": ((__turbopack_context__) => {

@@ -16,7 +16,7 @@ import { PlusCircle, Search, Loader2, FileX, ChevronRight, Filter, Edit } from '
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { collection, onSnapshot, query, orderBy, where, QueryConstraint } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, QueryConstraint, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit, PermitStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -178,20 +178,49 @@ export default function PermitsPage() {
     }
 
     const permitsCollection = collection(db, 'permits');
-    const queryConstraints: QueryConstraint[] = [];
-    const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
+    let finalQuery;
     
-    // Si el usuario es solicitante, solo puede ver sus permisos.
-    if (isSolicitante) {
-      queryConstraints.push(where('createdBy', '==', user.uid));
-    } else {
-        // Solo ordenar si no es solicitante para evitar el error de índice.
-        queryConstraints.push(orderBy('createdAt', 'desc'));
+    // Lógica de consulta específica por rol
+    if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+      finalQuery = query(permitsCollection, where('createdBy', '==', user.uid));
+    } else if (user.role === 'lider_sst') {
+      // Para SST, hacemos dos consultas y las unimos en el cliente.
+      const query1 = query(permitsCollection, where('trabajoAlturas', '==', true));
+      const query2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
+      
+      Promise.all([getDocs(query1), getDocs(query2)]).then(([snapshot1, snapshot2]) => {
+          const permitsMap = new Map<string, Permit>();
+          
+          snapshot1.docs.forEach(doc => {
+              const data = doc.data();
+              permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
+          });
+
+          snapshot2.docs.forEach(doc => {
+             if (!permitsMap.has(doc.id)) {
+                 const data = doc.data();
+                 permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
+             }
+          });
+
+          const combinedPermits = Array.from(permitsMap.values());
+          combinedPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          
+          setAllPermits(combinedPermits);
+          setLoading(false);
+      }).catch(error => {
+          console.error("Error fetching permits for SST:", error);
+          toast({ variant: 'destructive', title: 'Error al cargar permisos', description: 'No se pudieron obtener los datos para su rol.' });
+          setLoading(false);
+      });
+      
+      return; // Salimos para no ejecutar onSnapshot
+      
+    } else { // Para admin y autorizante
+      finalQuery = query(permitsCollection, orderBy('createdAt', 'desc'));
     }
 
-    const q = query(permitsCollection, ...queryConstraints);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(finalQuery, (snapshot) => {
       const permitsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -200,8 +229,8 @@ export default function PermitsPage() {
           createdAt: parseFirestoreDate(data.createdAt),
         } as Permit;
       });
-      // Ordenar en el cliente si es solicitante
-      if(isSolicitante) {
+      // Si es solicitante, es posible que el orden no sea por fecha si hay error de índice.
+      if (user.role === 'solicitante' || user.role === 'lider_tarea') {
         permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
       }
       setAllPermits(permitsData);
@@ -222,7 +251,9 @@ export default function PermitsPage() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+        if(unsubscribe) unsubscribe();
+    };
   }, [user, userLoading, toast]);
 
   const filteredPermits = useMemo(() => {

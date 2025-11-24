@@ -53,7 +53,7 @@ service cloud.firestore {
     
     // Nueva función para verificar si la firma de SST es requerida
     function isSSTSignatureRequired(permit) {
-      return permit.anexoAltura.tareaRealizar.id == 'otro';
+      return permit.isSSTSignatureRequired == true;
     }
 
     // --- Colección de Usuarios (users) ---
@@ -78,8 +78,8 @@ service cloud.firestore {
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      allow read: if isAdmin() || isAutorizante() || isLiderSST() || isCreator(resource.data);
-      allow list: if isAdmin() || isAutorizante() || isLiderSST();
+      allow read: if isAdmin() || isAutorizante() || isCreator(resource.data) || (isLiderSST() && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true));
+      allow list: if isAdmin() || isAutorizante();
       allow create, delete: if false;
       allow update: if 
         isAdmin() ||
@@ -96,7 +96,7 @@ service cloud.firestore {
                 isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' &&
                 resource.data.approvals.solicitante.status == 'pendiente' &&
                 (resource.data.trabajoAlturas == false || resource.data.approvals.coordinador_alturas.status == 'aprobado') &&
-                request.resource.data.status == 'pendiente_revision'
+                (request.resource.data.status == 'pendiente_revision' || request.resource.data.status == 'borrador')
             ) ||
             (
                 resource.data.status == 'pendiente_revision' && isAutorizante() &&
@@ -114,6 +114,7 @@ service cloud.firestore {
             ) ||
             (
                 resource.data.status == 'pendiente_revision' && isLiderSST() &&
+                isSSTSignatureRequired(resource.data) &&
                 resource.data.approvals.solicitante.status == 'aprobado' &&
                 request.resource.data.approvals.lider_sst.status == 'aprobado' &&
                 resource.data.approvals.lider_sst.status == 'pendiente'
