@@ -1745,7 +1745,16 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                               <ChevronDown className="h-5 w-5" />
                            </div>
                        </CollapsibleTrigger>
-                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-blue-100">
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-blue-100 space-y-6">
+                            <Section title="Información General del Anexo">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Field label="Tarea a Realizar" value={permit.anexoAltura.tareaRealizar?.nombre} />
+                                    <Field label="Descripción de la Tarea" value={<p className="text-sm whitespace-pre-wrap">{permit.anexoAltura.tareaRealizar?.descripcion}</p>} />
+                                    <Field label="Altura Aproximada" value={`${permit.anexoAltura.alturaAproximada || 'N/A'} metros`} />
+                                    <Field label="Contacto de Emergencia" value={`${permit.anexoAltura.emergencia?.contacto || 'N/A'} - ${permit.anexoAltura.emergencia?.telefono || 'N/A'}`} />
+                                </div>
+                            </Section>
+
                            <Section title="Estructura y Aspectos de Seguridad">
                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                                  {anexoAlturaEstructuras.map(e => (
@@ -1763,6 +1772,24 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                                ))}
                              </div>
                            </Section>
+
+                            <Section title="Precauciones y Controles Específicos">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                    {Object.keys(permit.anexoAltura.precauciones || {}).map(key => (
+                                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={(permit.anexoAltura?.precauciones as any)?.[key]} />
+                                    ))}
+                                </div>
+                            </Section>
+
+                            <Section title="Afectaciones">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                    <RadioCheck label="¿Produce riesgos para otras áreas?" value={permit.anexoAltura.afectaciones?.riesgoOtrasAreas} />
+                                    <RadioCheck label="¿Otras áreas producen riesgo a este trabajo?" value={permit.anexoAltura.afectaciones?.otrasAreasRiesgo} />
+                                    <RadioCheck label="¿Personal notificado?" value={permit.anexoAltura.afectaciones?.personalNotificado} />
+                                </div>
+                                <Field label="Observaciones" value={<p className="text-sm whitespace-pre-wrap">{permit.anexoAltura.afectaciones?.observaciones}</p>} />
+                            </Section>
+
                            {isApproved && <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
@@ -1777,7 +1804,21 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                               <ChevronDown className="h-5 w-5" />
                            </div>
                        </CollapsibleTrigger>
-                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-purple-100">
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-purple-100 space-y-6">
+                            <Section title="Información General del Anexo">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Field label="Contacto de Emergencia" value={`${permit.anexoConfinado.emergencia?.contacto || 'N/A'} - ${permit.anexoConfinado.emergencia?.telefono || 'N/A'}`} />
+                                </div>
+                            </Section>
+
+                            <Section title="Identificación de Peligros y Aspectos">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                    {Object.keys(permit.anexoConfinado.identificacionPeligros || {}).map(key => (
+                                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={(permit.anexoConfinado?.identificacionPeligros as any)?.[key]} />
+                                    ))}
+                                </div>
+                            </Section>
+
                            <Section title="Resultados de Pruebas de Gases Iniciales">
                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                    <Field label="LEL (0%)" value={permit.anexoConfinado.resultadosPruebasGases?.lel} />
@@ -1816,9 +1857,16 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                               <ChevronDown className="h-5 w-5" />
                            </div>
                        </CollapsibleTrigger>
-                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-yellow-100">
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-yellow-100 space-y-6">
                            <Section title="Tipos de Energía">
                                 {Object.entries(permit.anexoEnergias.energiasPeligrosas || {}).map(([key, value]) => value && <p key={key} className='capitalize'>{key.replace(/([A-Z])/g, ' $1')}</p>)}
+                           </Section>
+                           <Section title="Trabajos en Caliente">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                     {Object.keys(permit.anexoEnergias.trabajosEnCaliente || {}).map(key => (
+                                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={(permit.anexoEnergias.trabajosEnCaliente as any)?.[key]} />
+                                     ))}
+                                </div>
                            </Section>
                        </CollapsibleContent>
                    </Collapsible>
@@ -1832,12 +1880,19 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                               <ChevronDown className="h-5 w-5" />
                            </div>
                        </CollapsibleTrigger>
-                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-green-100">
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-green-100 space-y-6">
                            <Section title="Información de la Carga">
                                 <Field label="Acción a realizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.accion || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
                                 <Field label="Peso de la Carga" value={Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
                                 <Field label="Equipo a Utilizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {}).filter(([,v]) => v).map(([k]) => k).join(', ')} />
                            </Section>
+                           <Section title="Aspectos Requeridos">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                     {Object.keys(permit.anexoIzaje.aspectosRequeridos || {}).map(key => (
+                                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={(permit.anexoIzaje.aspectosRequeridos as any)?.[key]} />
+                                     ))}
+                                </div>
+                            </Section>
                            {isApproved && <DailyValidationTable anexoName="anexoIzaje" validationData={permit.anexoIzaje.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
@@ -1851,13 +1906,20 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
                               <ChevronDown className="h-5 w-5" />
                            </div>
                        </CollapsibleTrigger>
-                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-orange-100">
+                       <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-orange-100 space-y-6">
                            <Section title="Dimensiones">
                                 <Field label="Dimensiones" value={permit.anexoExcavaciones.informacionGeneral.dimensiones} />
                                 <Field label="Profundidad" value={permit.anexoExcavaciones.informacionGeneral.profundidad} />
                                 <Field label="Ancho" value={permit.anexoExcavaciones.informacionGeneral.ancho} />
                                 <Field label="Largo" value={permit.anexoExcavaciones.informacionGeneral.largo} />
                            </Section>
+                           <Section title="Aspectos Requeridos">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                    {Object.keys(permit.anexoExcavaciones.aspectosRequeridos || {}).map(key => (
+                                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={(permit.anexoExcavaciones.aspectosRequeridos as any)?.[key]} />
+                                    ))}
+                                </div>
+                            </Section>
                            {isApproved && <DailyValidationTable anexoName="anexoExcavaciones" validationData={permit.anexoExcavaciones.validacion} />}
                        </CollapsibleContent>
                    </Collapsible>
@@ -2106,4 +2168,3 @@ export default function PermitDetailPage({ params }: { params: { id: string } })
       </div>
   );
 }
-
