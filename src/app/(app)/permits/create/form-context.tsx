@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useReducer, useContext, Dispatch } from 'react';
+import React, { createContext, useReducer, useContext, Dispatch, useEffect } from 'react';
 import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes } from '@/types';
 
 // Define the shape of the form data
@@ -163,6 +163,8 @@ const initialState: FormState = {
   workers: [],
 };
 
+const LOCAL_STORAGE_KEY = 'permitFormDraft';
+
 // Reducer function
 function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
@@ -227,13 +229,10 @@ function formReducer(state: FormState, action: FormAction): FormState {
             workers: [...(state.workers || []), action.payload]
         }
     case 'UPDATE_SIGNATURE':
-      // Complex logic for updating signatures in nested annexes can be handled here
-      // This is a simplified example
       console.log('Signature update needs to be implemented in reducer:', action.payload);
       return state;
     case 'SET_ENTIRE_STATE':
         const { payload } = action;
-        // Reconstruct the state from the payload, providing defaults for any missing pieces
         return {
             generalInfo: { ...initialState.generalInfo, ...payload.generalInfo },
             selectedWorkTypes: { ...initialState.selectedWorkTypes, ...payload.selectedWorkTypes },
@@ -248,6 +247,12 @@ function formReducer(state: FormState, action: FormAction): FormState {
             workers: payload.workers || initialState.workers,
         };
     case 'RESET_FORM':
+      // Limpiar también el localStorage al resetear
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      } catch (error) {
+        console.error("Failed to remove draft from localStorage", error);
+      }
       return initialState;
     default:
       return state;
@@ -257,9 +262,40 @@ function formReducer(state: FormState, action: FormAction): FormState {
 // Create the context
 const PermitFormContext = createContext<{ state: FormState; dispatch: Dispatch<FormAction> } | undefined>(undefined);
 
+// Función para inicializar el estado, intentando cargar desde localStorage
+const initializer = (initialValue = initialState) => {
+  if (typeof window === "undefined") {
+    return initialValue;
+  }
+  try {
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Failed to parse draft from localStorage", error);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  }
+  return initialValue;
+};
+
+
 // Create the provider component
 export function PermitFormProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(formReducer, initialState);
+  const [state, dispatch] = useReducer(formReducer, initialState, initializer);
+
+  // Efecto para guardar en localStorage cada vez que el estado cambia
+  useEffect(() => {
+    try {
+      // No guardar si el estado es el inicial (formulario vacío)
+      if (state !== initialState) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+      }
+    } catch (error) {
+      console.error("Failed to save draft to localStorage", error);
+    }
+  }, [state]);
+
 
   return (
     <PermitFormContext.Provider value={{ state, dispatch }}>

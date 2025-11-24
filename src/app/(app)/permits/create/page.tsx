@@ -129,7 +129,6 @@ function CreatePermitWizard() {
           if (docSnap.exists() && (docSnap.data().status === 'borrador' || docSnap.data().status === 'pendiente_revision')) {
             const draftData = docSnap.data() as Permit;
             
-            // Use a single action to set the entire state for consistency
             dispatch({ type: 'SET_ENTIRE_STATE', payload: draftData });
             
             setDraftId(editId);
@@ -470,11 +469,13 @@ function CreatePermitWizard() {
       });
 
       if (result.success && result.permitId) {
+        // Al guardar, se limpia el borrador del localStorage
+        dispatch({ type: 'RESET_FORM' }); 
+
         toast({
           title: 'Borrador Guardado',
           description: 'Será redirigido para firmar y activar el permiso.',
         });
-        // Redirect to the permit detail page to finalize and sign
         router.push(`/permits/${result.permitId}`);
       } else {
         throw new Error(result.error || 'Hubo un error guardando el permiso.');
@@ -571,7 +572,7 @@ function CreatePermitWizard() {
             </div>
             <Button
               onClick={() => {
-                if (confirm('¿Está seguro de cancelar? Los cambios no guardados se perderán.')) {
+                if (confirm('¿Está seguro de cancelar? Los cambios no guardados en el borrador actual se mantendrán.')) {
                   router.push('/dashboard');
                 }
               }}
@@ -843,7 +844,3 @@ export default function CreatePermitPage() {
     </PermitFormProvider>
   );
 }
-
-
-
-    
