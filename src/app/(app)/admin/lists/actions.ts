@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb, isAdminReady } from '@/lib/firebase-admin';
+import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 
@@ -13,9 +13,6 @@ type ListName = 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
  * @param item - The string item to add to the list.
  */
 export async function addListItem(listName: ListName, item: string) {
-  if (!isAdminReady()) {
-    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
-  }
   try {
     const docRef = adminDb.collection('dynamic_lists').doc(listName);
     
@@ -39,9 +36,6 @@ export async function addListItem(listName: ListName, item: string) {
  * @param item - The string item to remove from the list.
  */
 export async function removeListItem(listName: ListName, item: string) {
-  if (!isAdminReady()) {
-    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
-  }
   try {
     const docRef = adminDb.collection('dynamic_lists').doc(listName);
 
