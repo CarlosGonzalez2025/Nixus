@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState, useRef, use } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -79,7 +80,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -214,6 +215,7 @@ export default function PermitDetailPage() {
   const [isSolicitanteSignAlertOpen, setIsSolicitanteSignAlertOpen] = useState(false);
   
   const [isDailyValidationSignatureOpen, setIsDailyValidationSignatureOpen] = useState(false);
+  const [isDailyValidationSigning, setIsDailyValidationSigning] = useState(false);
   const [dailyValidationTarget, setDailyValidationTarget] = useState<{anexo: string, type: 'autoridad' | 'responsable', index: number} | null>(null);
   const [dailyValidationName, setDailyValidationName] = useState('');
   const [dailyValidationDate, setDailyValidationDate] = useState('');
@@ -270,7 +272,7 @@ export default function PermitDetailPage() {
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
-    { id: 'personalSaludable', label: 'K. EL PERSONAL CHE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+    { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
     { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR CHE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
@@ -1246,7 +1248,7 @@ export default function PermitDetailPage() {
       return;
     }
     
-    setIsSigning(true);
+    setIsDailyValidationSigning(true);
     try {
       const result = await addDailyValidationSignature(
         permit.id,
@@ -1272,7 +1274,11 @@ export default function PermitDetailPage() {
     } catch(e: any) {
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
-      setIsSigning(false);
+      setIsDailyValidationSigning(false);
+      // Reset state for the next signature
+      setDailyValidationTarget(null);
+      setDailyValidationName('');
+      setDailyValidationDate('');
     }
   };
 
@@ -2187,7 +2193,7 @@ export default function PermitDetailPage() {
                 <Input id="daily-validation-date" type="datetime-local" value={dailyValidationDate} onChange={(e) => setDailyValidationDate(e.target.value)} />
               </div>
             </div>
-            <SignaturePad onSave={handleDailyValidationSignature} isSaving={isSigning} />
+            <SignaturePad onSave={handleDailyValidationSignature} isSaving={isDailyValidationSigning} />
           </DialogContent>
         </Dialog>
 
@@ -2291,3 +2297,4 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
