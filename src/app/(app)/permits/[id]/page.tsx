@@ -270,7 +270,7 @@ export default function PermitDetailPage() {
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
     { id: 'areaDelimitada', label: 'J. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
-    { id: 'personalSaludable', label: 'K. EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
+    { id: 'personalSaludable', label: 'K. EL PERSONAL CHE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD?.' },
     { id: 'equiposAccesoBuenEstado', label: 'L. SE CUENTA CON TODOS LOS EQUIPOS Y SISTEMAS DE ACCESO PARA TRABJO EN ALTURAS EN BUEN ESTADO?' },
     { id: 'espacioCaidaLibreSuficiente', label: 'M. EL ESPACIO DE CAIDA LIBRE ES SUFICIENTE PARA EVITAR CHE LA PERSONA SE GOLPEE CONTRA EL NIVEL INFERIOR.' },
     { id: 'equiposEmergenciaDisponibles', label: 'N. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA Y PLAN DE EMERGENCIAS PARA RESCATE EN ALTURAS?' },
@@ -959,6 +959,15 @@ export default function PermitDetailPage() {
     }
   };
  
+  const openDailyValidationSignatureDialog = (anexo: string, type: 'autoridad' | 'responsable', index: number) => {
+    if (!currentUser) return;
+    setDailyValidationTarget({ anexo, type, index });
+    const name = type === 'responsable' ? permit?.user?.displayName : permit?.approvals?.autorizante?.userName;
+    setDailyValidationName(name || currentUser.displayName || '');
+    setDailyValidationDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+    setIsDailyValidationSignatureOpen(true);
+  };
+  
 
   const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
       if(!currentUser) return;
@@ -1254,7 +1263,7 @@ export default function PermitDetailPage() {
       );
 
       if(result.success) {
-        setIsDailyValidationSignatureOpen(false); // Cierra el modal
+        setIsDailyValidationSignatureOpen(false);
         toast({ title: 'Validación Diaria Guardada' });
       } else {
         throw new Error(result.error);
