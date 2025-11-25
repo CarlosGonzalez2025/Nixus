@@ -2269,7 +2269,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-blue-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 26,
+                lineNumber: 25,
                 columnNumber: 14
             }, this);
         case 'signature':
@@ -2277,7 +2277,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-yellow-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 28,
+                lineNumber: 27,
                 columnNumber: 14
             }, this);
         case 'approval':
@@ -2285,7 +2285,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-green-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 30,
+                lineNumber: 29,
                 columnNumber: 14
             }, this);
         case 'rejection':
@@ -2293,7 +2293,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-red-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 32,
+                lineNumber: 31,
                 columnNumber: 14
             }, this);
         case 'cancellation':
@@ -2301,7 +2301,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-blue-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 34,
+                lineNumber: 33,
                 columnNumber: 14
             }, this);
         case 'status_change':
@@ -2309,7 +2309,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-green-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 36,
+                lineNumber: 35,
                 columnNumber: 14
             }, this);
         default:
@@ -2317,7 +2317,7 @@ const getNotificationIcon = (type)=>{
                 className: "mr-2 h-4 w-4 text-gray-500"
             }, void 0, false, {
                 fileName: "[project]/src/components/AlertsBell.tsx",
-                lineNumber: 38,
+                lineNumber: 37,
                 columnNumber: 14
             }, this);
     }
@@ -2368,16 +2368,14 @@ function AlertsBell() {
     };
     const handleMarkAllAsRead = async ()=>{
         if (unreadCount === 0) return;
-        const batch = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["writeBatch"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"]);
-        notifications.forEach((n)=>{
-            if (!n.isRead) {
-                const notifRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"], 'notifications', n.id);
-                batch.update(notifRef, {
-                    isRead: true
-                });
-            }
+        const unreadNotifications = notifications.filter((n)=>!n.isRead);
+        const updatePromises = unreadNotifications.map((n)=>{
+            const notifRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"], 'notifications', n.id);
+            return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updateDoc"])(notifRef, {
+                isRead: true
+            });
         });
-        await batch.commit();
+        await Promise.all(updatePromises);
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DropdownMenu"], {
         children: [

@@ -35,17 +35,26 @@ service cloud.firestore {
     
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
+      // CORRECCIÓN: Se reemplaza isOwner(userId) por la comprobación directa para romper la dependencia circular.
+      // Un usuario siempre debe poder leer su propio perfil para que getRole() funcione.
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
       allow update: if isOwner(userId) || isAdmin();
-      allow create, delete: if false;
+      allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
     }
     
     // --- Colección de Notificaciones (notifications) ---
     match /notifications/{notificationId} {
+      // Un usuario puede leer su propia notificación individualmente.
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Un usuario puede listar sus propias notificaciones si la consulta filtra por su ID.
       allow list: if isSignedIn() && request.query.where.userId == request.auth.uid;
+      
+      // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
+
+      // La creación y eliminación de notificaciones solo se hacen desde el backend.
       allow create, delete: if false;
     }
 
