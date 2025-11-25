@@ -26,6 +26,8 @@ import type { Permit } from '@/types';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { errorEmitter } from '@/lib/error-emitter';
+import { FirestorePermissionError } from '@/lib/errors';
 
 const getStatusColor = (status: string) => {
   const statusColors: {[key: string]: string} = {
@@ -100,12 +102,10 @@ export default function Dashboard() {
   
   useEffect(() => {
     if (userLoading) {
-      console.log('⏳ Waiting for auth...');
       return;
     }
 
     if (!user) {
-      console.log('🔒 No user - cleaning up and redirecting');
       setPermits([]);
       setStats({ total: 0, pendiente: 0, aprobado: 0, enEjecucion: 0 });
       setLoading(false);
@@ -113,16 +113,12 @@ export default function Dashboard() {
       return;
     }
 
-    console.log('✅ User authenticated, setting up listeners for:', user.email);
-
     const permitsCollection = collection(db, 'permits');
+    let unsubscribers: Unsubscribe[] = [];
 
     if (user.role === 'lider_sst') {
-      const q1 = query(permitsCollection, where("trabajoAlturas", "==", true));
+      const q1 = query(permitsCollection, where("selectedWorkTypes.alturas", "==", true));
       const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
-
-      const unsub1 = onSnapshot(q1, () => {});
-      const unsub2 = onSnapshot(q2, () => {});
 
       const fetchData = async () => {
         try {
@@ -142,8 +138,8 @@ export default function Dashboard() {
             }
           });
 
-          const combinedPermits = Array.from(permitsMap.values());
-          const recentPermits = [...combinedPermits].sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)).slice(0,10);
+          const combinedPermits = Array.from(permitsMap.values()).sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          const recentPermits = combinedPermits.slice(0, 10);
           setPermits(recentPermits);
 
           setStats({
@@ -156,17 +152,23 @@ export default function Dashboard() {
           setLoading(false);
 
         } catch (error) {
-           console.error('❌ Error fetching SST permits:', error);
+           const permissionError = new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' });
+           errorEmitter.emit('permission-error', permissionError);
            setLoading(false);
         }
       }
       
+      const unsub1 = onSnapshot(q1, fetchData, (e) => {
+        const permissionError = new FirestorePermissionError({ path: q1.toString(), operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      const unsub2 = onSnapshot(q2, fetchData, (e) => {
+        const permissionError = new FirestorePermissionError({ path: q2.toString(), operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+      
+      unsubscribers.push(unsub1, unsub2);
       fetchData();
-
-      return () => {
-        unsub1();
-        unsub2();
-      };
 
     } else {
       let finalQuery: QueryConstraint[] = [];
@@ -175,14 +177,15 @@ export default function Dashboard() {
       if (isSolicitante) {
         finalQuery.push(where('createdBy', '==', user.uid));
       }
-      finalQuery.push(orderBy('createdAt', 'desc'));
       
       const q = query(permitsCollection, ...finalQuery);
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        const permitsData = snapshot.docs.map(doc => ({
+        let permitsData = snapshot.docs.map(doc => ({
           id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
         } as Permit));
+        
+        permitsData = permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         
         const recentPermits = permitsData.slice(0, 10);
         setPermits(recentPermits);
@@ -196,16 +199,20 @@ export default function Dashboard() {
         
         setLoading(false);
       }, (error) => {
-        console.error('❌ Error fetching permits:', error);
-        if (error.code === 'permission-denied') router.push('/login');
+        const permissionError = new FirestorePermissionError({
+            path: permitsCollection.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
       });
 
-       return () => {
-        console.log('🧹 Cleaning up dashboard listeners');
-        if (unsubscribe) unsubscribe();
-      };
+      unsubscribers.push(unsubscribe);
     }
+
+    return () => {
+        unsubscribers.forEach(unsub => unsub());
+    };
 
   }, [user, userLoading, router]);
 
@@ -426,5 +433,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    
