@@ -469,9 +469,6 @@ function CreatePermitWizard() {
       });
 
       if (result.success && result.permitId) {
-        // Al guardar, se limpia el borrador del localStorage
-        dispatch({ type: 'RESET_FORM' }); 
-
         toast({
           title: 'Borrador Guardado',
           description: 'Será redirigido para firmar y activar el permiso.',
