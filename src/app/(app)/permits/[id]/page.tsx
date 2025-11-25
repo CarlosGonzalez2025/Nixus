@@ -312,12 +312,8 @@ export default function PermitDetailPage() {
       }
     }, (serverError) => {
       if (isMounted) {
-        const permissionError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError('No tiene permisos para ver este documento.');
+        console.error("Firebase onSnapshot error:", serverError);
+        setError('No tiene permisos para ver este documento o ha ocurrido un error.');
         setLoading(false);
       }
     });
@@ -1140,63 +1136,77 @@ export default function PermitDetailPage() {
 
 
   const getClosureStatus = () => {
-        if (!permit) return { can: false, reasons: ['Cargando permiso...'] };
-
-        const reasons: string[] = [];
-        
-        // Condición 1: El permiso debe estar en ejecución o suspendido.
-        if (permit.status !== 'en_ejecucion' && permit.status !== 'suspendido') {
-            reasons.push(`El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${getStatusInfo(permit.status).text}).`);
+    if (!permit) return { can: false, reasons: ['Cargando permiso...'] };
+    const reasons: string[] = [];
+  
+    // Condición 1: Rol de usuario
+    if (currentUser?.role !== 'lider_tarea' && currentUser?.role !== 'admin') {
+      // Esta condición ya está en canChangeStatus, pero la mantenemos por claridad
+    }
+  
+    // Condición 2: Estado del permiso
+    if (permit.status !== 'en_ejecucion' && permit.status !== 'suspendido') {
+      reasons.push(`El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${getStatusInfo(permit.status).text}).`);
+    }
+  
+    // Condición 3: Todas las firmas de cierre de trabajadores deben estar completas.
+    if (permit.workers?.some(w => !w.firmaCierre)) {
+      reasons.push('Faltan firmas de cierre de algunos trabajadores.');
+    }
+  
+    // Condición 4: El responsable y la autoridad deben firmar el cierre final.
+    if (!permit.closure?.responsable?.firma) {
+      reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
+    }
+    if (!permit.closure?.autoridad?.firma) {
+      reasons.push('Falta la firma de cierre de la Autoridad del Área.');
+    }
+  
+    // Condición 5: Todas las firmas diarias deben estar completas.
+    const checkDailyValidations = (anexoData: any, anexoName: string) => {
+      if (!anexoData?.validacion) return;
+      let duration = 1;
+      if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
+        try {
+          duration = differenceInCalendarDays(parseISO(permit.generalInfo.validUntil), parseISO(permit.generalInfo.validFrom)) + 1;
+        } catch (e) { /* ignore */ }
+      }
+  
+      for (let i = 0; i < duration; i++) {
+        if (!anexoData.validacion.responsable?.[i]?.firma) {
+          reasons.push(`Falta validación diaria del Responsable (Día ${i + 1}) en ${anexoName}.`);
         }
-
-        // Condición 2: Todas las firmas diarias deben estar completas.
-        const checkDailyValidations = (anexoData: any, anexoName: string) => {
-            if (!anexoData || !anexoData.validacion) return;
-            let duration = 1;
-             if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
-                try {
-                  duration = differenceInCalendarDays(parseISO(permit.generalInfo.validUntil), parseISO(permit.generalInfo.validFrom)) + 1;
-                } catch(e) { /* ignore */ }
-            }
-            for (let i = 0; i < duration; i++) {
-                if (!anexoData.validacion.responsable?.[i]?.firma) {
-                    reasons.push(`Falta validación diaria del Responsable (Día ${i + 1}) en ${anexoName}.`);
-                }
-                if (!anexoData.validacion.autoridad?.[i]?.firma) {
-                    reasons.push(`Falta validación diaria de la Autoridad (Día ${i + 1}) en ${anexoName}.`);
-                }
-            }
-        };
-
-        if (permit.selectedWorkTypes?.alturas) checkDailyValidations(permit.anexoAltura, 'Anexo Alturas');
-        if (permit.selectedWorkTypes?.confinado) checkDailyValidations(permit.anexoConfinado, 'Anexo Confinado');
-        if (permit.selectedWorkTypes?.izaje) checkDailyValidations(permit.anexoIzaje, 'Anexo Izaje');
-        if (permit.selectedWorkTypes?.excavacion) checkDailyValidations(permit.anexoExcavaciones, 'Anexo Excavaciones');
-
-        // Condición 3: Todos los trabajadores deben haber firmado el cierre.
-        if (!permit.workers?.every(w => w.firmaCierre)) {
-            reasons.push('Faltan firmas de cierre de algunos trabajadores.');
+        if (!anexoData.validacion.autoridad?.[i]?.firma) {
+          reasons.push(`Falta validación diaria de la Autoridad (Día ${i + 1}) en ${anexoName}.`);
         }
-
-        // Condición 4: El responsable y la autoridad deben firmar el cierre.
-        if (!permit.closure?.responsable?.firma) {
-            reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
-        }
-        if (!permit.closure?.autoridad?.firma) {
-            reasons.push('Falta la firma de cierre de la Autoridad del Área.');
-        }
-        
-        return {
-            can: reasons.length === 0,
-            reasons: reasons,
-        };
+      }
     };
+  
+    if (permit.selectedWorkTypes?.alturas) checkDailyValidations(permit.anexoAltura, 'Anexo Alturas');
+    if (permit.selectedWorkTypes?.confinado) checkDailyValidations(permit.anexoConfinado, 'Anexo Confinado');
+    if (permit.selectedWorkTypes?.izaje) checkDailyValidations(permit.anexoIzaje, 'Anexo Izaje');
+    if (permit.selectedWorkTypes?.excavacion) checkDailyValidations(permit.anexoExcavaciones, 'Anexo Excavaciones');
+    
+    return {
+      can: reasons.length === 0,
+      reasons: reasons,
+    };
+  };
 
-    const canInitiateClosure = () => {
-        if (!currentUser || !permit) return false;
-        const hasRole = currentUser.role === 'lider_tarea' || currentUser.role === 'admin';
-        const hasStatus = permit.status === 'en_ejecucion' || permit.status === 'suspendido';
-        return hasRole && hasStatus;
+    const canChangeStatus = (newStatus: 'cerrado' | 'en_ejecucion'): boolean => {
+      if (!currentUser || !permit) return false;
+      const hasRole = currentUser.role === 'lider_tarea' || currentUser.role === 'admin';
+      
+      if (newStatus === 'en_ejecucion') {
+          return hasRole && permit.status === 'aprobado';
+      }
+
+      if (newStatus === 'cerrado') {
+          // La lógica detallada está en getClosureStatus, aquí solo verificamos rol y estado base.
+          return hasRole && (permit.status === 'en_ejecucion' || permit.status === 'suspendido');
+      }
+
+      return false;
     };
 
 
@@ -1661,17 +1671,20 @@ export default function PermitDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2 flex-1">
+                 {canChangeStatus('en_ejecucion') && (
+                     <Button onClick={() => handleChangeStatus('en_ejecucion')}>
+                         <PlayCircle className="mr-2"/>Iniciar Ejecución
+                     </Button>
+                 )}
+                 {canChangeStatus('cerrado') && (
+                     <Button onClick={handleOpenClosureDialog}>
+                         <Lock className="mr-2"/>Cerrar Permiso
+                     </Button>
+                 )}
                  <Button variant="outline" onClick={handleExportToPDF}><FileDown className="mr-2"/>Exportar a PDF</Button>
-                 
                  {canBeCancelled && (
                     <Button variant="destructive" onClick={handleOpenCancellationDialog}>
                         <FileX className="mr-2"/>Cancelar Permiso
-                    </Button>
-                 )}
-
-                 {canInitiateClosure() && (
-                    <Button onClick={handleOpenClosureDialog}>
-                        <Lock className="mr-2"/>Cerrar Permiso
                     </Button>
                  )}
             </div>
@@ -2304,5 +2317,7 @@ export default function PermitDetailPage() {
 }
 
 
+
+    
 
     
