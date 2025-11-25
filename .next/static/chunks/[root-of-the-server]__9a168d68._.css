@@ -728,8 +728,16 @@ body {
   margin-top: 2rem;
 }
 
+.mr-1 {
+  margin-right: .25rem;
+}
+
 .block {
   display: block;
+}
+
+.inline {
+  display: inline;
 }
 
 .flex {
@@ -1528,6 +1536,11 @@ body {
   border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
 }
 
+.border-blue-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+
 .border-border\/50 {
   border-color: hsl(var(--border) / .5);
 }
@@ -1608,11 +1621,6 @@ body {
 .border-yellow-200 {
   --tw-border-opacity: 1;
   border-color: rgb(254 240 138 / var(--tw-border-opacity, 1));
-}
-
-.border-blue-500 {
-  --tw-border-opacity: 1;
-  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
 }
 
 .border-l-transparent {
@@ -3545,10 +3553,6 @@ body {
 
   .md\:col-span-2 {
     grid-column: span 2 / span 2;
-  }
-
-  .md\:col-start-2 {
-    grid-column-start: 2;
   }
 
   .md\:mx-2 {

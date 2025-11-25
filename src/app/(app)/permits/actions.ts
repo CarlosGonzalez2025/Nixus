@@ -264,7 +264,7 @@ export async function addSignatureAndNotify(
   user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string },
   comments?: string
 ) {
-    if (!permitId || !role || !signatureDataUrl || !user) {
+    if (!permitId || !role || !user) {
         return { success: false, error: 'Faltan parámetros para guardar la firma.' };
     }
     if (!isAdminReady()) {
@@ -286,7 +286,7 @@ export async function addSignatureAndNotify(
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
             
-            const existingClosureData = permitBeforeData.closure?.[closureRole] || {};
+            const existingClosureData = (permitBeforeData.closure as any)?.[closureRole] || {};
 
             updateData[closurePath] = {
                 ...existingClosureData,
@@ -294,6 +294,11 @@ export async function addSignatureAndNotify(
                 nombre: user.displayName,
                 fecha: FieldValue.serverTimestamp() 
             };
+            
+            if (role === 'cancelacion') {
+                updateData['closure.razonCancelacion'] = comments || 'No especificado';
+                updateData['closure.cancelado'] = 'si';
+            }
 
         } else {
             const approvalData: Partial<Approval> = {
@@ -399,8 +404,7 @@ export async function updatePermitStatus(
   permitId: string,
   status: PermitStatus,
   currentUser: { uid: string, displayName: string | null },
-  reason?: string,
-  closureData?: Partial<PermitClosure>
+  reason?: string
 ) {
     if (!permitId) {
         return { success: false, error: 'Permit ID is required.' };
@@ -411,17 +415,14 @@ export async function updatePermitStatus(
 
     try {
         const docRef = adminDb.collection('permits').doc(permitId);
-        const updateData: { status: PermitStatus; rejectionReason?: string; closure?: Partial<PermitClosure> | FieldValue } = { status };
+        const updateData: { status: PermitStatus; rejectionReason?: string; 'closure.fechaCierre'?: FieldValue } = { status };
 
         if (status === 'rechazado' && reason) {
             updateData.rejectionReason = reason;
         }
-
+        
         if (status === 'cerrado') {
-            updateData.closure = {
-                ...(closureData || {}),
-                fechaCierre: FieldValue.serverTimestamp(),
-            };
+            updateData['closure.fechaCierre'] = FieldValue.serverTimestamp();
         }
 
         if (status === 'en_ejecucion') {
@@ -495,7 +496,14 @@ ${permitUrl}`;
     }
 }
 
-export async function addDailyValidationSignature(permitId: string, anexoName: string, validationType: 'autoridad' | 'responsable', index: number, data: ValidacionDiaria, user: User) {
+export async function addDailyValidationSignature(
+  permitId: string, 
+  anexoName: string, 
+  validationType: 'autoridad' | 'responsable', 
+  index: number, 
+  data: ValidacionDiaria, 
+  user: User
+) {
   if (!permitId || !anexoName || !validationType || index < 0 || !data || !user) {
     return { success: false, error: 'Parámetros inválidos.' };
   }
@@ -517,7 +525,6 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
       return { success: false, error: `El anexo ${anexoName} no existe en el permiso.` };
     }
     
-    // Asegurarse de que la estructura de validación exista
     const anexoUpdate: any = { ...anexoData };
     if (!anexoUpdate.validacion) {
         anexoUpdate.validacion = { autoridad: [], responsable: [] };
@@ -537,13 +544,11 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
       [updatePath]: validationArray,
     });
 
-    // --- Lógica de Notificación ---
     const fullPermitData = { id: docRef.id, ...permitData } as Permit;
     const anexoDisplayName = anexoName.replace('anexo', 'Anexo ');
     const validationRoleName = validationType === 'autoridad' ? 'Autoridad del Área' : 'Responsable del Trabajo';
     const day = index + 1;
 
-    // Notificaciones en la App y por Email
     const message = `${user.displayName || 'Un usuario'} ha realizado la validación diaria (${validationRoleName}) para el DÍA ${day} del ${anexoDisplayName} en el permiso #${fullPermitData.number}.`;
     const involvedUsers = await getInvolvedUsers(fullPermitData);
     for (const uid of involvedUsers) {
@@ -552,7 +557,6 @@ export async function addDailyValidationSignature(permitId: string, anexoName: s
       }
     }
 
-    // Notificación por WhatsApp
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permitId}`;
     const whatsappMessage = `*Validación Diaria - SGPT* ✍️
