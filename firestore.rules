@@ -67,7 +67,7 @@ service cloud.firestore {
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
       allow list: if isSignedIn() && 
                   (
-                    (isAdmin() || hasRole('autorizante')) ||
+                    (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
                     // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
                     (request.query.where.createdBy == request.auth.uid)
                   );
