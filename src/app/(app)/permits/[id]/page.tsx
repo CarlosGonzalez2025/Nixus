@@ -312,7 +312,11 @@ export default function PermitDetailPage() {
       }
     }, (serverError) => {
       if (isMounted) {
-        console.error("Firebase onSnapshot error:", serverError);
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setError('No tiene permisos para ver este documento o ha ocurrido un error.');
         setLoading(false);
       }
@@ -2317,6 +2321,8 @@ export default function PermitDetailPage() {
 }
 
 
+
+    
 
     
 

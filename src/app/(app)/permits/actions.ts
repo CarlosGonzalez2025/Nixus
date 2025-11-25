@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
@@ -468,8 +469,8 @@ function validateStateTransition(currentStatus: PermitStatus, targetStatus: Perm
             'pendiente_revision': ['solicitante', 'lider_tarea', 'admin']
         },
         'pendiente_revision': {
+            'en_ejecucion': ['autorizante', 'admin'],
             'rechazado': ['autorizante', 'lider_sst', 'admin']
-            // NOTA: La transición a 'en_ejecucion' es AUTOMÁTICA al completarse firmas
         },
         'en_ejecucion': {
             'suspendido': ['lider_sst', 'admin'],
@@ -815,3 +816,6 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
+
+
+    

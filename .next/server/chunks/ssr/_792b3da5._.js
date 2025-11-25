@@ -359,111 +359,58 @@ function Dashboard() {
             return;
         }
         console.log('✅ User authenticated, setting up listeners for:', user.email);
-        const unsubscribers = [];
+        let unsubscribe;
         try {
             const permitsCollection = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["db"], 'permits');
             const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
-            const isSST = user.role === 'lider_sst';
-            let baseQueryConstraints = [];
+            let finalQuery = [];
             if (isSolicitante) {
-                baseQueryConstraints.push((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('createdBy', '==', user.uid));
+                finalQuery.push((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('createdBy', '==', user.uid));
+            } else if (user.role === 'lider_sst') {
+                // For SST, we can't do an OR query directly with onSnapshot easily.
+                // We'll fetch all permits and filter client-side for simplicity,
+                // or for more optimization, fetch two queries and merge.
+                // Let's go with a single query and client-side filter.
+                // This is less efficient but avoids complex index requirements.
+                finalQuery.push((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["orderBy"])('createdAt', 'desc'));
+            } else {
+                finalQuery.push((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["orderBy"])('createdAt', 'desc'));
             }
-            // Nueva lógica para SST
-            if (isSST) {
-                const sstQuery1 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(permitsCollection, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('trabajoAlturas', '==', true));
-                const sstQuery2 = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(permitsCollection, (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["where"])('isSSTSignatureRequired', '==', true));
-                const fetchSSTData = async ()=>{
-                    try {
-                        const [snapshot1, snapshot2] = await Promise.all([
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(sstQuery1),
-                            (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(sstQuery2)
-                        ]);
-                        const permitsMap = new Map();
-                        snapshot1.docs.forEach((doc)=>{
-                            const data = doc.data();
-                            permitsMap.set(doc.id, {
-                                id: doc.id,
-                                ...data,
-                                createdAt: parseFirestoreDate(data.createdAt)
-                            });
-                        });
-                        snapshot2.docs.forEach((doc)=>{
-                            if (!permitsMap.has(doc.id)) {
-                                const data = doc.data();
-                                permitsMap.set(doc.id, {
-                                    id: doc.id,
-                                    ...data,
-                                    createdAt: parseFirestoreDate(data.createdAt)
-                                });
-                            }
-                        });
-                        const combinedPermits = Array.from(permitsMap.values());
-                        combinedPermits.sort((a, b)=>(b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-                        setPermits(combinedPermits.slice(0, 10));
-                        setStats({
-                            total: combinedPermits.length,
-                            pendiente: combinedPermits.filter((p)=>p.status === 'pendiente_revision').length,
-                            aprobado: combinedPermits.filter((p)=>p.status === 'aprobado').length,
-                            enEjecucion: combinedPermits.filter((p)=>p.status === 'en_ejecucion').length
-                        });
-                        setLoading(false);
-                    } catch (error) {
-                        console.error('❌ Error fetching SST data:', error);
-                        setLoading(false);
-                    }
-                };
-                fetchSSTData();
-                return; // Salir del useEffect para evitar la lógica de onSnapshot
-            }
-            // Lógica onSnapshot para roles que no son SST
-            const recentPermitsQueryConstraints = [
-                ...baseQueryConstraints,
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["limit"])(10)
-            ];
-            if (!isSolicitante) {
-                recentPermitsQueryConstraints.push((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["orderBy"])('createdAt', 'desc'));
-            }
-            const recentPermitsQuery = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(permitsCollection, ...recentPermitsQueryConstraints);
-            const permitsUnsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["onSnapshot"])(recentPermitsQuery, (snapshot)=>{
-                console.log('📊 Recent permits updated:', snapshot.size);
-                const allRecentPermits = snapshot.docs.map((doc)=>({
+            const q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(permitsCollection, ...finalQuery);
+            unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["onSnapshot"])(q, (snapshot)=>{
+                let permitsData = snapshot.docs.map((doc)=>({
                         id: doc.id,
                         ...doc.data(),
                         createdAt: parseFirestoreDate(doc.data().createdAt)
                     }));
-                if (isSolicitante) {
-                    allRecentPermits.sort((a, b)=>(b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+                if (user.role === 'lider_sst') {
+                    permitsData = permitsData.filter((p)=>p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
                 }
-                setPermits(allRecentPermits);
-                setLoading(false);
-            }, (error)=>{
-                console.error('❌ Error fetching recent permits:', error);
-                if (error.code === 'permission-denied') router.push('/login');
-                setLoading(false);
-            });
-            unsubscribers.push(permitsUnsubscribe);
-            const allPermitsQuery = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["query"])(permitsCollection, ...baseQueryConstraints);
-            const statsUnsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["onSnapshot"])(allPermitsQuery, (statsSnapshot)=>{
-                console.log('📈 Stats updated:', statsSnapshot.size);
-                const allPermitsData = statsSnapshot.docs.map((d)=>d.data());
+                const recentPermits = [
+                    ...permitsData
+                ].sort((a, b)=>(b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)).slice(0, 10);
+                setPermits(recentPermits);
                 setStats({
-                    total: allPermitsData.length,
-                    pendiente: allPermitsData.filter((p)=>p.status === 'pendiente_revision').length,
-                    aprobado: allPermitsData.filter((p)=>p.status === 'aprobado').length,
-                    enEjecucion: allPermitsData.filter((p)=>p.status === 'en_ejecucion').length
+                    total: permitsData.length,
+                    pendiente: permitsData.filter((p)=>p.status === 'pendiente_revision').length,
+                    aprobado: permitsData.filter((p)=>p.status === 'aprobado').length,
+                    enEjecucion: permitsData.filter((p)=>p.status === 'en_ejecucion').length
                 });
+                setLoading(false);
             }, (error)=>{
-                console.error('❌ Error fetching stats:', error);
+                console.error('❌ Error fetching permits:', error);
                 if (error.code === 'permission-denied') router.push('/login');
+                setLoading(false);
             });
-            unsubscribers.push(statsUnsubscribe);
         } catch (error) {
             console.error('❌ Error setting up listeners:', error);
             setLoading(false);
         }
         return ()=>{
             console.log('🧹 Cleaning up dashboard listeners');
-            unsubscribers.forEach((unsub)=>unsub());
+            if (unsubscribe) {
+                unsubscribe();
+            }
         };
     }, [
         user,
@@ -512,7 +459,7 @@ function Dashboard() {
                     className: "h-8 w-8 animate-spin text-muted-foreground"
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                    lineNumber: 265,
+                    lineNumber: 219,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -520,13 +467,13 @@ function Dashboard() {
                     children: "Verificando autenticación..."
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                    lineNumber: 266,
+                    lineNumber: 220,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-            lineNumber: 264,
+            lineNumber: 218,
             columnNumber: 7
         }, this);
     }
@@ -549,7 +496,7 @@ function Dashboard() {
                             className: "rounded-full"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 279,
+                            lineNumber: 233,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -559,7 +506,7 @@ function Dashboard() {
                                     children: "Dashboard"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 287,
+                                    lineNumber: 241,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -567,24 +514,24 @@ function Dashboard() {
                                     children: "Resumen de permisos de trabajo y acciones rápidas."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 288,
+                                    lineNumber: 242,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 286,
+                            lineNumber: 240,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                    lineNumber: 278,
+                    lineNumber: 232,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                lineNumber: 277,
+                lineNumber: 231,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -600,7 +547,7 @@ function Dashboard() {
                                         children: stat.title
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                        lineNumber: 299,
+                                        lineNumber: 253,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -615,18 +562,18 @@ function Dashboard() {
                                             className: "h-6 w-6"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 303,
+                                            lineNumber: 257,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                        lineNumber: 302,
+                                        lineNumber: 256,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                lineNumber: 298,
+                                lineNumber: 252,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -638,23 +585,23 @@ function Dashboard() {
                                     children: stat.value
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 307,
+                                    lineNumber: 261,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                lineNumber: 306,
+                                lineNumber: 260,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, index, true, {
                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                        lineNumber: 297,
+                        lineNumber: 251,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                lineNumber: 295,
+                lineNumber: 249,
                 columnNumber: 7
             }, this),
             (user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -669,19 +616,19 @@ function Dashboard() {
                                     }
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 317,
+                                    lineNumber: 271,
                                     columnNumber: 15
                                 }, this),
                                 "Acciones Rápidas"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 316,
+                            lineNumber: 270,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                        lineNumber: 315,
+                        lineNumber: 269,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -702,19 +649,19 @@ function Dashboard() {
                                             className: "mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 324,
+                                            lineNumber: 278,
                                             columnNumber: 17
                                         }, this),
                                         "Nuevo Permiso de Trabajo"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 323,
+                                    lineNumber: 277,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                lineNumber: 322,
+                                lineNumber: 276,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -733,19 +680,19 @@ function Dashboard() {
                                             className: "mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 330,
+                                            lineNumber: 284,
                                             columnNumber: 17
                                         }, this),
                                         "Ver Todos los Permisos"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 329,
+                                    lineNumber: 283,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                lineNumber: 328,
+                                lineNumber: 282,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -758,26 +705,26 @@ function Dashboard() {
                                         className: "mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                        lineNumber: 335,
+                                        lineNumber: 289,
                                         columnNumber: 15
                                     }, this),
                                     "Exportar Reportes"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                lineNumber: 334,
+                                lineNumber: 288,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                        lineNumber: 321,
+                        lineNumber: 275,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                lineNumber: 314,
+                lineNumber: 268,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -787,12 +734,12 @@ function Dashboard() {
                             children: "Permisos Recientes"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 344,
+                            lineNumber: 298,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                        lineNumber: 343,
+                        lineNumber: 297,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -803,7 +750,7 @@ function Dashboard() {
                                     className: "h-8 w-8 animate-spin text-muted-foreground"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 349,
+                                    lineNumber: 303,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -811,13 +758,13 @@ function Dashboard() {
                                     children: "Cargando permisos..."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 350,
+                                    lineNumber: 304,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 348,
+                            lineNumber: 302,
                             columnNumber: 13
                         }, this) : permits.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "p-12 text-center text-gray-500",
@@ -827,7 +774,7 @@ function Dashboard() {
                                     className: "mx-auto mb-4 text-gray-300"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 354,
+                                    lineNumber: 308,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -835,7 +782,7 @@ function Dashboard() {
                                     children: "No hay permisos de trabajo registrados"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 355,
+                                    lineNumber: 309,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -843,7 +790,7 @@ function Dashboard() {
                                     children: "Crea tu primer permiso para comenzar"
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 356,
+                                    lineNumber: 310,
                                     columnNumber: 15
                                 }, this),
                                 (user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -859,25 +806,25 @@ function Dashboard() {
                                                 className: "mr-2"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                lineNumber: 360,
+                                                lineNumber: 314,
                                                 columnNumber: 21
                                             }, this),
                                             "Crear Primer Permiso"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                        lineNumber: 359,
+                                        lineNumber: 313,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 358,
+                                    lineNumber: 312,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                            lineNumber: 353,
+                            lineNumber: 307,
                             columnNumber: 13
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
                             children: [
@@ -904,7 +851,7 @@ function Dashboard() {
                                                                             children: permit.number || permit.id.substring(0, 8)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                            lineNumber: 375,
+                                                                            lineNumber: 329,
                                                                             columnNumber: 29
                                                                         }, this),
                                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -912,13 +859,13 @@ function Dashboard() {
                                                                             children: getWorkTypesString(permit.workType)
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                            lineNumber: 378,
+                                                                            lineNumber: 332,
                                                                             columnNumber: 29
                                                                         }, this)
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                    lineNumber: 374,
+                                                                    lineNumber: 328,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
@@ -926,13 +873,13 @@ function Dashboard() {
                                                                     children: getStatusText(permit.status)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                    lineNumber: 382,
+                                                                    lineNumber: 336,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 373,
+                                                            lineNumber: 327,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -945,7 +892,7 @@ function Dashboard() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                    lineNumber: 387,
+                                                                    lineNumber: 341,
                                                                     columnNumber: 27
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -955,34 +902,34 @@ function Dashboard() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                    lineNumber: 388,
+                                                                    lineNumber: 342,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 386,
+                                                            lineNumber: 340,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                    lineNumber: 372,
+                                                    lineNumber: 326,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                lineNumber: 371,
+                                                lineNumber: 325,
                                                 columnNumber: 21
                                             }, this)
                                         }, permit.id, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 370,
+                                            lineNumber: 324,
                                             columnNumber: 19
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 368,
+                                    lineNumber: 322,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Table"], {
@@ -995,51 +942,51 @@ function Dashboard() {
                                                         children: "Número"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 399,
+                                                        lineNumber: 353,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         children: "Tipo de Trabajo"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 400,
+                                                        lineNumber: 354,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         children: "Creado por"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 401,
+                                                        lineNumber: 355,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         children: "Fecha Creación"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 402,
+                                                        lineNumber: 356,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {
                                                         children: "Estado"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 403,
+                                                        lineNumber: 357,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableHead"], {}, void 0, false, {
                                                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                        lineNumber: 404,
+                                                        lineNumber: 358,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                lineNumber: 398,
+                                                lineNumber: 352,
                                                 columnNumber: 19
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 397,
+                                            lineNumber: 351,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableBody"], {
@@ -1056,33 +1003,33 @@ function Dashboard() {
                                                                 children: permit.number || permit.id.substring(0, 8)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                lineNumber: 411,
+                                                                lineNumber: 365,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 410,
+                                                            lineNumber: 364,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             children: getWorkTypesString(permit.workType)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 415,
+                                                            lineNumber: 369,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             children: permit.user?.displayName || 'N/A'
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 416,
+                                                            lineNumber: 370,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
                                                             children: permit.createdAt ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(permit.createdAt, "dd/MM/yyyy HH:mm") : 'N/A'
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 417,
+                                                            lineNumber: 371,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -1091,12 +1038,12 @@ function Dashboard() {
                                                                 children: getStatusText(permit.status)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                lineNumber: 421,
+                                                                lineNumber: 375,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 420,
+                                                            lineNumber: 374,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$table$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["TableCell"], {
@@ -1109,53 +1056,53 @@ function Dashboard() {
                                                                     children: "Ver Detalles"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                    lineNumber: 427,
+                                                                    lineNumber: 381,
                                                                     columnNumber: 27
                                                                 }, this)
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                                lineNumber: 426,
+                                                                lineNumber: 380,
                                                                 columnNumber: 25
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                            lineNumber: 425,
+                                                            lineNumber: 379,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, permit.id, true, {
                                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                                    lineNumber: 409,
+                                                    lineNumber: 363,
                                                     columnNumber: 21
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                            lineNumber: 407,
+                                            lineNumber: 361,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                                    lineNumber: 396,
+                                    lineNumber: 350,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                        lineNumber: 346,
+                        lineNumber: 300,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-                lineNumber: 342,
+                lineNumber: 296,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/dashboard/page.tsx",
-        lineNumber: 276,
+        lineNumber: 230,
         columnNumber: 5
     }, this);
 }
