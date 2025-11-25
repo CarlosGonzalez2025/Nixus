@@ -621,6 +621,10 @@ body {
   margin-left: auto;
 }
 
+.mr-1 {
+  margin-right: .25rem;
+}
+
 .mr-2 {
   margin-right: .5rem;
 }
@@ -647,10 +651,6 @@ body {
 
 .mt-8 {
   margin-top: 2rem;
-}
-
-.mr-1 {
-  margin-right: .25rem;
 }
 
 .block {
@@ -1520,11 +1520,6 @@ body {
   border-color: rgb(243 232 255 / var(--tw-border-opacity, 1));
 }
 
-.border-red-100 {
-  --tw-border-opacity: 1;
-  border-color: rgb(254 226 226 / var(--tw-border-opacity, 1));
-}
-
 .border-sidebar-border {
   border-color: hsl(var(--sidebar-border));
 }
@@ -1696,10 +1691,6 @@ body {
   background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
 }
 
-.bg-red-50\/50 {
-  background-color: #fef2f280;
-}
-
 .bg-secondary {
   background-color: hsl(var(--secondary));
 }
@@ -1854,11 +1845,6 @@ body {
   padding-bottom: 1rem;
 }
 
-.py-6 {
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
-}
-
 .pb-1 {
   padding-bottom: .25rem;
 }
@@ -1929,10 +1915,6 @@ body {
 
 .pt-4 {
   padding-top: 1rem;
-}
-
-.pt-6 {
-  padding-top: 1.5rem;
 }
 
 .text-left {
@@ -2380,6 +2362,12 @@ body {
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
+.\!transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter !important;
+  transition-duration: .15s !important;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1) !important;
+}
+
 .transition {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
   transition-duration: .15s;
@@ -2438,12 +2426,6 @@ body {
   transition-property: transform;
   transition-duration: .15s;
   transition-timing-function: cubic-bezier(.4, 0, .2, 1);
-}
-
-.\!transition {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter !important;
-  transition-duration: .15s !important;
-  transition-timing-function: cubic-bezier(.4, 0, .2, 1) !important;
 }
 
 .duration-200 {
@@ -3537,10 +3519,6 @@ body {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .md\:flex-row {
-    flex-direction: row;
   }
 
   .md\:gap-8 {

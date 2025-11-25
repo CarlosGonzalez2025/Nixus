@@ -1153,9 +1153,13 @@ export default function PermitDetailPage() {
       reasons.push(`El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${getStatusInfo(permit.status).text}).`);
     }
   
-    // Condición 3: Todas las firmas de cierre de trabajadores deben estar completas.
-    if (permit.workers?.some(w => !w.firmaCierre)) {
-      reasons.push('Faltan firmas de cierre de algunos trabajadores.');
+    // Condición 3: Todas las firmas de cierre de trabajadores deben estar completas
+    // SOLO si el permiso tiene trabajadores y está en proceso de cierre
+    if (permit.status === 'en_ejecucion' || permit.status === 'suspendido') {
+      const workersNeedingClosureSignature = permit.workers?.filter(w => !w.firmaCierre) || [];
+      if (workersNeedingClosureSignature.length > 0) {
+        reasons.push(`Faltan firmas de cierre de ${workersNeedingClosureSignature.length} trabajador(es).`);
+      }
     }
   
     // Condición 4: El responsable y la autoridad deben firmar el cierre final.
@@ -1680,11 +1684,39 @@ export default function PermitDetailPage() {
                          <PlayCircle className="mr-2"/>Iniciar Ejecución
                      </Button>
                  )}
-                 {canChangeStatus('cerrado') && (
-                     <Button onClick={handleOpenClosureDialog}>
-                         <Lock className="mr-2"/>Cerrar Permiso
-                     </Button>
-                 )}
+                 {(permit.status === 'en_ejecucion' || permit.status === 'suspendido') && (
+    <TooltipProvider>
+        <Tooltip open={closureStatus.can && canChangeStatus('cerrado') ? false : undefined}>
+            <TooltipTrigger asChild>
+                <div>
+                    <Button 
+                        onClick={handleOpenClosureDialog}
+                        disabled={!closureStatus.can || !canChangeStatus('cerrado')}
+                    >
+                        <Lock className="mr-2"/>Cerrar Permiso
+                    </Button>
+                </div>
+            </TooltipTrigger>
+            {(!closureStatus.can || !canChangeStatus('cerrado')) && (
+                <TooltipContent side="bottom" className="max-w-xs">
+                    {!canChangeStatus('cerrado') ? (
+                        <>
+                            <p className="font-semibold">Sin permisos para cerrar</p>
+                            <p className="text-xs mt-1">Solo Líder de Tarea o Administrador pueden cerrar permisos.</p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="font-semibold">Requisitos pendientes para el cierre:</p>
+                            <ul className="list-disc list-inside text-xs mt-1 space-y-1">
+                                {closureStatus.reasons.map((reason, i) => <li key={i}>{reason}</li>)}
+                            </ul>
+                        </>
+                    )}
+                </TooltipContent>
+            )}
+        </Tooltip>
+    </TooltipProvider>
+)}
                  <Button variant="outline" onClick={handleExportToPDF}><FileDown className="mr-2"/>Exportar a PDF</Button>
                  {canBeCancelled && (
                     <Button variant="destructive" onClick={handleOpenCancellationDialog}>

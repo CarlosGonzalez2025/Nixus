@@ -153,8 +153,9 @@ export default function PermitsPage() {
     const permitsCollection = collection(db, 'permits');
     let unsubscribers: Unsubscribe[] = [];
 
+    // Para el rol de SST, se hacen dos consultas separadas y se unen
     if (user.role === 'lider_sst') {
-        const q1 = query(permitsCollection, where("trabajoAlturas", "==", true));
+        const q1 = query(permitsCollection, where("selectedWorkTypes.alturas", "==", true));
         const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
 
         const processSnapshots = (snapshots: (ReturnType<typeof getDocs>)[]) => {
@@ -176,20 +177,33 @@ export default function PermitsPage() {
             setLoading(false);
         };
         
+        // Carga inicial y luego escucha por cambios
+        Promise.all([getDocs(q1), getDocs(q2)])
+            .then(processSnapshots)
+            .catch(error => {
+                console.error("Error fetching initial SST permits:", error);
+                const permissionError = new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' });
+                errorEmitter.emit('permission-error', permissionError);
+                setLoading(false);
+            });
+
         const unsub1 = onSnapshot(q1, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 1 failed", e)});
         const unsub2 = onSnapshot(q2, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 2 failed", e)});
         
         unsubscribers.push(unsub1, unsub2);
 
     } else {
+        // Para otros roles, se usa una sola consulta
         let finalQuery: QueryConstraint[] = [];
         
         if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+          // Solo filtrar, la ordenación se hará en el cliente
           finalQuery.push(where('createdBy', '==', user.uid));
+        } else {
+          // Para admin/autorizante, ordenar por fecha en la consulta
+          finalQuery.push(orderBy('createdAt', 'desc'));
         }
         
-        finalQuery.push(orderBy('createdAt', 'desc'));
-
         const q = query(permitsCollection, ...finalQuery);
         
         const unsub = onSnapshot(q, (snapshot) => {
@@ -201,6 +215,11 @@ export default function PermitsPage() {
               createdAt: parseFirestoreDate(data.createdAt),
             } as Permit;
           });
+
+          // Si es solicitante, ordenar en el cliente
+          if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+            permitsData = permitsData.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          }
 
           setAllPermits(permitsData);
           setLoading(false);

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
@@ -98,7 +97,7 @@ const getStatusText = (status: string) => {
     const statusText: {[key: string]: string} = {
       'borrador': 'Borrador',
       'pendiente_revision': 'Pendiente de Revisión',
-      'aprobado': 'Aprobado', // Mantener para compatibilidad con permisos antiguos
+      'aprobado': 'Aprobado',
       'en_ejecucion': 'En Ejecución',
       'suspendido': 'Suspendido',
       'cerrado': 'Cerrado',
@@ -361,9 +360,12 @@ export async function addSignatureAndNotify(
             }
 
             // ✅ VERIFICACIÓN AUTOMÁTICA: ¿Todas las firmas requeridas están completas?
-            const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
+            const updatedPermitData = { 
+                ...permitBeforeData, 
+                approvals: { ...permitBeforeData.approvals, [role]: approvalData }
+            };
             
-            if (await checkAllRequiredSignaturesComplete(permitBeforeData, updatedApprovals)) {
+            if (await checkAllRequiredSignaturesComplete(updatedPermitData)) {
                 // 🚀 CAMBIO AUTOMÁTICO DE PENDIENTE_REVISION → EN_EJECUCION
                 if (permitBeforeData.status === 'pendiente_revision') {
                     updateData['status'] = 'en_ejecucion';
@@ -423,11 +425,12 @@ Ver detalles: ${permitUrl}`;
     }
 }
 
-// ✅ FUNCIÓN NUEVA: Verificar si todas las firmas requeridas están completas
+// ✅ FUNCIÓN CORREGIDA: Verificar si todas las firmas requeridas están completas
 async function checkAllRequiredSignaturesComplete(
-    permitData: Permit, 
-    approvals: Permit['approvals']
+  permitData: Permit
 ): Promise<boolean> {
+    const { approvals } = permitData;
+    
     // Firma del solicitante es SIEMPRE requerida
     if (approvals?.solicitante?.status !== 'aprobado') {
         return false;
@@ -462,7 +465,7 @@ async function checkAllRequiredSignaturesComplete(
     return true;
 }
 
-// ✅ FUNCIÓN MEJORADA: Validación de transiciones de estado (SIN estado "aprobado" automático)
+// ✅ FUNCIÓN MEJORADA: Validación de transiciones de estado
 function validateStateTransition(currentStatus: PermitStatus, targetStatus: PermitStatus, userRole: UserRole): { allowed: boolean, reason?: string } {
     const allowedTransitions: Partial<Record<PermitStatus, Partial<Record<PermitStatus, UserRole[]>>>> = {
         'borrador': {
@@ -784,9 +787,9 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
 
         const permitData = permitSnap.data() as Permit;
         
-        // ✅ Validar estado según tipo de firma
-        if (signatureType === 'firmaApertura' && !['en_ejecucion', 'suspendido'].includes(permitData.status)) {
-            return { success: false, error: 'Solo se puede firmar apertura en permisos EN EJECUCIÓN.' };
+        // ✅ CORRECCIÓN: Validación de estado corregida para firma de apertura
+        if (signatureType === 'firmaApertura' && !['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permitData.status)) {
+            return { success: false, error: 'Solo se puede firmar apertura cuando el permiso está pendiente, aprobado o en ejecución.' };
         }
         if (signatureType === 'firmaCierre' && !['en_ejecucion', 'suspendido'].includes(permitData.status)) {
             return { success: false, error: 'Solo se puede firmar cierre en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
@@ -816,6 +819,3 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
-
-
-    

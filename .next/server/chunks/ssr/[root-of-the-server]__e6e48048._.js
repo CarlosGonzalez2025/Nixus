@@ -758,11 +758,14 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 }
             }
             // ✅ VERIFICACIÓN AUTOMÁTICA: ¿Todas las firmas requeridas están completas?
-            const updatedApprovals = {
-                ...permitBeforeData?.approvals,
-                [role]: approvalData
+            const updatedPermitData = {
+                ...permitBeforeData,
+                approvals: {
+                    ...permitBeforeData.approvals,
+                    [role]: approvalData
+                }
             };
-            if (await checkAllRequiredSignaturesComplete(permitBeforeData, updatedApprovals)) {
+            if (await checkAllRequiredSignaturesComplete(updatedPermitData)) {
                 // 🚀 CAMBIO AUTOMÁTICO DE PENDIENTE_REVISION → EN_EJECUCION
                 if (permitBeforeData.status === 'pendiente_revision') {
                     updateData['status'] = 'en_ejecucion';
@@ -816,8 +819,9 @@ Ver detalles: ${permitUrl}`;
         };
     }
 }
-// ✅ FUNCIÓN NUEVA: Verificar si todas las firmas requeridas están completas
-async function checkAllRequiredSignaturesComplete(permitData, approvals) {
+// ✅ FUNCIÓN CORREGIDA: Verificar si todas las firmas requeridas están completas
+async function checkAllRequiredSignaturesComplete(permitData) {
+    const { approvals } = permitData;
     // Firma del solicitante es SIEMPRE requerida
     if (approvals?.solicitante?.status !== 'aprobado') {
         return false;
@@ -846,7 +850,7 @@ async function checkAllRequiredSignaturesComplete(permitData, approvals) {
     }
     return true;
 }
-// ✅ FUNCIÓN MEJORADA: Validación de transiciones de estado (SIN estado "aprobado" automático)
+// ✅ FUNCIÓN MEJORADA: Validación de transiciones de estado
 function validateStateTransition(currentStatus, targetStatus, userRole) {
     const allowedTransitions = {
         'borrador': {
@@ -1257,14 +1261,15 @@ async function addWorkerSignature(permitId, workerIndex, signatureType, signatur
             };
         }
         const permitData = permitSnap.data();
-        // ✅ Validar estado según tipo de firma
+        // ✅ CORRECCIÓN: Validación de estado corregida para firma de apertura
         if (signatureType === 'firmaApertura' && ![
-            'en_ejecucion',
-            'suspendido'
+            'pendiente_revision',
+            'aprobado',
+            'en_ejecucion'
         ].includes(permitData.status)) {
             return {
                 success: false,
-                error: 'Solo se puede firmar apertura en permisos EN EJECUCIÓN.'
+                error: 'Solo se puede firmar apertura cuando el permiso está pendiente, aprobado o en ejecución.'
             };
         }
         if (signatureType === 'firmaCierre' && ![
