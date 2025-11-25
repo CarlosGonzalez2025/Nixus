@@ -857,6 +857,10 @@ function validateStateTransition(currentStatus, targetStatus, userRole) {
             ]
         },
         'pendiente_revision': {
+            'en_ejecucion': [
+                'autorizante',
+                'admin'
+            ],
             'rechazado': [
                 'autorizante',
                 'lider_sst',

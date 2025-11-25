@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, CheckCircle, Clock, XCircle, PlusCircle, Activity, TrendingUp, Upload, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
-import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe, QueryConstraint, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, limit, Unsubscribe, QueryConstraint, getDocs, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit } from '@/types';
 import { format } from 'date-fns';
@@ -115,39 +115,76 @@ export default function Dashboard() {
 
     console.log('✅ User authenticated, setting up listeners for:', user.email);
 
-    let unsubscribe: Unsubscribe | undefined;
+    const permitsCollection = collection(db, 'permits');
 
-    try {
-      const permitsCollection = collection(db, 'permits');
-      const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
+    if (user.role === 'lider_sst') {
+      const q1 = query(permitsCollection, where("trabajoAlturas", "==", true));
+      const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
+
+      const unsub1 = onSnapshot(q1, () => {});
+      const unsub2 = onSnapshot(q2, () => {});
+
+      const fetchData = async () => {
+        try {
+          const [snapshot1, snapshot2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+          
+          const permitsMap = new Map<string, Permit>();
+
+          snapshot1.docs.forEach(doc => {
+            if (!permitsMap.has(doc.id)) {
+              permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as Permit);
+            }
+          });
+
+          snapshot2.docs.forEach(doc => {
+            if (!permitsMap.has(doc.id)) {
+              permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as Permit);
+            }
+          });
+
+          const combinedPermits = Array.from(permitsMap.values());
+          const recentPermits = [...combinedPermits].sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)).slice(0,10);
+          setPermits(recentPermits);
+
+          setStats({
+            total: combinedPermits.length,
+            pendiente: combinedPermits.filter(p => p.status === 'pendiente_revision').length,
+            aprobado: combinedPermits.filter(p => p.status === 'aprobado').length,
+            enEjecucion: combinedPermits.filter(p => p.status === 'en_ejecucion').length
+          });
+
+          setLoading(false);
+
+        } catch (error) {
+           console.error('❌ Error fetching SST permits:', error);
+           setLoading(false);
+        }
+      }
       
+      fetchData();
+
+      return () => {
+        unsub1();
+        unsub2();
+      };
+
+    } else {
       let finalQuery: QueryConstraint[] = [];
+      const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
       
       if (isSolicitante) {
         finalQuery.push(where('createdBy', '==', user.uid));
-      } else if (user.role === 'lider_sst') {
-        // For SST, we can't do an OR query directly with onSnapshot easily.
-        // We'll fetch all permits and filter client-side for simplicity,
-        // or for more optimization, fetch two queries and merge.
-        // Let's go with a single query and client-side filter.
-        // This is less efficient but avoids complex index requirements.
-        finalQuery.push(orderBy('createdAt', 'desc'));
-      } else {
-        finalQuery.push(orderBy('createdAt', 'desc'));
       }
+      finalQuery.push(orderBy('createdAt', 'desc'));
       
       const q = query(permitsCollection, ...finalQuery);
 
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        let permitsData = snapshot.docs.map(doc => ({
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const permitsData = snapshot.docs.map(doc => ({
           id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
         } as Permit));
         
-        if (user.role === 'lider_sst') {
-            permitsData = permitsData.filter(p => p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
-        }
-        
-        const recentPermits = [...permitsData].sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)).slice(0,10);
+        const recentPermits = permitsData.slice(0, 10);
         setPermits(recentPermits);
 
         setStats({
@@ -164,17 +201,12 @@ export default function Dashboard() {
         setLoading(false);
       });
 
-    } catch (error) {
-      console.error('❌ Error setting up listeners:', error);
-      setLoading(false);
+       return () => {
+        console.log('🧹 Cleaning up dashboard listeners');
+        if (unsubscribe) unsubscribe();
+      };
     }
 
-    return () => {
-      console.log('🧹 Cleaning up dashboard listeners');
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
   }, [user, userLoading, router]);
 
   const statsCards = [

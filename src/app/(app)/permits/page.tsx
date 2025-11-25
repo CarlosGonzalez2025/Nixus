@@ -151,57 +151,79 @@ export default function PermitsPage() {
     }
 
     const permitsCollection = collection(db, 'permits');
-    let unsubscribe: Unsubscribe | undefined;
-    
-    let finalQuery: QueryConstraint[] = [];
-    
-    if (user.role === 'solicitante' || user.role === 'lider_tarea') {
-      finalQuery.push(where('createdBy', '==', user.uid));
-      finalQuery.push(orderBy('createdAt', 'desc')); // Requerido por la regla de seguridad
-    } else if (user.role === 'lider_sst') {
-        // La regla permite leer si es sst y trabajo en alturas o firma requerida.
-        // Una consulta OR no es posible en Firestore directamente, por lo que filtramos en el cliente.
+    let unsubscribers: Unsubscribe[] = [];
+
+    if (user.role === 'lider_sst') {
+        const q1 = query(permitsCollection, where("trabajoAlturas", "==", true));
+        const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
+
+        const processSnapshots = (snapshots: (ReturnType<typeof getDocs>)[]) => {
+            const permitsMap = new Map<string, Permit>();
+            snapshots.forEach(snapshot => {
+                snapshot.docs.forEach(doc => {
+                    if (!permitsMap.has(doc.id)) {
+                        const data = doc.data();
+                        permitsMap.set(doc.id, {
+                            id: doc.id,
+                            ...data,
+                            createdAt: parseFirestoreDate(data.createdAt),
+                        } as Permit);
+                    }
+                });
+            });
+            const combinedPermits = Array.from(permitsMap.values()).sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            setAllPermits(combinedPermits);
+            setLoading(false);
+        };
+        
+        const unsub1 = onSnapshot(q1, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 1 failed", e)});
+        const unsub2 = onSnapshot(q2, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 2 failed", e)});
+        
+        unsubscribers.push(unsub1, unsub2);
+
+    } else {
+        let finalQuery: QueryConstraint[] = [];
+        
+        if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+          finalQuery.push(where('createdBy', '==', user.uid));
+        }
+        
         finalQuery.push(orderBy('createdAt', 'desc'));
-    } else { // Para admin y autorizante
-      finalQuery.push(orderBy('createdAt', 'desc'));
+
+        const q = query(permitsCollection, ...finalQuery);
+        
+        const unsub = onSnapshot(q, (snapshot) => {
+          let permitsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: parseFirestoreDate(data.createdAt),
+            } as Permit;
+          });
+
+          setAllPermits(permitsData);
+          setLoading(false);
+        }, (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: permitsCollection.path,
+            operation: 'list',
+          });
+          
+          errorEmitter.emit('permission-error', permissionError);
+
+          toast({
+            variant: 'destructive',
+            title: 'Error al cargar permisos',
+            description: 'No se pudieron obtener los datos de los permisos.',
+          });
+          setLoading(false);
+        });
+        unsubscribers.push(unsub);
     }
 
-    const q = query(permitsCollection, ...finalQuery);
-    
-    unsubscribe = onSnapshot(q, (snapshot) => {
-      let permitsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt: parseFirestoreDate(data.createdAt),
-        } as Permit;
-      });
-
-      if (user.role === 'lider_sst') {
-          permitsData = permitsData.filter(p => p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
-      }
-
-      setAllPermits(permitsData);
-      setLoading(false);
-    }, (serverError) => {
-      const permissionError = new FirestorePermissionError({
-        path: permitsCollection.path,
-        operation: 'list',
-      });
-      
-      errorEmitter.emit('permission-error', permissionError);
-
-      toast({
-        variant: 'destructive',
-        title: 'Error al cargar permisos',
-        description: 'No se pudieron obtener los datos de los permisos.',
-      });
-      setLoading(false);
-    });
-
     return () => {
-        if(unsubscribe) unsubscribe();
+        unsubscribers.forEach(unsub => unsub());
     };
   }, [user, userLoading, toast]);
 
