@@ -2436,6 +2436,12 @@ body {
   transition-timing-function: cubic-bezier(.4, 0, .2, 1);
 }
 
+.\!transition {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter !important;
+  transition-duration: .15s !important;
+  transition-timing-function: cubic-bezier(.4, 0, .2, 1) !important;
+}
+
 .duration-200 {
   transition-duration: .2s;
 }

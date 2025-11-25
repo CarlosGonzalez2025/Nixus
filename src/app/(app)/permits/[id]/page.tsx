@@ -85,30 +85,30 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
-// ✅ Helper function to handle different date formats
+// ✅ Helper function to handle different date formats (CORREGIDO)
 const parseFirestoreDate = (dateValue: any): Date | null => {
   if (!dateValue) return null;
-  
-  // If it's a Firestore Timestamp
   if (typeof dateValue.toDate === 'function') {
     return dateValue.toDate();
   }
-  
-  // If it's already a Date object
   if (dateValue instanceof Date) {
     return dateValue;
   }
-  
-  // If it's a string (ISO format)
   if (typeof dateValue === 'string') {
     const parsed = new Date(dateValue);
     if (!isNaN(parsed.getTime())) {
       return parsed;
     }
   }
-  
   return null;
 };
+
+// ✅ Helper seguro para formatear fechas (NUEVO)
+const safeFormat = (date: any, fmt: string): string => {
+  const parsedDate = parseFirestoreDate(date);
+  return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
+};
+
 
 const getStatusInfo = (status: string): { text: string; icon: React.ElementType; color: string; bgColor: string } => {
     const statusInfo: { [key: string]: { text: string; icon: React.ElementType; color: string, bgColor: string } } = {
@@ -286,45 +286,52 @@ export default function PermitDetailPage() {
     { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
 ];
 
+  // ✅ CORRECCIÓN 6.2: useEffect seguro para evitar memory leaks
   useEffect(() => {
     if (!permitId) {
       setError('ID de permiso no válido.');
       setLoading(false);
       return;
     }
-
+    
+    let isMounted = true;
     const docRef = doc(db, 'permits', permitId);
+
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setPermit({
-          id: docSnap.id,
-          ...data,
-          createdAt: parseFirestoreDate(data.createdAt),
-          closure: data.closure || {}, // Ensure closure object exists
-          approvals: data.approvals || {}, // Ensure approvals object exists
-        } as Permit);
-        setError(null);
-      } else {
-        setError('No se encontró el permiso de trabajo.');
-        setPermit(null);
+      if (isMounted) {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPermit({
+            id: docSnap.id,
+            ...data,
+            //createdAt y otros campos de fecha se parsean donde se usan con safeFormat
+          } as Permit);
+          setError(null);
+        } else {
+          setError('No se encontró el permiso de trabajo.');
+          setPermit(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     }, (serverError) => {
-      const permissionError = new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'get',
-      });
-      
-      errorEmitter.emit('permission-error', permissionError);
-      setError('No tiene permisos para ver este documento.');
-      setLoading(false);
+      if (isMounted) {
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError('No tiene permisos para ver este documento.');
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [permitId]);
   
-  // ✅ Función handleExportToPDF corregida
+  // ✅ CORRECCIÓN: handleExportToPDF corregido
   const handleExportToPDF = async () => {
     if (!permit) {
       toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
@@ -403,11 +410,6 @@ export default function PermitDetailPage() {
         doc.setTextColor(0, 0, 0);
       };
       
-      const safeFormat = (date: any, fmt: string) => {
-        const parsedDate = parseFirestoreDate(date);
-        return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
-      };
-  
       const drawSignatureBox = (roleTitle: string, approval: any, x: number, y: number, width: number, height: number) => {
         doc.rect(x, y, width, height);
         doc.setFontSize(6);
@@ -1042,7 +1044,7 @@ export default function PermitDetailPage() {
     if (!permit || !currentUser) return;
     setIsStatusChanging(true);
     try {
-      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName }, reason);
+      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role });
       if (result.success) {
         toast({
           title: 'Estado Actualizado',
@@ -1227,7 +1229,7 @@ export default function PermitDetailPage() {
       if (!permit || !currentUser) return;
       setIsSigning(true);
       try {
-        const result = await addSignatureAndNotify(permit.id, 'cancelacion', 'firmaCierre', '', { uid: currentUser.uid, displayName: currentUser.displayName}, cancellationReason);
+        const result = await addSignatureAndNotify(permit.id, 'cancelacion', 'firmaCierre', '', { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role }, cancellationReason);
         if(result.success) {
             await handleChangeStatus('rechazado', `Cancelado: ${cancellationReason}`);
             setIsCancellationDialogOpen(false);
@@ -1271,9 +1273,8 @@ export default function PermitDetailPage() {
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
-        // Reset state and close dialog in finally block to ensure it happens
-        setIsDailyValidationSigning(false);
         setIsDailyValidationSignatureOpen(false);
+        setIsDailyValidationSigning(false);
         setDailyValidationTarget(null);
         setDailyValidationName('');
         setDailyValidationDate('');
@@ -1497,7 +1498,7 @@ export default function PermitDetailPage() {
                        <p>Por: <span className="font-semibold">{approval.userName}</span></p>
                        {getRoleDisplayName() && <p>Rol: <span className="font-semibold">{getRoleDisplayName()}</span></p>}
                        {approval.userEmpresa && <p>Empresa: <span className="font-semibold">{approval.userEmpresa}</span></p>}
-                       <p>Fecha: {approval.signedAt ? format(parseFirestoreDate(approval.signedAt)!, 'dd/MM/yy HH:mm') : 'N/A'}</p>
+                       <p>Fecha: {safeFormat(approval.signedAt, 'dd/MM/yy HH:mm')}</p>
                     </div>
                     {approval.firmaApertura && <Image src={approval.firmaApertura} alt={`Firma ${role}`} width={120} height={60} className="rounded border mt-2" />}
                      {approval.comments && (
@@ -1598,7 +1599,7 @@ export default function PermitDetailPage() {
                                 </TooltipProvider>
                             )}
                         </TableCell>
-                        <TableCell>{v?.fecha ? format(parseFirestoreDate(v.fecha)!, 'dd/MM/yy HH:mm') : 'N/A'}</TableCell>
+                        <TableCell>{safeFormat(v?.fecha, 'dd/MM/yy HH:mm')}</TableCell>
                     </TableRow>
                 );
             });
@@ -1703,7 +1704,7 @@ export default function PermitDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                         <Field label="Número de Permiso" value={<span className="font-bold text-primary">{permit.number || permit.id.substring(0,8)}</span>} />
                         <Field label="Solicitante" value={permit.user?.displayName} />
-                        <Field label="Fecha Creación" value={permit.createdAt ? format(parseFirestoreDate(permit.createdAt)!, 'dd/MM/yyyy HH:mm') : 'N/A'} />
+                        <Field label="Fecha Creación" value={safeFormat(permit.createdAt, 'dd/MM/yyyy HH:mm')} />
                         <Field label="Área Específica" value={permit.generalInfo?.areaEspecifica} />
                         <Field label="Planta" value={permit.generalInfo?.planta} />
                         <Field label="Proceso" value={permit.generalInfo?.proceso} />
@@ -2295,3 +2296,4 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
