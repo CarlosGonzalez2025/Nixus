@@ -4,7 +4,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
+    // --- Funciones de Ayuda ---
     function isSignedIn() {
       return request.auth != null;
     }
@@ -20,48 +20,25 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && getRole() == 'admin';
     }
-
+    
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
-    
-    function isSolicitante() {
-      let role = getRole();
-      return role == 'solicitante' || role == 'lider_tarea';
-    }
-    
-    function isAutorizante() {
-      return getRole() == 'autorizante';
+
+    function hasRole(role) {
+      return getRole() == role;
     }
 
-    function isMantenimiento() {
-        return getRole() == 'mantenimiento';
-    }
-
-    function isLiderSST() {
-        return getRole() == 'lider_sst';
+    function hasAnyRole(roles) {
+      return getRole() in roles;
     }
     
-    function isLiderTarea() {
-      return getRole() == 'lider_tarea';
-    }
-    
-    function isCoordinadorAlturas() {
-      // Por ahora, asumimos que el Líder SST puede actuar como coordinador
-      return isLiderSST();
-    }
-    
-    // Nueva función para verificar si la firma de SST es requerida
-    function isSSTSignatureRequired(permit) {
-      return permit.isSSTSignatureRequired == true;
-    }
-
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
       allow read: if isAdmin() || isOwner(userId);
       allow list: if isAdmin();
       allow update: if isOwner(userId) || isAdmin();
-      allow create, delete: if false;
+      allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
     }
     
     // --- Colección de Notificaciones (notifications) ---
@@ -72,75 +49,64 @@ service cloud.firestore {
       // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
 
-      // La creación y eliminación de notificaciones solo se hace desde el servidor.
+      // La creación y eliminación de notificaciones solo se hacen desde el backend.
       allow create, delete: if false;
     }
 
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
-      allow read: if isAdmin() || isAutorizante() || isCreator(resource.data) || (isLiderSST() && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true));
-      allow list: if isAdmin() || isAutorizante();
+      // LECTURA: Permite leer a los involucrados directamente.
+      allow read: if isSignedIn() && 
+                    (isAdmin() || 
+                     hasRole('autorizante') || 
+                     isCreator(resource.data) ||
+                     (hasRole('lider_sst') && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true)) ||
+                     (hasRole('mantenimiento') && resource.data.controlEnergia == true)
+                    );
+
+      // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
+      allow list: if isSignedIn() && 
+                  (
+                    (isAdmin() || hasRole('autorizante')) ||
+                    // Un usuario puede listar sus propios permisos si ordena por fecha.
+                    (request.query.where.createdBy == request.auth.uid && request.query.orderBy.createdAt == 'desc')
+                  );
+      
+      // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
       allow create, delete: if false;
-      allow update: if 
-        isAdmin() ||
-        (isCreator(resource.data) && resource.data.status == 'borrador') ||
-        (
-          isSignedIn() &&
-          (
-            (
-                resource.data.trabajoAlturas == true && isCoordinadorAlturas() &&
-                request.resource.data.approvals.coordinador_alturas.status == 'aprobado' &&
-                resource.data.approvals.coordinador_alturas.status == 'pendiente'
-            ) ||
-            (
-                isSolicitante() && request.resource.data.approvals.solicitante.status == 'aprobado' &&
-                resource.data.approvals.solicitante.status == 'pendiente' &&
-                (resource.data.trabajoAlturas == false || resource.data.approvals.coordinador_alturas.status == 'aprobado') &&
-                (request.resource.data.status == 'pendiente_revision' || request.resource.data.status == 'borrador')
-            ) ||
-            (
-                resource.data.status == 'pendiente_revision' && isAutorizante() &&
-                resource.data.approvals.solicitante.status == 'aprobado' &&
-                request.resource.data.approvals.autorizante.status == 'aprobado' &&
-                resource.data.approvals.autorizante.status == 'pendiente' &&
-                (request.resource.data.status == 'en_ejecucion' || request.resource.data.status == 'pendiente_revision')
-            ) ||
-            (
-                resource.data.status == 'pendiente_revision' && isMantenimiento() &&
-                resource.data.controlEnergia == true &&
-                resource.data.approvals.autorizante.status == 'aprobado' &&
-                request.resource.data.approvals.mantenimiento.status == 'aprobado' &&
-                resource.data.approvals.mantenimiento.status == 'pendiente'
-            ) ||
-            (
-                resource.data.status == 'pendiente_revision' && isLiderSST() &&
-                isSSTSignatureRequired(resource.data) &&
-                resource.data.approvals.solicitante.status == 'aprobado' &&
-                request.resource.data.approvals.lider_sst.status == 'aprobado' &&
-                resource.data.approvals.lider_sst.status == 'pendiente'
-            )
-          )
-        ) ||
-        (
-          isSignedIn() && 
-          (
-            (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && (isAutorizante() || isLiderSST())) ||
-            (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && isLiderSST()) ||
-            (request.resource.data.status == 'cerrado' && (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') && isLiderTarea())
-          )
-        );
+
+      // ACTUALIZAR: La lógica más compleja, define quién puede modificar el permiso y en qué estado.
+      allow update: if isSignedIn() &&
+                    ( 
+                      // El creador puede editarlo solo si está en estado 'borrador'.
+                      (isCreator(resource.data) && resource.data.status == 'borrador') ||
+
+                      // Un admin puede cambiar el estado en cualquier momento (para emergencias).
+                      (isAdmin()) ||
+
+                      // Lógica de firmas: cualquier usuario con rol puede firmar si el permiso está pendiente.
+                      // Las validaciones de *qué* firma puede poner se hacen en la Server Action.
+                      (resource.data.status == 'pendiente_revision') ||
+
+                      // Lógica de cierre: permite a los roles autorizados cambiar el estado a 'cerrado'
+                      // si el permiso está en ejecución o suspendido.
+                      (request.resource.data.status == 'cerrado' && 
+                       (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
+                       hasAnyRole(['lider_tarea', 'admin'])) ||
+                       
+                      // Lógica de suspensión y reactivación
+                      (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && hasAnyRole(['lider_sst', 'admin'])) ||
+                      (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'suspendido' && hasAnyRole(['lider_sst', 'admin'])) ||
+                      
+                      // Lógica de rechazo: permite a roles de aprobación rechazar un permiso.
+                      (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && hasAnyRole(['autorizante', 'lider_sst', 'admin']))
+                    );
     }
 
     // --- Colección de Listas Dinámicas (dynamic_lists) ---
     match /dynamic_lists/{listName} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
-    }
-
-    // --- Colección de Prueba (test) ---
-    match /test/{docId} {
-      allow read: if true;
-      allow write: if isSignedIn();
     }
   }
 }

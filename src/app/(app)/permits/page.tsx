@@ -16,7 +16,7 @@ import { PlusCircle, Search, Loader2, FileX, ChevronRight, Filter, Edit } from '
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { collection, onSnapshot, query, orderBy, where, QueryConstraint, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, QueryConstraint, getDocs, Unsubscribe } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit, PermitStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -68,74 +68,47 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
   return null;
 };
 
-// Función actualizada para obtener tipos de trabajo
-const getWorkTypesString = (permit: Permit): string => {
-  const workTypes: string[] = [];
-  
-  // Primero verificar los campos booleanos nuevos
-  if (permit.trabajoAlturas) workTypes.push('Trabajo en Alturas');
-  if (permit.espaciosConfinados) workTypes.push('Espacios Confinados');
-  if (permit.controlEnergia) workTypes.push('Control de Energías');
-  if (permit.izajeCargas) workTypes.push('Izaje de Cargas');
-  if (permit.excavaciones) workTypes.push('Excavaciones');
-  if (permit.trabajoGeneral) workTypes.push('Trabajo General');
-  
-  // Fallback al campo workType array (compatibilidad)
-  if (workTypes.length === 0 && permit.workType && Array.isArray(permit.workType)) {
-    const workTypesMap: {[key: string]: string} = {
-      'altura': 'Trabajo en Alturas',
-      'confinado': 'Espacios Confinados',
-      'energia': 'Control de Energías',
-      'izaje': 'Izaje de Cargas',
-      'excavacion': 'Excavaciones',
-      'general': 'Trabajo General'
-    };
-    return permit.workType.map(key => workTypesMap[key] || key).join(', ');
-  }
-  
-  return workTypes.length > 0 ? workTypes.join(', ') : 'Trabajo General';
-};
-
 // Función para obtener badges de tipos de trabajo
 const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
   const badges: JSX.Element[] = [];
+  const selectedTypes = permit.selectedWorkTypes || {};
   
-  if (permit.trabajoAlturas) {
+  if (selectedTypes.alturas) {
     badges.push(
       <Badge key="alturas" className="bg-blue-100 text-blue-800 text-xs">
         Alturas
       </Badge>
     );
   }
-  if (permit.espaciosConfinados) {
+  if (selectedTypes.confinado) {
     badges.push(
       <Badge key="confinados" className="bg-purple-100 text-purple-800 text-xs">
         Confinados
       </Badge>
     );
   }
-  if (permit.controlEnergia) {
+  if (selectedTypes.energia) {
     badges.push(
       <Badge key="energia" className="bg-yellow-100 text-yellow-800 text-xs">
         Energías
       </Badge>
     );
   }
-  if (permit.izajeCargas) {
+  if (selectedTypes.izaje) {
     badges.push(
       <Badge key="izaje" className="bg-green-100 text-green-800 text-xs">
         Izaje
       </Badge>
     );
   }
-  if (permit.excavaciones) {
+  if (selectedTypes.excavacion) {
     badges.push(
       <Badge key="excavaciones" className="bg-orange-100 text-orange-800 text-xs">
         Excavaciones
       </Badge>
     );
   }
-  if (permit.trabajoGeneral) {
+  if (selectedTypes.general) {
     badges.push(
       <Badge key="general" className="bg-gray-100 text-gray-800 text-xs">
         General
@@ -184,9 +157,10 @@ export default function PermitsPage() {
     
     if (user.role === 'solicitante' || user.role === 'lider_tarea') {
       finalQuery.push(where('createdBy', '==', user.uid));
+      finalQuery.push(orderBy('createdAt', 'desc')); // Requerido por la regla de seguridad
     } else if (user.role === 'lider_sst') {
-        // For SST, we can't do an OR query directly with onSnapshot easily.
-        // We'll fetch all permits and filter client-side for simplicity.
+        // La regla permite leer si es sst y trabajo en alturas o firma requerida.
+        // Una consulta OR no es posible en Firestore directamente, por lo que filtramos en el cliente.
         finalQuery.push(orderBy('createdAt', 'desc'));
     } else { // Para admin y autorizante
       finalQuery.push(orderBy('createdAt', 'desc'));
@@ -208,10 +182,6 @@ export default function PermitsPage() {
           permitsData = permitsData.filter(p => p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
       }
 
-      // Si es solicitante, es posible que el orden no sea por fecha si hay error de índice.
-      if (user.role === 'solicitante' || user.role === 'lider_tarea') {
-        permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-      }
       setAllPermits(permitsData);
       setLoading(false);
     }, (serverError) => {
@@ -249,24 +219,25 @@ export default function PermitsPage() {
       // Filtro por tipo de trabajo
       if (workTypeFilter !== 'all') {
         let matchesWorkType = false;
+        const selectedTypes = permit.selectedWorkTypes || {};
         switch (workTypeFilter) {
           case 'alturas':
-            matchesWorkType = permit.trabajoAlturas === true;
+            matchesWorkType = selectedTypes.alturas === true;
             break;
           case 'confinados':
-            matchesWorkType = permit.espaciosConfinados === true;
+            matchesWorkType = selectedTypes.confinado === true;
             break;
           case 'energia':
-            matchesWorkType = permit.controlEnergia === true;
+            matchesWorkType = selectedTypes.energia === true;
             break;
           case 'izaje':
-            matchesWorkType = permit.izajeCargas === true;
+            matchesWorkType = selectedTypes.izaje === true;
             break;
           case 'excavaciones':
-            matchesWorkType = permit.excavaciones === true;
+            matchesWorkType = selectedTypes.excavacion === true;
             break;
           case 'general':
-            matchesWorkType = permit.trabajoGeneral === true;
+            matchesWorkType = selectedTypes.general === true;
             break;
         }
         if (!matchesWorkType) return false;
@@ -278,7 +249,6 @@ export default function PermitsPage() {
       
       return (
         (permit.number || permit.id).toLowerCase().includes(searchLower) ||
-        getWorkTypesString(permit).toLowerCase().includes(searchLower) ||
         (permit.user?.displayName || '').toLowerCase().includes(searchLower) ||
         (permit.generalInfo?.areaEspecifica || '').toLowerCase().includes(searchLower) ||
         (permit.generalInfo?.planta || '').toLowerCase().includes(searchLower)
@@ -367,7 +337,7 @@ export default function PermitsPage() {
               {permits.map((permit) => (
                 <TableRow key={permit.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
-                    <Link href={permit.status === 'borrador' ? `/permits/${permit.id}` : `/permits/${permit.id}`} className="hover:underline text-primary">
+                    <Link href={permit.status === 'borrador' ? `/permits/create?edit=${permit.id}` : `/permits/${permit.id}`} className="hover:underline text-primary">
                       {getPermitDisplayNumber(permit)}
                     </Link>
                   </TableCell>
@@ -394,11 +364,6 @@ export default function PermitsPage() {
                   <TableCell className="text-right flex items-center justify-end gap-2">
                     {permit.status === 'borrador' ? (
                        <>
-                        <Button asChild variant="ghost" size="sm">
-                            <Link href={`/permits/${permit.id}`}>
-                                Ver Detalles
-                            </Link>
-                        </Button>
                         <Button asChild variant="outline" size="sm">
                             <Link href={`/permits/create?edit=${permit.id}`}>
                                 <Edit className="mr-2 h-4 w-4" />
@@ -432,11 +397,13 @@ export default function PermitsPage() {
             Gestione todos sus permisos de trabajo aquí.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/permits/create">
-            <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Permiso
-          </Link>
-        </Button>
+        {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
+            <Button asChild>
+            <Link href="/permits/create">
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Permiso
+            </Link>
+            </Button>
+        )}
       </div>
       
       <Card>
@@ -474,7 +441,7 @@ export default function PermitsPage() {
                   <SelectContent>
                     <SelectItem value="all">Todos los tipos</SelectItem>
                     <SelectItem value="alturas">Trabajo en Alturas</SelectItem>
-                    <SelectItem value="confinados">Espacios Confinados</SelectItem>
+                    <SelectItem value="confinado">Espacios Confinados</SelectItem>
                     <SelectItem value="energia">Control de Energías</SelectItem>
                     <SelectItem value="izaje">Izaje de Cargas</SelectItem>
                     <SelectItem value="excavaciones">Excavaciones</SelectItem>
