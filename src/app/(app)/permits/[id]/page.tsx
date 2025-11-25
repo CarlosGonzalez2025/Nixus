@@ -1139,93 +1139,65 @@ export default function PermitDetailPage() {
   };
 
 
-  const canChangeStatus = (targetStatus: PermitStatus): { can: boolean; reason?: string, details?: string[] } => {
-    if (!currentUser || !permit || !currentUser.role) return { can: false, reason: 'Cargando datos...' };
-    const { role } = currentUser;
-    const { status, approvals, workers, selectedWorkTypes, anexoAltura, anexoConfinado, anexoIzaje, anexoExcavaciones, generalInfo } = permit;
-
-    if (!approvals) return { can: false, reason: 'Faltan datos de aprobación.' };
-
-    switch (targetStatus) {
-      case 'aprobado': // Este estado ya no se usa para transición automática, pero se mantiene la lógica por si acaso.
-          if(status !== 'pendiente_revision') return { can: false, reason: `El permiso debe estar 'Pendiente de Revisión' (actual: ${status}).`};
-          
-          let missingSignatures: string[] = [];
-          if(approvals.solicitante?.status !== 'aprobado') missingSignatures.push('Solicitante');
-          if(approvals.autorizante?.status !== 'aprobado') missingSignatures.push('Autorizante');
-          if(permit.controlEnergia && approvals.mantenimiento?.status !== 'aprobado') missingSignatures.push('Mantenimiento');
-          if(isSSTSignatureRequired && approvals.lider_sst?.status !== 'aprobado') missingSignatures.push('Líder SST');
-
-          if(missingSignatures.length > 0) {
-              return { can: false, reason: "Faltan firmas para aprobar.", details: missingSignatures.map(r => `Firma de ${r}`)};
-          }
-          
-          if(role !== 'admin' && role !== 'autorizante') return { can: false, reason: 'No tiene el rol para aprobar.' };
-
-          return { can: true };
-      case 'rechazado':
-        const canRechazar = (status === 'pendiente_revision' || status === 'aprobado' || status === 'en_ejecucion') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
-        return { can: canRechazar, reason: canRechazar ? undefined : 'No tiene permisos o el permiso no está en el estado adecuado.' };
-      case 'en_ejecucion':
-        // Esta transición ahora es automática, pero mantenemos la lógica por si se necesita manualmente.
-        if(status !== 'aprobado' && status !== 'pendiente_revision') return { can: false, reason: `El permiso debe estar 'Aprobado' o 'Pendiente' (actual: ${status}).` };
-        if (role !== 'admin' && role !== 'lider_tarea' && role !== 'autorizante') return { can: false, reason: 'No tiene el rol para iniciar la ejecución.' };
-        return { can: true };
-      case 'suspendido':
-        const canSuspender = status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
-        return { can: canSuspender, reason: canSuspender ? undefined : 'Solo un Líder SST o Admin puede suspender un permiso en ejecución.' };
-      case 'cerrado':
-        const canCloseRole = role === 'lider_tarea' || role === 'admin';
-        if (!canCloseRole) return { can: false, reason: 'No tiene el rol para cerrar permisos.' };
-
-        const canCloseState = status === 'en_ejecucion' || status === 'suspendido';
-        if (!canCloseState) return { can: false, reason: `El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${status}).` };
+  const getClosureStatus = () => {
+        if (!permit) return { can: false, reasons: ['Cargando permiso...'] };
 
         const reasons: string[] = [];
-
-        // 1. Verificar firmas de cierre de trabajadores
-        const allWorkersSignedClosure = workers?.every(w => w.firmaCierre);
-        if (!allWorkersSignedClosure) reasons.push('Faltan firmas de cierre de los trabajadores.');
         
-        // 2. Verificar firmas de cierre del responsable y autoridad
-        const responsableSigned = permit.closure?.responsable?.firma;
-        if (!responsableSigned) reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
-
-        const autoridadSigned = permit.closure?.autoridad?.firma;
-        if (!autoridadSigned) reasons.push('Falta la firma de cierre de la Autoridad del Área.');
-
-        // 3. Verificar todas las firmas diarias requeridas
-        let permitDuration = 1;
-        if (generalInfo?.validFrom && generalInfo?.validUntil) {
-          try {
-            permitDuration = differenceInCalendarDays(parseISO(generalInfo.validUntil), parseISO(generalInfo.validFrom)) + 1;
-          } catch(e) { /* ignore */ }
+        // Condición 1: El permiso debe estar en ejecución o suspendido.
+        if (permit.status !== 'en_ejecucion' && permit.status !== 'suspendido') {
+            reasons.push(`El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${getStatusInfo(permit.status).text}).`);
         }
 
-        const checkDailyValidations = (anexo: { validacion?: { responsable: ValidacionDiaria[], autoridad: ValidacionDiaria[] } } | undefined, anexoName: string) => {
-          if (!anexo || !anexo.validacion) return;
-          for (let i = 0; i < permitDuration; i++) {
-            if (!anexo.validacion.responsable?.[i]?.firma) {
-              reasons.push(`Falta firma diaria (Día ${i+1}) del Responsable en ${anexoName}.`);
+        // Condición 2: Todas las firmas diarias deben estar completas.
+        const checkDailyValidations = (anexoData: any, anexoName: string) => {
+            if (!anexoData || !anexoData.validacion) return;
+            let duration = 1;
+             if (permit.generalInfo?.validFrom && permit.generalInfo?.validUntil) {
+                try {
+                  duration = differenceInCalendarDays(parseISO(permit.generalInfo.validUntil), parseISO(permit.generalInfo.validFrom)) + 1;
+                } catch(e) { /* ignore */ }
             }
-            if (!anexo.validacion.autoridad?.[i]?.firma) {
-              reasons.push(`Falta firma diaria (Día ${i+1}) de la Autoridad en ${anexoName}.`);
+            for (let i = 0; i < duration; i++) {
+                if (!anexoData.validacion.responsable?.[i]?.firma) {
+                    reasons.push(`Falta validación diaria del Responsable (Día ${i + 1}) en ${anexoName}.`);
+                }
+                if (!anexoData.validacion.autoridad?.[i]?.firma) {
+                    reasons.push(`Falta validación diaria de la Autoridad (Día ${i + 1}) en ${anexoName}.`);
+                }
             }
-          }
         };
 
-        if (selectedWorkTypes?.alturas) checkDailyValidations(anexoAltura, "Anexo Alturas");
-        if (selectedWorkTypes?.confinado) checkDailyValidations(anexoConfinado, "Anexo Confinado");
-        if (selectedWorkTypes?.izaje) checkDailyValidations(anexoIzaje, "Anexo Izaje");
-        if (selectedWorkTypes?.excavacion) checkDailyValidations(anexoExcavaciones, "Anexo Excavaciones");
+        if (permit.selectedWorkTypes?.alturas) checkDailyValidations(permit.anexoAltura, 'Anexo Alturas');
+        if (permit.selectedWorkTypes?.confinado) checkDailyValidations(permit.anexoConfinado, 'Anexo Confinado');
+        if (permit.selectedWorkTypes?.izaje) checkDailyValidations(permit.anexoIzaje, 'Anexo Izaje');
+        if (permit.selectedWorkTypes?.excavacion) checkDailyValidations(permit.anexoExcavaciones, 'Anexo Excavaciones');
 
-        if (reasons.length > 0) return { can: false, reason: "Faltan condiciones para el cierre.", details: reasons };
+        // Condición 3: Todos los trabajadores deben haber firmado el cierre.
+        if (!permit.workers?.every(w => w.firmaCierre)) {
+            reasons.push('Faltan firmas de cierre de algunos trabajadores.');
+        }
+
+        // Condición 4: El responsable y la autoridad deben firmar el cierre.
+        if (!permit.closure?.responsable?.firma) {
+            reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
+        }
+        if (!permit.closure?.autoridad?.firma) {
+            reasons.push('Falta la firma de cierre de la Autoridad del Área.');
+        }
         
-        return { can: true };
-      default:
-        return { can: false, reason: 'Estado de destino no reconocido.' };
-    }
-  };
+        return {
+            can: reasons.length === 0,
+            reasons: reasons,
+        };
+    };
+
+    const canInitiateClosure = () => {
+        if (!currentUser || !permit) return false;
+        const hasRole = currentUser.role === 'lider_tarea' || currentUser.role === 'admin';
+        const hasStatus = permit.status === 'en_ejecucion' || permit.status === 'suspendido';
+        return hasRole && hasStatus;
+    };
 
 
   const handleOpenClosureDialog = () => {
@@ -1381,12 +1353,8 @@ export default function PermitDetailPage() {
   }
   
   const statusInfo = getStatusInfo(permit.status);
-  const isApproved = ['aprobado', 'en_ejecucion', 'suspendido'].includes(permit.status);
   const canBeCancelled = ['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'autorizante' || currentUser?.role === 'lider_sst');
-  const canBeClosed = ['en_ejecucion', 'suspendido'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'lider_tarea');
-  const closureStatus = canChangeStatus('cerrado');
-  const canApprove = canChangeStatus('aprobado');
-
+  const closureStatus = getClosureStatus();
 
   const getWorkTypesString = (permit: Permit): string => {
     const workTypes: string[] = [];
@@ -1701,28 +1669,10 @@ export default function PermitDetailPage() {
                     </Button>
                  )}
 
-                 {canBeClosed && (
+                 {canInitiateClosure() && (
                     <Button onClick={handleOpenClosureDialog}>
                         <Lock className="mr-2"/>Cerrar Permiso
                     </Button>
-                 )}
-                 
-                 {canChangeStatus('rechazado').can && (
-                    <AlertDialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive"><XCircle className="mr-2"/>Rechazar</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Rechazar Permiso</AlertDialogTitle></AlertDialogHeader>
-                            <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Escriba el motivo del rechazo..."/>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleChangeStatus('rechazado', rejectionReason)} disabled={!rejectionReason || isStatusChanging}>
-                                {isStatusChanging ? <Loader2 className="animate-spin" /> : null} Rechazar
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
                  )}
             </div>
           </div>
@@ -2123,7 +2073,7 @@ export default function PermitDetailPage() {
                             </TableCell>
                             <TableCell>
                               {worker.firmaApertura ? <Image src={worker.firmaApertura} alt="Firma Apertura" width={80} height={40} className="border rounded" /> : (
-                                <Button size="sm" variant="outline" onClick={() => openWorkerSignatureDialog(index, 'firmaApertura')} disabled={!isApproved || !!worker.firmaApertura}>
+                                <Button size="sm" variant="outline" onClick={() => openWorkerSignatureDialog(index, 'firmaApertura')} disabled={permit.status !== 'en_ejecucion' && permit.status !== 'suspendido'}>
                                     <SignatureIcon className="mr-2 h-4 w-4" />Firmar
                                 </Button>
                               )}
@@ -2253,11 +2203,11 @@ export default function PermitDetailPage() {
                     <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
                         <p className="font-bold flex items-center gap-2"><Info size={16}/>Condiciones para el Cierre</p>
                         <ul className="list-none space-y-1 text-sm mt-2">
-                            {closureStatus.details?.length > 0 ? (
-                                closureStatus.details.map((detail, i) => (
+                            {closureStatus.reasons.length > 0 ? (
+                                closureStatus.reasons.map((reason, i) => (
                                     <li key={i} className="flex items-start gap-2">
                                         <XCircle size={14} className="inline mr-1 text-red-500 mt-1 flex-shrink-0"/>
-                                        <span>{detail}</span>
+                                        <span>{reason}</span>
                                     </li>
                                 ))
                             ) : (
@@ -2317,8 +2267,7 @@ export default function PermitDetailPage() {
                                 <TooltipContent side="bottom" className="max-w-xs">
                                     <p className="font-semibold">No se puede cerrar el permiso:</p>
                                     <ul className="list-disc list-inside text-xs mt-1">
-                                        {closureStatus.details?.map((detail, i) => <li key={i}>{detail}</li>)}
-                                        {!closureStatus.details && <li>{closureStatus.reason}</li>}
+                                        {closureStatus.reasons.map((reason, i) => <li key={i}>{reason}</li>)}
                                     </ul>
                                 </TooltipContent>
                             )}
@@ -2354,3 +2303,6 @@ export default function PermitDetailPage() {
   );
 }
 
+
+
+    
