@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
@@ -150,6 +151,7 @@ export async function createPermit(data: PermitCreateData) {
       photoURL: userPhotoURL,
     },
     approvals: initialApprovals,
+    isSSTSignatureRequired: data.isSSTSignatureRequired || false,
     closure: {},
   };
   
@@ -227,6 +229,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
       photoURL: userPhotoURL,
     },
     approvals: initialApprovals,
+    isSSTSignatureRequired: data.isSSTSignatureRequired || false,
   };
 
   try {

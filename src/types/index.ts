@@ -424,6 +424,7 @@ export type Permit = {
     coordinador_alturas: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
+  isSSTSignatureRequired?: boolean; // Campo para indicar firma SST
   anexoATS?: Partial<AnexoATS>;
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;

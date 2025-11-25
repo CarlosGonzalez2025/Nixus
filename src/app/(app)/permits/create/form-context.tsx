@@ -25,6 +25,7 @@ type FormAction =
   | { type: 'SET_WORKERS'; payload: ExternalWorker[] }
   | { type: 'ADD_WORKER'; payload: ExternalWorker }
   | { type: 'UPDATE_SIGNATURE', payload: { target: string, signature: string, context: any } }
+  | { type: 'SET_SST_REQUIRED', payload: boolean }
   | { type: 'SET_ENTIRE_STATE', payload: Partial<Permit> }
   | { type: 'RESET_FORM' };
 
@@ -56,6 +57,7 @@ const initialState: FormState = {
     excavacion: false,
     general: false,
   },
+  isSSTSignatureRequired: false,
   anexoATS: {
     peligros: {},
     controles: {},
@@ -231,11 +233,18 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'UPDATE_SIGNATURE':
       console.log('Signature update needs to be implemented in reducer:', action.payload);
       return state;
+    case 'SET_SST_REQUIRED':
+        return {
+            ...state,
+            isSSTSignatureRequired: action.payload
+        };
     case 'SET_ENTIRE_STATE':
         const { payload } = action;
         return {
+            ...initialState, // Start with a clean initial state
             generalInfo: { ...initialState.generalInfo, ...payload.generalInfo },
             selectedWorkTypes: { ...initialState.selectedWorkTypes, ...payload.selectedWorkTypes },
+            isSSTSignatureRequired: payload.isSSTSignatureRequired || false,
             anexoATS: { ...initialState.anexoATS, ...payload.anexoATS },
             anexoAltura: { ...initialState.anexoAltura, ...payload.anexoAltura },
             anexoConfinado: { ...initialState.anexoConfinado, ...payload.anexoConfinado },

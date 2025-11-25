@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
-import { Signature, Trash2, Plus, ChevronDown } from 'lucide-react';
+import { Signature, Trash2, Plus, ChevronDown, Info } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -37,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AutorizacionPersona, ValidacionDiaria, AnexoAltura } from '@/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const anexoAlturaEstructuras = [
   { id: 'escaleraCuerpo', label: 'Escalera de un cuerpo' },
@@ -89,8 +91,7 @@ const tareasTrabajoAltura = [
     nombre: 'Estudios isocinéticos', 
     descripcion: 'Instalación y desmonte equipo, en chimenea de caldera' 
   },
-  { 
-    id: 'cargue-graneleros', 
+  { id: 'cargue-graneleros', 
     nombre: 'Cargue de graneleros', 
     descripcion: 'Abrir compuertas superiores de graneleros y realizar cargue' 
   },
@@ -142,7 +143,7 @@ const anexoAlturaAspectos = [
     { id: 'medidasPrevencion', label: 'C. SE HAN DETERMINADO LAS MEDIDAS DE PREVENCIÓN CONTRA CAÍDAS?' },
     { id: 'conocenMedidas', label: 'D. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?'},
     { id: 'entrenadosCertificados', label: 'E. ESTÁN LOS EJECUTANTES ENTRENADOS Y SE ENCUENTRAN LOS CERTIFICADOS EN SITIO PARA REALIZAR   TRABAJOS EN ALTURA?'},
-    { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO Y CERTIFICADOS?' },
+    { id: 'elementosProteccionCertificados', label: 'F. ESTÁN TODOS LOS ELEMENTOS DE PROTECCIÓN CONTRA CAÍDAS EN BUEN ESTADO E CERTIFICADOS?' },
     { id: 'sistemaAseguramientoVerificado', label: 'G. SE VERIFICO EL SISTEMA DE ASEGURAMIENTO DE LA ESCALERA , ANDAMIO O PLATAFORMA A UNA ESTRUCTURA FIJA' },
     { id: 'estadoElementosVerificado', label: 'H. SE VERIFICO EL ESTADO DE: ESLINGAS, ARNES, CASCO, MOSQUETONES, CASCO, Y DEMAS ELEMENTOS NECESARIOS PARA REALIZAR EL TRABAJO.' },
     { id: 'puntosAnclajeCertificados', label: 'I. LOS PUNTOS DE ANCLAJE Y DEMAS ELEMENTOS CUMPLEN CON LA RESISTENCIA DE 5000 LBS POR PERSONA Y ESTAN CERTIFICADOS?' },
@@ -216,6 +217,7 @@ const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defau
 export function AnexoAlturaStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, anexoAltura } = state;
+  const isSSTRequired = anexoAltura.tareaRealizar?.id === 'otro';
 
   const handleUpdate = (payload: Partial<AnexoAltura>) => {
     dispatch({ type: 'UPDATE_ANEXO_ALTURA', payload });
@@ -225,6 +227,10 @@ export function AnexoAlturaStep() {
     const currentSection = (anexoAltura as any)[section] || {};
     handleUpdate({ [section]: { ...currentSection, [field]: value } });
   };
+  
+  React.useEffect(() => {
+    dispatch({ type: 'SET_SST_REQUIRED', payload: isSSTRequired });
+  }, [isSSTRequired, dispatch]);
 
   // Handler para el cambio de tarea
   const handleTareaChange = (tareaId: string) => {
@@ -351,6 +357,18 @@ export function AnexoAlturaStep() {
                   required
                 />
               </div>
+               <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
+                  <Info className="h-4 w-4 text-red-800" />
+                  <AlertTitle className="font-semibold">Firma SST Requerida</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    Al seleccionar "Otro", este permiso requerirá obligatoriamente la firma de un Líder SST para su aprobación.
+                  </AlertDescription>
+                </Alert>
+                 <Input 
+                    type="hidden" 
+                    readOnly 
+                    value={state.isSSTSignatureRequired.toString()}
+                 />
             </div>
           )}
         </div>
