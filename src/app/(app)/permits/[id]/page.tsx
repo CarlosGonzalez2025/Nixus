@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -80,7 +80,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -1241,44 +1241,42 @@ export default function PermitDetailPage() {
       }
   };
 
-
-  const handleDailyValidationSignature = async (signature: string) => {
+  const handleSaveDailyValidationSignature = async (signature: string) => {
     if (!permit || !dailyValidationTarget || !dailyValidationName.trim() || !dailyValidationDate || !currentUser) {
-      toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, complete nombre y fecha.' });
-      return;
+        toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, complete nombre y fecha.' });
+        return;
     }
-    
+
     setIsDailyValidationSigning(true);
     try {
-      const result = await addDailyValidationSignature(
-        permit.id,
-        dailyValidationTarget.anexo,
-        dailyValidationTarget.type,
-        dailyValidationTarget.index,
-        {
-          dia: dailyValidationTarget.index + 1,
-          nombre: dailyValidationName,
-          fecha: dailyValidationDate,
-          firma: signature,
-        },
-        currentUser as User
-      );
+        const result = await addDailyValidationSignature(
+            permit.id,
+            dailyValidationTarget.anexo,
+            dailyValidationTarget.type,
+            dailyValidationTarget.index,
+            {
+                dia: dailyValidationTarget.index + 1,
+                nombre: dailyValidationName,
+                fecha: dailyValidationDate,
+                firma: signature,
+            },
+            currentUser as User
+        );
 
-      if(result.success) {
-        setIsDailyValidationSignatureOpen(false);
-        toast({ title: 'Validación Diaria Guardada' });
-      } else {
-        throw new Error(result.error);
-      }
-
-    } catch(e: any) {
-      toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
+        if (result.success) {
+            toast({ title: 'Validación Diaria Guardada' });
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
-      setIsDailyValidationSigning(false);
-      // Reset state for the next signature
-      setDailyValidationTarget(null);
-      setDailyValidationName('');
-      setDailyValidationDate('');
+        // Reset state and close dialog in finally block to ensure it happens
+        setIsDailyValidationSigning(false);
+        setIsDailyValidationSignatureOpen(false);
+        setDailyValidationTarget(null);
+        setDailyValidationName('');
+        setDailyValidationDate('');
     }
   };
 
@@ -2193,7 +2191,7 @@ export default function PermitDetailPage() {
                 <Input id="daily-validation-date" type="datetime-local" value={dailyValidationDate} onChange={(e) => setDailyValidationDate(e.target.value)} />
               </div>
             </div>
-            <SignaturePad onSave={handleDailyValidationSignature} isSaving={isDailyValidationSigning} />
+            <SignaturePad onSave={handleSaveDailyValidationSignature} isSaving={isDailyValidationSigning} />
           </DialogContent>
         </Dialog>
 
@@ -2297,4 +2295,3 @@ export default function PermitDetailPage() {
       </div>
   );
 }
-
