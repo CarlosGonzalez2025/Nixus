@@ -1077,11 +1077,12 @@ export default function PermitDetailPage() {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
     const { status, approvals, selectedWorkTypes, createdBy } = permit;
 
-    if (['rechazado', 'cerrado', 'suspendido', 'en_ejecucion', 'aprobado'].includes(status)) {
+    if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
         return { can: false, reason: `El permiso está ${status}.` };
     }
     
-    if (status !== 'pendiente_revision' && status !== 'borrador') {
+    // Permitir firmar si está pendiente o incluso si ya está en ejecución (para firmas secundarias)
+    if (status !== 'pendiente_revision' && status !== 'borrador' && status !== 'en_ejecucion') {
          return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
     }
     
@@ -1141,12 +1142,12 @@ export default function PermitDetailPage() {
   const canChangeStatus = (targetStatus: PermitStatus): { can: boolean; reason?: string, details?: string[] } => {
     if (!currentUser || !permit || !currentUser.role) return { can: false, reason: 'Cargando datos...' };
     const { role } = currentUser;
-    const { status, approvals, workers } = permit;
+    const { status, approvals, workers, selectedWorkTypes, anexoAltura, anexoConfinado, anexoIzaje, anexoExcavaciones, generalInfo } = permit;
 
     if (!approvals) return { can: false, reason: 'Faltan datos de aprobación.' };
 
     switch (targetStatus) {
-      case 'aprobado':
+      case 'aprobado': // Este estado ya no se usa para transición automática, pero se mantiene la lógica por si acaso.
           if(status !== 'pendiente_revision') return { can: false, reason: `El permiso debe estar 'Pendiente de Revisión' (actual: ${status}).`};
           
           let missingSignatures: string[] = [];
@@ -1163,11 +1164,12 @@ export default function PermitDetailPage() {
 
           return { can: true };
       case 'rechazado':
-        const canRechazar = (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
+        const canRechazar = (status === 'pendiente_revision' || status === 'aprobado' || status === 'en_ejecucion') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
         return { can: canRechazar, reason: canRechazar ? undefined : 'No tiene permisos o el permiso no está en el estado adecuado.' };
       case 'en_ejecucion':
-        if(status !== 'aprobado') return { can: false, reason: `El permiso debe estar 'Aprobado' (actual: ${status}).` };
-        if (role !== 'admin' && role !== 'lider_tarea') return { can: false, reason: 'No tiene el rol para iniciar la ejecución.' };
+        // Esta transición ahora es automática, pero mantenemos la lógica por si se necesita manualmente.
+        if(status !== 'aprobado' && status !== 'pendiente_revision') return { can: false, reason: `El permiso debe estar 'Aprobado' o 'Pendiente' (actual: ${status}).` };
+        if (role !== 'admin' && role !== 'lider_tarea' && role !== 'autorizante') return { can: false, reason: 'No tiene el rol para iniciar la ejecución.' };
         return { can: true };
       case 'suspendido':
         const canSuspender = status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
@@ -1180,14 +1182,42 @@ export default function PermitDetailPage() {
         if (!canCloseState) return { can: false, reason: `El permiso debe estar 'En Ejecución' o 'Suspendido' (actual: ${status}).` };
 
         const reasons: string[] = [];
+
+        // 1. Verificar firmas de cierre de trabajadores
         const allWorkersSignedClosure = workers?.every(w => w.firmaCierre);
         if (!allWorkersSignedClosure) reasons.push('Faltan firmas de cierre de los trabajadores.');
         
+        // 2. Verificar firmas de cierre del responsable y autoridad
         const responsableSigned = permit.closure?.responsable?.firma;
         if (!responsableSigned) reasons.push('Falta la firma de cierre del Responsable del Trabajo.');
 
         const autoridadSigned = permit.closure?.autoridad?.firma;
         if (!autoridadSigned) reasons.push('Falta la firma de cierre de la Autoridad del Área.');
+
+        // 3. Verificar todas las firmas diarias requeridas
+        let permitDuration = 1;
+        if (generalInfo?.validFrom && generalInfo?.validUntil) {
+          try {
+            permitDuration = differenceInCalendarDays(parseISO(generalInfo.validUntil), parseISO(generalInfo.validFrom)) + 1;
+          } catch(e) { /* ignore */ }
+        }
+
+        const checkDailyValidations = (anexo: { validacion?: { responsable: ValidacionDiaria[], autoridad: ValidacionDiaria[] } } | undefined, anexoName: string) => {
+          if (!anexo || !anexo.validacion) return;
+          for (let i = 0; i < permitDuration; i++) {
+            if (!anexo.validacion.responsable?.[i]?.firma) {
+              reasons.push(`Falta firma diaria (Día ${i+1}) del Responsable en ${anexoName}.`);
+            }
+            if (!anexo.validacion.autoridad?.[i]?.firma) {
+              reasons.push(`Falta firma diaria (Día ${i+1}) de la Autoridad en ${anexoName}.`);
+            }
+          }
+        };
+
+        if (selectedWorkTypes?.alturas) checkDailyValidations(anexoAltura, "Anexo Alturas");
+        if (selectedWorkTypes?.confinado) checkDailyValidations(anexoConfinado, "Anexo Confinado");
+        if (selectedWorkTypes?.izaje) checkDailyValidations(anexoIzaje, "Anexo Izaje");
+        if (selectedWorkTypes?.excavacion) checkDailyValidations(anexoExcavaciones, "Anexo Excavaciones");
 
         if (reasons.length > 0) return { can: false, reason: "Faltan condiciones para el cierre.", details: reasons };
         
@@ -1579,12 +1609,16 @@ export default function PermitDetailPage() {
                 let canSignValidation = false;
                 let tooltipContent = "No tienes permiso para firmar.";
                 
-                if (type === 'autoridad') {
-                    canSignValidation = isApproved && (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
-                    tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
-                } else if (type === 'responsable') {
-                    canSignValidation = isApproved && (currentUser?.uid === permit.createdBy || currentUser?.role === 'lider_tarea') && !v?.firma;
-                    tooltipContent = "Solo el creador o líder de la tarea puede firmar.";
+                if (permit.status === 'en_ejecucion' || permit.status === 'suspendido') {
+                    if (type === 'autoridad') {
+                        canSignValidation = (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
+                        tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
+                    } else if (type === 'responsable') {
+                        canSignValidation = (currentUser?.uid === permit.createdBy || currentUser?.role === 'lider_tarea') && !v?.firma;
+                        tooltipContent = "Solo el creador o líder de la tarea puede firmar.";
+                    }
+                } else {
+                    tooltipContent = "El permiso no está en ejecución.";
                 }
 
                 return (
@@ -1671,12 +1705,6 @@ export default function PermitDetailPage() {
                     <Button onClick={handleOpenClosureDialog}>
                         <Lock className="mr-2"/>Cerrar Permiso
                     </Button>
-                 )}
-                 
-                 {canApprove.can && permit.status === 'pendiente_revision' && (
-                     <Button onClick={() => handleChangeStatus('aprobado')} disabled={isStatusChanging} className="bg-green-600 hover:bg-green-700">
-                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <CheckCircle className="mr-2"/>} Aprobar Permiso
-                     </Button>
                  )}
                  
                  {canChangeStatus('rechazado').can && (
@@ -1866,7 +1894,7 @@ export default function PermitDetailPage() {
                                 <Field label="Observaciones" value={<p className="text-sm whitespace-pre-wrap">{permit.anexoAltura.afectaciones?.observaciones}</p>} />
                             </Section>
 
-                           {isApproved && <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura.validacion} />}
+                           <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura.validacion} />
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -1942,7 +1970,7 @@ export default function PermitDetailPage() {
                                 </TableBody>
                               </Table>
                            </Section>
-                           {isApproved && <DailyValidationTable anexoName="anexoConfinado" validationData={permit.anexoConfinado.validacion} />}
+                           <DailyValidationTable anexoName="anexoConfinado" validationData={permit.anexoConfinado.validacion} />
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -2011,7 +2039,7 @@ export default function PermitDetailPage() {
                                      ))}
                                  </div>
                              </Section>
-                           {isApproved && <DailyValidationTable anexoName="anexoIzaje" validationData={permit.anexoIzaje.validacion} />}
+                           <DailyValidationTable anexoName="anexoIzaje" validationData={permit.anexoIzaje.validacion} />
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -2043,7 +2071,7 @@ export default function PermitDetailPage() {
                                      ))}
                                  </div>
                              </Section>
-                           {isApproved && <DailyValidationTable anexoName="anexoExcavaciones" validationData={permit.anexoExcavaciones.validacion} />}
+                           <DailyValidationTable anexoName="anexoExcavaciones" validationData={permit.anexoExcavaciones.validacion} />
                        </CollapsibleContent>
                    </Collapsible>
                 )}
@@ -2225,22 +2253,19 @@ export default function PermitDetailPage() {
                     <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
                         <p className="font-bold flex items-center gap-2"><Info size={16}/>Condiciones para el Cierre</p>
                         <ul className="list-none space-y-1 text-sm mt-2">
-                            <li className="flex items-start gap-2">
-                                {closureStatus.can ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
-                                <span>El permiso debe estar en estado <strong>'En Ejecución'</strong> o <strong>'Suspendido'</strong>.</span>
-                            </li>
-                            <li className="flex items-start gap-2">
-                                {!closureStatus.details?.includes('Faltan firmas de cierre de los trabajadores.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
-                                <span>Todos los trabajadores deben haber registrado su firma de salida.</span>
-                            </li>
-                             <li className="flex items-start gap-2">
-                                {!closureStatus.details?.includes('Falta la firma de cierre del Responsable del Trabajo.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
-                                <span>El <strong>Responsable del Trabajo</strong> debe registrar su firma de cierre.</span>
-                            </li>
-                             <li className="flex items-start gap-2">
-                                {!closureStatus.details?.includes('Falta la firma de cierre de la Autoridad del Área.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
-                                <span>La <strong>Autoridad del Área</strong> debe registrar su firma de cierre (después del responsable).</span>
-                            </li>
+                            {closureStatus.details?.length > 0 ? (
+                                closureStatus.details.map((detail, i) => (
+                                    <li key={i} className="flex items-start gap-2">
+                                        <XCircle size={14} className="inline mr-1 text-red-500 mt-1 flex-shrink-0"/>
+                                        <span>{detail}</span>
+                                    </li>
+                                ))
+                            ) : (
+                                <li className="flex items-start gap-2">
+                                    <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1 flex-shrink-0"/>
+                                    <span>Todas las condiciones para el cierre están completas.</span>
+                                </li>
+                            )}
                         </ul>
                     </div>
 
@@ -2328,6 +2353,4 @@ export default function PermitDetailPage() {
       </div>
   );
 }
-
-
 
