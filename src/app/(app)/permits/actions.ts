@@ -151,6 +151,7 @@ export async function createPermit(data: PermitCreateData) {
       photoURL: userPhotoURL,
     },
     approvals: initialApprovals,
+    trabajoAlturas: data.trabajoAlturas || false,
     isSSTSignatureRequired: data.isSSTSignatureRequired || false,
     closure: {},
   };
@@ -229,6 +230,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
       photoURL: userPhotoURL,
     },
     approvals: initialApprovals,
+    trabajoAlturas: data.trabajoAlturas || false,
     isSSTSignatureRequired: data.isSSTSignatureRequired || false,
   };
 

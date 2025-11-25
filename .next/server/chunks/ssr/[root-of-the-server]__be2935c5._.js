@@ -519,6 +519,7 @@ async function createPermit(data) {
             photoURL: userPhotoURL
         },
         approvals: initialApprovals,
+        isSSTSignatureRequired: data.isSSTSignatureRequired || false,
         closure: {}
     };
     try {
@@ -611,7 +612,8 @@ async function savePermitDraft(data) {
             email: userEmail,
             photoURL: userPhotoURL
         },
-        approvals: initialApprovals
+        approvals: initialApprovals,
+        isSSTSignatureRequired: data.isSSTSignatureRequired || false
     };
     try {
         if (draftId) {

@@ -57,6 +57,7 @@ const initialState: FormState = {
     excavacion: false,
     general: false,
   },
+  trabajoAlturas: false, // Compatibility field
   isSSTSignatureRequired: false,
   anexoATS: {
     peligros: {},
@@ -176,9 +177,12 @@ function formReducer(state: FormState, action: FormAction): FormState {
         generalInfo: { ...state.generalInfo, ...action.payload },
       };
     case 'UPDATE_WORK_TYPES':
+        const isAlturas = action.payload.type === 'alturas';
         return {
             ...state,
-            selectedWorkTypes: { ...state.selectedWorkTypes, [action.payload.type]: action.payload.value }
+            selectedWorkTypes: { ...state.selectedWorkTypes, [action.payload.type]: action.payload.value },
+            // Also update the old 'trabajoAlturas' field for compatibility with security rules
+            ...(isAlturas && { trabajoAlturas: action.payload.value }),
         }
     case 'UPDATE_ATS':
         return {
@@ -244,6 +248,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
             ...initialState, // Start with a clean initial state
             generalInfo: { ...initialState.generalInfo, ...payload.generalInfo },
             selectedWorkTypes: { ...initialState.selectedWorkTypes, ...payload.selectedWorkTypes },
+            trabajoAlturas: payload.trabajoAlturas || false,
             isSSTSignatureRequired: payload.isSSTSignatureRequired || false,
             anexoATS: { ...initialState.anexoATS, ...payload.anexoATS },
             anexoAltura: { ...initialState.anexoAltura, ...payload.anexoAltura },
