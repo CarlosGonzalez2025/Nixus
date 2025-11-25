@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -81,14 +80,15 @@ export function AlertsBell() {
   
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
-    const batch = writeBatch(db);
-    notifications.forEach(n => {
-      if (!n.isRead) {
-        const notifRef = doc(db, 'notifications', n.id);
-        batch.update(notifRef, { isRead: true });
-      }
+    
+    const unreadNotifications = notifications.filter(n => !n.isRead);
+    
+    const updatePromises = unreadNotifications.map(n => {
+      const notifRef = doc(db, 'notifications', n.id);
+      return updateDoc(notifRef, { isRead: true });
     });
-    await batch.commit();
+
+    await Promise.all(updatePromises);
   };
 
   return (
