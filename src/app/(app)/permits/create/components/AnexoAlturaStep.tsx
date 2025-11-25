@@ -364,11 +364,13 @@ export function AnexoAlturaStep() {
                     Al seleccionar "Otro", este permiso requerirá obligatoriamente la firma de un Líder SST para su aprobación.
                   </AlertDescription>
                 </Alert>
+                {state.isSSTSignatureRequired !== undefined && (
                  <Input 
                     type="hidden" 
                     readOnly 
                     value={state.isSSTSignatureRequired.toString()}
                  />
+                )}
             </div>
           )}
         </div>
