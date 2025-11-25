@@ -68,8 +68,8 @@ service cloud.firestore {
       allow list: if isSignedIn() && 
                   (
                     (isAdmin() || hasRole('autorizante')) ||
-                    // Un usuario puede listar sus propios permisos si ordena por fecha.
-                    (request.query.where.createdBy == request.auth.uid && request.query.orderBy.createdAt == 'desc')
+                    // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
+                    (request.query.where.createdBy == request.auth.uid)
                   );
       
       // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
