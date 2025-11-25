@@ -1,0 +1,108 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Funciones de Ayuda ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getRole() == 'admin';
+    }
+    
+    function isCreator(permit) {
+      return request.auth.uid == permit.createdBy;
+    }
+
+    function hasRole(role) {
+      return getRole() == role;
+    }
+
+    function hasAnyRole(roles) {
+      return getRole() in roles;
+    }
+    
+    // --- Colección de Usuarios (users) ---
+    match /users/{userId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow list: if isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow create, delete: if false;
+    }
+    
+    // --- Colección de Notificaciones (notifications) ---
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
+      allow create, delete: if false;
+    }
+
+    // --- Colección de Permisos (permits) ---
+    match /permits/{permitId} {
+      // LECTURA: Permite leer a los involucrados directamente.
+      allow read: if isSignedIn() && 
+                    (isAdmin() || 
+                     hasRole('autorizante') || 
+                     isCreator(resource.data) ||
+                     (hasRole('lider_sst') && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true)) ||
+                     (hasRole('mantenimiento') && resource.data.controlEnergia == true)
+                    );
+
+      // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
+      allow list: if isSignedIn() && 
+                  (
+                    (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
+                    // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
+                    (request.query.where.createdBy == request.auth.uid)
+                  );
+      
+      // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
+      allow create, delete: if false;
+
+      // ACTUALIZAR: La lógica más compleja, define quién puede modificar el permiso y en qué estado.
+      allow update: if isSignedIn() &&
+                    ( 
+                      // El creador puede editarlo solo si está en estado 'borrador'.
+                      (isCreator(resource.data) && resource.data.status == 'borrador') ||
+
+                      // Un admin puede cambiar el estado en cualquier momento (para emergencias).
+                      (isAdmin()) ||
+
+                      // Lógica de firmas: cualquier usuario con rol puede firmar si el permiso está pendiente.
+                      // Las validaciones de *qué* firma puede poner se hacen en la Server Action.
+                      (resource.data.status == 'pendiente_revision') ||
+
+                      // Lógica de cierre: permite a los roles autorizados cambiar el estado a 'cerrado'
+                      // si el permiso está en ejecución o suspendido.
+                      (request.resource.data.status == 'cerrado' && 
+                       (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
+                       hasAnyRole(['lider_tarea', 'admin'])) ||
+                       
+                      // Lógica de suspensión y reactivación
+                      (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && hasAnyRole(['lider_sst', 'admin'])) ||
+                      (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'suspendido' && hasAnyRole(['lider_sst', 'admin'])) ||
+                      
+                      // Lógica de rechazo: permite a roles de aprobación rechazar un permiso.
+                      (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && hasAnyRole(['autorizante', 'lider_sst', 'admin']))
+                    );
+    }
+
+    // --- Colección de Listas Dinámicas (dynamic_lists) ---
+    match /dynamic_lists/{listName} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

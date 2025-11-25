@@ -52,7 +52,6 @@ export function AlertsBell() {
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
-      // orderBy('createdAt', 'desc'), // Removido para evitar error de índice compuesto
       limit(20)
     );
 
