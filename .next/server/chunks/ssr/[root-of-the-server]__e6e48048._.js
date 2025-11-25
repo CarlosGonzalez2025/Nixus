@@ -519,6 +519,7 @@ async function createPermit(data) {
             photoURL: userPhotoURL
         },
         approvals: initialApprovals,
+        trabajoAlturas: data.trabajoAlturas || false,
         isSSTSignatureRequired: data.isSSTSignatureRequired || false,
         closure: {}
     };
@@ -613,6 +614,7 @@ async function savePermitDraft(data) {
             photoURL: userPhotoURL
         },
         approvals: initialApprovals,
+        trabajoAlturas: data.trabajoAlturas || false,
         isSSTSignatureRequired: data.isSSTSignatureRequired || false
     };
     try {

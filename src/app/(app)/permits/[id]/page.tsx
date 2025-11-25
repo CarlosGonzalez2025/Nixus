@@ -1071,7 +1071,7 @@ export default function PermitDetailPage() {
     return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
   
-  const isSSTSignatureRequired = permit?.anexoAltura?.tareaRealizar?.id === 'otro';
+  const isSSTSignatureRequired = permit?.isSSTSignatureRequired;
   
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
@@ -2351,11 +2351,3 @@ export default function PermitDetailPage() {
       </div>
   );
 }
-
-
-
-    
-
-    
-
-    
