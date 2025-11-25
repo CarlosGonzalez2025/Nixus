@@ -178,50 +178,24 @@ export default function PermitsPage() {
     }
 
     const permitsCollection = collection(db, 'permits');
-    let finalQuery;
+    let unsubscribe: Unsubscribe | undefined;
     
-    // Lógica de consulta específica por rol
+    let finalQuery: QueryConstraint[] = [];
+    
     if (user.role === 'solicitante' || user.role === 'lider_tarea') {
-      finalQuery = query(permitsCollection, where('createdBy', '==', user.uid));
+      finalQuery.push(where('createdBy', '==', user.uid));
     } else if (user.role === 'lider_sst') {
-      // Para SST, hacemos dos consultas y las unimos en el cliente.
-      const query1 = query(permitsCollection, where('trabajoAlturas', '==', true));
-      const query2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
-      
-      Promise.all([getDocs(query1), getDocs(query2)]).then(([snapshot1, snapshot2]) => {
-          const permitsMap = new Map<string, Permit>();
-          
-          snapshot1.docs.forEach(doc => {
-              const data = doc.data();
-              permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
-          });
-
-          snapshot2.docs.forEach(doc => {
-             if (!permitsMap.has(doc.id)) {
-                 const data = doc.data();
-                 permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
-             }
-          });
-
-          const combinedPermits = Array.from(permitsMap.values());
-          combinedPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-          
-          setAllPermits(combinedPermits);
-          setLoading(false);
-      }).catch(error => {
-          console.error("Error fetching permits for SST:", error);
-          toast({ variant: 'destructive', title: 'Error al cargar permisos', description: 'No se pudieron obtener los datos para su rol.' });
-          setLoading(false);
-      });
-      
-      return; // Salimos para no ejecutar onSnapshot
-      
+        // For SST, we can't do an OR query directly with onSnapshot easily.
+        // We'll fetch all permits and filter client-side for simplicity.
+        finalQuery.push(orderBy('createdAt', 'desc'));
     } else { // Para admin y autorizante
-      finalQuery = query(permitsCollection, orderBy('createdAt', 'desc'));
+      finalQuery.push(orderBy('createdAt', 'desc'));
     }
 
-    const unsubscribe = onSnapshot(finalQuery, (snapshot) => {
-      const permitsData = snapshot.docs.map(doc => {
+    const q = query(permitsCollection, ...finalQuery);
+    
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      let permitsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -229,6 +203,11 @@ export default function PermitsPage() {
           createdAt: parseFirestoreDate(data.createdAt),
         } as Permit;
       });
+
+      if (user.role === 'lider_sst') {
+          permitsData = permitsData.filter(p => p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
+      }
+
       // Si es solicitante, es posible que el orden no sea por fecha si hay error de índice.
       if (user.role === 'solicitante' || user.role === 'lider_tarea') {
         permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));

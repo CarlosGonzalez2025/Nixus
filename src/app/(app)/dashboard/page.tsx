@@ -115,102 +115,54 @@ export default function Dashboard() {
 
     console.log('✅ User authenticated, setting up listeners for:', user.email);
 
-    const unsubscribers: Unsubscribe[] = [];
+    let unsubscribe: Unsubscribe | undefined;
 
     try {
       const permitsCollection = collection(db, 'permits');
       const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
-      const isSST = user.role === 'lider_sst';
-
-      let baseQueryConstraints: QueryConstraint[] = [];
-
+      
+      let finalQuery: QueryConstraint[] = [];
+      
       if (isSolicitante) {
-        baseQueryConstraints.push(where('createdBy', '==', user.uid));
+        finalQuery.push(where('createdBy', '==', user.uid));
+      } else if (user.role === 'lider_sst') {
+        // For SST, we can't do an OR query directly with onSnapshot easily.
+        // We'll fetch all permits and filter client-side for simplicity,
+        // or for more optimization, fetch two queries and merge.
+        // Let's go with a single query and client-side filter.
+        // This is less efficient but avoids complex index requirements.
+        finalQuery.push(orderBy('createdAt', 'desc'));
+      } else {
+        finalQuery.push(orderBy('createdAt', 'desc'));
       }
       
-      // Nueva lógica para SST
-      if (isSST) {
-        const sstQuery1 = query(permitsCollection, where('trabajoAlturas', '==', true));
-        const sstQuery2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
+      const q = query(permitsCollection, ...finalQuery);
 
-        const fetchSSTData = async () => {
-          try {
-            const [snapshot1, snapshot2] = await Promise.all([getDocs(sstQuery1), getDocs(sstQuery2)]);
-            const permitsMap = new Map<string, Permit>();
-
-            snapshot1.docs.forEach(doc => {
-              const data = doc.data();
-              permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
-            });
-            snapshot2.docs.forEach(doc => {
-              if (!permitsMap.has(doc.id)) {
-                const data = doc.data();
-                permitsMap.set(doc.id, { id: doc.id, ...data, createdAt: parseFirestoreDate(data.createdAt) } as Permit);
-              }
-            });
-
-            const combinedPermits = Array.from(permitsMap.values());
-            combinedPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-
-            setPermits(combinedPermits.slice(0, 10));
-            setStats({
-              total: combinedPermits.length,
-              pendiente: combinedPermits.filter(p => p.status === 'pendiente_revision').length,
-              aprobado: combinedPermits.filter(p => p.status === 'aprobado').length,
-              enEjecucion: combinedPermits.filter(p => p.status === 'en_ejecucion').length
-            });
-            setLoading(false);
-          } catch (error) {
-            console.error('❌ Error fetching SST data:', error);
-            setLoading(false);
-          }
-        };
-
-        fetchSSTData();
-        return; // Salir del useEffect para evitar la lógica de onSnapshot
-      }
-      
-      // Lógica onSnapshot para roles que no son SST
-      const recentPermitsQueryConstraints: QueryConstraint[] = [...baseQueryConstraints, limit(10)];
-      if (!isSolicitante) {
-        recentPermitsQueryConstraints.push(orderBy('createdAt', 'desc'));
-      }
-      const recentPermitsQuery = query(permitsCollection, ...recentPermitsQueryConstraints);
-
-      const permitsUnsubscribe = onSnapshot(recentPermitsQuery, (snapshot) => {
-        console.log('📊 Recent permits updated:', snapshot.size);
-        const allRecentPermits = snapshot.docs.map(doc => ({
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        let permitsData = snapshot.docs.map(doc => ({
           id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
         } as Permit));
         
-        if (isSolicitante) {
-          allRecentPermits.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        if (user.role === 'lider_sst') {
+            permitsData = permitsData.filter(p => p.isSSTSignatureRequired === true || p.trabajoAlturas === true);
         }
         
-        setPermits(allRecentPermits);
-        setLoading(false);
-      }, (error) => {
-        console.error('❌ Error fetching recent permits:', error);
-        if (error.code === 'permission-denied') router.push('/login');
-        setLoading(false);
-      });
-      unsubscribers.push(permitsUnsubscribe);
+        const recentPermits = [...permitsData].sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)).slice(0,10);
+        setPermits(recentPermits);
 
-      const allPermitsQuery = query(permitsCollection, ...baseQueryConstraints);
-      const statsUnsubscribe = onSnapshot(allPermitsQuery, (statsSnapshot) => {
-        console.log('📈 Stats updated:', statsSnapshot.size);
-        const allPermitsData = statsSnapshot.docs.map(d => d.data() as Permit);
         setStats({
-          total: allPermitsData.length,
-          pendiente: allPermitsData.filter(p => p.status === 'pendiente_revision').length,
-          aprobado: allPermitsData.filter(p => p.status === 'aprobado').length,
-          enEjecucion: allPermitsData.filter(p => p.status === 'en_ejecucion').length
+          total: permitsData.length,
+          pendiente: permitsData.filter(p => p.status === 'pendiente_revision').length,
+          aprobado: permitsData.filter(p => p.status === 'aprobado').length,
+          enEjecucion: permitsData.filter(p => p.status === 'en_ejecucion').length
         });
+        
+        setLoading(false);
       }, (error) => {
-        console.error('❌ Error fetching stats:', error);
+        console.error('❌ Error fetching permits:', error);
         if (error.code === 'permission-denied') router.push('/login');
+        setLoading(false);
       });
-      unsubscribers.push(statsUnsubscribe);
 
     } catch (error) {
       console.error('❌ Error setting up listeners:', error);
@@ -219,7 +171,9 @@ export default function Dashboard() {
 
     return () => {
       console.log('🧹 Cleaning up dashboard listeners');
-      unsubscribers.forEach(unsub => unsub());
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, [user, userLoading, router]);
 
