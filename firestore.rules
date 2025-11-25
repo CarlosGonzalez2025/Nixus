@@ -35,7 +35,9 @@ service cloud.firestore {
     
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
+      // CORRECCIÓN: Se reemplaza isOwner(userId) por la comprobación directa para romper la dependencia circular.
+      // Un usuario siempre debe poder leer su propio perfil para que getRole() funcione.
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
