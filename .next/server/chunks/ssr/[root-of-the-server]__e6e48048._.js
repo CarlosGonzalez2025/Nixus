@@ -630,8 +630,11 @@ async function savePermitDraft(data) {
             };
         } else {
             // Crear un nuevo borrador
-            permitPayload.createdAt = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
-            const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(permitPayload);
+            const payloadWithTimestamp = {
+                ...permitPayload,
+                createdAt: __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp()
+            };
+            const docRef = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').add(payloadWithTimestamp);
             (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])('/permits');
             return {
                 success: true,
@@ -648,10 +651,10 @@ async function savePermitDraft(data) {
     }
 }
 async function addSignatureAndNotify(permitId, role, signatureType, signatureDataUrl, user, comments) {
-    if (!permitId || !role || !user) {
+    if (!permitId || !role || !user || !user.uid || !user.role) {
         return {
             success: false,
-            error: 'Faltan parámetros para guardar la firma.'
+            error: 'Parámetros inválidos para guardar la firma.'
         };
     }
     if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
@@ -663,14 +666,14 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
     try {
         const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
         const permitDocBefore = await docRef.get();
-        const permitBeforeData = permitDocBefore.data();
-        if (!permitBeforeData) {
+        if (!permitDocBefore.exists) {
             return {
                 success: false,
                 error: 'El permiso no existe.'
             };
         }
-        let updateData = {};
+        const permitBeforeData = permitDocBefore.data();
+        const updateData = {};
         // Lógica para manejar firmas de aprobación y de cierre/cancelación
         if (role.startsWith('cierre_') || role === 'cancelacion') {
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : role === 'cierre_responsable' ? 'responsable' : 'canceladoPor';
@@ -687,6 +690,14 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 updateData['closure.cancelado'] = 'si';
             }
         } else {
+            // ✅ CORRECCIÓN 3.1: Validar permisos antes de firmar
+            const canSign = await validateSignaturePermission(permitId, role, user);
+            if (!canSign.allowed) {
+                return {
+                    success: false,
+                    error: canSign.reason
+                };
+            }
             const approvalData = {
                 status: 'aprobado',
                 firmaApertura: signatureDataUrl,
@@ -712,7 +723,7 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                         updateData['status'] = 'pendiente_revision';
                         updateData['isSSTSignatureRequired'] = permitBeforeData?.anexoAltura?.tareaRealizar?.id === 'otro';
                     }
-                    // Auto-llenar validación diaria del responsable
+                    // ✅ CORRECCIÓN 2.2: Auto-llenado de validaciones diarias mejorado
                     [
                         'anexoAltura',
                         'anexoConfinado',
@@ -721,12 +732,13 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                     ].forEach((anexo)=>{
                         if (permitBeforeData?.[anexo]) {
                             const currentValidations = permitBeforeData[anexo].validacion?.responsable || [];
-                            currentValidations[0] = validationPayload;
-                            updateData[`${anexo}.validacion.responsable`] = currentValidations;
+                            if (!currentValidations[0]?.firma) {
+                                currentValidations[0] = validationPayload;
+                                updateData[`${anexo}.validacion.responsable`] = currentValidations;
+                            }
                         }
                     });
                 } else if (role === 'autorizante') {
-                    // Auto-llenar validación diaria de la autoridad
                     [
                         'anexoAltura',
                         'anexoConfinado',
@@ -735,13 +747,15 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                     ].forEach((anexo)=>{
                         if (permitBeforeData?.[anexo]) {
                             const currentValidations = permitBeforeData[anexo].validacion?.autoridad || [];
-                            currentValidations[0] = validationPayload;
-                            updateData[`${anexo}.validacion.autoridad`] = currentValidations;
+                            if (!currentValidations[0]?.firma) {
+                                currentValidations[0] = validationPayload;
+                                updateData[`${anexo}.validacion.autoridad`] = currentValidations;
+                            }
                         }
                     });
                 }
             }
-            // *** LÓGICA DE APROBACIÓN AUTOMÁTICA ***
+            // ✅ CORRECCIÓN 2.1: LÓGICA DE APROBACIÓN AUTOMÁTICA
             const updatedApprovals = {
                 ...permitBeforeData?.approvals,
                 [role]: approvalData
@@ -753,6 +767,9 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
             }
             if (isSSTRequired) {
                 allRequiredSignaturesDone = allRequiredSignaturesDone && updatedApprovals.lider_sst?.status === 'aprobado';
+            }
+            if (allRequiredSignaturesDone && permitBeforeData?.status === 'pendiente_revision') {
+                updateData['status'] = 'aprobado';
             }
         }
         await docRef.update(updateData);
@@ -769,12 +786,10 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
                 await createNotification(uid, updatedPermitData, message, 'signature', user);
             }
         }
-        if (updateData['status'] === 'en_ejecucion') {
-            const executionMessage = `El permiso #${updatedPermitData.number} ha sido aprobado y se encuentra ahora EN EJECUCIÓN.`;
+        if (updateData['status'] === 'aprobado') {
+            const approvalMessage = `El permiso #${updatedPermitData.number} ha sido APROBADO y está listo para ejecución.`;
             for (const uid of involvedUsers){
-                if (uid !== user.uid) {
-                    await createNotification(uid, updatedPermitData, executionMessage, 'approval', user);
-                }
+                await createNotification(uid, updatedPermitData, approvalMessage, 'approval', user);
             }
         }
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$cache$2e$js__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["revalidatePath"])(`/permits/${permitId}`);
@@ -789,21 +804,87 @@ async function addSignatureAndNotify(permitId, role, signatureType, signatureDat
         };
     }
 }
+// ✅ CORRECCIÓN 3.2: Nueva función para validar cambios de estado
+function validateStateTransition(currentStatus, targetStatus, userRole) {
+    const allowedTransitions = {
+        'aprobado': {
+            'en_ejecucion': [
+                'lider_tarea',
+                'admin'
+            ]
+        },
+        'pendiente_revision': {
+            'rechazado': [
+                'autorizante',
+                'lider_sst',
+                'admin'
+            ]
+        },
+        'en_ejecucion': {
+            'suspendido': [
+                'lider_sst',
+                'admin'
+            ],
+            'cerrado': [
+                'lider_tarea',
+                'admin'
+            ]
+        },
+        'suspendido': {
+            'cerrado': [
+                'lider_tarea',
+                'admin'
+            ]
+        }
+    };
+    const allowedRoles = allowedTransitions[currentStatus]?.[targetStatus];
+    if (!allowedRoles) {
+        return {
+            allowed: false,
+            reason: `Transición de '${currentStatus}' a '${targetStatus}' no está permitida.`
+        };
+    }
+    if (!allowedRoles.includes(userRole) && userRole !== 'admin') {
+        return {
+            allowed: false,
+            reason: `Tu rol (${userRole}) no tiene permisos para cambiar el estado a '${targetStatus}'.`
+        };
+    }
+    return {
+        allowed: true
+    };
+}
 async function updatePermitStatus(permitId, status, currentUser, reason) {
-    if (!permitId) {
+    if (!permitId || !currentUser.uid || !currentUser.role) {
         return {
             success: false,
-            error: 'Permit ID is required.'
+            error: 'Parámetros inválidos o usuario sin rol.'
         };
     }
     if (!(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["isAdminReady"])()) {
         return {
             success: false,
-            error: 'Credenciales de administrador de Firebase no configuradas en el servidor.'
+            error: 'Credenciales de administrador de Firebase no configuradas.'
         };
     }
     try {
         const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
+        const permitSnap = await docRef.get();
+        if (!permitSnap.exists) {
+            return {
+                success: false,
+                error: 'El permiso no existe.'
+            };
+        }
+        const permitData = permitSnap.data();
+        // ✅ CORRECCIÓN 3.2: Validar la transición de estado permitida
+        const transition = validateStateTransition(permitData.status, status, currentUser.role);
+        if (!transition.allowed) {
+            return {
+                success: false,
+                error: transition.reason
+            };
+        }
         const updateData = {
             status
         };
@@ -813,47 +894,35 @@ async function updatePermitStatus(permitId, status, currentUser, reason) {
         if (status === 'cerrado') {
             updateData['closure.fechaCierre'] = __TURBOPACK__imported__module__$5b$externals$5d2f$firebase$2d$admin$2f$firestore__$5b$external$5d$__$28$firebase$2d$admin$2f$firestore$2c$__esm_import$29$__["FieldValue"].serverTimestamp();
         }
-        if (status === 'en_ejecucion') {
-            const permitSnap = await docRef.get();
-            const permitData = permitSnap.data();
-            if (permitData?.status !== 'aprobado') {
-                return {
-                    success: false,
-                    error: `El permiso no se puede poner en ejecución desde el estado '${permitData?.status}'. Debe estar aprobado.`
-                };
-            }
-        }
         await docRef.update(updateData);
-        const permitDoc = await docRef.get();
-        const permitData = {
-            id: permitDoc.id,
-            ...permitDoc.data()
+        const updatedPermitData = {
+            ...permitData,
+            ...updateData,
+            id: permitId
         };
         const triggeredBy = currentUser;
         let notificationType = 'status_change';
         let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
-        if (status === 'en_ejecucion') {
+        if (status === 'aprobado') {
             notificationType = 'approval';
-            message = `El permiso #${permitData.number} ha sido aprobado y ahora se encuentra EN EJECUCIÓN.`;
+            message = `El permiso #${permitData.number} ha sido APROBADO y ahora se encuentra listo para ejecución.`;
         } else if (status === 'rechazado') {
             notificationType = 'rejection';
             message = `${currentUser.displayName || 'Un usuario'} ha rechazado el permiso #${permitData.number}.`;
-            if (reason) {
-                message += ` Motivo: ${reason}`;
-            }
+            if (reason) message += ` Motivo: ${reason}`;
         } else if (status === 'cerrado') {
-            notificationType = 'cancellation'; // Using cancellation for close
+            notificationType = 'cancellation';
             message = `${currentUser.displayName || 'Un usuario'} ha cerrado el permiso #${permitData.number}.`;
         }
-        const involvedUsers = await getInvolvedUsers(permitData);
+        const involvedUsers = await getInvolvedUsers(updatedPermitData);
         for (const uid of involvedUsers){
             if (uid !== currentUser.uid) {
-                await createNotification(uid, permitData, message, notificationType, triggeredBy);
+                await createNotification(uid, updatedPermitData, message, notificationType, triggeredBy);
             }
         }
         const baseUrl = ("TURBOPACK compile-time value", "http://localhost:9003") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
-        let messageBody = `*Actualización de Estado - SGPT* 🔄
+        let messageBody = `*Actualización de Estado - SGTC* 🔄
 El estado del permiso *${permitData.number || permitId}* ha cambiado.
 
 *Nuevo Estado:* ${getStatusText(status)}
@@ -877,6 +946,73 @@ ${permitUrl}`;
             error: error.message || 'Could not update permit status.'
         };
     }
+}
+// ✅ CORRECCIÓN 3.1: Helper para validar permisos de firma
+async function validateSignaturePermission(permitId, signatureRole, currentUser) {
+    const docRef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2d$admin$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["adminDb"].collection('permits').doc(permitId);
+    const permitDoc = await docRef.get();
+    if (!permitDoc.exists) {
+        return {
+            allowed: false,
+            reason: 'Permiso no encontrado.'
+        };
+    }
+    const permit = permitDoc.data();
+    switch(signatureRole){
+        case 'solicitante':
+            if (permit.createdBy !== currentUser.uid && currentUser.role !== 'admin') {
+                return {
+                    allowed: false,
+                    reason: 'Solo el creador del permiso puede firmar como solicitante.'
+                };
+            }
+            break;
+        case 'autorizante':
+            if (currentUser.role !== 'autorizante' && currentUser.role !== 'admin') {
+                return {
+                    allowed: false,
+                    reason: 'Rol de autorizante requerido.'
+                };
+            }
+            if (permit.approvals?.solicitante?.status !== 'aprobado') {
+                return {
+                    allowed: false,
+                    reason: 'La firma del solicitante es requerida primero.'
+                };
+            }
+            break;
+        case 'lider_sst':
+            if (currentUser.role !== 'lider_sst' && currentUser.role !== 'admin') {
+                return {
+                    allowed: false,
+                    reason: 'Rol de Líder SST requerido.'
+                };
+            }
+            if (permit.approvals?.solicitante?.status !== 'aprobado') {
+                return {
+                    allowed: false,
+                    reason: 'La firma del solicitante es requerida primero.'
+                };
+            }
+            break;
+        case 'mantenimiento':
+            if (currentUser.role !== 'mantenimiento' && currentUser.role !== 'admin') {
+                return {
+                    allowed: false,
+                    reason: 'Rol de Mantenimiento requerido.'
+                };
+            }
+            if (permit.approvals?.autorizante?.status !== 'aprobado') {
+                return {
+                    allowed: false,
+                    reason: 'La firma del autorizante es requerida primero.'
+                };
+            }
+            break;
+    }
+    return {
+        allowed: true
+    };
 }
 async function addDailyValidationSignature(permitId, anexoName, validationType, index, data, user) {
     if (!permitId || !anexoName || !validationType || index < 0 || !data || !user) {
@@ -950,7 +1086,7 @@ async function addDailyValidationSignature(permitId, anexoName, validationType, 
         }
         const baseUrl = ("TURBOPACK compile-time value", "http://localhost:9003") || 'https://sgpt-movil.web.app';
         const permitUrl = `${baseUrl}/permits/${permitId}`;
-        const whatsappMessage = `*Validación Diaria - SGPT* ✍️
+        const whatsappMessage = `*Validación Diaria - SGTC* ✍️
 Se ha registrado una nueva firma de validación diaria.
 
 📄 *Permiso:* ${fullPermitData.number || 'N/A'}

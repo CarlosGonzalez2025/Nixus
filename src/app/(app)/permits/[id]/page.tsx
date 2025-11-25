@@ -1041,10 +1041,10 @@ export default function PermitDetailPage() {
   }
 
   const handleChangeStatus = async (newStatus: PermitStatus, reason?: string) => {
-    if (!permit || !currentUser) return;
+    if (!permit || !currentUser || !currentUser.role) return;
     setIsStatusChanging(true);
     try {
-      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role });
+      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role }, reason);
       if (result.success) {
         toast({
           title: 'Estado Actualizado',
@@ -1143,7 +1143,7 @@ export default function PermitDetailPage() {
 
 
   const canChangeStatus = (targetStatus: PermitStatus): { can: boolean; reason?: string, details?: string[] } => {
-    if (!currentUser || !permit) return { can: false, reason: 'Cargando datos...' };
+    if (!currentUser || !permit || !currentUser.role) return { can: false, reason: 'Cargando datos...' };
     const { role } = currentUser;
     const { status, approvals, workers } = permit;
 
@@ -1156,7 +1156,9 @@ export default function PermitDetailPage() {
         const canRechazar = (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
         return { can: canRechazar, reason: canRechazar ? undefined : 'No tiene permisos o el permiso no está en el estado adecuado.' };
       case 'en_ejecucion':
-        return { can: false, reason: 'El estado "En Ejecución" se activa automáticamente.' };
+        if(status !== 'aprobado') return { can: false, reason: `El permiso debe estar 'Aprobado' (actual: ${status}).` };
+        if (role !== 'admin' && role !== 'lider_tarea') return { can: false, reason: 'No tiene el rol para iniciar la ejecución.' };
+        return { can: true };
       case 'suspendido':
         const canSuspender = status === 'en_ejecucion' && (role === 'lider_sst' || role === 'admin');
         return { can: canSuspender, reason: canSuspender ? undefined : 'Solo un Líder SST o Admin puede suspender un permiso en ejecución.' };
@@ -1343,6 +1345,7 @@ export default function PermitDetailPage() {
   const canBeCancelled = ['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'autorizante' || currentUser?.role === 'lider_sst');
   const canBeClosed = ['en_ejecucion', 'suspendido'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'lider_tarea');
   const closureStatus = canChangeStatus('cerrado');
+  const canStartExecution = canChangeStatus('en_ejecucion');
 
 
   const getWorkTypesString = (permit: Permit): string => {
@@ -1657,6 +1660,12 @@ export default function PermitDetailPage() {
                  {canBeClosed && (
                     <Button onClick={handleOpenClosureDialog}>
                         <Lock className="mr-2"/>Cerrar Permiso
+                    </Button>
+                 )}
+                 
+                 {canStartExecution.can && (
+                    <Button onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}>
+                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <PlayCircle className="mr-2"/>} Iniciar Ejecución
                     </Button>
                  )}
                  
@@ -2203,12 +2212,25 @@ export default function PermitDetailPage() {
                     <DialogDescription>Complete las firmas requeridas para finalizar el permiso de trabajo.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                    <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded" role="alert">
-                        <p className="font-bold flex items-center gap-2"><Info size={16}/>Instrucciones para Cerrar</p>
-                        <ul className="list-disc list-inside text-sm mt-2 space-y-1">
-                            {!closureStatus.details?.includes('Faltan firmas de cierre de los trabajadores.') ? <li><CheckCircle size={14} className="inline mr-1 text-green-500"/>Todos los trabajadores han firmado su salida.</li> : <li><XCircle size={14} className="inline mr-1 text-red-500"/>Faltan firmas de cierre de los trabajadores.</li>}
-                            {!closureStatus.details?.includes('Falta la firma de cierre del Responsable del Trabajo.') ? <li><CheckCircle size={14} className="inline mr-1 text-green-500"/>Firma del Responsable del Trabajo completada.</li> : <li><XCircle size={14} className="inline mr-1 text-red-500"/>Falta la firma de cierre del Responsable del Trabajo.</li>}
-                            {!closureStatus.details?.includes('Falta la firma de cierre de la Autoridad del Área.') ? <li><CheckCircle size={14} className="inline mr-1 text-green-500"/>Firma de la Autoridad del Área completada.</li> : <li><XCircle size={14} className="inline mr-1 text-red-500"/>Falta la firma de cierre de la Autoridad del Área.</li>}
+                    <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
+                        <p className="font-bold flex items-center gap-2"><Info size={16}/>Condiciones para el Cierre</p>
+                        <ul className="list-none space-y-1 text-sm mt-2">
+                            <li className="flex items-start gap-2">
+                                {closureStatus.can ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
+                                <span>El permiso debe estar en estado <strong>'En Ejecución'</strong> o <strong>'Suspendido'</strong>.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                {!closureStatus.details?.includes('Faltan firmas de cierre de los trabajadores.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
+                                <span>Todos los trabajadores deben haber registrado su firma de salida.</span>
+                            </li>
+                             <li className="flex items-start gap-2">
+                                {!closureStatus.details?.includes('Falta la firma de cierre del Responsable del Trabajo.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
+                                <span>El <strong>Responsable del Trabajo</strong> debe registrar su firma de cierre.</span>
+                            </li>
+                             <li className="flex items-start gap-2">
+                                {!closureStatus.details?.includes('Falta la firma de cierre de la Autoridad del Área.') ? <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1"/> : <XCircle size={14} className="inline mr-1 text-red-500 mt-1"/>}
+                                <span>La <strong>Autoridad del Área</strong> debe registrar su firma de cierre (después del responsable).</span>
+                            </li>
                         </ul>
                     </div>
 
@@ -2296,4 +2318,5 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
