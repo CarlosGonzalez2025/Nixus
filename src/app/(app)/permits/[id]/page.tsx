@@ -223,7 +223,6 @@ export default function PermitDetailPage() {
   const [isWorkerSignatureOpen, setIsWorkerSignatureOpen] = useState(false);
   const [workerSignatureTarget, setWorkerSignatureTarget] = useState<{ index: number; type: 'firmaApertura' | 'firmaCierre'; } | null>(null);
   
-  // State for new closure/cancellation dialogs
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isCancellationDialogOpen, setIsCancellationDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
@@ -286,7 +285,6 @@ export default function PermitDetailPage() {
     { id: 'sistemasPosicionamiento', label: 'V. EN CASO DE REQUERIRSE SE CUENTA CON SISTEMAS DE POSICIONAMIENTO' },
 ];
 
-  // ✅ CORRECCIÓN 6.2: useEffect seguro para evitar memory leaks
   useEffect(() => {
     if (!permitId) {
       setError('ID de permiso no válido.');
@@ -304,7 +302,6 @@ export default function PermitDetailPage() {
           setPermit({
             id: docSnap.id,
             ...data,
-            //createdAt y otros campos de fecha se parsean donde se usan con safeFormat
           } as Permit);
           setError(null);
         } else {
@@ -331,7 +328,6 @@ export default function PermitDetailPage() {
     };
   }, [permitId]);
   
-  // ✅ CORRECCIÓN: handleExportToPDF corregido
   const handleExportToPDF = async () => {
     if (!permit) {
       toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
@@ -1151,7 +1147,21 @@ export default function PermitDetailPage() {
 
     switch (targetStatus) {
       case 'aprobado':
-        return { can: false, reason: 'La aprobación es automática al completar firmas.' };
+          if(status !== 'pendiente_revision') return { can: false, reason: `El permiso debe estar 'Pendiente de Revisión' (actual: ${status}).`};
+          
+          let missingSignatures: string[] = [];
+          if(approvals.solicitante?.status !== 'aprobado') missingSignatures.push('Solicitante');
+          if(approvals.autorizante?.status !== 'aprobado') missingSignatures.push('Autorizante');
+          if(permit.controlEnergia && approvals.mantenimiento?.status !== 'aprobado') missingSignatures.push('Mantenimiento');
+          if(isSSTSignatureRequired && approvals.lider_sst?.status !== 'aprobado') missingSignatures.push('Líder SST');
+
+          if(missingSignatures.length > 0) {
+              return { can: false, reason: "Faltan firmas para aprobar.", details: missingSignatures.map(r => `Firma de ${r}`)};
+          }
+          
+          if(role !== 'admin' && role !== 'autorizante') return { can: false, reason: 'No tiene el rol para aprobar.' };
+
+          return { can: true };
       case 'rechazado':
         const canRechazar = (status === 'pendiente_revision' || status === 'aprobado') && (role === 'autorizante' || role === 'admin' || role === 'lider_sst');
         return { can: canRechazar, reason: canRechazar ? undefined : 'No tiene permisos o el permiso no está en el estado adecuado.' };
@@ -1275,8 +1285,8 @@ export default function PermitDetailPage() {
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
-        setIsDailyValidationSignatureOpen(false);
         setIsDailyValidationSigning(false);
+        setIsDailyValidationSignatureOpen(false);
         setDailyValidationTarget(null);
         setDailyValidationName('');
         setDailyValidationDate('');
@@ -1345,7 +1355,7 @@ export default function PermitDetailPage() {
   const canBeCancelled = ['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'autorizante' || currentUser?.role === 'lider_sst');
   const canBeClosed = ['en_ejecucion', 'suspendido'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'lider_tarea');
   const closureStatus = canChangeStatus('cerrado');
-  const canStartExecution = canChangeStatus('en_ejecucion');
+  const canApprove = canChangeStatus('aprobado');
 
 
   const getWorkTypesString = (permit: Permit): string => {
@@ -1663,10 +1673,10 @@ export default function PermitDetailPage() {
                     </Button>
                  )}
                  
-                 {canStartExecution.can && (
-                    <Button onClick={() => handleChangeStatus('en_ejecucion')} disabled={isStatusChanging}>
-                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <PlayCircle className="mr-2"/>} Iniciar Ejecución
-                    </Button>
+                 {canApprove.can && permit.status === 'pendiente_revision' && (
+                     <Button onClick={() => handleChangeStatus('aprobado')} disabled={isStatusChanging} className="bg-green-600 hover:bg-green-700">
+                        {isStatusChanging ? <Loader2 className="animate-spin" /> : <CheckCircle className="mr-2"/>} Aprobar Permiso
+                     </Button>
                  )}
                  
                  {canChangeStatus('rechazado').can && (
@@ -2318,5 +2328,6 @@ export default function PermitDetailPage() {
       </div>
   );
 }
+
 
 

@@ -4,7 +4,7 @@
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
-import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { getEmailForUser, sendPermitUpdateEmail } from '@/lib/email';
 import { config } from 'dotenv';
@@ -41,17 +41,17 @@ const createNotification = async (
   type: Notification['type'],
   triggeredBy: { uid: string, displayName: string | null }
 ) => {
-  const notification = {
+  const notification: Omit<Notification, 'id'> = {
     userId,
     permitId: permit.id,
     permitNumber: permit.number || '',
     message,
     type,
     isRead: false,
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp() as Timestamp,
     triggeredBy,
   };
-  await adminDb.collection('notifications').add(notification);
+  await adminDb.collection('notifications').add(notification as any);
   
   // Enviar correo electrónico
   const userEmail = await getEmailForUser(userId);
@@ -156,7 +156,7 @@ export async function createPermit(data: PermitCreateData) {
   };
   
   try {
-    const docRef = await adminDb.collection('permits').add(permitPayload);
+    const docRef = await adminDb.collection('permits').add(permitPayload as any);
     const permitNumber = `PT-${Date.now()}-${docRef.id.substring(0, 6).toUpperCase()}`;
     await docRef.update({ number: permitNumber });
     
@@ -242,7 +242,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
     } else {
       // Crear un nuevo borrador
       const payloadWithTimestamp = { ...permitPayload, createdAt: FieldValue.serverTimestamp() };
-      const docRef = await adminDb.collection('permits').add(payloadWithTimestamp);
+      const docRef = await adminDb.collection('permits').add(payloadWithTimestamp as any);
       revalidatePath('/permits');
       return { success: true, permitId: docRef.id, isUpdate: false };
     }
@@ -301,7 +301,6 @@ export async function addSignatureAndNotify(
             }
 
         } else {
-            // ✅ CORRECCIÓN 3.1: Validar permisos antes de firmar
             const canSign = await validateSignaturePermission(permitId, role, user);
             if (!canSign.allowed) {
                 return { success: false, error: canSign.reason };
@@ -331,7 +330,6 @@ export async function addSignatureAndNotify(
                         updateData['isSSTSignatureRequired'] = permitBeforeData?.anexoAltura?.tareaRealizar?.id === 'otro';
                     }
                     
-                    // ✅ CORRECCIÓN 2.2: Auto-llenado de validaciones diarias mejorado
                     ['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones'].forEach(anexo => {
                         if ((permitBeforeData as any)?.[anexo]) {
                             const currentValidations = (permitBeforeData as any)[anexo].validacion?.responsable || [];
@@ -355,7 +353,6 @@ export async function addSignatureAndNotify(
                 }
             }
 
-            // ✅ CORRECCIÓN 2.1: LÓGICA DE APROBACIÓN AUTOMÁTICA
             const updatedApprovals = { ...permitBeforeData?.approvals, [role]: approvalData };
             const isSSTRequired = permitBeforeData?.isSSTSignatureRequired;
 
@@ -371,7 +368,7 @@ export async function addSignatureAndNotify(
             }
 
             if (allRequiredSignaturesDone && permitBeforeData?.status === 'pendiente_revision') {
-                updateData['status'] = 'aprobado';
+                updateData['status'] = 'en_ejecucion';
             }
         }
         
@@ -391,8 +388,8 @@ export async function addSignatureAndNotify(
           }
         }
         
-        if (updateData['status'] === 'aprobado') {
-            const approvalMessage = `El permiso #${updatedPermitData.number} ha sido APROBADO y está listo para ejecución.`;
+        if (updateData['status'] === 'en_ejecucion') {
+            const approvalMessage = `El permiso #${updatedPermitData.number} ha sido APROBADO y se encuentra ahora EN EJECUCIÓN.`;
             for (const uid of involvedUsers) {
                  await createNotification(uid, updatedPermitData, approvalMessage, 'approval', user);
             }
@@ -410,14 +407,26 @@ export async function addSignatureAndNotify(
     }
 }
 
-
-// ✅ CORRECCIÓN 3.2: Nueva función para validar cambios de estado
 function validateStateTransition(currentStatus: PermitStatus, targetStatus: PermitStatus, userRole: UserRole): { allowed: boolean, reason?: string } {
-    const allowedTransitions: Record<string, Partial<Record<string, UserRole[]>>> = {
-        'aprobado': { 'en_ejecucion': ['lider_tarea', 'admin'] },
-        'pendiente_revision': { 'rechazado': ['autorizante', 'lider_sst', 'admin'] },
-        'en_ejecucion': { 'suspendido': ['lider_sst', 'admin'], 'cerrado': ['lider_tarea', 'admin'] },
-        'suspendido': { 'cerrado': ['lider_tarea', 'admin'] }
+    const allowedTransitions: Partial<Record<PermitStatus, Partial<Record<PermitStatus, UserRole[]>>>> = {
+        'borrador': {
+            'pendiente_revision': ['solicitante', 'lider_tarea', 'admin']
+        },
+        'pendiente_revision': {
+            'rechazado': ['autorizante', 'lider_sst', 'admin']
+        },
+        'aprobado': {
+            'en_ejecucion': ['lider_tarea', 'admin'],
+            'rechazado': ['autorizante', 'lider_sst', 'admin']
+        },
+        'en_ejecucion': {
+            'suspendido': ['lider_sst', 'admin'],
+            'cerrado': ['lider_tarea', 'admin']
+        },
+        'suspendido': {
+            'en_ejecucion': ['lider_sst', 'admin'],
+            'cerrado': ['lider_tarea', 'admin']
+        }
     };
     
     const allowedRoles = allowedTransitions[currentStatus]?.[targetStatus];
@@ -454,7 +463,6 @@ export async function updatePermitStatus(
         }
         const permitData = permitSnap.data() as Permit;
         
-        // ✅ CORRECCIÓN 3.2: Validar la transición de estado permitida
         const transition = validateStateTransition(permitData.status, status, currentUser.role);
         if (!transition.allowed) {
             return { success: false, error: transition.reason };
@@ -528,7 +536,6 @@ ${permitUrl}`;
     }
 }
 
-// ✅ CORRECCIÓN 3.1: Helper para validar permisos de firma
 async function validateSignaturePermission(
     permitId: string, 
     signatureRole: string, 
@@ -571,7 +578,6 @@ async function validateSignaturePermission(
                 return { allowed: false, reason: 'La firma del autorizante es requerida primero.' };
             }
             break;
-        // Se pueden añadir más casos
     }
     
     return { allowed: true };
@@ -706,4 +712,3 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
 }
 
     
-
