@@ -585,4 +585,3 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
     </div>
   );
 }
-
