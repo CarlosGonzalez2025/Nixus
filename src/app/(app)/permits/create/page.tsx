@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
@@ -73,7 +72,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-
 const workerRoles = [
   "Trabajador autorizado",
   "Ayudante de seguridad",
@@ -83,6 +81,45 @@ const workerRoles = [
   "Operador de equipo para elevación de personas",
   "Vigía",
   "Otro"
+];
+
+// Listas de entidades colombianas
+const epsEntidades = [
+  "Salud Total",
+  "Sanitas",
+  "Compensar",
+  "Sura",
+  "Nueva EPS",
+  "Famisanar",
+  "Coomeva",
+  "Medimás",
+  "Capital Salud",
+  "SOS",
+  "Cruz Blanca",
+  "Aliansalud",
+  "Coosalud",
+  "Mutual Ser",
+  "Emssanar",
+];
+
+const arlEntidades = [
+  "AXA Colpatria",
+  "Bolívar",
+  "Colmena",
+  "Sura",
+  "Positiva",
+  "Liberty",
+  "Equidad",
+  "Aurora",
+];
+
+const pensionEntidades = [
+  "Protección",
+  "Porvenir",
+  "Colpensiones",
+  "Colfondos",
+  "Old Mutual",
+  "Skandia",
 ];
 
 function CreatePermitWizard() {
@@ -117,7 +154,6 @@ function CreatePermitWizard() {
     window.scrollTo(0, 0);
   }, [step]);
 
-
   useEffect(() => {
     const editId = searchParams.get('edit');
     if (editId) {
@@ -148,7 +184,6 @@ function CreatePermitWizard() {
       setIsLoadingForm(false);
     }
   }, [searchParams, dispatch, router, toast]);
-
 
   useEffect(() => {
     if (user && !formData.generalInfo.nombreSolicitante) {
@@ -348,7 +383,7 @@ function CreatePermitWizard() {
             toast({
                 variant: "destructive",
                 title: "Validación Requerida en ATS",
-                description: "El recuadro rojo para obligatoriedad de “Escoja o seleccione los EPP´S requeridos, para continuar",
+                description: "Debe seleccionar al menos un EPP requerido para continuar.",
             });
             return false;
         }
@@ -713,110 +748,249 @@ function CreatePermitWizard() {
       </Dialog>
       
         <Dialog open={isWorkerDialogOpen} onOpenChange={setIsWorkerDialogOpen}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>{editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador</DialogTitle>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader className="pb-4 border-b">
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        <UserPlus className="h-5 w-5 text-primary"/>
+                        {editingWorkerIndex !== null ? 'Editar' : 'Agregar'} Trabajador
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">Complete la información del trabajador</p>
                 </DialogHeader>
-                <div className="space-y-4 max-h-[70vh] overflow-y-auto p-4">
-                    <div>
-                        <Label htmlFor="worker-name">Nombres y Apellidos</Label>
-                        <Input id="worker-name" value={currentWorker?.nombre || ''} onChange={(e) => handleWorkerInputChange('nombre', e.target.value)} />
-                    </div>
-                    <div>
-                        <Label htmlFor="worker-cedula">Cédula</Label>
-                        <Input id="worker-cedula" value={currentWorker?.cedula || ''} onChange={(e) => handleWorkerInputChange('cedula', e.target.value)} />
-                    </div>
-                    <div>
-                        <Label htmlFor="worker-rol">Cargo/Rol</Label>
-                        <Select value={currentWorker?.rol || ''} onValueChange={(value) => handleWorkerInputChange('rol', value)}>
-                            <SelectTrigger id="worker-rol"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {workerRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     {currentWorker?.rol === 'Otro' && (
-                        <div>
-                            <Label htmlFor="worker-otro-rol">Especifique el rol</Label>
-                            <Input id="worker-otro-rol" value={currentWorker?.otroRol || ''} onChange={(e) => handleWorkerInputChange('otroRol', e.target.value)} />
+                
+                <div className="flex-1 overflow-y-auto px-1">
+                    <div className="space-y-6 py-4">
+                        {/* Información Personal */}
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                            <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                <Users className="h-4 w-4"/>
+                                Información Personal
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-name" className="text-sm font-medium">
+                                        Nombres y Apellidos <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input 
+                                        id="worker-name" 
+                                        value={currentWorker?.nombre || ''} 
+                                        onChange={(e) => handleWorkerInputChange('nombre', e.target.value)}
+                                        placeholder="Ingrese nombre completo"
+                                        className="h-10"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-cedula" className="text-sm font-medium">
+                                        Cédula <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input 
+                                        id="worker-cedula" 
+                                        value={currentWorker?.cedula || ''} 
+                                        onChange={(e) => handleWorkerInputChange('cedula', e.target.value)}
+                                        placeholder="Número de identificación"
+                                        className="h-10"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-rol" className="text-sm font-medium">
+                                        Cargo/Rol <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={currentWorker?.rol || ''} onValueChange={(value) => handleWorkerInputChange('rol', value)}>
+                                        <SelectTrigger id="worker-rol" className="h-10">
+                                            <SelectValue placeholder="Seleccione un rol"/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {workerRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {currentWorker?.rol === 'Otro' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="worker-otro-rol" className="text-sm font-medium">
+                                            Especifique el rol <span className="text-red-500">*</span>
+                                        </Label>
+                                        <Input 
+                                            id="worker-otro-rol" 
+                                            value={currentWorker?.otroRol || ''} 
+                                            onChange={(e) => handleWorkerInputChange('otroRol', e.target.value)}
+                                            placeholder="Describa el rol"
+                                            className="h-10"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
 
-                    <div className="space-y-2">
-                        <Label className="font-semibold">Certificado Aptitud Médica</Label>
-                        <div className="flex gap-4">
-                            <div className="flex items-center gap-2">
-                                <Checkbox 
-                                    id="cert-tec" 
-                                    checked={currentWorker?.tsaTec?.tec || false} 
-                                    onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tec: !!checked })} 
-                                /> 
-                                <Label htmlFor="cert-tec">TEC</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Checkbox 
-                                    id="cert-tsa" 
-                                    checked={currentWorker?.tsaTec?.tsa || false} 
-                                    onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tsa: !!checked })} 
-                                /> 
-                                <Label htmlFor="cert-tsa">TSA</Label>
+                        {/* Certificaciones */}
+                        <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+                            <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                <Shield className="h-4 w-4"/>
+                                Certificaciones y Entrenamiento
+                            </h3>
+                            
+                            <div className="space-y-3">
+                                <div>
+                                    <Label className="text-sm font-medium mb-2 block">Certificado Aptitud Médica</Label>
+                                    <div className="flex gap-6">
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="cert-tec" 
+                                                checked={currentWorker?.tsaTec?.tec || false} 
+                                                onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tec: !!checked })} 
+                                            /> 
+                                            <Label htmlFor="cert-tec" className="font-normal cursor-pointer">TEC</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="cert-tsa" 
+                                                checked={currentWorker?.tsaTec?.tsa || false} 
+                                                onCheckedChange={checked => handleWorkerInputChange('tsaTec', { ...currentWorker?.tsaTec, tsa: !!checked })} 
+                                            /> 
+                                            <Label htmlFor="cert-tsa" className="font-normal cursor-pointer">TSA</Label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label className="text-sm font-medium mb-2 block">Entrenamiento / Capacitación</Label>
+                                    <div className="flex flex-wrap gap-6">
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="ent-tec" 
+                                                checked={currentWorker?.entrenamiento?.tec || false} 
+                                                onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tec: !!checked })} 
+                                            /> 
+                                            <Label htmlFor="ent-tec" className="font-normal cursor-pointer">TEC</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="ent-tsa" 
+                                                checked={currentWorker?.entrenamiento?.tsa || false} 
+                                                onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tsa: !!checked })} 
+                                            /> 
+                                            <Label htmlFor="ent-tsa" className="font-normal cursor-pointer">TSA</Label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox 
+                                                id="ent-otro" 
+                                                checked={currentWorker?.entrenamiento?.otro || false} 
+                                                onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otro: !!checked })} 
+                                            /> 
+                                            <Label htmlFor="ent-otro" className="font-normal cursor-pointer">Otro</Label>
+                                        </div>
+                                    </div>
+                                    {currentWorker?.entrenamiento?.otro && (
+                                        <Input 
+                                            placeholder="Especificar otro entrenamiento" 
+                                            value={currentWorker?.entrenamiento?.otroCual || ''} 
+                                            onChange={e => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otroCual: e.target.value })}
+                                            className="mt-2 h-10"
+                                        />
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label className="font-semibold">Entrenamiento / Capacitación</Label>
-                        <div className="flex gap-4">
-                             <div className="flex items-center gap-2">
-                                <Checkbox 
-                                    id="ent-tec" 
-                                    checked={currentWorker?.entrenamiento?.tec || false} 
-                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tec: !!checked })} 
-                                /> 
-                                <Label htmlFor="ent-tec">TEC</Label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Checkbox 
-                                    id="ent-tsa" 
-                                    checked={currentWorker?.entrenamiento?.tsa || false} 
-                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, tsa: !!checked })} 
-                                /> 
-                                <Label htmlFor="ent-tsa">TSA</Label>
-                            </div>
-                             <div className="flex items-center gap-2">
-                                <Checkbox 
-                                    id="ent-otro" 
-                                    checked={currentWorker?.entrenamiento?.otro || false} 
-                                    onCheckedChange={checked => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otro: !!checked })} 
-                                /> 
-                                <Label htmlFor="ent-otro">Otro</Label>
+
+                        {/* Afiliaciones a Seguridad Social */}
+                        <div className="bg-green-50 p-4 rounded-lg space-y-4">
+                            <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                <FileText className="h-4 w-4"/>
+                                Afiliación a Seguridad Social
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-eps" className="text-sm font-medium">EPS</Label>
+                                    <Select 
+                                        value={currentWorker?.eps || ''} 
+                                        onValueChange={(value) => handleWorkerInputChange('eps', value)}
+                                    >
+                                        <SelectTrigger id="worker-eps" className="h-10">
+                                            <SelectValue placeholder="Seleccione EPS"/>
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[200px]">
+                                            {epsEntidades.map(eps => (
+                                                <SelectItem key={eps} value={eps}>{eps}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-arl" className="text-sm font-medium">ARL</Label>
+                                    <Select 
+                                        value={currentWorker?.arl || ''} 
+                                        onValueChange={(value) => handleWorkerInputChange('arl', value)}
+                                    >
+                                        <SelectTrigger id="worker-arl" className="h-10">
+                                            <SelectValue placeholder="Seleccione ARL"/>
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[200px]">
+                                            {arlEntidades.map(arl => (
+                                                <SelectItem key={arl} value={arl}>{arl}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker-pension" className="text-sm font-medium">Pensión</Label>
+                                    <Select 
+                                        value={currentWorker?.pensiones || ''} 
+                                        onValueChange={(value) => handleWorkerInputChange('pensiones', value)}
+                                    >
+                                        <SelectTrigger id="worker-pension" className="h-10">
+                                            <SelectValue placeholder="Seleccione Pensión"/>
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[200px]">
+                                            {pensionEntidades.map(pension => (
+                                                <SelectItem key={pension} value={pension}>{pension}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
-                         <Input 
-                            placeholder="Especificar otro entrenamiento" 
-                            value={currentWorker?.entrenamiento?.otroCual || ''} 
-                            onChange={e => handleWorkerInputChange('entrenamiento', { ...currentWorker?.entrenamiento, otroCual: e.target.value })}
-                            disabled={!currentWorker?.entrenamiento?.otro} 
-                         />
-                    </div>
-                     <div className="space-y-2">
-                        <Label className="font-semibold">Afiliación a Seguridad Social</Label>
-                        <div className="flex gap-4">
-                           <div className="flex items-center gap-2"><Checkbox id="afil-eps" checked={!!currentWorker?.eps} onCheckedChange={checked => handleWorkerInputChange('eps', checked ? 'activo' : '')} /> <Label htmlFor="afil-eps">EPS</Label></div>
-                           <div className="flex items-center gap-2"><Checkbox id="afil-arl" checked={!!currentWorker?.arl} onCheckedChange={checked => handleWorkerInputChange('arl', checked ? 'activo' : '')} /> <Label htmlFor="afil-arl">ARL</Label></div>
-                           <div className="flex items-center gap-2"><Checkbox id="afil-pension" checked={!!currentWorker?.pensiones} onCheckedChange={checked => handleWorkerInputChange('pensiones', checked ? 'activo' : '')} /> <Label htmlFor="afil-pension">Pensiones</Label></div>
+
+                        {/* Firma */}
+                        <div className="bg-purple-50 p-4 rounded-lg space-y-3">
+                            <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                <Signature className="h-4 w-4"/>
+                                Firma de Apertura
+                            </h3>
+                            <Button 
+                                variant="outline" 
+                                className="w-full h-12 text-sm font-medium hover:bg-white" 
+                                onClick={() => openSignaturePad('worker.firmaApertura')}
+                            >
+                                <Signature className="mr-2 h-4 w-4"/> 
+                                {currentWorker?.firmaApertura ? 'Ver/Cambiar Firma' : 'Registrar Firma'}
+                            </Button>
+                            {currentWorker?.firmaApertura && (
+                                <div className="flex justify-center p-3 bg-white rounded-md border-2 border-dashed">
+                                    <Image 
+                                        src={currentWorker.firmaApertura} 
+                                        alt="Firma Apertura" 
+                                        width={200} 
+                                        height={100} 
+                                        className="border rounded"
+                                    />
+                                </div>
+                            )}
                         </div>
-                    </div>
-                    <div>
-                      <Label>Firma de Apertura</Label>
-                      <Button variant="outline" className="w-full mt-2" onClick={() => openSignaturePad('worker.firmaApertura')}>
-                        <Signature className="mr-2"/> {currentWorker?.firmaApertura ? 'Ver/Cambiar Firma' : 'Registrar Firma'}
-                      </Button>
-                      {currentWorker?.firmaApertura && <Image src={currentWorker.firmaApertura} alt="Firma Apertura" width={150} height={75} className="mx-auto mt-2 border rounded-md"/>}
                     </div>
                 </div>
-                 <DialogFooter>
-                    <Button variant="secondary" onClick={() => setIsWorkerDialogOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSaveWorker}>Guardar Trabajador</Button>
+
+                <DialogFooter className="pt-4 border-t mt-4">
+                    <Button variant="outline" onClick={() => setIsWorkerDialogOpen(false)} className="h-10">
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleSaveWorker} className="h-10">
+                        <Check className="mr-2 h-4 w-4"/>
+                        Guardar Trabajador
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

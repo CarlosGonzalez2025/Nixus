@@ -46,6 +46,8 @@ const initialState = {
         excavacion: false,
         general: false
     },
+    trabajoAlturas: false,
+    isSSTSignatureRequired: false,
     anexoATS: {
         peligros: {},
         controles: {},
@@ -70,6 +72,20 @@ const initialState = {
             otrasAreasRiesgo: 'na',
             personalNotificado: 'na',
             observaciones: ''
+        },
+        validacion: {
+            autoridad: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                })),
+            responsable: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                }))
         }
     },
     anexoConfinado: {
@@ -86,8 +102,18 @@ const initialState = {
             fechaCalibracion: ''
         },
         validacion: {
-            autoridad: [],
-            responsable: []
+            autoridad: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                })),
+            responsable: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                }))
         }
     },
     anexoEnergias: {
@@ -113,7 +139,21 @@ const initialState = {
             capacidadEquipo: ''
         },
         aspectosRequeridos: {},
-        precauciones: {}
+        precauciones: {},
+        validacion: {
+            autoridad: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                })),
+            responsable: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                }))
+        }
     },
     anexoExcavaciones: {
         informacionGeneral: {
@@ -123,7 +163,21 @@ const initialState = {
             largo: ''
         },
         aspectosRequeridos: {},
-        precauciones: {}
+        precauciones: {},
+        validacion: {
+            autoridad: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                })),
+            responsable: Array(7).fill(0).map((_, i)=>({
+                    dia: i + 1,
+                    nombre: '',
+                    firma: '',
+                    fecha: ''
+                }))
+        }
     },
     verificacionPeligros: {
         fisicos: {},
@@ -140,6 +194,7 @@ const initialState = {
     },
     workers: []
 };
+const LOCAL_STORAGE_KEY = 'permitFormDraft';
 // Reducer function
 function formReducer(state, action) {
     switch(action.type){
@@ -152,11 +207,16 @@ function formReducer(state, action) {
                 }
             };
         case 'UPDATE_WORK_TYPES':
+            const isAlturas = action.payload.type === 'alturas';
             return {
                 ...state,
                 selectedWorkTypes: {
                     ...state.selectedWorkTypes,
                     [action.payload.type]: action.payload.value
+                },
+                // Also update the old 'trabajoAlturas' field for compatibility with security rules
+                ...isAlturas && {
+                    trabajoAlturas: action.payload.value
                 }
             };
         case 'UPDATE_ATS':
@@ -237,14 +297,17 @@ function formReducer(state, action) {
                 ]
             };
         case 'UPDATE_SIGNATURE':
-            // Complex logic for updating signatures in nested annexes can be handled here
-            // This is a simplified example
             console.log('Signature update needs to be implemented in reducer:', action.payload);
             return state;
+        case 'SET_SST_REQUIRED':
+            return {
+                ...state,
+                isSSTSignatureRequired: action.payload
+            };
         case 'SET_ENTIRE_STATE':
             const { payload } = action;
-            // Reconstruct the state from the payload, providing defaults for any missing pieces
             return {
+                ...initialState,
                 generalInfo: {
                     ...initialState.generalInfo,
                     ...payload.generalInfo
@@ -253,6 +316,8 @@ function formReducer(state, action) {
                     ...initialState.selectedWorkTypes,
                     ...payload.selectedWorkTypes
                 },
+                trabajoAlturas: payload.trabajoAlturas || false,
+                isSSTSignatureRequired: payload.isSSTSignatureRequired || false,
                 anexoATS: {
                     ...initialState.anexoATS,
                     ...payload.anexoATS
@@ -288,6 +353,12 @@ function formReducer(state, action) {
                 workers: payload.workers || initialState.workers
             };
         case 'RESET_FORM':
+            // Limpiar también el localStorage al resetear
+            try {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+            } catch (error) {
+                console.error("Failed to remove draft from localStorage", error);
+            }
             return initialState;
         default:
             return state;
@@ -295,8 +366,28 @@ function formReducer(state, action) {
 }
 // Create the context
 const PermitFormContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
+// Función para inicializar el estado, intentando cargar desde localStorage
+const initializer = (initialValue = initialState)=>{
+    if ("TURBOPACK compile-time truthy", 1) {
+        return initialValue;
+    }
+    "TURBOPACK unreachable";
+};
 function PermitFormProvider({ children }) {
-    const [state, dispatch] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useReducer"])(formReducer, initialState);
+    const [state, dispatch] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useReducer"])(formReducer, initialState, initializer);
+    // Efecto para guardar en localStorage cada vez que el estado cambia
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        try {
+            // No guardar si el estado es el inicial (formulario vacío)
+            if (state !== initialState) {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+            }
+        } catch (error) {
+            console.error("Failed to save draft to localStorage", error);
+        }
+    }, [
+        state
+    ]);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(PermitFormContext.Provider, {
         value: {
             state,
@@ -305,7 +396,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 254,
+        lineNumber: 315,
         columnNumber: 5
     }, this);
 }

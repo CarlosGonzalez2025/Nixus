@@ -1198,7 +1198,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$c
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/select.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/plus.js [app-client] (ecmascript) <export default as Plus>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/trash-2.js [app-client] (ecmascript) <export default as Trash2>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/check.js [app-client] (ecmascript) <export default as Check>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$search$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Search$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/search.js [app-client] (ecmascript) <export default as Search>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/x.js [app-client] (ecmascript) <export default as X>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-toast.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$esm$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/esm/index.esm.js [app-client] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.esm2017.js [app-client] (ecmascript)");
@@ -1247,12 +1249,39 @@ const workTypes = [
         name: 'Excavaciones'
     }
 ];
+// Lista genérica inicial de herramientas por defecto
+const herramientasIniciales = [
+    'Taladro',
+    'Martillo',
+    'Destornillador',
+    'Llave inglesa',
+    'Alicate',
+    'Sierra',
+    'Nivel',
+    'Flexómetro',
+    'Escalera',
+    'Andamio',
+    'Esmeril',
+    'Soldadora',
+    'Pulidora',
+    'Compresor',
+    'Pistola de impacto'
+];
+const ITEMS_PER_PAGE = 20;
+const QUICK_SELECT_COUNT = 6;
 function GeneralInfoStep() {
     _s();
     const { state, dispatch } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePermitForm"])();
     const { generalInfo, selectedWorkTypes } = state;
     const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
+    const [herramientasDisponibles, setHerramientasDisponibles] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [searchTerm, setSearchTerm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('');
+    const [isAddingNew, setIsAddingNew] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [newToolName, setNewToolName] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('');
+    const [showSearchResults, setShowSearchResults] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [displayCount, setDisplayCount] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(ITEMS_PER_PAGE);
+    const searchInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const resultsContainerRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const [dynamicLists, setDynamicLists] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
         areas: [],
         plantas: [],
@@ -1261,6 +1290,37 @@ function GeneralInfoStep() {
         empresas: []
     });
     const [loadingLists, setLoadingLists] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
+    // Cargar herramientas desde Firestore
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "GeneralInfoStep.useEffect": ()=>{
+            const herramientasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"], 'dynamic_lists', 'herramientas');
+            const unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["onSnapshot"])(herramientasRef, {
+                "GeneralInfoStep.useEffect.unsubscribe": (docSnap)=>{
+                    if (docSnap.exists()) {
+                        const items = docSnap.data().items || [];
+                        setHerramientasDisponibles(items.sort());
+                    } else {
+                        // Si no existe el documento, crearlo con la lista inicial
+                        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["setDoc"])(herramientasRef, {
+                            items: herramientasIniciales.sort()
+                        }).then({
+                            "GeneralInfoStep.useEffect.unsubscribe": ()=>setHerramientasDisponibles(herramientasIniciales.sort())
+                        }["GeneralInfoStep.useEffect.unsubscribe"]).catch({
+                            "GeneralInfoStep.useEffect.unsubscribe": (error)=>console.error('Error creating herramientas list:', error)
+                        }["GeneralInfoStep.useEffect.unsubscribe"]);
+                    }
+                }
+            }["GeneralInfoStep.useEffect.unsubscribe"], {
+                "GeneralInfoStep.useEffect.unsubscribe": (error)=>{
+                    console.error('Error fetching herramientas:', error);
+                    setHerramientasDisponibles(herramientasIniciales.sort());
+                }
+            }["GeneralInfoStep.useEffect.unsubscribe"]);
+            return ({
+                "GeneralInfoStep.useEffect": ()=>unsubscribe()
+            })["GeneralInfoStep.useEffect"];
+        }
+    }["GeneralInfoStep.useEffect"], []);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "GeneralInfoStep.useEffect": ()=>{
             setLoadingLists(true);
@@ -1295,7 +1355,6 @@ function GeneralInfoStep() {
                     }["GeneralInfoStep.useEffect.unsubscribers"]);
                 }
             }["GeneralInfoStep.useEffect.unsubscribers"]);
-            // This is a bit of a hack to know when all listeners have fired at least once
             Promise.all(listNames.map({
                 "GeneralInfoStep.useEffect": (listName)=>new Promise({
                         "GeneralInfoStep.useEffect": (resolve)=>{
@@ -1304,7 +1363,7 @@ function GeneralInfoStep() {
                                 "GeneralInfoStep.useEffect": ()=>resolve(true)
                             }["GeneralInfoStep.useEffect"], {
                                 "GeneralInfoStep.useEffect": ()=>resolve(true)
-                            }["GeneralInfoStep.useEffect"]); // Resolve even on error
+                            }["GeneralInfoStep.useEffect"]);
                         }
                     }["GeneralInfoStep.useEffect"])
             }["GeneralInfoStep.useEffect"])).then({
@@ -1319,6 +1378,22 @@ function GeneralInfoStep() {
     }["GeneralInfoStep.useEffect"], [
         toast
     ]);
+    // Cerrar resultados al hacer click fuera
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "GeneralInfoStep.useEffect": ()=>{
+            const handleClickOutside = {
+                "GeneralInfoStep.useEffect.handleClickOutside": (event)=>{
+                    if (resultsContainerRef.current && !resultsContainerRef.current.contains(event.target) && searchInputRef.current && !searchInputRef.current.contains(event.target)) {
+                        setShowSearchResults(false);
+                    }
+                }
+            }["GeneralInfoStep.useEffect.handleClickOutside"];
+            document.addEventListener('mousedown', handleClickOutside);
+            return ({
+                "GeneralInfoStep.useEffect": ()=>document.removeEventListener('mousedown', handleClickOutside)
+            })["GeneralInfoStep.useEffect"];
+        }
+    }["GeneralInfoStep.useEffect"], []);
     const handleInputChange = (field, value)=>{
         dispatch({
             type: 'UPDATE_GENERAL_INFO',
@@ -1343,29 +1418,102 @@ function GeneralInfoStep() {
         };
         handleInputChange('responsable', newResponsable);
     };
-    const addTool = ()=>{
-        if (newToolName.trim()) {
+    // Agregar herramienta seleccionada
+    const addToolFromList = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "GeneralInfoStep.useCallback[addToolFromList]": (toolName)=>{
+            if (!toolName) return;
+            const alreadyAdded = generalInfo.tools?.some({
+                "GeneralInfoStep.useCallback[addToolFromList]": (t)=>t.name === toolName
+            }["GeneralInfoStep.useCallback[addToolFromList]"]);
+            if (alreadyAdded) {
+                toast({
+                    variant: "destructive",
+                    title: "Ya agregada",
+                    description: "Esta herramienta ya está en la lista."
+                });
+                return;
+            }
             const newTools = [
                 ...generalInfo.tools || [],
                 {
-                    name: newToolName.trim(),
+                    name: toolName,
                     status: 'B'
                 }
             ];
             handleInputChange('tools', newTools);
+            // Limpiar búsqueda y cerrar resultados
+            setSearchTerm('');
+            setShowSearchResults(false);
+            setDisplayCount(ITEMS_PER_PAGE);
+            // Toast de confirmación
+            toast({
+                title: "✓ Agregada",
+                description: `${toolName}`,
+                duration: 1500
+            });
+        }
+    }["GeneralInfoStep.useCallback[addToolFromList]"], [
+        generalInfo.tools,
+        handleInputChange,
+        toast
+    ]);
+    // Agregar nueva herramienta personalizada
+    const addNewToolToFirestore = async ()=>{
+        const trimmedName = newToolName.trim();
+        if (!trimmedName) return;
+        if (herramientasDisponibles.includes(trimmedName)) {
+            toast({
+                variant: "destructive",
+                title: "Ya existe",
+                description: "Esta herramienta ya está en la lista disponible."
+            });
             setNewToolName('');
+            setIsAddingNew(false);
+            return;
+        }
+        try {
+            const herramientasRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"], 'dynamic_lists', 'herramientas');
+            const docSnap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDoc"])(herramientasRef);
+            const currentItems = docSnap.exists() ? docSnap.data().items || [] : [];
+            const updatedItems = [
+                ...currentItems,
+                trimmedName
+            ].sort();
+            await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["setDoc"])(herramientasRef, {
+                items: updatedItems
+            });
+            addToolFromList(trimmedName);
+            toast({
+                title: "✓ Herramienta creada",
+                description: `"${trimmedName}" se agregó al catálogo.`
+            });
+            setNewToolName('');
+            setIsAddingNew(false);
+        } catch (error) {
+            console.error('Error adding tool:', error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No se pudo agregar la herramienta."
+            });
         }
     };
-    const removeTool = (index)=>{
-        const newTools = (generalInfo.tools || []).filter((_, i)=>i !== index);
-        handleInputChange('tools', newTools);
-    };
+    const removeTool = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "GeneralInfoStep.useCallback[removeTool]": (index)=>{
+            const newTools = (generalInfo.tools || []).filter({
+                "GeneralInfoStep.useCallback[removeTool].newTools": (_, i)=>i !== index
+            }["GeneralInfoStep.useCallback[removeTool].newTools"]);
+            handleInputChange('tools', newTools);
+        }
+    }["GeneralInfoStep.useCallback[removeTool]"], [
+        generalInfo.tools,
+        handleInputChange
+    ]);
     const maxDate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
         "GeneralInfoStep.useMemo[maxDate]": ()=>{
             if (!generalInfo.validFrom) return '';
             const startDate = new Date(generalInfo.validFrom);
             const maxDate = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$addDays$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["addDays"])(startDate, 7);
-            // Format for datetime-local which is 'yyyy-MM-ddThh:mm'
             return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(maxDate, "yyyy-MM-dd'T'HH:mm");
         }
     }["GeneralInfoStep.useMemo[maxDate]"], [
@@ -1392,7 +1540,7 @@ function GeneralInfoStep() {
                         children: label
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 123,
+                        lineNumber: 252,
                         columnNumber: 7
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1407,12 +1555,12 @@ function GeneralInfoStep() {
                                     placeholder: loadingLists ? "Cargando..." : `Seleccione una opción...`
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                    lineNumber: 130,
+                                    lineNumber: 259,
                                     columnNumber: 11
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 129,
+                                lineNumber: 258,
                                 columnNumber: 9
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1422,25 +1570,25 @@ function GeneralInfoStep() {
                                             children: item
                                         }, item, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                            lineNumber: 134,
+                                            lineNumber: 263,
                                             columnNumber: 13
                                         }, this)
                                 }["GeneralInfoStep.useCallback[renderDynamicSelect]"])
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 132,
+                                lineNumber: 261,
                                 columnNumber: 9
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 124,
+                        lineNumber: 253,
                         columnNumber: 7
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 122,
+                lineNumber: 251,
                 columnNumber: 5
             }, this)
     }["GeneralInfoStep.useCallback[renderDynamicSelect]"], [
@@ -1449,6 +1597,66 @@ function GeneralInfoStep() {
         loadingLists,
         handleInputChange
     ]);
+    // Filtrar herramientas según búsqueda con optimización
+    const filteredHerramientas = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "GeneralInfoStep.useMemo[filteredHerramientas]": ()=>{
+            if (!searchTerm) return herramientasDisponibles;
+            const searchLower = searchTerm.toLowerCase();
+            return herramientasDisponibles.filter({
+                "GeneralInfoStep.useMemo[filteredHerramientas]": (h)=>h.toLowerCase().includes(searchLower)
+            }["GeneralInfoStep.useMemo[filteredHerramientas]"]);
+        }
+    }["GeneralInfoStep.useMemo[filteredHerramientas]"], [
+        searchTerm,
+        herramientasDisponibles
+    ]);
+    // Herramientas a mostrar con lazy loading
+    const displayedHerramientas = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "GeneralInfoStep.useMemo[displayedHerramientas]": ()=>{
+            return filteredHerramientas.slice(0, displayCount);
+        }
+    }["GeneralInfoStep.useMemo[displayedHerramientas]"], [
+        filteredHerramientas,
+        displayCount
+    ]);
+    // Herramientas para selección rápida (excluir ya agregadas)
+    const quickSelectTools = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useMemo"])({
+        "GeneralInfoStep.useMemo[quickSelectTools]": ()=>{
+            return herramientasDisponibles.slice(0, QUICK_SELECT_COUNT).filter({
+                "GeneralInfoStep.useMemo[quickSelectTools]": (h)=>!generalInfo.tools?.some({
+                        "GeneralInfoStep.useMemo[quickSelectTools]": (t)=>t.name === h
+                    }["GeneralInfoStep.useMemo[quickSelectTools]"])
+            }["GeneralInfoStep.useMemo[quickSelectTools]"]);
+        }
+    }["GeneralInfoStep.useMemo[quickSelectTools]"], [
+        herramientasDisponibles,
+        generalInfo.tools
+    ]);
+    // Manejar scroll para lazy loading
+    const handleScroll = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
+        "GeneralInfoStep.useCallback[handleScroll]": (e)=>{
+            const target = e.target;
+            const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+            if (bottom && displayCount < filteredHerramientas.length) {
+                setDisplayCount({
+                    "GeneralInfoStep.useCallback[handleScroll]": (prev)=>Math.min(prev + ITEMS_PER_PAGE, filteredHerramientas.length)
+                }["GeneralInfoStep.useCallback[handleScroll]"]);
+            }
+        }
+    }["GeneralInfoStep.useCallback[handleScroll]"], [
+        displayCount,
+        filteredHerramientas.length
+    ]);
+    const handleSearchChange = (e)=>{
+        setSearchTerm(e.target.value);
+        setShowSearchResults(true);
+        setDisplayCount(ITEMS_PER_PAGE);
+    };
+    const clearSearch = ()=>{
+        setSearchTerm('');
+        setShowSearchResults(false);
+        setDisplayCount(ITEMS_PER_PAGE);
+    };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "space-y-6",
         children: [
@@ -1460,7 +1668,7 @@ function GeneralInfoStep() {
                         children: "Información General del Permiso"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 145,
+                        lineNumber: 316,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1468,13 +1676,13 @@ function GeneralInfoStep() {
                         children: "Complete todos los campos obligatorios (*)"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 148,
+                        lineNumber: 319,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 144,
+                lineNumber: 315,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1492,7 +1700,7 @@ function GeneralInfoStep() {
                                 children: "Nombre del solicitante"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 158,
+                                lineNumber: 329,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1501,19 +1709,19 @@ function GeneralInfoStep() {
                                 disabled: true
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 159,
+                                lineNumber: 330,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 157,
+                        lineNumber: 328,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 151,
+                lineNumber: 322,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1523,7 +1731,7 @@ function GeneralInfoStep() {
                         children: "Listas de Verificación Complementarias"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 164,
+                        lineNumber: 335,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1537,7 +1745,7 @@ function GeneralInfoStep() {
                                         onCheckedChange: (checked)=>handleWorkTypeChange(key, !!checked)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 168,
+                                        lineNumber: 339,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -1546,24 +1754,24 @@ function GeneralInfoStep() {
                                         children: name
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 173,
+                                        lineNumber: 344,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, key, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 167,
+                                lineNumber: 338,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 165,
+                        lineNumber: 336,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 163,
+                lineNumber: 334,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1573,7 +1781,7 @@ function GeneralInfoStep() {
                         children: "Duración del Permiso"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 182,
+                        lineNumber: 353,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1586,7 +1794,7 @@ function GeneralInfoStep() {
                                         children: "Desde"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 185,
+                                        lineNumber: 356,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1596,13 +1804,13 @@ function GeneralInfoStep() {
                                         min: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(), "yyyy-MM-dd'T'HH:mm")
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 186,
+                                        lineNumber: 357,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 184,
+                                lineNumber: 355,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1612,7 +1820,7 @@ function GeneralInfoStep() {
                                         children: "Hasta"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 194,
+                                        lineNumber: 365,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1624,25 +1832,25 @@ function GeneralInfoStep() {
                                         max: maxDate
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 195,
+                                        lineNumber: 366,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 193,
+                                lineNumber: 364,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 183,
+                        lineNumber: 354,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 181,
+                lineNumber: 352,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1652,7 +1860,7 @@ function GeneralInfoStep() {
                         children: "Descripción de la Tarea - ALCANCE"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 208,
+                        lineNumber: 379,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1663,13 +1871,13 @@ function GeneralInfoStep() {
                         placeholder: "Describa el alcance, descripción y área/equipo..."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 209,
+                        lineNumber: 380,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 207,
+                lineNumber: 378,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1679,132 +1887,436 @@ function GeneralInfoStep() {
                         children: "Equipos y/o Herramientas"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 219,
+                        lineNumber: 390,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg mt-2",
+                        className: "space-y-4 p-4 border rounded-lg mt-2",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "space-y-2",
-                                children: generalInfo.tools?.slice(0, 4).map((tool, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex items-center gap-4 p-2 bg-gray-50 rounded",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "flex-1",
-                                                children: tool.name
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 224,
-                                                columnNumber: 21
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
-                                                size: "icon",
-                                                onClick: ()=>removeTool(index),
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                                                    className: "h-4 w-4 text-destructive"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                    lineNumber: 225,
-                                                    columnNumber: 91
-                                                }, this)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 225,
-                                                columnNumber: 21
-                                            }, this)
-                                        ]
-                                    }, index, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 223,
-                                        columnNumber: 21
-                                    }, this))
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 221,
-                                columnNumber: 13
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "space-y-2",
-                                children: generalInfo.tools?.slice(4, 8).map((tool, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex items-center gap-4 p-2 bg-gray-50 rounded",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "flex-1",
-                                                children: tool.name
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 232,
-                                                columnNumber: 21
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "ghost",
-                                                size: "icon",
-                                                onClick: ()=>removeTool(index + 4),
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
-                                                    className: "h-4 w-4 text-destructive"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                    lineNumber: 233,
-                                                    columnNumber: 95
-                                                }, this)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                                lineNumber: 233,
-                                                columnNumber: 21
-                                            }, this)
-                                        ]
-                                    }, index + 4, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 231,
-                                        columnNumber: 21
-                                    }, this))
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 229,
-                                columnNumber: 15
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "md:col-span-2 flex gap-2",
+                            generalInfo.tools && generalInfo.tools.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "space-y-2 pb-3 border-b",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                        value: newToolName,
-                                        onChange: (e)=>setNewToolName(e.target.value),
-                                        placeholder: "Nueva herramienta..."
-                                    }, void 0, false, {
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-xs text-muted-foreground",
+                                        children: [
+                                            "Seleccionadas (",
+                                            generalInfo.tools.length,
+                                            "):"
+                                        ]
+                                    }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 238,
-                                        columnNumber: 17
+                                        lineNumber: 395,
+                                        columnNumber: 15
                                     }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: addTool,
-                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {}, void 0, false, {
-                                            fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                            lineNumber: 239,
-                                            columnNumber: 43
-                                        }, this)
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex flex-wrap gap-2",
+                                        children: generalInfo.tools.map((tool, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm group",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
+                                                        className: "h-3 w-3 flex-shrink-0"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 399,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "truncate max-w-[150px] sm:max-w-none",
+                                                        children: tool.name
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 400,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                        onClick: ()=>removeTool(index),
+                                                        className: "hover:text-destructive transition-colors flex-shrink-0 ml-1",
+                                                        type: "button",
+                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
+                                                            className: "h-3 w-3"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                            lineNumber: 406,
+                                                            columnNumber: 23
+                                                        }, this)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 401,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, index, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 398,
+                                                columnNumber: 19
+                                            }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 239,
-                                        columnNumber: 17
+                                        lineNumber: 396,
+                                        columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 237,
+                                lineNumber: 394,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "space-y-3",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "relative",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$search$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Search$3e$__["Search"], {
+                                                className: "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 417,
+                                                columnNumber: 15
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
+                                                ref: searchInputRef,
+                                                value: searchTerm,
+                                                onChange: handleSearchChange,
+                                                onFocus: ()=>setShowSearchResults(true),
+                                                placeholder: "Buscar herramienta...",
+                                                className: "pl-9 pr-9",
+                                                autoComplete: "off"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 418,
+                                                columnNumber: 15
+                                            }, this),
+                                            searchTerm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                onClick: clearSearch,
+                                                className: "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground",
+                                                type: "button",
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
+                                                    className: "h-4 w-4"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                    lineNumber: 433,
+                                                    columnNumber: 19
+                                                }, this)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 428,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 416,
+                                        columnNumber: 13
+                                    }, this),
+                                    showSearchResults && searchTerm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        ref: resultsContainerRef,
+                                        className: "absolute z-50 w-[calc(100%-2rem)] md:w-auto md:min-w-[400px] max-w-[600px] mt-1 bg-white border rounded-lg shadow-lg",
+                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            className: "max-h-[50vh] overflow-y-auto overscroll-contain",
+                                            onScroll: handleScroll,
+                                            children: displayedHerramientas.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                                                children: [
+                                                    displayedHerramientas.map((herramienta)=>{
+                                                        const isAdded = generalInfo.tools?.some((t)=>t.name === herramienta);
+                                                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                            onClick: ()=>!isAdded && addToolFromList(herramienta),
+                                                            disabled: isAdded,
+                                                            type: "button",
+                                                            className: `w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm border-b last:border-b-0 ${isAdded ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''}`,
+                                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                                className: "flex items-center justify-between gap-2",
+                                                                children: [
+                                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                        className: "truncate flex-1",
+                                                                        children: herramienta
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                        lineNumber: 463,
+                                                                        columnNumber: 31
+                                                                    }, this),
+                                                                    isAdded ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
+                                                                        className: "h-4 w-4 text-primary flex-shrink-0"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                        lineNumber: 465,
+                                                                        columnNumber: 33
+                                                                    }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                                                                        className: "h-4 w-4 text-muted-foreground flex-shrink-0"
+                                                                    }, void 0, false, {
+                                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                        lineNumber: 467,
+                                                                        columnNumber: 33
+                                                                    }, this)
+                                                                ]
+                                                            }, void 0, true, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 462,
+                                                                columnNumber: 29
+                                                            }, this)
+                                                        }, herramienta, false, {
+                                                            fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                            lineNumber: 453,
+                                                            columnNumber: 27
+                                                        }, this);
+                                                    }),
+                                                    displayCount < filteredHerramientas.length && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                        className: "px-4 py-3 text-center text-xs text-muted-foreground border-t",
+                                                        children: [
+                                                            "Mostrando ",
+                                                            displayCount,
+                                                            " de ",
+                                                            filteredHerramientas.length,
+                                                            "... Desliza para ver más"
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 474,
+                                                        columnNumber: 25
+                                                    }, this)
+                                                ]
+                                            }, void 0, true) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "px-4 py-8 text-center",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                        className: "text-sm text-muted-foreground mb-3",
+                                                        children: [
+                                                            'No se encontró "',
+                                                            searchTerm,
+                                                            '"'
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 481,
+                                                        columnNumber: 23
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                        type: "button",
+                                                        variant: "outline",
+                                                        size: "sm",
+                                                        onClick: ()=>{
+                                                            setNewToolName(searchTerm);
+                                                            setIsAddingNew(true);
+                                                            setShowSearchResults(false);
+                                                        },
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                                                                className: "mr-2 h-4 w-4"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 494,
+                                                                columnNumber: 25
+                                                            }, this),
+                                                            'Agregar "',
+                                                            searchTerm,
+                                                            '"'
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 484,
+                                                        columnNumber: 23
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 480,
+                                                columnNumber: 21
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                            lineNumber: 444,
+                                            columnNumber: 17
+                                        }, this)
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 440,
+                                        columnNumber: 15
+                                    }, this),
+                                    isAddingNew && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex flex-col sm:flex-row gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
+                                                value: newToolName,
+                                                onChange: (e)=>setNewToolName(e.target.value),
+                                                placeholder: "Nombre de la nueva herramienta...",
+                                                onKeyDown: (e)=>{
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addNewToolToFirestore();
+                                                    }
+                                                    if (e.key === 'Escape') {
+                                                        setIsAddingNew(false);
+                                                        setNewToolName('');
+                                                    }
+                                                },
+                                                autoFocus: true,
+                                                className: "flex-1"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 506,
+                                                columnNumber: 17
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex gap-2",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                        type: "button",
+                                                        onClick: addNewToolToFirestore,
+                                                        disabled: !newToolName.trim(),
+                                                        className: "flex-1 sm:flex-none",
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
+                                                                className: "h-4 w-4 sm:mr-2"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 530,
+                                                                columnNumber: 21
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                className: "sm:inline hidden",
+                                                                children: "Guardar"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 531,
+                                                                columnNumber: 21
+                                                            }, this)
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 524,
+                                                        columnNumber: 19
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                        type: "button",
+                                                        variant: "outline",
+                                                        onClick: ()=>{
+                                                            setIsAddingNew(false);
+                                                            setNewToolName('');
+                                                        },
+                                                        className: "flex-1 sm:flex-none",
+                                                        children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
+                                                                className: "h-4 w-4 sm:mr-2"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 542,
+                                                                columnNumber: 21
+                                                            }, this),
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                                className: "sm:inline hidden",
+                                                                children: "Cancelar"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                                lineNumber: 543,
+                                                                columnNumber: 21
+                                                            }, this)
+                                                        ]
+                                                    }, void 0, true, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 533,
+                                                        columnNumber: 19
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 523,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 505,
+                                        columnNumber: 15
+                                    }, this),
+                                    !isAddingNew && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                        type: "button",
+                                        variant: "outline",
+                                        onClick: ()=>setIsAddingNew(true),
+                                        className: "w-full",
+                                        size: "sm",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                                                className: "mr-2 h-4 w-4"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 557,
+                                                columnNumber: 17
+                                            }, this),
+                                            "Crear nueva herramienta"
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 550,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                lineNumber: 415,
+                                columnNumber: 11
+                            }, this),
+                            quickSelectTools.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "pt-3 border-t",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-xs text-muted-foreground mb-2",
+                                        children: "Acceso rápido:"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 566,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "grid grid-cols-2 sm:grid-cols-3 gap-2",
+                                        children: quickSelectTools.map((herramienta)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                                type: "button",
+                                                variant: "outline",
+                                                size: "sm",
+                                                onClick: ()=>addToolFromList(herramienta),
+                                                className: "text-xs justify-start h-auto py-2 px-3",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                                                        className: "mr-1 h-3 w-3 flex-shrink-0"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 577,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "truncate",
+                                                        children: herramienta
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 578,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, herramienta, true, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 569,
+                                                columnNumber: 19
+                                            }, this))
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                        lineNumber: 567,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                lineNumber: 565,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 220,
+                        lineNumber: 391,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 218,
+                lineNumber: 389,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1814,7 +2326,7 @@ function GeneralInfoStep() {
                         children: "No. Trabajadores"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 245,
+                        lineNumber: 588,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1824,7 +2336,7 @@ function GeneralInfoStep() {
                         placeholder: "Cantidad de trabajadores"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 246,
+                        lineNumber: 589,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1832,13 +2344,13 @@ function GeneralInfoStep() {
                         children: "Tener presente que el número de trabajadores aquí relacionados debe ser el mismo número de trabajadores firmantes, si la cantidad de firmantes no es igual el sistema no le permitirá generar el permiso."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 247,
+                        lineNumber: 590,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 244,
+                lineNumber: 587,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1848,7 +2360,7 @@ function GeneralInfoStep() {
                         children: "Responsable del Trabajo / Ejecutor"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 253,
+                        lineNumber: 596,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1861,7 +2373,7 @@ function GeneralInfoStep() {
                                         children: "Nombre completo"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 256,
+                                        lineNumber: 599,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1870,13 +2382,13 @@ function GeneralInfoStep() {
                                         onChange: (e)=>handleResponsableChange('nombre', e.target.value)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 257,
+                                        lineNumber: 600,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 255,
+                                lineNumber: 598,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1886,7 +2398,7 @@ function GeneralInfoStep() {
                                         children: "Cargo"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 260,
+                                        lineNumber: 603,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -1895,13 +2407,13 @@ function GeneralInfoStep() {
                                         onChange: (e)=>handleResponsableChange('cargo', e.target.value)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 261,
+                                        lineNumber: 604,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 259,
+                                lineNumber: 602,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1911,44 +2423,73 @@ function GeneralInfoStep() {
                                         children: "Compañía"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 264,
+                                        lineNumber: 607,
                                         columnNumber: 13
                                     }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                        placeholder: "Compañía",
-                                        value: generalInfo.responsable?.compania,
-                                        onChange: (e)=>handleResponsableChange('compania', e.target.value)
-                                    }, void 0, false, {
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
+                                        value: generalInfo.responsable?.compania || '',
+                                        onValueChange: (value)=>handleResponsableChange('compania', value),
+                                        disabled: loadingLists,
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
+                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
+                                                    placeholder: loadingLists ? "Cargando..." : "Seleccione una compañía..."
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                    lineNumber: 614,
+                                                    columnNumber: 17
+                                                }, this)
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 613,
+                                                columnNumber: 15
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
+                                                children: dynamicLists.empresas.map((empresa)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                                        value: empresa,
+                                                        children: empresa
+                                                    }, empresa, false, {
+                                                        fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                        lineNumber: 618,
+                                                        columnNumber: 19
+                                                    }, this))
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
+                                                lineNumber: 616,
+                                                columnNumber: 15
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                        lineNumber: 265,
+                                        lineNumber: 608,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                                lineNumber: 263,
+                                lineNumber: 606,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                        lineNumber: 254,
+                        lineNumber: 597,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-                lineNumber: 252,
+                lineNumber: 595,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx",
-        lineNumber: 143,
+        lineNumber: 314,
         columnNumber: 5
     }, this);
 }
-_s(GeneralInfoStep, "7b1G8PuQfq97+oygpYLPNtFaKyY=", false, function() {
+_s(GeneralInfoStep, "ZzUG+gMNaUd1Vy6qqviCupO+MYM=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePermitForm"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"]
@@ -2290,12 +2831,24 @@ const eppOptions = {
         {
             id: 'visor_careta',
             label: 'Visor / careta para',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Esmerilado',
+                'Químicos',
+                'Impactos',
+                'Soldadura'
+            ]
         },
         {
             id: 'careta_arco_electrico',
             label: 'Careta arco eléctrico clase',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Clase 1',
+                'Clase 2',
+                'Clase 3',
+                'Clase 4'
+            ]
         },
         {
             id: 'protector_auditivo',
@@ -2309,7 +2862,15 @@ const eppOptions = {
         {
             id: 'mascarilla_filtro',
             label: 'Mascarilla con filtro',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Vapores orgánicos',
+                'Gases ácidos',
+                'Amoniaco',
+                'Formaldehído',
+                'Partículas P100',
+                'Combinado'
+            ]
         },
         {
             id: 'chavo_en_tela_o_carnaza',
@@ -2331,7 +2892,22 @@ const eppOptions = {
         {
             id: 'overol_ignifugo',
             label: 'Overol ignífugo clase',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Clase 1',
+                'Clase 2',
+                'Clase 3'
+            ]
+        },
+        {
+            id: 'dotacion',
+            label: 'Dotación',
+            type: 'select',
+            selectOptions: [
+                'Pantalón y camisa',
+                'Overol',
+                'Pantalón y camiseta'
+            ]
         },
         {
             id: 'chaleco_reflectivo',
@@ -2360,8 +2936,8 @@ const eppOptions = {
         },
         {
             id: 'guante_dielectrico',
-            label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)',
-            type: 'text'
+            label: 'Guante dieléctrico clase',
+            type: 'custom_guante_dielectrico'
         },
         {
             id: 'guante_caucho_nitrilo',
@@ -2371,7 +2947,12 @@ const eppOptions = {
         {
             id: 'guante_cuero_carnaza',
             label: 'Guante de cuero o carnaza',
-            type: 'boolean'
+            type: 'select',
+            selectOptions: [
+                'Tipo carpado',
+                'Tipo vaqueta',
+                'Tipo descarne'
+            ]
         },
         {
             id: 'guante_vaqueta_anticorte',
@@ -2408,7 +2989,12 @@ const eppOptions = {
         {
             id: 'arnes',
             label: 'Arnés',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Cuerpo completo',
+                'Pélvico',
+                'Paracaídas'
+            ]
         },
         {
             id: 'mosqueton',
@@ -2417,23 +3003,46 @@ const eppOptions = {
         },
         {
             id: 'punto_de_anclaje',
-            label: 'Punto de anclaje (cual)',
-            type: 'text'
+            label: 'Punto de anclaje',
+            type: 'select',
+            selectOptions: [
+                'Fijo estructural',
+                'Portátil/Móvil',
+                'Viga',
+                'Anclaje certificado'
+            ]
         },
         {
             id: 'eslinga',
             label: 'Eslinga tipo/absorbedor',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Y con absorbedor',
+                'Simple con absorbedor',
+                'Doble sin absorbedor',
+                'Retráctil'
+            ]
         },
         {
             id: 'linea_vida',
             label: 'Línea de vida',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Vertical',
+                'Horizontal temporal',
+                'Horizontal fija'
+            ]
         },
         {
             id: 'adaptador_anclaje',
             label: 'Adaptador de anclaje',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Viga I',
+                'Viga H',
+                'Esquina/Borde',
+                'Universal'
+            ]
         },
         {
             id: 'aire_respirable',
@@ -2443,7 +3052,14 @@ const eppOptions = {
         {
             id: 'tapete_dielectrico',
             label: 'Tapete dieléctrico clase',
-            type: 'text'
+            type: 'select',
+            selectOptions: [
+                'Clase 0 (hasta 1000V)',
+                'Clase 1 (hasta 7500V)',
+                'Clase 2 (hasta 17000V)',
+                'Clase 3 (hasta 26500V)',
+                'Clase 4 (hasta 36000V)'
+            ]
         },
         {
             id: 'senalizacion',
@@ -2513,7 +3129,7 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                             onCheckedChange: onCheckedChange
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 155,
+                            lineNumber: 154,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -2522,36 +3138,120 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                             children: item.label
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 160,
+                            lineNumber: 159,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 154,
+                    lineNumber: 153,
                     columnNumber: 9
                 }, this),
                 checked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "ml-6 space-y-2",
                     children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                            placeholder: "Tipo",
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
                             value: eppData?.casco_seguridad_tipo || '',
-                            onChange: (e)=>handleSpecChange('casco_seguridad_tipo', e.target.value),
-                            className: "h-8 text-xs"
-                        }, void 0, false, {
+                            onValueChange: (value)=>handleSpecChange('casco_seguridad_tipo', value),
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
+                                    className: "h-8 text-xs",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
+                                        placeholder: "Tipo"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                        lineNumber: 168,
+                                        columnNumber: 17
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 167,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "tipo_1",
+                                            children: "Tipo 1"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 171,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "tipo_2",
+                                            children: "Tipo 2"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 172,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 170,
+                                    columnNumber: 15
+                                }, this)
+                            ]
+                        }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 164,
+                            lineNumber: 163,
                             columnNumber: 13
                         }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                            placeholder: "Clase",
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
                             value: eppData?.casco_seguridad_clase || '',
-                            onChange: (e)=>handleSpecChange('casco_seguridad_clase', e.target.value),
-                            className: "h-8 text-xs"
-                        }, void 0, false, {
+                            onValueChange: (value)=>handleSpecChange('casco_seguridad_clase', value),
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
+                                    className: "h-8 text-xs",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
+                                        placeholder: "Clase"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                        lineNumber: 180,
+                                        columnNumber: 17
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 179,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_e",
+                                            children: "Clase E (Eléctrico)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 183,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_g",
+                                            children: "Clase G (General)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 184,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_c",
+                                            children: "Clase C (Conductivo)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 185,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 182,
+                                    columnNumber: 15
+                                }, this)
+                            ]
+                        }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 170,
+                            lineNumber: 175,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -2564,12 +3264,12 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                                         placeholder: "Barbuquejo"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 181,
+                                        lineNumber: 193,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 180,
+                                    lineNumber: 192,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -2579,7 +3279,7 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                                             children: "Con barbuquejo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 184,
+                                            lineNumber: 196,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
@@ -2587,35 +3287,226 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                                             children: "Sin barbuquejo"
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 185,
+                                            lineNumber: 197,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 183,
+                                    lineNumber: 195,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 176,
+                            lineNumber: 188,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 163,
+                    lineNumber: 162,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-            lineNumber: 153,
+            lineNumber: 152,
             columnNumber: 7
         }, this);
     }
-    // Manejo para campos con select (como protector auditivo)
+    // Manejo especial para guante dieléctrico
+    if (item.type === 'custom_guante_dielectrico') {
+        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+            className: "flex flex-col gap-2",
+            children: [
+                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "flex items-center space-x-2",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
+                            id: item.id,
+                            checked: checked,
+                            onCheckedChange: onCheckedChange
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                            lineNumber: 211,
+                            columnNumber: 11
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                            htmlFor: item.id,
+                            className: "text-sm",
+                            children: item.label
+                        }, void 0, false, {
+                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                            lineNumber: 216,
+                            columnNumber: 11
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                    lineNumber: 210,
+                    columnNumber: 9
+                }, this),
+                checked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    className: "ml-6 space-y-2",
+                    children: [
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
+                            value: eppData?.guante_dielectrico_clase || '',
+                            onValueChange: (value)=>handleSpecChange('guante_dielectrico_clase', value),
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
+                                    className: "h-8 text-xs",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
+                                        placeholder: "Seleccione clase..."
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                        lineNumber: 225,
+                                        columnNumber: 17
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 224,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_00",
+                                            children: "Clase 00 (hasta 500V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 228,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_0",
+                                            children: "Clase 0 (hasta 1000V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 229,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_1",
+                                            children: "Clase 1 (hasta 7500V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 230,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_2",
+                                            children: "Clase 2 (hasta 17000V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 231,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_3",
+                                            children: "Clase 3 (hasta 26500V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 232,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                            value: "clase_4",
+                                            children: "Clase 4 (hasta 36000V)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 233,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 227,
+                                    columnNumber: 15
+                                }, this)
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                            lineNumber: 220,
+                            columnNumber: 13
+                        }, this),
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "text-xs text-muted-foreground space-y-1",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex items-center gap-2",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
+                                            id: "guantin",
+                                            checked: eppData?.guante_dielectrico_guantin || false,
+                                            onCheckedChange: (checked)=>handleSpecChange('guante_dielectrico_guantin', checked)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 238,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                                            htmlFor: "guantin",
+                                            className: "font-normal",
+                                            children: "Guantín (protector interno)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 243,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 237,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex items-center gap-2",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
+                                            id: "proteccion_mecanica",
+                                            checked: eppData?.guante_dielectrico_proteccion || false,
+                                            onCheckedChange: (checked)=>handleSpecChange('guante_dielectrico_proteccion', checked)
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 246,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
+                                            htmlFor: "proteccion_mecanica",
+                                            className: "font-normal",
+                                            children: "Protección mecánica (sobre-guante)"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                            lineNumber: 251,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                                    lineNumber: 245,
+                                    columnNumber: 15
+                                }, this)
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                            lineNumber: 236,
+                            columnNumber: 13
+                        }, this)
+                    ]
+                }, void 0, true, {
+                    fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+                    lineNumber: 219,
+                    columnNumber: 11
+                }, this)
+            ]
+        }, void 0, true, {
+            fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
+            lineNumber: 209,
+            columnNumber: 7
+        }, this);
+    }
+    // Manejo para campos con select
     if (item.type === 'select' && item.selectOptions) {
         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
             className: "flex flex-col gap-2",
@@ -2629,7 +3520,7 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                             onCheckedChange: onCheckedChange
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 199,
+                            lineNumber: 265,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -2638,64 +3529,64 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                             children: item.label
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 204,
+                            lineNumber: 270,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 198,
+                    lineNumber: 264,
                     columnNumber: 9
                 }, this),
                 checked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "ml-6",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
-                        value: eppData?.[`${item.id}_tipo`] || '',
-                        onValueChange: (value)=>handleSpecChange(`${item.id}_tipo`, value),
+                        value: eppData?.[`${item.id}_spec`] || '',
+                        onValueChange: (value)=>handleSpecChange(`${item.id}_spec`, value),
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
                                 className: "h-8 text-xs",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {
-                                    placeholder: "Seleccione tipo..."
+                                    placeholder: "Seleccione opción..."
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 213,
+                                    lineNumber: 279,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 212,
+                                lineNumber: 278,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
                                 children: item.selectOptions.map((option)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                        value: option.toLowerCase(),
+                                        value: option.toLowerCase().replace(/ /g, '_'),
                                         children: option
                                     }, option, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 217,
+                                        lineNumber: 283,
                                         columnNumber: 19
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 215,
+                                lineNumber: 281,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 208,
+                        lineNumber: 274,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 207,
+                    lineNumber: 273,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-            lineNumber: 197,
+            lineNumber: 263,
             columnNumber: 7
         }, this);
     }
@@ -2712,7 +3603,7 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                         onCheckedChange: onCheckedChange
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 233,
+                        lineNumber: 299,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -2721,13 +3612,13 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                         children: item.label
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 238,
+                        lineNumber: 304,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 232,
+                lineNumber: 298,
                 columnNumber: 7
             }, this),
             item.type === 'text' && checked && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2738,13 +3629,13 @@ const EppItem = ({ item, checked, onCheckedChange, eppData, onEppChange })=>{
                 onChange: (e)=>onEppChange(`${item.id}_spec`, e.target.value)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 241,
+                lineNumber: 307,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 231,
+        lineNumber: 297,
         columnNumber: 5
     }, this);
 };
@@ -2759,16 +3650,18 @@ const EppCategory = ({ category, items, eppData, onEppChange })=>{
             newEpp[id] = true;
         } else {
             delete newEpp[id];
-            if (type === 'text') {
+            if (type === 'text' || type === 'select') {
                 delete newEpp[`${id}_spec`];
-            }
-            if (type === 'select') {
-                delete newEpp[`${id}_tipo`];
             }
             if (type === 'custom_casco') {
                 delete newEpp[`casco_seguridad_tipo`];
                 delete newEpp[`casco_seguridad_clase`];
                 delete newEpp[`casco_seguridad_barbuquejo`];
+            }
+            if (type === 'custom_guante_dielectrico') {
+                delete newEpp[`guante_dielectrico_clase`];
+                delete newEpp[`guante_dielectrico_guantin`];
+                delete newEpp[`guante_dielectrico_proteccion`];
             }
         }
         onEppChange('epp', newEpp);
@@ -2788,7 +3681,7 @@ const EppCategory = ({ category, items, eppData, onEppChange })=>{
                 children: category
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 296,
+                lineNumber: 363,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2801,18 +3694,18 @@ const EppCategory = ({ category, items, eppData, onEppChange })=>{
                         onEppChange: handleSpecChange
                     }, item.id, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 299,
+                        lineNumber: 366,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 297,
+                lineNumber: 364,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 295,
+        lineNumber: 362,
         columnNumber: 5
     }, this);
 };
@@ -2862,7 +3755,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                 children: "Otros Peligros"
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 343,
+                lineNumber: 410,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2879,7 +3772,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                             children: item.peligro
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 348,
+                                            lineNumber: 415,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2887,13 +3780,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                             children: item.descripcion
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 349,
+                                            lineNumber: 416,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 347,
+                                    lineNumber: 414,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2905,18 +3798,18 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         className: "h-4 w-4 text-destructive"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 357,
+                                        lineNumber: 424,
                                         columnNumber: 15
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 351,
+                                    lineNumber: 418,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, `peligro-${index}`, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 346,
+                            lineNumber: 413,
                             columnNumber: 11
                         }, this)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2929,7 +3822,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         children: "Nombre del nuevo peligro"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 364,
+                                        lineNumber: 431,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -2941,13 +3834,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         type: "text"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 365,
+                                        lineNumber: 432,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 363,
+                                lineNumber: 430,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2957,7 +3850,7 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         children: "Descripción y control del peligro"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 375,
+                                        lineNumber: 442,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -2969,13 +3862,13 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         rows: 3
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 376,
+                                        lineNumber: 443,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 374,
+                                lineNumber: 441,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2988,32 +3881,32 @@ const OtrosPeligrosSection = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$pr
                                         className: "mr-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 391,
+                                        lineNumber: 458,
                                         columnNumber: 13
                                     }, this),
                                     " Agregar Peligro"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 385,
+                                lineNumber: 452,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 362,
+                        lineNumber: 429,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 344,
+                lineNumber: 411,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 342,
+        lineNumber: 409,
         columnNumber: 5
     }, this);
 }, "69XdhHFT/pMEYNzTUv91PN55EXU="));
@@ -3035,25 +3928,25 @@ const SectionWrapper = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$
                             children: title
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 421,
+                            lineNumber: 488,
                             columnNumber: 9
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                             className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 422,
+                            lineNumber: 489,
                             columnNumber: 9
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 417,
+                    lineNumber: 484,
                     columnNumber: 7
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 416,
+                lineNumber: 483,
                 columnNumber: 5
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -3061,13 +3954,13 @@ const SectionWrapper = /*#__PURE__*/ __TURBOPACK__imported__module__$5b$project$
                 children: children
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 425,
+                lineNumber: 492,
                 columnNumber: 5
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 415,
+        lineNumber: 482,
         columnNumber: 3
     }, this));
 _c3 = SectionWrapper;
@@ -3140,7 +4033,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: "Análisis de Peligros y ATS"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 463,
+                        lineNumber: 530,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3148,13 +4041,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: "Identifique los peligros, controles y EPP necesarios para la tarea."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 466,
+                        lineNumber: 533,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 462,
+                lineNumber: 529,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3168,7 +4061,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         children: 'Coloque "SI" o "NO" para los peligros envueltos en el trabajo. Cuando asigne un "SI", se desplegarán los controles recomendados.'
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 477,
+                        lineNumber: 544,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3188,25 +4081,25 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                     children: category
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                    lineNumber: 492,
+                                                    lineNumber: 559,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                                     className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                    lineNumber: 493,
+                                                    lineNumber: 560,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                            lineNumber: 488,
+                                            lineNumber: 555,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 487,
+                                        lineNumber: 554,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -3223,7 +4116,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: hazard.label
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 500,
+                                                                lineNumber: 567,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -3239,7 +4132,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 id: `${hazard.id}-si`
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 509,
+                                                                                lineNumber: 576,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -3247,13 +4140,13 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 children: "SI"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 510,
+                                                                                lineNumber: 577,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                        lineNumber: 508,
+                                                                        lineNumber: 575,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3264,7 +4157,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 id: `${hazard.id}-no`
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 513,
+                                                                                lineNumber: 580,
                                                                                 columnNumber: 27
                                                                             }, this),
                                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -3272,25 +4165,25 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                                 children: "NO"
                                                                             }, void 0, false, {
                                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                                lineNumber: 514,
+                                                                                lineNumber: 581,
                                                                                 columnNumber: 27
                                                                             }, this)
                                                                         ]
                                                                     }, void 0, true, {
                                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                        lineNumber: 512,
+                                                                        lineNumber: 579,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 503,
+                                                                lineNumber: 570,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                        lineNumber: 499,
+                                                        lineNumber: 566,
                                                         columnNumber: 21
                                                     }, this),
                                                     anexoATS.peligros?.[hazard.id] === 'si' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3301,7 +4194,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: "CONTROL RECOMENDADO:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 520,
+                                                                lineNumber: 587,
                                                                 columnNumber: 25
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3309,35 +4202,35 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                                                 children: hazard.control
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                                lineNumber: 521,
+                                                                lineNumber: 588,
                                                                 columnNumber: 25
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                        lineNumber: 519,
+                                                        lineNumber: 586,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, hazard.id, true, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                                lineNumber: 498,
+                                                lineNumber: 565,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 496,
+                                        lineNumber: 563,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, category, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 482,
+                                lineNumber: 549,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 480,
+                        lineNumber: 547,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(OtrosPeligrosSection, {
@@ -3345,7 +4238,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                         onUpdatePeligros: handleUpdatePeligrosAdicionales
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 531,
+                        lineNumber: 598,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3356,7 +4249,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                 children: "PELIGROS ADICIONALES A LA ACTIVIDAD Y MEDIDAS DE CONTROL"
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 538,
+                                lineNumber: 605,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -3366,39 +4259,39 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                         children: "Definir el área adecuada para tomar agua, refrigerio, uso del baño (si es necesario). No hacer consumo de alimentos en el área de operación."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 540,
+                                        lineNumber: 607,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
                                         children: "Todos los trabajadores envueltos en la actividad deben conocer y cumplir las reglas de seguridad de la compañía así como las propias del área."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 541,
+                                        lineNumber: 608,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
                                         children: "Cualquier cambio en las condiciones del trabajo se deberá suspender actividades y realizar un ATS complementario."
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                        lineNumber: 542,
+                                        lineNumber: 609,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                lineNumber: 539,
+                                lineNumber: 606,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                        lineNumber: 537,
+                        lineNumber: 604,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 471,
+                lineNumber: 538,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3415,17 +4308,17 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                             onEppChange: handleEppChange
                         }, category, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 555,
+                            lineNumber: 622,
                             columnNumber: 13
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 553,
+                    lineNumber: 620,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 547,
+                lineNumber: 614,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
@@ -3444,7 +4337,7 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     onCheckedChange: (checked)=>handleJustificacionChange(option.id, !!checked)
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 575,
+                                    lineNumber: 642,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
@@ -3453,29 +4346,29 @@ function AtsStep({ anexoATS, onUpdateATS }) {
                                     children: option.label
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                                    lineNumber: 580,
+                                    lineNumber: 647,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, option.id, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                            lineNumber: 574,
+                            lineNumber: 641,
                             columnNumber: 13
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                    lineNumber: 572,
+                    lineNumber: 639,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-                lineNumber: 566,
+                lineNumber: 633,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/AtsStep.tsx",
-        lineNumber: 461,
+        lineNumber: 528,
         columnNumber: 5
     }, this);
 }
@@ -12213,7 +13106,7 @@ const DetailField = ({ label, value })=>/*#__PURE__*/ (0, __TURBOPACK__imported_
                 children: label
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                lineNumber: 13,
+                lineNumber: 14,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -12221,13 +13114,13 @@ const DetailField = ({ label, value })=>/*#__PURE__*/ (0, __TURBOPACK__imported_
                 children: value || 'N/A'
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                lineNumber: 14,
+                lineNumber: 15,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-        lineNumber: 12,
+        lineNumber: 13,
         columnNumber: 5
     }, this);
 _c = DetailField;
@@ -12270,7 +13163,7 @@ function ReviewStep() {
                         children: "Revisión Final"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 51,
+                        lineNumber: 52,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -12278,13 +13171,13 @@ function ReviewStep() {
                         children: "Por favor, revise toda la información antes de guardar el permiso."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 54,
+                        lineNumber: 55,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                lineNumber: 50,
+                lineNumber: 51,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -12303,27 +13196,27 @@ function ReviewStep() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 63,
+                                                lineNumber: 64,
                                                 columnNumber: 67
                                             }, this),
                                             " Información General"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 63,
+                                        lineNumber: 64,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                         className: "h-4 w-4 transition-transform data-[state=open]:rotate-180"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 64,
+                                        lineNumber: 65,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 62,
+                                lineNumber: 63,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -12337,7 +13230,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.nombreSolicitante
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 68,
+                                                lineNumber: 69,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12345,7 +13238,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.empresa
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 69,
+                                                lineNumber: 70,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12353,7 +13246,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.areaEspecifica
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 70,
+                                                lineNumber: 71,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12361,7 +13254,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.planta
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 71,
+                                                lineNumber: 72,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12369,7 +13262,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.proceso
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 72,
+                                                lineNumber: 73,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12377,7 +13270,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.contrato
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 73,
+                                                lineNumber: 74,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12385,7 +13278,7 @@ function ReviewStep() {
                                                 value: state.generalInfo.validFrom ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(state.generalInfo.validFrom), 'PPpp') : 'N/A'
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 74,
+                                                lineNumber: 75,
                                                 columnNumber: 29
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12393,13 +13286,13 @@ function ReviewStep() {
                                                 value: state.generalInfo.validUntil ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(state.generalInfo.validUntil), 'PPpp') : 'N/A'
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 75,
+                                                lineNumber: 76,
                                                 columnNumber: 29
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 67,
+                                        lineNumber: 68,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12409,12 +13302,12 @@ function ReviewStep() {
                                             children: getWorkTypesString()
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                            lineNumber: 77,
+                                            lineNumber: 78,
                                             columnNumber: 84
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 77,
+                                        lineNumber: 78,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12424,12 +13317,12 @@ function ReviewStep() {
                                             children: state.generalInfo.workDescription
                                         }, void 0, false, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                            lineNumber: 78,
+                                            lineNumber: 79,
                                             columnNumber: 87
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 78,
+                                        lineNumber: 79,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12437,7 +13330,7 @@ function ReviewStep() {
                                         value: state.generalInfo.tools?.map((t)=>t.name).join(', ') || 'Ninguna'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 79,
+                                        lineNumber: 80,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12445,7 +13338,7 @@ function ReviewStep() {
                                         value: state.generalInfo.numTrabajadores
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 80,
+                                        lineNumber: 81,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12453,19 +13346,19 @@ function ReviewStep() {
                                         value: `${state.generalInfo.responsable?.nombre} (${state.generalInfo.responsable?.cargo})`
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 81,
+                                        lineNumber: 82,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 66,
+                                lineNumber: 67,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 61,
+                        lineNumber: 62,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Collapsible"], {
@@ -12480,27 +13373,27 @@ function ReviewStep() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 88,
+                                                lineNumber: 89,
                                                 columnNumber: 67
                                             }, this),
                                             " Análisis de Trabajo Seguro (ATS)"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 88,
+                                        lineNumber: 89,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                         className: "h-4 w-4 transition-transform data-[state=open]:rotate-180"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 89,
+                                        lineNumber: 90,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 87,
+                                lineNumber: 88,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -12511,7 +13404,7 @@ function ReviewStep() {
                                         value: getCheckedItems(state.anexoATS?.peligros).join(', ') || 'Ninguno'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 92,
+                                        lineNumber: 93,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12519,7 +13412,7 @@ function ReviewStep() {
                                         value: getCheckedItems(state.anexoATS?.epp).join(', ') || 'Ninguno'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 93,
+                                        lineNumber: 94,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DetailField, {
@@ -12527,19 +13420,19 @@ function ReviewStep() {
                                         value: getCheckedItems(state.anexoATS?.justificacion).join(', ') || 'Ninguna'
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 94,
+                                        lineNumber: 95,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 91,
+                                lineNumber: 92,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 86,
+                        lineNumber: 87,
                         columnNumber: 17
                     }, this),
                     state.selectedWorkTypes.alturas && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Collapsible"], {
@@ -12554,27 +13447,27 @@ function ReviewStep() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 102,
+                                                lineNumber: 103,
                                                 columnNumber: 71
                                             }, this),
                                             " Anexo: Trabajo en Alturas"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 102,
+                                        lineNumber: 103,
                                         columnNumber: 29
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                         className: "h-4 w-4 transition-transform data-[state=open]:rotate-180"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 103,
+                                        lineNumber: 104,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 101,
+                                lineNumber: 102,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -12584,18 +13477,18 @@ function ReviewStep() {
                                     value: getCheckedItems(state.anexoAltura?.aspectosSeguridad).join(', ') || 'Ninguno'
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                    lineNumber: 106,
+                                    lineNumber: 107,
                                     columnNumber: 29
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 105,
+                                lineNumber: 106,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 100,
+                        lineNumber: 101,
                         columnNumber: 22
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Collapsible"], {
@@ -12610,7 +13503,7 @@ function ReviewStep() {
                                                 size: 16
                                             }, void 0, false, {
                                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                lineNumber: 114,
+                                                lineNumber: 115,
                                                 columnNumber: 66
                                             }, this),
                                             " Trabajadores (",
@@ -12619,20 +13512,20 @@ function ReviewStep() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 114,
+                                        lineNumber: 115,
                                         columnNumber: 24
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                                         className: "h-4 w-4 transition-transform data-[state=open]:rotate-180"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                        lineNumber: 115,
+                                        lineNumber: 116,
                                         columnNumber: 24
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 113,
+                                lineNumber: 114,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
@@ -12655,13 +13548,13 @@ function ReviewStep() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                            lineNumber: 121,
+                                                            lineNumber: 122,
                                                             columnNumber: 54
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                    lineNumber: 121,
+                                                    lineNumber: 122,
                                                     columnNumber: 37
                                                 }, this),
                                                 w.firmaApertura ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
@@ -12670,42 +13563,42 @@ function ReviewStep() {
                                                     children: "Firmado"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                    lineNumber: 122,
+                                                    lineNumber: 123,
                                                     columnNumber: 56
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
                                                     variant: "destructive",
                                                     children: "Firma Pendiente"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                                    lineNumber: 122,
+                                                    lineNumber: 123,
                                                     columnNumber: 139
                                                 }, this)
                                             ]
                                         }, i, true, {
                                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                            lineNumber: 120,
+                                            lineNumber: 121,
                                             columnNumber: 33
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                    lineNumber: 118,
+                                    lineNumber: 119,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                lineNumber: 117,
+                                lineNumber: 118,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 112,
+                        lineNumber: 113,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                lineNumber: 59,
+                lineNumber: 60,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -12719,19 +13612,19 @@ function ReviewStep() {
                                     size: 20
                                 }, void 0, false, {
                                     fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                                    lineNumber: 133,
+                                    lineNumber: 134,
                                     columnNumber: 25
                                 }, this),
                                 "Próximos Pasos"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                            lineNumber: 132,
+                            lineNumber: 133,
                             columnNumber: 21
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 131,
+                        lineNumber: 132,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -12740,24 +13633,24 @@ function ReviewStep() {
                             children: "Al guardar, se creará un borrador del permiso. Luego será redirigido a la página de detalles para que el solicitante principal pueda firmar y activar el flujo de aprobación."
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                            lineNumber: 138,
+                            lineNumber: 139,
                             columnNumber: 22
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                        lineNumber: 137,
+                        lineNumber: 138,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-                lineNumber: 130,
+                lineNumber: 131,
                 columnNumber: 14
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/ReviewStep.tsx",
-        lineNumber: 49,
+        lineNumber: 50,
         columnNumber: 9
     }, this);
 }
@@ -12774,1848 +13667,15 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
 }}),
-"[project]/src/app/(app)/permits/create/page.tsx [app-client] (ecmascript)": ((__turbopack_context__) => {
-"use strict";
+"[project]/src/app/(app)/permits/create/page.tsx [app-client] (ecmascript)": (function(__turbopack_context__) {
 
-var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
+var { g: global, __dirname, k: __turbopack_refresh__, m: module, e: exports } = __turbopack_context__;
 {
-__turbopack_context__.s({
-    "default": (()=>CreatePermitPage)
-});
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$user$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-user.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/hooks/use-toast.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$data$3a$2f5de7__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/data:2f5de7 [app-client] (ecmascript) <text/javascript>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2d$big$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/circle-check-big.js [app-client] (ecmascript) <export default as CheckCircle>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-client] (ecmascript) <export default as Loader2>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/x.js [app-client] (ecmascript) <export default as X>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/signature.js [app-client] (ecmascript) <export default as Signature>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$right$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowRight$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/arrow-right.js [app-client] (ecmascript) <export default as ArrowRight>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/arrow-left.js [app-client] (ecmascript) <export default as ArrowLeft>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$save$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Save$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/save.js [app-client] (ecmascript) <export default as Save>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/alert-dialog.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/signature-pad.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/image.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/form-context.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$GeneralInfoStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/GeneralInfoStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AtsStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AtsStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoAlturaStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AnexoAlturaStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoConfinadoStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoEnergiaStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AnexoEnergiaStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoIzajeStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AnexoIzajeStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoExcavacionesStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/AnexoExcavacionesStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$VerificacionPeligrosStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/VerificacionPeligrosStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$EppEmergenciasStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$WorkersStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/WorkersStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$ReviewStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/app/(app)/permits/create/components/ReviewStep.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/input.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/label.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/select.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/checkbox.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$esm$2f$index$2e$esm$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/esm/index.esm.js [app-client] (ecmascript) <module evaluation>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.esm2017.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/firebase.ts [app-client] (ecmascript)");
-;
-var _s = __turbopack_context__.k.signature();
-'use client';
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-const workerRoles = [
-    "Trabajador autorizado",
-    "Ayudante de seguridad",
-    "Coordinador de TA",
-    "Supervisor de EC",
-    "Soldador",
-    "Operador de equipo para elevación de personas",
-    "Vigía",
-    "Otro"
-];
-function CreatePermitWizard() {
-    _s();
-    const { user } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$user$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useUser"])();
-    const { toast } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"])();
-    const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
-    const searchParams = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSearchParams"])();
-    const { state: formData, dispatch } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePermitForm"])();
-    const [draftId, setDraftId] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(undefined);
-    const [isLoadingForm, setIsLoadingForm] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
-    const [step, setStep] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
-    const [isSubmitting, setIsSubmitting] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [isSavingDraft, setIsSavingDraft] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [showSuccessDialog, setShowSuccessDialog] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [newPermitInfo, setNewPermitInfo] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])({
-        id: '',
-        number: ''
-    });
-    // Worker Dialog State
-    const [isWorkerDialogOpen, setIsWorkerDialogOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [currentWorker, setCurrentWorker] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [editingWorkerIndex, setEditingWorkerIndex] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    // Signature Pad State
-    const [isSignaturePadOpen, setIsSignaturePadOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
-    const [signatureTarget, setSignatureTarget] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [signatureContext, setSignatureContext] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    // Scroll to top on step change
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "CreatePermitWizard.useEffect": ()=>{
-            window.scrollTo(0, 0);
-        }
-    }["CreatePermitWizard.useEffect"], [
-        step
-    ]);
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "CreatePermitWizard.useEffect": ()=>{
-            const editId = searchParams.get('edit');
-            if (editId) {
-                setIsLoadingForm(true);
-                const fetchDraft = {
-                    "CreatePermitWizard.useEffect.fetchDraft": async ()=>{
-                        try {
-                            const docRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$firebase$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["db"], 'permits', editId);
-                            const docSnap = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDoc"])(docRef);
-                            if (docSnap.exists() && (docSnap.data().status === 'borrador' || docSnap.data().status === 'pendiente_revision')) {
-                                const draftData = docSnap.data();
-                                dispatch({
-                                    type: 'SET_ENTIRE_STATE',
-                                    payload: draftData
-                                });
-                                setDraftId(editId);
-                            } else {
-                                toast({
-                                    variant: "destructive",
-                                    title: "Permiso no encontrado o no editable",
-                                    description: "El permiso que intenta editar no existe o ya no está en estado de borrador."
-                                });
-                                router.push('/permits');
-                            }
-                        } catch (error) {
-                            console.error("Error cargando borrador:", error);
-                            toast({
-                                variant: "destructive",
-                                title: "Error al Cargar",
-                                description: "No se pudo cargar la información del permiso."
-                            });
-                        } finally{
-                            setIsLoadingForm(false);
-                        }
-                    }
-                }["CreatePermitWizard.useEffect.fetchDraft"];
-                fetchDraft();
-            } else {
-                setIsLoadingForm(false);
-            }
-        }
-    }["CreatePermitWizard.useEffect"], [
-        searchParams,
-        dispatch,
-        router,
-        toast
-    ]);
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "CreatePermitWizard.useEffect": ()=>{
-            if (user && !formData.generalInfo.nombreSolicitante) {
-                dispatch({
-                    type: 'UPDATE_GENERAL_INFO',
-                    payload: {
-                        nombreSolicitante: user.displayName || ''
-                    }
-                });
-            }
-        }
-    }["CreatePermitWizard.useEffect"], [
-        user,
-        formData.generalInfo.nombreSolicitante,
-        dispatch
-    ]);
-    const openNewWorkerDialog = ()=>{
-        setEditingWorkerIndex(null);
-        setCurrentWorker({
-            nombre: '',
-            cedula: '',
-            rol: '',
-            otroRol: '',
-            eps: '',
-            arl: '',
-            pensiones: '',
-            tsaTec: {
-                tec: false,
-                tsa: false
-            },
-            entrenamiento: {
-                tec: false,
-                tsa: false,
-                otro: false,
-                otroCual: ''
-            },
-            firmaApertura: '',
-            firmaCierre: ''
-        });
-        setIsWorkerDialogOpen(true);
-    };
-    const openEditWorkerDialog = (worker, index)=>{
-        setEditingWorkerIndex(index);
-        setCurrentWorker(worker);
-        setIsWorkerDialogOpen(true);
-    };
-    const handleSaveWorker = ()=>{
-        if (!currentWorker || !currentWorker.nombre || !currentWorker.cedula || !currentWorker.rol) {
-            toast({
-                variant: 'destructive',
-                title: 'Campos Incompletos',
-                description: 'Nombre, cédula y rol son requeridos.'
-            });
-            return;
-        }
-        if (currentWorker.rol === 'Otro' && !currentWorker.otroRol?.trim()) {
-            toast({
-                variant: 'destructive',
-                title: 'Especificación Requerida',
-                description: 'Por favor, especifique el rol "Otro".'
-            });
-            return;
-        }
-        if (editingWorkerIndex !== null) {
-            const updatedWorkers = [
-                ...formData.workers || []
-            ];
-            updatedWorkers[editingWorkerIndex] = currentWorker;
-            dispatch({
-                type: 'SET_WORKERS',
-                payload: updatedWorkers
-            });
-            toast({
-                title: 'Trabajador Actualizado'
-            });
-        } else {
-            dispatch({
-                type: 'ADD_WORKER',
-                payload: currentWorker
-            });
-            toast({
-                title: 'Trabajador Agregado'
-            });
-        }
-        setIsWorkerDialogOpen(false);
-        setCurrentWorker(null);
-        setEditingWorkerIndex(null);
-    };
-    const removeWorker = (index)=>{
-        const updatedWorkers = (formData.workers || []).filter((_, i)=>i !== index);
-        dispatch({
-            type: 'SET_WORKERS',
-            payload: updatedWorkers
-        });
-    };
-    const handleWorkerInputChange = (field, value)=>{
-        setCurrentWorker((prev)=>prev ? {
-                ...prev,
-                [field]: value
-            } : null);
-    };
-    const openSignaturePad = (target, context)=>{
-        setSignatureTarget(target);
-        setSignatureContext(context);
-        setIsSignaturePadOpen(true);
-    };
-    const handleSaveSignature = (signatureDataUrl)=>{
-        if (!signatureTarget) return;
-        if (signatureTarget === 'worker.firmaApertura' || signatureTarget === 'worker.firmaCierre') {
-            setCurrentWorker((prev)=>prev ? {
-                    ...prev,
-                    [signatureTarget.split('.')[1]]: signatureDataUrl
-                } : null);
-        } else {
-            dispatch({
-                type: 'UPDATE_SIGNATURE',
-                payload: {
-                    target: signatureTarget,
-                    signature: signatureDataUrl,
-                    context: signatureContext
-                }
-            });
-        }
-        setIsSignaturePadOpen(false);
-        setSignatureTarget(null);
-        setSignatureContext(null);
-    };
-    const handleSaveDraft = async ()=>{
-        if (!user) {
-            toast({
-                variant: 'destructive',
-                title: 'Error de Autenticación'
-            });
-            return;
-        }
-        setIsSavingDraft(true);
-        try {
-            const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$data$3a$2f5de7__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["savePermitDraft"])({
-                userId: user.uid,
-                userDisplayName: user.displayName || null,
-                userEmail: user.email || null,
-                userPhotoURL: user.photoURL || null,
-                draftId: draftId,
-                ...formData
-            });
-            if (result.success && result.permitId) {
-                if (!draftId) {
-                    setDraftId(result.permitId);
-                }
-                toast({
-                    title: "Borrador Guardado",
-                    description: "Tu progreso ha sido guardado."
-                });
-            } else {
-                throw new Error(result.error || 'No se pudo guardar el borrador.');
-            }
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Error al Guardar',
-                description: error.message
-            });
-        } finally{
-            setIsSavingDraft(false);
-        }
-    };
-    const colors = {
-        primary: 'hsl(var(--primary))',
-        dark: 'hsl(var(--primary))',
-        success: 'hsl(var(--accent))'
-    };
-    const baseSteps = [
-        {
-            label: "Info General",
-            condition: true
-        },
-        {
-            label: "ATS",
-            condition: true
-        },
-        {
-            label: "Anexo Altura",
-            condition: formData.selectedWorkTypes.alturas
-        },
-        {
-            label: "Anexo Confinado",
-            condition: formData.selectedWorkTypes.confinado
-        },
-        {
-            label: "Anexo Energías",
-            condition: formData.selectedWorkTypes.energia
-        },
-        {
-            label: "Anexo Izaje",
-            condition: formData.selectedWorkTypes.izaje
-        },
-        {
-            label: "Anexo Excavaciones",
-            condition: formData.selectedWorkTypes.excavacion
-        },
-        {
-            label: "Verificación Peligros",
-            condition: false
-        },
-        {
-            label: "Emergencias",
-            condition: true
-        },
-        {
-            label: "Trabajadores",
-            condition: true
-        },
-        {
-            label: "Revisión",
-            condition: true
-        }
-    ];
-    const steps = baseSteps.filter((s)=>s.condition);
-    const currentStepInfo = steps[step - 1];
-    const canProceed = ()=>{
-        const currentLabel = steps[step - 1]?.label;
-        if (currentLabel === 'Info General') {
-            const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores, responsable } = formData.generalInfo;
-            const missingFields = [];
-            if (!areaEspecifica) missingFields.push("Área específica");
-            if (!planta) missingFields.push("Planta");
-            if (!nombreSolicitante) missingFields.push("Nombre solicitante");
-            if (!validFrom) missingFields.push("Fecha de inicio");
-            if (!validUntil) missingFields.push("Fecha de fin");
-            if (!workDescription?.trim()) missingFields.push("Descripción de la Tarea");
-            if (!numTrabajadores) missingFields.push("No. Trabajadores");
-            if (!responsable?.nombre) missingFields.push("Nombre del Responsable");
-            if (!responsable?.cargo) missingFields.push("Cargo del Responsable");
-            if (!responsable?.compania) missingFields.push("Compañía del Responsable");
-            if (!Object.values(formData.selectedWorkTypes).some((v)=>v)) {
-                missingFields.push("Tipo de Trabajo (al menos uno)");
-            }
-            if (missingFields.length > 0) {
-                toast({
-                    variant: "destructive",
-                    title: "Campos Incompletos en Información General",
-                    description: `Por favor, complete los siguientes campos obligatorios: ${missingFields.join(', ')}.`,
-                    duration: 6000
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'ATS') {
-            const { peligros, justificacion, epp, peligrosAdicionales } = formData.anexoATS || {};
-            const hasPeligro = peligros && Object.values(peligros).some((value)=>value === 'si') || peligrosAdicionales && peligrosAdicionales.length > 0;
-            if (!hasPeligro) {
-                toast({
-                    variant: "destructive",
-                    title: "Validación Requerida en ATS",
-                    description: "Debe seleccionar los peligros asociados e identificados para la actividad, para continuar."
-                });
-                return false;
-            }
-            const hasEpp = epp && Object.values(epp).some((value)=>value === true || typeof value === 'string' && value.trim() !== '');
-            if (!hasEpp) {
-                toast({
-                    variant: "destructive",
-                    title: "Validación Requerida en ATS",
-                    description: "El recuadro rojo para obligatoriedad de “Escoja o seleccione los EPP´S requeridos, para continuar"
-                });
-                return false;
-            }
-            if (!justificacion || !Object.values(justificacion).some((value)=>value === true)) {
-                toast({
-                    variant: "destructive",
-                    title: "Validación Requerida en ATS",
-                    description: "Debe seleccionar al menos una 'Justificación para el uso del ATS' para continuar."
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Anexo Altura') {
-            const anexo = formData.anexoAltura;
-            if (anexo?.tipoEstructura?.otros && !anexo.tipoEstructura.otrosCual?.trim()) {
-                toast({
-                    variant: "destructive",
-                    title: "Campo Requerido",
-                    description: "Debe especificar el otro tipo de estructura en el Anexo de Alturas."
-                });
-                return false;
-            }
-            if (!anexo?.afectaciones?.observaciones?.trim()) {
-                toast({
-                    variant: "destructive",
-                    title: "Campo Requerido",
-                    description: "Debe ingresar las observaciones en la sección de Afectaciones del Anexo de Alturas."
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Anexo Confinado') {
-            const anexo = formData.anexoConfinado;
-            if (anexo?.identificacionPeligros?.procedimientoComunicacion === 'si' && !anexo.procedimientoComunicacionCual?.trim()) {
-                toast({
-                    variant: "destructive",
-                    title: "Campo Requerido",
-                    description: "Debe especificar cuál es el procedimiento de comunicación en el Anexo de Espacios Confinados."
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Anexo Energías') {
-            const anexo = formData.anexoEnergias;
-            const trabajosEnCaliente = anexo?.trabajosEnCaliente;
-            if (trabajosEnCaliente?.otro_check && !(trabajosEnCaliente?.otro || '').trim()) {
-                toast({
-                    variant: "destructive",
-                    title: "Campo Requerido",
-                    description: "Debe especificar el 'otro' aspecto en Trabajos en Caliente."
-                });
-                return false;
-            }
-            const energiasPeligrosas = anexo?.energiasPeligrosas;
-            if (energiasPeligrosas?.otra_check && !(energiasPeligrosas?.otra || '').trim()) {
-                toast({
-                    variant: "destructive",
-                    title: "Campo Requerido",
-                    description: "Debe especificar el 'otro' tipo de energía peligrosa."
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Verificación Peligros') {
-            const { verificacionPeligros } = formData;
-            if (!verificacionPeligros || Object.values(verificacionPeligros).every((category)=>!Object.values(category).some((value)=>value === 'si'))) {
-                toast({
-                    variant: "destructive",
-                    title: "Validación Requerida en Verificación de Peligros",
-                    description: "Debe seleccionar 'SI' en al menos un peligro para poder continuar."
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Emergencias') {
-            const { emergencias } = formData.eppEmergencias || {};
-            if (!emergencias || !Object.values(emergencias).some((value)=>value === 'si')) {
-                toast({
-                    variant: "destructive",
-                    title: "Validación Requerida en Manejo de Emergencias",
-                    description: "Debe seleccionar 'SI' en al menos una opción de 'Notificación y Manejo de Emergencias' para continuar.",
-                    duration: 6000
-                });
-                return false;
-            }
-        }
-        if (currentLabel === 'Trabajadores') {
-            const numTrabajadores = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
-            const workers = formData.workers || [];
-            if (workers.length !== numTrabajadores) {
-                toast({
-                    variant: "destructive",
-                    title: "Número de Trabajadores no Coincide",
-                    description: `Ha especificado ${numTrabajadores} trabajadores, pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
-                    duration: 6000
-                });
-                return false;
-            }
-            const missingSignatures = workers.filter((w)=>!w.firmaApertura);
-            if (missingSignatures.length > 0) {
-                toast({
-                    variant: "destructive",
-                    title: "Faltan Firmas de Trabajadores",
-                    description: `Todos los trabajadores deben registrar su firma de apertura para poder continuar. Faltan ${missingSignatures.length} firmas.`,
-                    duration: 6000
-                });
-                return false;
-            }
-        }
-        return true;
-    };
-    const handleSavePermit = async ()=>{
-        if (!user) {
-            toast({
-                variant: 'destructive',
-                title: 'Error de Autenticación'
-            });
-            return;
-        }
-        setIsSubmitting(true);
-        try {
-            const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$data$3a$2f5de7__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["savePermitDraft"])({
-                userId: user.uid,
-                userDisplayName: user.displayName || null,
-                userEmail: user.email || null,
-                userPhotoURL: user.photoURL || null,
-                draftId: draftId,
-                ...formData
-            });
-            if (result.success && result.permitId) {
-                toast({
-                    title: 'Borrador Guardado',
-                    description: 'Será redirigido para firmar y activar el permiso.'
-                });
-                router.push(`/permits/${result.permitId}`);
-            } else {
-                throw new Error(result.error || 'Hubo un error guardando el permiso.');
-            }
-        } catch (error) {
-            toast({
-                variant: 'destructive',
-                title: 'Falló el Envío',
-                description: error.message
-            });
-        } finally{
-            setIsSubmitting(false);
-        }
-    };
-    const handleUpdateATS = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "CreatePermitWizard.useCallback[handleUpdateATS]": (updates)=>{
-            dispatch({
-                type: 'UPDATE_ATS',
-                payload: updates
-            });
-        }
-    }["CreatePermitWizard.useCallback[handleUpdateATS]"], [
-        dispatch
-    ]);
-    const handleUpdateEppEmergencias = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
-        "CreatePermitWizard.useCallback[handleUpdateEppEmergencias]": (updates)=>{
-            dispatch({
-                type: 'UPDATE_EPP_EMERGENCIAS',
-                payload: updates
-            });
-        }
-    }["CreatePermitWizard.useCallback[handleUpdateEppEmergencias]"], [
-        dispatch
-    ]);
-    const renderStepContent = ()=>{
-        if (isLoadingForm) {
-            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex justify-center items-center h-64",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
-                    className: "h-8 w-8 animate-spin"
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 503,
-                    columnNumber: 11
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                lineNumber: 502,
-                columnNumber: 9
-            }, this);
-        }
-        const currentStepLabel = steps[step - 1]?.label;
-        switch(currentStepLabel){
-            case "Info General":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$GeneralInfoStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["GeneralInfoStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 511,
-                    columnNumber: 16
-                }, this);
-            case "ATS":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AtsStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AtsStep"], {
-                    anexoATS: formData.anexoATS,
-                    onUpdateATS: handleUpdateATS
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 513,
-                    columnNumber: 16
-                }, this);
-            case "Anexo Altura":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoAlturaStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnexoAlturaStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 515,
-                    columnNumber: 16
-                }, this);
-            case "Anexo Confinado":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoConfinadoStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnexoConfinadoStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 517,
-                    columnNumber: 16
-                }, this);
-            case "Anexo Energías":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoEnergiaStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnexoEnergiaStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 519,
-                    columnNumber: 16
-                }, this);
-            case "Anexo Izaje":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoIzajeStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnexoIzajeStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 521,
-                    columnNumber: 16
-                }, this);
-            case "Anexo Excavaciones":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$AnexoExcavacionesStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AnexoExcavacionesStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 523,
-                    columnNumber: 16
-                }, this);
-            case "Verificación Peligros":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$VerificacionPeligrosStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["VerificacionPeligrosStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 525,
-                    columnNumber: 16
-                }, this);
-            case "Emergencias":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$EppEmergenciasStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["EppEmergenciasStep"], {
-                    eppEmergencias: formData.eppEmergencias,
-                    onUpdate: handleUpdateEppEmergencias
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 527,
-                    columnNumber: 16
-                }, this);
-            case "Trabajadores":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$WorkersStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["WorkersStep"], {
-                    workers: formData.workers || [],
-                    onAddWorker: openNewWorkerDialog,
-                    onEditWorker: openEditWorkerDialog,
-                    onRemoveWorker: removeWorker
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 529,
-                    columnNumber: 16
-                }, this);
-            case "Revisión":
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$components$2f$ReviewStep$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ReviewStep"], {}, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 536,
-                    columnNumber: 16
-                }, this);
-            default:
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "text-center p-8",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                            className: "text-xl font-bold",
-                            children: "Paso en Construcción"
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                            lineNumber: 540,
-                            columnNumber: 13
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-muted-foreground",
-                            children: currentStepLabel
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                            lineNumber: 541,
-                            columnNumber: 13
-                        }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 539,
-                    columnNumber: 11
-                }, this);
-        }
-    };
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-            className: "flex flex-1 flex-col bg-gray-50 min-h-screen",
-            children: [
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
-                    className: "text-white shadow-lg sticky top-0 z-20",
-                    style: {
-                        background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)`
-                    },
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "max-w-7xl mx-auto px-4 py-3 md:py-4",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex justify-between items-center",
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex items-center gap-3",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                                                src: "https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg",
-                                                alt: "Crear Permiso Icon",
-                                                width: 48,
-                                                height: 48,
-                                                className: "rounded-full"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 555,
-                                                columnNumber: 17
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "hidden md:block border-l border-white border-opacity-30 pl-3",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                                        className: "text-xl font-bold",
-                                                        children: "Nuevo Permiso de Trabajo"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 563,
-                                                        columnNumber: 19
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                        className: "text-sm text-white text-opacity-80",
-                                                        children: [
-                                                            "Paso ",
-                                                            step,
-                                                            " de ",
-                                                            steps.length,
-                                                            ": ",
-                                                            currentStepInfo.label
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 564,
-                                                        columnNumber: 19
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 562,
-                                                columnNumber: 17
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 554,
-                                        columnNumber: 15
-                                    }, this)
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                    lineNumber: 553,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                    onClick: ()=>{
-                                        if (confirm('¿Está seguro de cancelar? Los cambios no guardados en el borrador actual se mantendrán.')) {
-                                            router.push('/dashboard');
-                                        }
-                                    },
-                                    variant: "ghost",
-                                    className: "bg-white bg-opacity-20 hover:bg-opacity-30",
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
-                                            size: 18,
-                                            className: "mr-2"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                            lineNumber: 579,
-                                            columnNumber: 15
-                                        }, this),
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            className: "hidden sm:inline",
-                                            children: "Cancelar"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                            lineNumber: 580,
-                                            columnNumber: 15
-                                        }, this)
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                    lineNumber: 570,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
-                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                            lineNumber: 552,
-                            columnNumber: 11
-                        }, this)
-                    }, void 0, false, {
-                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                        lineNumber: 551,
-                        columnNumber: 9
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 550,
-                    columnNumber: 7
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "bg-white border-b shadow-sm sticky top-[68px] md:top-[80px] z-10",
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "max-w-7xl mx-auto px-4 py-4 md:py-6",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex items-center justify-between mb-4",
-                                children: steps.map((s_info, s_idx)=>{
-                                    const s = s_idx + 1;
-                                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "flex items-center flex-1",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: `relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full font-bold text-sm transition-all ${s === step ? 'ring-4 scale-110 shadow-lg text-white' : s < step ? 'text-white' : 'bg-gray-200 text-gray-600'}`,
-                                                style: s <= step ? {
-                                                    backgroundColor: s === step ? colors.primary : colors.success
-                                                } : {},
-                                                children: s < step ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2d$big$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle$3e$__["CheckCircle"], {
-                                                    size: 20
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                    lineNumber: 599,
-                                                    columnNumber: 31
-                                                }, this) : s_idx + 1
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 593,
-                                                columnNumber: 17
-                                            }, this),
-                                            s < steps.length && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex-1 h-1 mx-1 md:mx-2 rounded",
-                                                style: {
-                                                    backgroundColor: s < step ? colors.success : '#E5E7EB'
-                                                }
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 602,
-                                                columnNumber: 19
-                                            }, this)
-                                        ]
-                                    }, s, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 592,
-                                        columnNumber: 15
-                                    }, this);
-                                })
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 588,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "grid",
-                                style: {
-                                    gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`
-                                },
-                                children: steps.map((s_info, s_idx)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "text-[10px] md:text-xs text-center font-medium",
-                                        style: {
-                                            color: step === s_idx + 1 ? colors.primary : '#6B7280'
-                                        },
-                                        children: s_info.label
-                                    }, s_idx, false, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 611,
-                                        columnNumber: 15
-                                    }, this))
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 609,
-                                columnNumber: 11
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                        lineNumber: 587,
-                        columnNumber: 9
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 586,
-                    columnNumber: 7
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "bg-white rounded-xl shadow-xl p-6 md:p-8",
-                            children: renderStepContent()
-                        }, step, false, {
-                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                            lineNumber: 618,
-                            columnNumber: 9
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20",
-                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "max-w-5xl mx-auto px-4 py-3 flex gap-2 sm:gap-4",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: ()=>setStep(step - 1),
-                                        disabled: isSubmitting || step === 1,
-                                        variant: "outline",
-                                        className: "px-4 py-3 h-auto md:px-6",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__["ArrowLeft"], {
-                                                className: "mr-2 h-4 w-4"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 631,
-                                                columnNumber: 15
-                                            }, this),
-                                            "Anterior"
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 625,
-                                        columnNumber: 13
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: handleSaveDraft,
-                                        variant: "secondary",
-                                        disabled: isSavingDraft || isSubmitting,
-                                        className: "px-4 py-3 h-auto md:px-6",
-                                        children: [
-                                            isSavingDraft ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
-                                                className: "mr-2 h-4 w-4 animate-spin"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 641,
-                                                columnNumber: 34
-                                            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$save$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Save$3e$__["Save"], {
-                                                className: "mr-2 h-4 w-4"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 641,
-                                                columnNumber: 85
-                                            }, this),
-                                            "Borrador"
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 635,
-                                        columnNumber: 13
-                                    }, this),
-                                    step < steps.length ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: ()=>{
-                                            if (canProceed()) {
-                                                setStep(step + 1);
-                                            }
-                                        },
-                                        disabled: isSubmitting,
-                                        className: "flex-1 py-3 h-auto",
-                                        children: [
-                                            "Siguiente",
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$right$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowRight$3e$__["ArrowRight"], {
-                                                className: "ml-2 h-4 w-4"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 656,
-                                                columnNumber: 17
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 646,
-                                        columnNumber: 15
-                                    }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogTrigger"], {
-                                                asChild: true,
-                                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                    disabled: isSubmitting,
-                                                    className: "flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg",
-                                                    children: [
-                                                        isSubmitting ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
-                                                            className: "mr-2 h-5 w-5 animate-spin"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                            lineNumber: 666,
-                                                            columnNumber: 29
-                                                        }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$save$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Save$3e$__["Save"], {
-                                                            size: 22,
-                                                            className: "mr-2"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                            lineNumber: 668,
-                                                            columnNumber: 29
-                                                        }, this),
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                            children: "Guardar Permiso"
-                                                        }, void 0, false, {
-                                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                            lineNumber: 670,
-                                                            columnNumber: 29
-                                                        }, this)
-                                                    ]
-                                                }, void 0, true, {
-                                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                    lineNumber: 661,
-                                                    columnNumber: 26
-                                                }, this)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 660,
-                                                columnNumber: 21
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogHeader"], {
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogTitle"], {
-                                                                children: "¿Está seguro de guardar el permiso?"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 675,
-                                                                columnNumber: 29
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
-                                                                children: "Se creará un borrador del permiso. Deberá ir a la página de detalles para firmar y activar el flujo de aprobación."
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 676,
-                                                                columnNumber: 29
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 674,
-                                                        columnNumber: 25
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogCancel"], {
-                                                                children: "Cancelar"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 681,
-                                                                columnNumber: 29
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
-                                                                onClick: handleSavePermit,
-                                                                disabled: isSubmitting,
-                                                                children: isSubmitting ? 'Guardando...' : 'Sí, guardar ahora'
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 682,
-                                                                columnNumber: 29
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 680,
-                                                        columnNumber: 25
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 673,
-                                                columnNumber: 21
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 659,
-                                        columnNumber: 17
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 624,
-                                columnNumber: 11
-                            }, this)
-                        }, void 0, false, {
-                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                            lineNumber: 623,
-                            columnNumber: 9
-                        }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 617,
-                    columnNumber: 7
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
-                    open: showSuccessDialog,
-                    onOpenChange: setShowSuccessDialog,
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                        className: "flex items-center gap-2 text-green-600",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2d$big$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle$3e$__["CheckCircle"], {}, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 697,
-                                                columnNumber: 23
-                                            }, this),
-                                            "¡Permiso Creado Exitosamente!"
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 696,
-                                        columnNumber: 19
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
-                                        children: [
-                                            "El permiso N° ",
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("strong", {
-                                                children: newPermitInfo.number
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 701,
-                                                columnNumber: 37
-                                            }, this),
-                                            " ha sido creado y enviado para revisión."
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 700,
-                                        columnNumber: 19
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 695,
-                                columnNumber: 15
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
-                                className: "sm:justify-between gap-2",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        variant: "outline",
-                                        onClick: ()=>router.push('/dashboard'),
-                                        children: "Ir al Dashboard"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 705,
-                                        columnNumber: 19
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: ()=>router.push(`/permits/${newPermitInfo.id}`),
-                                        children: "Ver Detalles del Permiso"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 708,
-                                        columnNumber: 20
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 704,
-                                columnNumber: 15
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                        lineNumber: 694,
-                        columnNumber: 11
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 693,
-                    columnNumber: 7
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
-                    open: isWorkerDialogOpen,
-                    onOpenChange: setIsWorkerDialogOpen,
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-                        className: "sm:max-w-lg",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                    children: [
-                                        editingWorkerIndex !== null ? 'Editar' : 'Agregar',
-                                        " Trabajador"
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                    lineNumber: 718,
-                                    columnNumber: 21
-                                }, this)
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 717,
-                                columnNumber: 17
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "space-y-4 max-h-[70vh] overflow-y-auto p-4",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                htmlFor: "worker-name",
-                                                children: "Nombres y Apellidos"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 722,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                id: "worker-name",
-                                                value: currentWorker?.nombre || '',
-                                                onChange: (e)=>handleWorkerInputChange('nombre', e.target.value)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 723,
-                                                columnNumber: 25
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 721,
-                                        columnNumber: 21
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                htmlFor: "worker-cedula",
-                                                children: "Cédula"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 726,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                id: "worker-cedula",
-                                                value: currentWorker?.cedula || '',
-                                                onChange: (e)=>handleWorkerInputChange('cedula', e.target.value)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 727,
-                                                columnNumber: 25
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 725,
-                                        columnNumber: 21
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                htmlFor: "worker-rol",
-                                                children: "Cargo/Rol"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 730,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
-                                                value: currentWorker?.rol || '',
-                                                onValueChange: (value)=>handleWorkerInputChange('rol', value),
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectTrigger"], {
-                                                        id: "worker-rol",
-                                                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectValue"], {}, void 0, false, {
-                                                            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                            lineNumber: 732,
-                                                            columnNumber: 60
-                                                        }, this)
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 732,
-                                                        columnNumber: 29
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
-                                                        children: workerRoles.map((role)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                                value: role,
-                                                                children: role
-                                                            }, role, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 734,
-                                                                columnNumber: 58
-                                                            }, this))
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 733,
-                                                        columnNumber: 29
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 731,
-                                                columnNumber: 25
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 729,
-                                        columnNumber: 21
-                                    }, this),
-                                    currentWorker?.rol === 'Otro' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                htmlFor: "worker-otro-rol",
-                                                children: "Especifique el rol"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 740,
-                                                columnNumber: 29
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                id: "worker-otro-rol",
-                                                value: currentWorker?.otroRol || '',
-                                                onChange: (e)=>handleWorkerInputChange('otroRol', e.target.value)
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 741,
-                                                columnNumber: 29
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 739,
-                                        columnNumber: 25
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "space-y-2",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                className: "font-semibold",
-                                                children: "Certificado Aptitud Médica"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 746,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex gap-4",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "cert-tec",
-                                                                checked: currentWorker?.tsaTec?.tec || false,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('tsaTec', {
-                                                                        ...currentWorker?.tsaTec,
-                                                                        tec: !!checked
-                                                                    })
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 749,
-                                                                columnNumber: 33
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "cert-tec",
-                                                                children: "TEC"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 754,
-                                                                columnNumber: 33
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 748,
-                                                        columnNumber: 29
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "cert-tsa",
-                                                                checked: currentWorker?.tsaTec?.tsa || false,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('tsaTec', {
-                                                                        ...currentWorker?.tsaTec,
-                                                                        tsa: !!checked
-                                                                    })
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 757,
-                                                                columnNumber: 33
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "cert-tsa",
-                                                                children: "TSA"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 762,
-                                                                columnNumber: 33
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 756,
-                                                        columnNumber: 29
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 747,
-                                                columnNumber: 25
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 745,
-                                        columnNumber: 21
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "space-y-2",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                className: "font-semibold",
-                                                children: "Entrenamiento / Capacitación"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 767,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex gap-4",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "ent-tec",
-                                                                checked: currentWorker?.entrenamiento?.tec || false,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('entrenamiento', {
-                                                                        ...currentWorker?.entrenamiento,
-                                                                        tec: !!checked
-                                                                    })
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 770,
-                                                                columnNumber: 33
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "ent-tec",
-                                                                children: "TEC"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 775,
-                                                                columnNumber: 33
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 769,
-                                                        columnNumber: 30
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "ent-tsa",
-                                                                checked: currentWorker?.entrenamiento?.tsa || false,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('entrenamiento', {
-                                                                        ...currentWorker?.entrenamiento,
-                                                                        tsa: !!checked
-                                                                    })
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 778,
-                                                                columnNumber: 33
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "ent-tsa",
-                                                                children: "TSA"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 783,
-                                                                columnNumber: 33
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 777,
-                                                        columnNumber: 29
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "ent-otro",
-                                                                checked: currentWorker?.entrenamiento?.otro || false,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('entrenamiento', {
-                                                                        ...currentWorker?.entrenamiento,
-                                                                        otro: !!checked
-                                                                    })
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 786,
-                                                                columnNumber: 33
-                                                            }, this),
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "ent-otro",
-                                                                children: "Otro"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 791,
-                                                                columnNumber: 33
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 785,
-                                                        columnNumber: 30
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 768,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
-                                                placeholder: "Especificar otro entrenamiento",
-                                                value: currentWorker?.entrenamiento?.otroCual || '',
-                                                onChange: (e)=>handleWorkerInputChange('entrenamiento', {
-                                                        ...currentWorker?.entrenamiento,
-                                                        otroCual: e.target.value
-                                                    }),
-                                                disabled: !currentWorker?.entrenamiento?.otro
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 794,
-                                                columnNumber: 26
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 766,
-                                        columnNumber: 22
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "space-y-2",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                className: "font-semibold",
-                                                children: "Afiliación a Seguridad Social"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 802,
-                                                columnNumber: 25
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                className: "flex gap-4",
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "afil-eps",
-                                                                checked: !!currentWorker?.eps,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('eps', checked ? 'activo' : '')
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 804,
-                                                                columnNumber: 69
-                                                            }, this),
-                                                            " ",
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "afil-eps",
-                                                                children: "EPS"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 804,
-                                                                columnNumber: 212
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 804,
-                                                        columnNumber: 28
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "afil-arl",
-                                                                checked: !!currentWorker?.arl,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('arl', checked ? 'activo' : '')
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 805,
-                                                                columnNumber: 69
-                                                            }, this),
-                                                            " ",
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "afil-arl",
-                                                                children: "ARL"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 805,
-                                                                columnNumber: 212
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 805,
-                                                        columnNumber: 28
-                                                    }, this),
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "flex items-center gap-2",
-                                                        children: [
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$checkbox$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Checkbox"], {
-                                                                id: "afil-pension",
-                                                                checked: !!currentWorker?.pensiones,
-                                                                onCheckedChange: (checked)=>handleWorkerInputChange('pensiones', checked ? 'activo' : '')
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 806,
-                                                                columnNumber: 69
-                                                            }, this),
-                                                            " ",
-                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                                htmlFor: "afil-pension",
-                                                                children: "Pensiones"
-                                                            }, void 0, false, {
-                                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                                lineNumber: 806,
-                                                                columnNumber: 228
-                                                            }, this)
-                                                        ]
-                                                    }, void 0, true, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 806,
-                                                        columnNumber: 28
-                                                    }, this)
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 803,
-                                                columnNumber: 25
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 801,
-                                        columnNumber: 22
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
-                                                children: "Firma de Apertura"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 810,
-                                                columnNumber: 23
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                                variant: "outline",
-                                                className: "w-full mt-2",
-                                                onClick: ()=>openSignaturePad('worker.firmaApertura'),
-                                                children: [
-                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$signature$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Signature$3e$__["Signature"], {
-                                                        className: "mr-2"
-                                                    }, void 0, false, {
-                                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                        lineNumber: 812,
-                                                        columnNumber: 25
-                                                    }, this),
-                                                    " ",
-                                                    currentWorker?.firmaApertura ? 'Ver/Cambiar Firma' : 'Registrar Firma'
-                                                ]
-                                            }, void 0, true, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 811,
-                                                columnNumber: 23
-                                            }, this),
-                                            currentWorker?.firmaApertura && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
-                                                src: currentWorker.firmaApertura,
-                                                alt: "Firma Apertura",
-                                                width: 150,
-                                                height: 75,
-                                                className: "mx-auto mt-2 border rounded-md"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                                lineNumber: 814,
-                                                columnNumber: 56
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 809,
-                                        columnNumber: 21
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 720,
-                                columnNumber: 17
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        variant: "secondary",
-                                        onClick: ()=>setIsWorkerDialogOpen(false),
-                                        children: "Cancelar"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 818,
-                                        columnNumber: 21
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                                        onClick: handleSaveWorker,
-                                        children: "Guardar Trabajador"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                        lineNumber: 819,
-                                        columnNumber: 21
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 817,
-                                columnNumber: 18
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                        lineNumber: 716,
-                        columnNumber: 13
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 715,
-                    columnNumber: 9
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
-                    open: isSignaturePadOpen,
-                    onOpenChange: setIsSignaturePadOpen,
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
-                        className: "w-[90vw] max-w-lg",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogHeader"], {
-                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogTitle"], {
-                                    children: "Registrar Firma"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                    lineNumber: 827,
-                                    columnNumber: 13
-                                }, this)
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 826,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$signature$2d$pad$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SignaturePad"], {
-                                onSave: handleSaveSignature
-                            }, void 0, false, {
-                                fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                                lineNumber: 829,
-                                columnNumber: 11
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                        lineNumber: 825,
-                        columnNumber: 9
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-                    lineNumber: 824,
-                    columnNumber: 8
-                }, this)
-            ]
-        }, void 0, true, {
-            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-            lineNumber: 549,
-            columnNumber: 5
-        }, this)
-    }, void 0, false);
-}
-_s(CreatePermitWizard, "OeLBFrLbdVpHM5wV2xztdYA4SBQ=", false, function() {
-    return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$user$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useUser"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useToast"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useSearchParams"],
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["usePermitForm"]
-    ];
-});
-_c = CreatePermitWizard;
-function CreatePermitPage() {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$app$2f28$app$292f$permits$2f$create$2f$form$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PermitFormProvider"], {
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(CreatePermitWizard, {}, void 0, false, {
-            fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-            lineNumber: 840,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
-        fileName: "[project]/src/app/(app)/permits/create/page.tsx",
-        lineNumber: 839,
-        columnNumber: 5
-    }, this);
-}
-_c1 = CreatePermitPage;
-var _c, _c1;
-__turbopack_context__.k.register(_c, "CreatePermitWizard");
-__turbopack_context__.k.register(_c1, "CreatePermitPage");
-if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
-    __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
-}
-}}),
+const e = new Error(`Could not parse module '[project]/src/app/(app)/permits/create/page.tsx'
+
+Expected ',', got 'Escoja'`);
+e.code = 'MODULE_UNPARSEABLE';
+throw e;}}),
 }]);
 
 //# sourceMappingURL=src_9f942888._.js.map

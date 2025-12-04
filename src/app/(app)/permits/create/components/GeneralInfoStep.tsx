@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -9,9 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Check, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
 
@@ -24,12 +23,41 @@ const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selecte
   { key: 'excavacion', name: 'Excavaciones' },
 ];
 
+// Lista genérica inicial de herramientas por defecto
+const herramientasIniciales = [
+  'Taladro',
+  'Martillo',
+  'Destornillador',
+  'Llave inglesa',
+  'Alicate',
+  'Sierra',
+  'Nivel',
+  'Flexómetro',
+  'Escalera',
+  'Andamio',
+  'Esmeril',
+  'Soldadora',
+  'Pulidora',
+  'Compresor',
+  'Pistola de impacto',
+];
+
+const ITEMS_PER_PAGE = 20;
+const QUICK_SELECT_COUNT = 6;
+
 export function GeneralInfoStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, selectedWorkTypes } = state;
   const { toast } = useToast();
 
+  const [herramientasDisponibles, setHerramientasDisponibles] = React.useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [isAddingNew, setIsAddingNew] = React.useState(false);
   const [newToolName, setNewToolName] = React.useState('');
+  const [showSearchResults, setShowSearchResults] = React.useState(false);
+  const [displayCount, setDisplayCount] = React.useState(ITEMS_PER_PAGE);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const resultsContainerRef = React.useRef<HTMLDivElement>(null);
 
   const [dynamicLists, setDynamicLists] = React.useState({
     areas: [] as string[],
@@ -39,6 +67,28 @@ export function GeneralInfoStep() {
     empresas: [] as string[],
   });
   const [loadingLists, setLoadingLists] = React.useState(true);
+
+  // Cargar herramientas desde Firestore
+  React.useEffect(() => {
+    const herramientasRef = doc(db, 'dynamic_lists', 'herramientas');
+    
+    const unsubscribe = onSnapshot(herramientasRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const items = docSnap.data().items || [];
+        setHerramientasDisponibles(items.sort());
+      } else {
+        // Si no existe el documento, crearlo con la lista inicial
+        setDoc(herramientasRef, { items: herramientasIniciales.sort() })
+          .then(() => setHerramientasDisponibles(herramientasIniciales.sort()))
+          .catch(error => console.error('Error creating herramientas list:', error));
+      }
+    }, (error) => {
+      console.error('Error fetching herramientas:', error);
+      setHerramientasDisponibles(herramientasIniciales.sort());
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   React.useEffect(() => {
     setLoadingLists(true);
@@ -60,15 +110,30 @@ export function GeneralInfoStep() {
       });
     });
 
-    // This is a bit of a hack to know when all listeners have fired at least once
     Promise.all(listNames.map(listName => new Promise(resolve => {
       const docRef = doc(db, 'dynamic_lists', listName);
-      onSnapshot(docRef, () => resolve(true), () => resolve(true)); // Resolve even on error
+      onSnapshot(docRef, () => resolve(true), () => resolve(true));
     }))).then(() => setLoadingLists(false));
 
     return () => unsubscribers.forEach(unsub => unsub());
   }, [toast]);
 
+  // Cerrar resultados al hacer click fuera
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        resultsContainerRef.current &&
+        !resultsContainerRef.current.contains(event.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleInputChange = (field: keyof typeof generalInfo, value: any) => {
     dispatch({ type: 'UPDATE_GENERAL_INFO', payload: { [field]: value } });
@@ -83,24 +148,88 @@ export function GeneralInfoStep() {
     handleInputChange('responsable', newResponsable);
   };
 
-  const addTool = () => {
-    if (newToolName.trim()) {
-      const newTools = [...(generalInfo.tools || []), { name: newToolName.trim(), status: 'B' }];
-      handleInputChange('tools', newTools);
+  // Agregar herramienta seleccionada
+  const addToolFromList = React.useCallback((toolName: string) => {
+    if (!toolName) return;
+    
+    const alreadyAdded = generalInfo.tools?.some(t => t.name === toolName);
+    if (alreadyAdded) {
+      toast({
+        variant: "destructive",
+        title: "Ya agregada",
+        description: "Esta herramienta ya está en la lista.",
+      });
+      return;
+    }
+
+    const newTools = [...(generalInfo.tools || []), { name: toolName, status: 'B' }];
+    handleInputChange('tools', newTools);
+    
+    // Limpiar búsqueda y cerrar resultados
+    setSearchTerm('');
+    setShowSearchResults(false);
+    setDisplayCount(ITEMS_PER_PAGE);
+    
+    // Toast de confirmación
+    toast({
+      title: "✓ Agregada",
+      description: `${toolName}`,
+      duration: 1500,
+    });
+  }, [generalInfo.tools, handleInputChange, toast]);
+
+  // Agregar nueva herramienta personalizada
+  const addNewToolToFirestore = async () => {
+    const trimmedName = newToolName.trim();
+    if (!trimmedName) return;
+
+    if (herramientasDisponibles.includes(trimmedName)) {
+      toast({
+        variant: "destructive",
+        title: "Ya existe",
+        description: "Esta herramienta ya está en la lista disponible.",
+      });
       setNewToolName('');
+      setIsAddingNew(false);
+      return;
+    }
+
+    try {
+      const herramientasRef = doc(db, 'dynamic_lists', 'herramientas');
+      const docSnap = await getDoc(herramientasRef);
+      const currentItems = docSnap.exists() ? docSnap.data().items || [] : [];
+      const updatedItems = [...currentItems, trimmedName].sort();
+      
+      await setDoc(herramientasRef, { items: updatedItems });
+      
+      addToolFromList(trimmedName);
+      
+      toast({
+        title: "✓ Herramienta creada",
+        description: `"${trimmedName}" se agregó al catálogo.`,
+      });
+      
+      setNewToolName('');
+      setIsAddingNew(false);
+    } catch (error) {
+      console.error('Error adding tool:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo agregar la herramienta.",
+      });
     }
   };
 
-  const removeTool = (index: number) => {
+  const removeTool = React.useCallback((index: number) => {
     const newTools = (generalInfo.tools || []).filter((_, i) => i !== index);
     handleInputChange('tools', newTools);
-  };
+  }, [generalInfo.tools, handleInputChange]);
   
   const maxDate = React.useMemo(() => {
     if (!generalInfo.validFrom) return '';
     const startDate = new Date(generalInfo.validFrom);
     const maxDate = addDays(startDate, 7);
-    // Format for datetime-local which is 'yyyy-MM-ddThh:mm'
     return format(maxDate, "yyyy-MM-dd'T'HH:mm");
   }, [generalInfo.validFrom]);
 
@@ -138,6 +267,48 @@ export function GeneralInfoStep() {
     </div>
   ), [generalInfo, dynamicLists, loadingLists, handleInputChange]);
 
+  // Filtrar herramientas según búsqueda con optimización
+  const filteredHerramientas = React.useMemo(() => {
+    if (!searchTerm) return herramientasDisponibles;
+    const searchLower = searchTerm.toLowerCase();
+    return herramientasDisponibles.filter(h => 
+      h.toLowerCase().includes(searchLower)
+    );
+  }, [searchTerm, herramientasDisponibles]);
+
+  // Herramientas a mostrar con lazy loading
+  const displayedHerramientas = React.useMemo(() => {
+    return filteredHerramientas.slice(0, displayCount);
+  }, [filteredHerramientas, displayCount]);
+
+  // Herramientas para selección rápida (excluir ya agregadas)
+  const quickSelectTools = React.useMemo(() => {
+    return herramientasDisponibles
+      .slice(0, QUICK_SELECT_COUNT)
+      .filter(h => !generalInfo.tools?.some(t => t.name === h));
+  }, [herramientasDisponibles, generalInfo.tools]);
+
+  // Manejar scroll para lazy loading
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement;
+    const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+    
+    if (bottom && displayCount < filteredHerramientas.length) {
+      setDisplayCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredHerramientas.length));
+    }
+  }, [displayCount, filteredHerramientas.length]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setShowSearchResults(true);
+    setDisplayCount(ITEMS_PER_PAGE);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setShowSearchResults(false);
+    setDisplayCount(ITEMS_PER_PAGE);
+  };
 
   return (
     <div className="space-y-6">
@@ -217,27 +388,199 @@ export function GeneralInfoStep() {
 
       <div>
         <Label className="font-bold text-gray-700">Equipos y/o Herramientas</Label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg mt-2">
-            <div className="space-y-2">
-                {generalInfo.tools?.slice(0, 4).map((tool, index) => (
-                    <div key={index} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
-                    <span className="flex-1">{tool.name}</span>
-                    <Button variant="ghost" size="icon" onClick={() => removeTool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                    </div>
+        <div className="space-y-4 p-4 border rounded-lg mt-2">
+          {/* Herramientas seleccionadas - Optimizado para móvil */}
+          {generalInfo.tools && generalInfo.tools.length > 0 && (
+            <div className="space-y-2 pb-3 border-b">
+              <p className="text-xs text-muted-foreground">Seleccionadas ({generalInfo.tools.length}):</p>
+              <div className="flex flex-wrap gap-2">
+                {generalInfo.tools.map((tool, index) => (
+                  <div key={index} className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm group">
+                    <Check className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate max-w-[150px] sm:max-w-none">{tool.name}</span>
+                    <button
+                      onClick={() => removeTool(index)}
+                      className="hover:text-destructive transition-colors flex-shrink-0 ml-1"
+                      type="button"
+                    >
+                      <X className="h-3 w-3"/>
+                    </button>
+                  </div>
                 ))}
+              </div>
             </div>
-              <div className="space-y-2">
-                {generalInfo.tools?.slice(4, 8).map((tool, index) => (
-                    <div key={index + 4} className="flex items-center gap-4 p-2 bg-gray-50 rounded">
-                    <span className="flex-1">{tool.name}</span>
-                    <Button variant="ghost" size="icon" onClick={() => removeTool(index + 4)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+          )}
+          
+          {/* Campo de búsqueda - Optimizado para móvil */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                ref={searchInputRef}
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onFocus={() => setShowSearchResults(true)}
+                placeholder="Buscar herramienta..."
+                className="pl-9 pr-9"
+                autoComplete="off"
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            
+            {/* Lista de resultados con lazy loading - Optimizada */}
+            {showSearchResults && searchTerm && (
+              <div
+                ref={resultsContainerRef}
+                className="absolute z-50 w-[calc(100%-2rem)] md:w-auto md:min-w-[400px] max-w-[600px] mt-1 bg-white border rounded-lg shadow-lg"
+              >
+                <div 
+                  className="max-h-[50vh] overflow-y-auto overscroll-contain"
+                  onScroll={handleScroll}
+                >
+                  {displayedHerramientas.length > 0 ? (
+                    <>
+                      {displayedHerramientas.map((herramienta) => {
+                        const isAdded = generalInfo.tools?.some(t => t.name === herramienta);
+                        return (
+                          <button
+                            key={herramienta}
+                            onClick={() => !isAdded && addToolFromList(herramienta)}
+                            disabled={isAdded}
+                            type="button"
+                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors text-sm border-b last:border-b-0 ${
+                              isAdded ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate flex-1">{herramienta}</span>
+                              {isAdded ? (
+                                <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                              ) : (
+                                <Plus className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {displayCount < filteredHerramientas.length && (
+                        <div className="px-4 py-3 text-center text-xs text-muted-foreground border-t">
+                          Mostrando {displayCount} de {filteredHerramientas.length}... Desliza para ver más
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        No se encontró "{searchTerm}"
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setNewToolName(searchTerm);
+                          setIsAddingNew(true);
+                          setShowSearchResults(false);
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Agregar "{searchTerm}"
+                      </Button>
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Agregar nueva herramienta */}
+            {isAddingNew && (
+              <div className="flex flex-col sm:flex-row gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <Input
+                  value={newToolName}
+                  onChange={(e) => setNewToolName(e.target.value)}
+                  placeholder="Nombre de la nueva herramienta..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addNewToolToFirestore();
+                    }
+                    if (e.key === 'Escape') {
+                      setIsAddingNew(false);
+                      setNewToolName('');
+                    }
+                  }}
+                  autoFocus
+                  className="flex-1"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={addNewToolToFirestore}
+                    disabled={!newToolName.trim()}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Check className="h-4 w-4 sm:mr-2" />
+                    <span className="sm:inline hidden">Guardar</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingNew(false);
+                      setNewToolName('');
+                    }}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <X className="h-4 w-4 sm:mr-2" />
+                    <span className="sm:inline hidden">Cancelar</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!isAddingNew && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddingNew(true)}
+                className="w-full"
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Crear nueva herramienta
+              </Button>
+            )}
+          </div>
+
+          {/* Selección rápida - Solo herramientas no agregadas */}
+          {quickSelectTools.length > 0 && (
+            <div className="pt-3 border-t">
+              <p className="text-xs text-muted-foreground mb-2">Acceso rápido:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {quickSelectTools.map((herramienta) => (
+                  <Button
+                    key={herramienta}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addToolFromList(herramienta)}
+                    className="text-xs justify-start h-auto py-2 px-3"
+                  >
+                    <Plus className="mr-1 h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{herramienta}</span>
+                  </Button>
                 ))}
+              </div>
             </div>
-            <div className="md:col-span-2 flex gap-2">
-                <Input value={newToolName} onChange={(e) => setNewToolName(e.target.value)} placeholder="Nueva herramienta..." />
-                <Button onClick={addTool}><Plus/></Button>
-            </div>
+          )}
         </div>
       </div>
 
@@ -262,7 +605,20 @@ export function GeneralInfoStep() {
           </div>
           <div>
             <Label className="text-sm text-muted-foreground after:content-['*'] after:ml-0.5 after:text-red-500">Compañía</Label>
-            <Input placeholder="Compañía" value={generalInfo.responsable?.compania} onChange={e => handleResponsableChange('compania', e.target.value)} />
+            <Select
+              value={generalInfo.responsable?.compania || ''}
+              onValueChange={(value) => handleResponsableChange('compania', value)}
+              disabled={loadingLists}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={loadingLists ? "Cargando..." : "Seleccione una compañía..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {dynamicLists.empresas.map((empresa) => (
+                  <SelectItem key={empresa} value={empresa}>{empresa}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

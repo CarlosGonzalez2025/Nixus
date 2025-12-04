@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useCallback } from 'react';
@@ -77,24 +76,25 @@ export const eppOptions = {
     { id: 'careta_soldador', label: 'Careta de soldador', type: 'boolean' },
     { id: 'careta_proteccion_total', label: 'Careta de protección total', type: 'boolean' },
     { id: 'gafas_antisalpicaduras', label: 'Gafas antisalpicaduras', type: 'boolean' },
-    { id: 'visor_careta', label: 'Visor / careta para', type: 'text' },
-    { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'text' },
+    { id: 'visor_careta', label: 'Visor / careta para', type: 'select', selectOptions: ['Esmerilado', 'Químicos', 'Impactos', 'Soldadura'] },
+    { id: 'careta_arco_electrico', label: 'Careta arco eléctrico clase', type: 'select', selectOptions: ['Clase 1', 'Clase 2', 'Clase 3', 'Clase 4'] },
     { id: 'protector_auditivo', label: 'Protector auditivo tipo:', type: 'select', selectOptions: ['Copa', 'Inserción'] },
-    { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'text' },
+    { id: 'mascarilla_filtro', label: 'Mascarilla con filtro', type: 'select', selectOptions: ['Vapores orgánicos', 'Gases ácidos', 'Amoniaco', 'Formaldehído', 'Partículas P100', 'Combinado'] },
     { id: 'chavo_en_tela_o_carnaza', label: 'Chavo en tela o carnaza', type: 'boolean' },
     { id: 'mascarilla_material_particulado', label: 'Mascarilla material particulado', type: 'boolean' },
   ],
   'Protección Corporal, Manos y Pies': [
     { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
-    { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'text' },
+    { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'select', selectOptions: ['Clase 1', 'Clase 2', 'Clase 3'] },
+    { id: 'dotacion', label: 'Dotación', type: 'select', selectOptions: ['Pantalón y camisa', 'Overol', 'Pantalón y camiseta'] },
     { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
     { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
     { id: 'delantal_cuero_carnaza', label: 'Delantal de cuero o carnaza', type: 'boolean' },
     { id: 'delantal_pvc', label: 'Delantal de PVC', type: 'boolean' },    
     { id: 'polainas', label: 'Polainas', type: 'boolean' },
-    { id: 'guante_dielectrico', label: 'Guante dieléctrico clase (guantín, guante dieléctrico, protección mecánica)', type: 'text' },
+    { id: 'guante_dielectrico', label: 'Guante dieléctrico clase', type: 'custom_guante_dielectrico' },
     { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
-    { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'boolean' },
+    { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'select', selectOptions: ['Tipo carpado', 'Tipo vaqueta', 'Tipo descarne'] },
     { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
     { id: 'guante_temperatura', label: 'Guante temperatura', type: 'boolean' },
     { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },
@@ -103,14 +103,14 @@ export const eppOptions = {
     { id: 'proteccion_metatarso', label: 'Protección Metatarso', type: 'boolean' },
   ],
   'Protección Contra Caídas y Equipos Especiales': [
-    { id: 'arnes', label: 'Arnés', type: 'text' },
+    { id: 'arnes', label: 'Arnés', type: 'select', selectOptions: ['Cuerpo completo', 'Pélvico', 'Paracaídas'] },
     { id: 'mosqueton', label: 'Mosquetón', type: 'boolean' },
-    { id: 'punto_de_anclaje', label: 'Punto de anclaje (cual)', type: 'text' },
-    { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'text' },
-    { id: 'linea_vida', label: 'Línea de vida', type: 'text' },
-    { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'text' },
+    { id: 'punto_de_anclaje', label: 'Punto de anclaje', type: 'select', selectOptions: ['Fijo estructural', 'Portátil/Móvil', 'Viga', 'Anclaje certificado'] },
+    { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'select', selectOptions: ['Y con absorbedor', 'Simple con absorbedor', 'Doble sin absorbedor', 'Retráctil'] },
+    { id: 'linea_vida', label: 'Línea de vida', type: 'select', selectOptions: ['Vertical', 'Horizontal temporal', 'Horizontal fija'] },
+    { id: 'adaptador_anclaje', label: 'Adaptador de anclaje', type: 'select', selectOptions: ['Viga I', 'Viga H', 'Esquina/Borde', 'Universal'] },
     { id: 'aire_respirable', label: 'Aire respirable (compresor o cilindro)', type: 'boolean' },
-    { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'text' },
+    { id: 'tapete_dielectrico', label: 'Tapete dieléctrico clase', type: 'select', selectOptions: ['Clase 0 (hasta 1000V)', 'Clase 1 (hasta 7500V)', 'Clase 2 (hasta 17000V)', 'Clase 3 (hasta 26500V)', 'Clase 4 (hasta 36000V)'] },
     { id: 'senalizacion', label: 'Señalización', type: 'boolean' },
     { id: 'barandas', label: 'Barandas', type: 'boolean' },
     { id: 'delimitacion_perimetral', label: 'Delimitación perímetro', type: 'boolean' },
@@ -118,7 +118,6 @@ export const eppOptions = {
     { id: 'otro_epp', label: 'Otro:', type: 'text' },
   ],
 };
-
 
 const justificacionOptions = [
   { id: 'rutinario_3_meses', label: 'TRABAJO RUTINARIO REALIZADO 1 VEZ CADA 3 MESES' },
@@ -161,18 +160,31 @@ const EppItem = ({
         </div>
         {checked && (
           <div className="ml-6 space-y-2">
-            <Input 
-              placeholder="Tipo" 
+            <Select 
               value={eppData?.casco_seguridad_tipo || ''}
-              onChange={(e) => handleSpecChange('casco_seguridad_tipo', e.target.value)}
-              className="h-8 text-xs"
-            />
-            <Input 
-              placeholder="Clase" 
+              onValueChange={(value) => handleSpecChange('casco_seguridad_tipo', value)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tipo_1">Tipo 1</SelectItem>
+                <SelectItem value="tipo_2">Tipo 2</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select 
               value={eppData?.casco_seguridad_clase || ''}
-              onChange={(e) => handleSpecChange('casco_seguridad_clase', e.target.value)}
-              className="h-8 text-xs"
-            />
+              onValueChange={(value) => handleSpecChange('casco_seguridad_clase', value)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Clase" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="clase_e">Clase E (Eléctrico)</SelectItem>
+                <SelectItem value="clase_g">Clase G (General)</SelectItem>
+                <SelectItem value="clase_c">Clase C (Conductivo)</SelectItem>
+              </SelectContent>
+            </Select>
             <Select 
               value={eppData?.casco_seguridad_barbuquejo || ''}
               onValueChange={(value) => handleSpecChange('casco_seguridad_barbuquejo', value)}
@@ -191,7 +203,61 @@ const EppItem = ({
     );
   }
 
-  // Manejo para campos con select (como protector auditivo)
+  // Manejo especial para guante dieléctrico
+  if (item.type === 'custom_guante_dielectrico') {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id={item.id} 
+            checked={checked} 
+            onCheckedChange={onCheckedChange}
+          />
+          <Label htmlFor={item.id} className="text-sm">{item.label}</Label>
+        </div>
+        {checked && (
+          <div className="ml-6 space-y-2">
+            <Select 
+              value={eppData?.guante_dielectrico_clase || ''}
+              onValueChange={(value) => handleSpecChange('guante_dielectrico_clase', value)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Seleccione clase..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="clase_00">Clase 00 (hasta 500V)</SelectItem>
+                <SelectItem value="clase_0">Clase 0 (hasta 1000V)</SelectItem>
+                <SelectItem value="clase_1">Clase 1 (hasta 7500V)</SelectItem>
+                <SelectItem value="clase_2">Clase 2 (hasta 17000V)</SelectItem>
+                <SelectItem value="clase_3">Clase 3 (hasta 26500V)</SelectItem>
+                <SelectItem value="clase_4">Clase 4 (hasta 36000V)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="guantin"
+                  checked={eppData?.guante_dielectrico_guantin || false}
+                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_guantin', checked)}
+                />
+                <Label htmlFor="guantin" className="font-normal">Guantín (protector interno)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="proteccion_mecanica"
+                  checked={eppData?.guante_dielectrico_proteccion || false}
+                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_proteccion', checked)}
+                />
+                <Label htmlFor="proteccion_mecanica" className="font-normal">Protección mecánica (sobre-guante)</Label>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Manejo para campos con select
   if (item.type === 'select' && item.selectOptions) {
     return (
       <div className="flex flex-col gap-2">
@@ -206,15 +272,15 @@ const EppItem = ({
         {checked && (
           <div className="ml-6">
             <Select 
-              value={eppData?.[`${item.id}_tipo`] || ''}
-              onValueChange={(value) => handleSpecChange(`${item.id}_tipo`, value)}
+              value={eppData?.[`${item.id}_spec`] || ''}
+              onValueChange={(value) => handleSpecChange(`${item.id}_spec`, value)}
             >
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Seleccione tipo..." />
+                <SelectValue placeholder="Seleccione opción..." />
               </SelectTrigger>
               <SelectContent>
                 {item.selectOptions.map((option) => (
-                  <SelectItem key={option} value={option.toLowerCase()}>
+                  <SelectItem key={option} value={option.toLowerCase().replace(/ /g, '_')}>
                     {option}
                   </SelectItem>
                 ))}
@@ -250,7 +316,6 @@ const EppItem = ({
   );
 };
 
-
 // Componente para categorías de EPP
 const EppCategory = ({ 
   category, 
@@ -271,22 +336,24 @@ const EppCategory = ({
       newEpp[id] = true;
     } else {
       delete newEpp[id];
-      if (type === 'text') {
+      if (type === 'text' || type === 'select') {
         delete newEpp[`${id}_spec`];
-      }
-      if (type === 'select') {
-        delete newEpp[`${id}_tipo`];
       }
       if (type === 'custom_casco') {
         delete newEpp[`casco_seguridad_tipo`];
         delete newEpp[`casco_seguridad_clase`];
         delete newEpp[`casco_seguridad_barbuquejo`];
       }
+      if (type === 'custom_guante_dielectrico') {
+        delete newEpp[`guante_dielectrico_clase`];
+        delete newEpp[`guante_dielectrico_guantin`];
+        delete newEpp[`guante_dielectrico_proteccion`];
+      }
     }
     onEppChange('epp', newEpp);
   };
   
-  const handleSpecChange = (field: string, value: string) => {
+  const handleSpecChange = (field: string, value: string | boolean) => {
     const newEpp = { ...(eppData || {}), [field]: value };
     onEppChange('epp', newEpp);
   }
