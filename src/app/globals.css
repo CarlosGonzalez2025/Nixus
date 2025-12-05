@@ -192,3 +192,31 @@
     backdrop-filter: blur(10px);
   }
 }
+/* ============================================
+   OPTIMIZACIÓN DE IMÁGENES PARA MÓVIL HD
+   ============================================ */
+
+/* Mejora de renderizado de imágenes en pantallas Retina */
+img {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimización específica para logos */
+.logo-crisp {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Prevenir blur en transformaciones */
+.no-blur-transform {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
