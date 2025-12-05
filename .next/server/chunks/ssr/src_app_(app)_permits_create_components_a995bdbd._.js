@@ -1630,8 +1630,7 @@ const eppOptions = {
             type: 'select',
             selectOptions: [
                 'Cuerpo completo',
-                'Pélvico',
-                'Paracaídas'
+                'Para escate'
             ]
         },
         {
@@ -1674,13 +1673,7 @@ const eppOptions = {
         {
             id: 'adaptador_anclaje',
             label: 'Adaptador de anclaje',
-            type: 'select',
-            selectOptions: [
-                'Viga I',
-                'Viga H',
-                'Esquina/Borde',
-                'Universal'
-            ]
+            type: 'boolean'
         },
         {
             id: 'aire_respirable',

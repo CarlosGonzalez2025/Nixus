@@ -512,13 +512,26 @@ function CreatePermitWizard() {
         ...formData,
       });
 
+      // ESTE ES EL CÓDIGO NUEVO Y CORRECTO
       if (result.success && result.permitId) {
         toast({
-          title: 'Borrador Guardado',
-          description: 'Será redirigido para firmar y activar el permiso.',
+          title: '¡Permiso Guardado!',
+          description: 'Redirigiendo a la página de detalles para la firma.',
         });
-        router.push(`/permits/${result.permitId}`);
-      } else {
+        
+        // 1. Guarda el ID del nuevo permiso para la redirección.
+        const newPermitId = result.permitId;
+        
+        // 2. Limpia el estado del formulario para la próxima vez que se use.
+        dispatch({ type: 'RESET_FORM' });
+        setStep(1);
+        setDraftId(undefined);
+
+        // 3. Finalmente, redirige al usuario a la página de detalles del nuevo permiso.
+        router.push(`/permits/${newPermitId}`);
+      }
+
+       else {
         throw new Error(result.error || 'Hubo un error guardando el permiso.');
       }
     } catch (error: any) {

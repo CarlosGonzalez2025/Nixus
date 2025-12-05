@@ -98,3 +98,97 @@
     background: linear-gradient(135deg, hsl(188, 75%, 43%) 0%, hsl(188, 75%, 38%) 100%);
   }
 }
+/* ============================================
+   MEJORAS DE UX PARA SIDEBAR MÓVIL
+   ============================================ */
+
+/* Transiciones suaves para elementos del sidebar */
+[data-sidebar] {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mejora del estado activo del botón */
+[data-sidebar] button[data-active="true"] {
+  @apply bg-sidebar-accent/50 font-semibold;
+  border-left: 3px solid hsl(var(--sidebar-foreground));
+}
+
+/* Animaciones de apertura/cierre en móvil */
+@media (max-width: 768px) {
+  [data-sidebar][data-state="open"] {
+    animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Scrollbar personalizado para el sidebar */
+[data-sidebar] ::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-sidebar] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-sidebar] ::-webkit-scrollbar-thumb {
+  @apply bg-sidebar-foreground/20 rounded-full;
+}
+
+[data-sidebar] ::-webkit-scrollbar-thumb:hover {
+  @apply bg-sidebar-foreground/30;
+}
+
+/* Mejora del badge de notificaciones */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Mejora del dropdown */
+[role="menu"] {
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Espaciado seguro para móviles con notch */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Mejora visual del focus para accesibilidad */
+[data-sidebar] button:focus-visible {
+  @apply outline-2 outline-offset-2 outline-sidebar-foreground;
+}
+
+/* Backdrop blur para header móvil */
+@supports (backdrop-filter: blur(10px)) {
+  header.sticky {
+    backdrop-filter: blur(10px);
+  }
+}
