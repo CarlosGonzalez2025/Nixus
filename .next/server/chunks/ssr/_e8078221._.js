@@ -29,7 +29,7 @@ var { g: global, __dirname, m: module, e: exports } = __turbopack_context__;
 {
 const e = new Error(`Could not parse module '[project]/src/app/(app)/permits/[id]/page.tsx'
 
-Unexpected eof`);
+Expected ')', got 'data'`);
 e.code = 'MODULE_UNPARSEABLE';
 throw e;}}),
 "[project]/src/app/(app)/permits/[id]/page.tsx [app-rsc] (ecmascript, Next.js server component)": ((__turbopack_context__) => {

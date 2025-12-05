@@ -183,6 +183,25 @@ export type PruebaGasesPeriodica = {
   firma: string;
 }
 
+export type MedicionAtmosferica = {
+  id?: string;
+  fecha?: string;
+  hora?: string;
+  oxigeno?: string;      // O2
+  lel?: string;          // Límite Explosivo Inferior
+  h2s?: string;          // Sulfuro de Hidrógeno
+  co?: string;           // Monóxido de Carbono
+  otros?: string;        // Otros gases
+  temperatura?: string;
+  humedad?: string;
+  presion?: string;
+  realizadaPor?: string;
+  nombreTecnico?: string;
+  firma?: string;
+  serialEquipo?: string;
+  observaciones?: string;
+}
+
 export type SupervisorConfinado = {
     nombre: string;
     cedula: string;

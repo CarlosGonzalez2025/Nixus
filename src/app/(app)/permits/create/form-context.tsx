@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch, useEffect } from 'react';
@@ -28,7 +27,6 @@ type FormAction =
   | { type: 'SET_SST_REQUIRED', payload: boolean }
   | { type: 'SET_ENTIRE_STATE', payload: Partial<Permit> }
   | { type: 'RESET_FORM' };
-
 
 // Initial state
 const initialState: FormState = {
@@ -274,7 +272,10 @@ function formReducer(state: FormState, action: FormAction): FormState {
 }
 
 // Create the context
-const PermitFormContext = createContext<{ state: FormState; dispatch: Dispatch<FormAction> } | undefined>(undefined);
+const PermitFormContext = createContext<{ 
+    state: FormState; 
+    dispatch: Dispatch<FormAction>;
+} | undefined>(undefined);
 
 // Función para inicializar el estado, intentando cargar desde localStorage
 const initializer = (initialValue = initialState) => {
@@ -293,6 +294,42 @@ const initializer = (initialValue = initialState) => {
   return initialValue;
 };
 
+// 🔥 FUNCIÓN DE VALIDACIÓN DE EMERGENCIAS (EXPORTADA)
+export const validateEmergenciasStep = (eppEmergencias: EppEmergencias): {
+    isValid: boolean;
+    errors: string[];
+    hasNoResponses: boolean;
+} => {
+    const emergenciasRequired = [
+        'notificacion',
+        'potenciales',
+        'procedimientos',
+        'rutasEvacuacion',
+        'puntosEncuentro',
+        'equiposEmergencia',
+        'ubicacionBrigadistas'
+    ];
+
+    const errors: string[] = [];
+    let hasNoResponses = false;
+
+    emergenciasRequired.forEach(field => {
+        const value = eppEmergencias.emergencias?.[field];
+        
+        if (value === 'no') {
+            errors.push(`El campo "${field}" debe estar en "SI"`);
+            hasNoResponses = true;
+        } else if (!value || value === '') {
+            errors.push(`El campo "${field}" no ha sido seleccionado`);
+        }
+    });
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+        hasNoResponses
+    };
+};
 
 // Create the provider component
 export function PermitFormProvider({ children }: { children: React.ReactNode }) {
@@ -310,7 +347,6 @@ export function PermitFormProvider({ children }: { children: React.ReactNode }) 
     }
   }, [state]);
 
-
   return (
     <PermitFormContext.Provider value={{ state, dispatch }}>
       {children}
@@ -327,4 +363,5 @@ export function usePermitForm() {
   return context;
 }
 
-    
+// 🔥 EXPORTAR FUNCIÓN HELPER PARA VALIDAR DESDE CUALQUIER COMPONENTE
+export { validateEmergenciasStep as validateEmergencias };

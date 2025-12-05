@@ -1678,9 +1678,9 @@ const eppOptions = {
             label: 'Guante de cuero o carnaza',
             type: 'select',
             selectOptions: [
-                'Tipo carpado',
+                'Tipo soldador',
                 'Tipo vaqueta',
-                'Tipo descarne'
+                'Tipo carnaza'
             ]
         },
         {
@@ -10581,7 +10581,8 @@ var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_
 {
 __turbopack_context__.s({
     "EppEmergenciasStep": (()=>EppEmergenciasStep),
-    "eppItems": (()=>eppItems)
+    "eppItems": (()=>eppItems),
+    "validateEmergencias": (()=>validateEmergencias)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
@@ -10590,11 +10591,14 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$i
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/radio-group.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/chevron-down.js [app-client] (ecmascript) <export default as ChevronDown>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$triangle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertTriangle$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/triangle-alert.js [app-client] (ecmascript) <export default as AlertTriangle>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/collapsible.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/select.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/alert.tsx [app-client] (ecmascript)");
 ;
-var _s = __turbopack_context__.k.signature();
+var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature();
 'use client';
+;
 ;
 ;
 ;
@@ -10621,57 +10625,67 @@ const SectionWrapper = ({ title, children, defaultOpen = false })=>{
                             children: title
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 25,
-                            columnNumber: 11
+                            lineNumber: 34,
+                            columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
                             className: "h-5 w-5 transition-transform data-[state=open]:rotate-180"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 26,
-                            columnNumber: 11
+                            lineNumber: 35,
+                            columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                    lineNumber: 24,
-                    columnNumber: 9
+                    lineNumber: 30,
+                    columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 23,
-                columnNumber: 7
+                lineNumber: 29,
+                columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$collapsible$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CollapsibleContent"], {
                 className: "p-4 border-l border-r border-b rounded-b-lg",
                 children: children
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 29,
-                columnNumber: 7
+                lineNumber: 38,
+                columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-        lineNumber: 22,
-        columnNumber: 5
+        lineNumber: 28,
+        columnNumber: 9
     }, this);
 };
 _s(SectionWrapper, "QSEG/+wAbCqYSsrjeAEeSTwR0QA=");
 _c = SectionWrapper;
-const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputValue, onInputChange, placeholder, isSelect = false, selectOptions = [] })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex flex-col space-y-2 p-3 border rounded-md bg-white",
+const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputValue, onInputChange, placeholder, isSelect = false, selectOptions = [], hasError = false })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: `flex flex-col space-y-2 p-3 border rounded-md bg-white transition-all ${hasError ? 'border-red-500 border-2 bg-red-50' : ''}`,
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "flex justify-between items-center",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                         htmlFor: id,
-                        className: "text-sm font-medium flex-1",
-                        children: label
-                    }, void 0, false, {
+                        className: `text-sm font-medium flex-1 ${hasError ? 'text-red-700' : ''}`,
+                        children: [
+                            label,
+                            hasError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "ml-2 text-red-600 font-bold",
+                                children: '⚠️ Debe seleccionar "SI"'
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                                lineNumber: 81,
+                                columnNumber: 21
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 61,
+                        lineNumber: 75,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$radio$2d$group$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["RadioGroup"], {
@@ -10688,21 +10702,21 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                                         id: `${id}-si`
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 63,
-                                        columnNumber: 62
+                                        lineNumber: 93,
+                                        columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                         htmlFor: `${id}-si`,
                                         children: "SI"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 63,
-                                        columnNumber: 107
+                                        lineNumber: 94,
+                                        columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                lineNumber: 63,
+                                lineNumber: 92,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10713,21 +10727,21 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                                         id: `${id}-no`
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 64,
-                                        columnNumber: 62
+                                        lineNumber: 97,
+                                        columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                         htmlFor: `${id}-no`,
                                         children: "NO"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 64,
-                                        columnNumber: 107
+                                        lineNumber: 98,
+                                        columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                lineNumber: 64,
+                                lineNumber: 96,
                                 columnNumber: 17
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10738,33 +10752,33 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                                         id: `${id}-na`
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 65,
-                                        columnNumber: 62
+                                        lineNumber: 101,
+                                        columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Label"], {
                                         htmlFor: `${id}-na`,
                                         children: "N/A"
                                     }, void 0, false, {
                                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                        lineNumber: 65,
-                                        columnNumber: 107
+                                        lineNumber: 102,
+                                        columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                lineNumber: 65,
+                                lineNumber: 100,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 62,
+                        lineNumber: 86,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 60,
+                lineNumber: 74,
                 columnNumber: 9
             }, this),
             value === 'si' && onInputChange && (isSelect ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -10777,12 +10791,12 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                             placeholder: placeholder || "Seleccione una opción"
                         }, void 0, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 72,
+                            lineNumber: 110,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 71,
+                        lineNumber: 109,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -10791,18 +10805,18 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                                 children: option
                             }, option, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                lineNumber: 76,
+                                lineNumber: 114,
                                 columnNumber: 29
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 74,
+                        lineNumber: 112,
                         columnNumber: 21
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 70,
+                lineNumber: 108,
                 columnNumber: 17
             }, this) : showInput ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
                 className: "mt-2",
@@ -10811,13 +10825,13 @@ const RadioGroupField = ({ id, label, value, onChange, showInput = false, inputV
                 onChange: (e)=>onInputChange(e.target.value)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 81,
+                lineNumber: 119,
                 columnNumber: 17
             }, this) : null)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-        lineNumber: 59,
+        lineNumber: 71,
         columnNumber: 5
     }, this);
 _c1 = RadioGroupField;
@@ -10953,41 +10967,84 @@ const eppItems = [
         manual: false
     }
 ];
+// 🔥 ITEMS DE EMERGENCIAS CON FLAG DE REQUERIDO
 const emergenciasItems = [
     {
         id: 'notificacion',
-        label: 'NOTIFICACIÓN: El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados del trabajo a realizar'
+        label: 'NOTIFICACIÓN: El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados del trabajo a realizar',
+        required: true
     },
     {
         id: 'recordarVerificar',
-        label: 'EMERGENCIAS: Recordar y verificar'
+        label: 'EMERGENCIAS: Recordar y verificar',
+        required: false,
+        isHeader: true // Marca como encabezado
     },
     {
         id: 'potenciales',
-        label: 'A.- Las emergencias potenciales que pueden ocurrir'
+        label: 'A.- Las emergencias potenciales que pueden ocurrir',
+        required: true
     },
     {
         id: 'procedimientos',
-        label: 'B.- Los procedimientos establecidos para tales situaciones.'
+        label: 'B.- Los procedimientos establecidos para tales situaciones.',
+        required: true
     },
     {
         id: 'rutasEvacuacion',
-        label: 'C.- Rutas de Evacuación'
+        label: 'C.- Rutas de Evacuación',
+        required: true
     },
     {
         id: 'puntosEncuentro',
-        label: 'D.- Puntos de encuentro'
+        label: 'D.- Puntos de encuentro',
+        required: true
     },
     {
         id: 'equiposEmergencia',
-        label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo'
+        label: 'E.- Ubicación de equipos de emergencia en el sitio de trabajo',
+        required: true
     },
     {
         id: 'ubicacionBrigadistas',
-        label: 'F.- Ubicación de Brigadistas cercanos'
+        label: 'F.- Ubicación de Brigadistas cercanos',
+        required: true
     }
 ];
+const validateEmergencias = (emergencias)=>{
+    const errors = [];
+    const requiredFields = emergenciasItems.filter((item)=>item.required);
+    let hasNoResponses = false;
+    requiredFields.forEach((item)=>{
+        const value = emergencias?.[item.id];
+        if (value === 'no') {
+            errors.push(`❌ ${item.label}`);
+            hasNoResponses = true;
+        } else if (!value || value === '') {
+            errors.push(`⚠️ ${item.label} (No seleccionado)`);
+        }
+    });
+    return {
+        isValid: errors.length === 0,
+        errors,
+        hasNoResponses
+    };
+};
 function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
+    _s1();
+    const [validationErrors, setValidationErrors] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
+    const [showValidation, setShowValidation] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [hasNoResponses, setHasNoResponses] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    // 🔥 VALIDACIÓN EN TIEMPO REAL
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "EppEmergenciasStep.useEffect": ()=>{
+            const validation = validateEmergencias(eppEmergencias.emergencias);
+            setValidationErrors(validation.errors);
+            setHasNoResponses(validation.hasNoResponses);
+        }
+    }["EppEmergenciasStep.useEffect"], [
+        eppEmergencias.emergencias
+    ]);
     const handleUpdate = (section, field, value)=>{
         onUpdate({
             [section]: {
@@ -10995,6 +11052,15 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                 [field]: value
             }
         });
+        // Mostrar validación después del primer cambio
+        setShowValidation(true);
+    };
+    // 🔥 FUNCIÓN PARA VERIFICAR SI UN CAMPO TIENE ERROR
+    const hasFieldError = (fieldId)=>{
+        const item = emergenciasItems.find((i)=>i.id === fieldId);
+        if (!item?.required) return false;
+        const value = eppEmergencias.emergencias?.[fieldId];
+        return showValidation && (value === 'no' || !value);
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "space-y-8",
@@ -11007,7 +11073,7 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                         children: "Manejo de Emergencias"
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 146,
+                        lineNumber: 271,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -11015,14 +11081,79 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                         children: "Verifique las notificaciones y procedimientos de emergencia."
                     }, void 0, false, {
                         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                        lineNumber: 149,
+                        lineNumber: 274,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 145,
+                lineNumber: 270,
                 columnNumber: 13
+            }, this),
+            showValidation && validationErrors.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Alert"], {
+                variant: "destructive",
+                className: "border-2 border-red-500 bg-red-50",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$triangle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertTriangle$3e$__["AlertTriangle"], {
+                        className: "h-5 w-5"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                        lineNumber: 285,
+                        columnNumber: 21
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertTitle"], {
+                        className: "font-bold text-lg",
+                        children: "🚫 No se puede continuar al siguiente paso"
+                    }, void 0, false, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                        lineNumber: 286,
+                        columnNumber: 21
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDescription"], {
+                        className: "space-y-3",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "font-semibold text-base",
+                                children: hasNoResponses ? 'Todas las condiciones de emergencia DEBEN cumplirse (respuesta "SI"):' : 'Complete los siguientes campos para continuar:'
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                                lineNumber: 290,
+                                columnNumber: 25
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
+                                className: "list-none pl-0 space-y-2 mt-3",
+                                children: validationErrors.map((error, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("li", {
+                                        className: "text-sm bg-white p-2 rounded border border-red-300",
+                                        children: error
+                                    }, index, false, {
+                                        fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                                        lineNumber: 298,
+                                        columnNumber: 33
+                                    }, this))
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                                lineNumber: 296,
+                                columnNumber: 25
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-xs mt-4 font-semibold text-red-800",
+                                children: '💡 Todas las condiciones de la A a la F deben estar en "SI" para poder avanzar al siguiente paso.'
+                            }, void 0, false, {
+                                fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                                lineNumber: 306,
+                                columnNumber: 25
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                        lineNumber: 289,
+                        columnNumber: 21
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
+                lineNumber: 281,
+                columnNumber: 17
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionWrapper, {
                 title: "Notificaciones y Manejo de Emergencias",
@@ -11030,44 +11161,48 @@ function EppEmergenciasStep({ eppEmergencias, onUpdate }) {
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "space-y-2",
                     children: emergenciasItems.map((item)=>{
-                        if (item.id === 'recordarVerificar') {
+                        // Renderizar como encabezado
+                        if (item.isHeader) {
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
-                                className: "font-semibold text-gray-800 pt-4 pb-2",
+                                className: "font-semibold text-gray-800 pt-4 pb-2 text-base",
                                 children: item.label
                             }, item.id, false, {
                                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                                lineNumber: 159,
+                                lineNumber: 319,
                                 columnNumber: 33
                             }, this);
                         }
+                        // Renderizar como campo
                         return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(RadioGroupField, {
                             id: `emergencia-${item.id}`,
                             label: item.label,
                             value: eppEmergencias.emergencias?.[item.id],
-                            onChange: (value)=>handleUpdate('emergencias', item.id, value)
+                            onChange: (value)=>handleUpdate('emergencias', item.id, value),
+                            hasError: hasFieldError(item.id)
                         }, item.id, false, {
                             fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                            lineNumber: 165,
+                            lineNumber: 327,
                             columnNumber: 29
                         }, this);
                     })
                 }, void 0, false, {
                     fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                    lineNumber: 155,
+                    lineNumber: 314,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-                lineNumber: 154,
+                lineNumber: 313,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/app/(app)/permits/create/components/EppEmergenciasStep.tsx",
-        lineNumber: 144,
+        lineNumber: 269,
         columnNumber: 9
     }, this);
 }
+_s1(EppEmergenciasStep, "U29lWlxm3JCFi6P4D28IHjmk2dM=");
 _c2 = EppEmergenciasStep;
 var _c, _c1, _c2;
 __turbopack_context__.k.register(_c, "SectionWrapper");

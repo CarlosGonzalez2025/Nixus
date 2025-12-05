@@ -7,7 +7,9 @@ var { g: global, __dirname } = __turbopack_context__;
 {
 __turbopack_context__.s({
     "PermitFormProvider": (()=>PermitFormProvider),
-    "usePermitForm": (()=>usePermitForm)
+    "usePermitForm": (()=>usePermitForm),
+    "validateEmergencias": (()=>validateEmergenciasStep),
+    "validateEmergenciasStep": (()=>validateEmergenciasStep)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
@@ -373,6 +375,33 @@ const initializer = (initialValue = initialState)=>{
     }
     "TURBOPACK unreachable";
 };
+const validateEmergenciasStep = (eppEmergencias)=>{
+    const emergenciasRequired = [
+        'notificacion',
+        'potenciales',
+        'procedimientos',
+        'rutasEvacuacion',
+        'puntosEncuentro',
+        'equiposEmergencia',
+        'ubicacionBrigadistas'
+    ];
+    const errors = [];
+    let hasNoResponses = false;
+    emergenciasRequired.forEach((field)=>{
+        const value = eppEmergencias.emergencias?.[field];
+        if (value === 'no') {
+            errors.push(`El campo "${field}" debe estar en "SI"`);
+            hasNoResponses = true;
+        } else if (!value || value === '') {
+            errors.push(`El campo "${field}" no ha sido seleccionado`);
+        }
+    });
+    return {
+        isValid: errors.length === 0,
+        errors,
+        hasNoResponses
+    };
+};
 function PermitFormProvider({ children }) {
     const [state, dispatch] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useReducer"])(formReducer, initialState, initializer);
     // Efecto para guardar en localStorage cada vez que el estado cambia
@@ -396,7 +425,7 @@ function PermitFormProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/src/app/(app)/permits/create/form-context.tsx",
-        lineNumber: 315,
+        lineNumber: 351,
         columnNumber: 5
     }, this);
 }
@@ -407,6 +436,7 @@ function usePermitForm() {
     }
     return context;
 }
+;
 }}),
 
 };

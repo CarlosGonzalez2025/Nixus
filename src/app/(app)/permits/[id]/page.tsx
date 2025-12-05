@@ -347,27 +347,27 @@ export default function PermitDetailPage() {
       const pageHeight = doc.internal.pageSize.height;
       const margin = 10;
       let yPos = margin;
-  
+
       // Colores corporativos
       const italcolOrange = [239, 123, 0];
-  
-      // ===== FUNCIONES HELPER =====
-      
+
+      // FUNCIONES HELPER
       const checkPageBreak = (neededHeight: number) => {
         if (yPos + neededHeight > pageHeight - margin) {
           doc.addPage();
           yPos = margin;
         }
       };
-  
+
       const drawHeader = (title: string, code = "DN-FR-SST-016", version = "04") => {
         // Logo
         try {
-          if (logoBase64 !== "DEJA ESTE CAMPO ASÍ PARA AGREGARLO MANUALMENTE") {
+          // ✅ CORRECCIÓN AQUÍ - Línea 366
+          if (logoBase64) {  // O: if (logoBase64 && logoBase64.length > 0)
             doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
           } else {
-             doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
-             doc.rect(margin, yPos, 30, 20, 'F');
+            doc.setFillColor(italcolOrange[0], italcolOrange[1], italcolOrange[2]);
+            doc.rect(margin, yPos, 30, 20, 'F');
           }
         } catch (e) {
           console.error('Error al cargar logo:', e);

@@ -1683,7 +1683,7 @@ function PermitDetailPage() {
                 123,
                 0
             ];
-            // ===== FUNCIONES HELPER =====
+            // FUNCIONES HELPER
             const checkPageBreak = (neededHeight)=>{
                 if (yPos + neededHeight > pageHeight - margin) {
                     doc.addPage();
@@ -1693,6 +1693,7 @@ function PermitDetailPage() {
             const drawHeader = (title, code = "DN-FR-SST-016", version = "04")=>{
                 // Logo
                 try {
+                    // ✅ CORRECCIÓN AQUÍ - Línea 366
                     if ("TURBOPACK compile-time truthy", 1) {
                         doc.addImage(logoBase64, 'PNG', margin, yPos, 30, 20);
                     } else {

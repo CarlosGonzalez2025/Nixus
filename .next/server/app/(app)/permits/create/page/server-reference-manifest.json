@@ -4,12 +4,16 @@
       "workers": {
         "app/(app)/permits/create/page": {
           "moduleId": "[project]/.next-internal/server/app/(app)/permits/create/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
+          "async": true,
+          "exportedName": "savePermitDraft",
+          "filename": "src/app/(app)/permits/actions.ts"
         }
       },
       "layer": {
         "app/(app)/permits/create/page": "action-browser"
-      }
+      },
+      "exportedName": "savePermitDraft",
+      "filename": "src/app/(app)/permits/actions.ts"
     }
   },
   "edge": {}

@@ -1,4 +1,5 @@
 'use client';
+
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -53,7 +54,7 @@ import {
 import type { Permit, ExternalWorker, Tool, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoATS, PermitGeneralInfo, ValidacionDiaria, AutorizacionPersona, PruebaGasesPeriodica, JustificacionATS, EppEmergencias } from '@/types';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
-import { PermitFormProvider, usePermitForm } from './form-context';
+import { PermitFormProvider, usePermitForm, validateEmergencias } from './form-context';
 import { GeneralInfoStep } from './components/GeneralInfoStep';
 import { AtsStep } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
@@ -333,6 +334,7 @@ function CreatePermitWizard() {
   const steps = baseSteps.filter(s => s.condition);
   const currentStepInfo = steps[step - 1];
 
+  // 🔥 FUNCIÓN DE VALIDACIÓN ÚNICA (SIN DUPLICADOS)
   const canProceed = () => {
     const currentLabel = steps[step - 1]?.label;
 
@@ -444,19 +446,26 @@ function CreatePermitWizard() {
         }
     }
 
+    // 🔥 VALIDACIÓN DE EMERGENCIAS
     if (currentLabel === 'Emergencias') {
-        const { emergencias } = formData.eppEmergencias || {};
-        if (!emergencias || !Object.values(emergencias).some(value => value === 'si')) {
+        const validation = validateEmergencias(formData.eppEmergencias);
+        
+        if (!validation.isValid) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
             toast({
-                variant: "destructive",
-                title: "Validación Requerida en Manejo de Emergencias",
-                description: "Debe seleccionar 'SI' en al menos una opción de 'Notificación y Manejo de Emergencias' para continuar.",
-                duration: 6000,
+                variant: 'destructive',
+                title: '🚫 No se puede continuar',
+                description: validation.hasNoResponses 
+                    ? 'TODAS las condiciones de emergencia (A-F) deben estar en "SI" para poder avanzar al siguiente paso.'
+                    : 'Complete todos los campos requeridos de emergencias antes de continuar.',
+                duration: 8000,
             });
             return false;
         }
     }
-    
+
+    // 🔥 VALIDACIÓN DE TRABAJADORES
     if (currentLabel === 'Trabajadores') {
       const numTrabajadores = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
       const workers = formData.workers || [];
@@ -639,7 +648,7 @@ function CreatePermitWizard() {
                   }} />
                 )}
               </div>
-            )})}
+            )})};
           </div>
           <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
             {steps.map((s_info, s_idx) => (

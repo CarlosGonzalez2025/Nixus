@@ -94,7 +94,7 @@ export const eppOptions = {
     { id: 'polainas', label: 'Polainas', type: 'boolean' },
     { id: 'guante_dielectrico', label: 'Guante dieléctrico clase', type: 'custom_guante_dielectrico' },
     { id: 'guante_caucho_nitrilo', label: 'Guante de caucho y/o nitrilo', type: 'boolean' },
-    { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'select', selectOptions: ['Tipo carpado', 'Tipo vaqueta', 'Tipo descarne'] },
+    { id: 'guante_cuero_carnaza', label: 'Guante de cuero o carnaza', type: 'select', selectOptions: ['Tipo soldador', 'Tipo vaqueta', 'Tipo carnaza'] },
     { id: 'guante_vaqueta_anticorte', label: 'Guante de vaqueta o Anticorte', type: 'boolean' },
     { id: 'guante_temperatura', label: 'Guante temperatura', type: 'boolean' },
     { id: 'botas_seguridad', label: 'Botas de seguridad', type: 'boolean' },

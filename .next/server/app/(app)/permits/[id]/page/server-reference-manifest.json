@@ -4,45 +4,61 @@
       "workers": {
         "app/(app)/permits/[id]/page": {
           "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
+          "async": true,
+          "exportedName": "updatePermitStatus",
+          "filename": "src/app/(app)/permits/actions.ts"
         }
       },
       "layer": {
         "app/(app)/permits/[id]/page": "action-browser"
-      }
+      },
+      "exportedName": "updatePermitStatus",
+      "filename": "src/app/(app)/permits/actions.ts"
     },
     "7e15bdb6ac388e78a59299d5091891127d63de7bc6": {
       "workers": {
         "app/(app)/permits/[id]/page": {
           "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
+          "async": true,
+          "exportedName": "addSignatureAndNotify",
+          "filename": "src/app/(app)/permits/actions.ts"
         }
       },
       "layer": {
         "app/(app)/permits/[id]/page": "action-browser"
-      }
+      },
+      "exportedName": "addSignatureAndNotify",
+      "filename": "src/app/(app)/permits/actions.ts"
     },
     "7edc6233c637b331b2fa6dba912da67e147424b389": {
       "workers": {
         "app/(app)/permits/[id]/page": {
           "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
+          "async": true,
+          "exportedName": "addDailyValidationSignature",
+          "filename": "src/app/(app)/permits/actions.ts"
         }
       },
       "layer": {
         "app/(app)/permits/[id]/page": "action-browser"
-      }
+      },
+      "exportedName": "addDailyValidationSignature",
+      "filename": "src/app/(app)/permits/actions.ts"
     },
     "78ef86f0b5ad2d150f478f7151b2ac622c1a91d8a4": {
       "workers": {
         "app/(app)/permits/[id]/page": {
           "moduleId": "[project]/.next-internal/server/app/(app)/permits/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/(app)/permits/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": true
+          "async": true,
+          "exportedName": "addWorkerSignature",
+          "filename": "src/app/(app)/permits/actions.ts"
         }
       },
       "layer": {
         "app/(app)/permits/[id]/page": "action-browser"
-      }
+      },
+      "exportedName": "addWorkerSignature",
+      "filename": "src/app/(app)/permits/actions.ts"
     }
   },
   "edge": {}
