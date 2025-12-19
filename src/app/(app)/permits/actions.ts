@@ -15,21 +15,42 @@ config();
 const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   const userIds = new Set<string>();
 
-  // 1. Creador del permiso
+  // 1. Creador del permiso (Solicitante)
   if (permit.createdBy) {
     userIds.add(permit.createdBy);
   }
 
-  // 2. Usuarios que han firmado
+  // 2. Usuarios que han firmado (Cualquiera que ya haya participado)
   Object.values(permit.approvals || {}).forEach(approval => {
     if (approval && approval.userId) {
       userIds.add(approval.userId);
     }
   });
 
-  // 3. Roles administrativos o de supervisión que deberían ser notificados
-  const adminsQuery = await adminDb.collection('users').where('role', 'in', ['admin', 'autorizante', 'lider_sst']).get();
-  adminsQuery.forEach(doc => userIds.add(doc.id));
+  // 3. Lógica específica para Autorizantes y SST según la planta
+  const permitPlant = permit.generalInfo?.planta;
+
+  // Buscar Autorizantes
+  let autorizantesQuery = adminDb.collection('users').where('role', '==', 'autorizante');
+  if (permitPlant) {
+    autorizantesQuery = autorizantesQuery.where('planta', '==', permitPlant);
+  }
+  const autorizantesSnap = await autorizantesQuery.get();
+  autorizantesSnap.forEach(doc => userIds.add(doc.id));
+
+  // Buscar Líderes SST (Solo si es requerido o hay riesgo alto)
+  // Se asume que si el permiso requiere firma SST, se debe notificar a los SST.
+  // También se podría validar por tipos de trabajo de alto riesgo, pero isSSTSignatureRequired suele cubrir esto.
+  if (permit.isSSTSignatureRequired || permit.trabajoAlturas || permit.espaciosConfinados || permit.controlEnergia || permit.izajeCargas || permit.excavaciones) {
+     let sstQuery = adminDb.collection('users').where('role', '==', 'lider_sst');
+     if (permitPlant) {
+        sstQuery = sstQuery.where('planta', '==', permitPlant);
+     }
+     const sstSnap = await sstQuery.get();
+     sstSnap.forEach(doc => userIds.add(doc.id));
+  }
+
+  // Nota: Ya NO se notifica a 'admin' genéricos automáticamente, a menos que sean firmantes.
 
   return Array.from(userIds);
 };
@@ -56,7 +77,7 @@ const createNotification = async (
   // Enviar correo electrónico
   const userEmail = await getEmailForUser(userId);
   if (userEmail) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permit.id}`;
     await sendPermitUpdateEmail({
       to: userEmail,
@@ -176,7 +197,7 @@ export async function createPermit(data: PermitCreateData) {
     }
 
     const workTypesText = getWorkTypesString(permitPayload);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${docRef.id}`;
     
     const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
@@ -189,6 +210,7 @@ Se ha creado una nueva solicitud de permiso de trabajo.
 Por favor, revise la solicitud para su aprobación en el siguiente enlace:
 ${permitUrl}`;
     
+    // ✅ WHATSAPP: Solo se envía en la creación del permiso.
     await sendWhatsAppNotification(messageBody);
     
     revalidatePath('/permits');
@@ -398,26 +420,10 @@ export async function addSignatureAndNotify(
         
         // ✅ NOTIFICACIÓN ESPECIAL SI EL PERMISO PASÓ AUTOMÁTICAMENTE A EN_EJECUCION
         if (updateData['status'] === 'en_ejecucion') {
-            const executionMessage = `El permiso #${updatedPermitData.number} ha completado todas las aprobaciones requeridas y ahora está EN EJECUCIÓN.`;
+            const executionMessage = `El permiso #${updatedPermitData.number} ha completado todas las aprobaciones y ahora está EN EJECUCIÓN.`;
             for (const uid of involvedUsers) {
                  await createNotification(uid, updatedPermitData, executionMessage, 'approval', user);
             }
-            
-            // Notificación WhatsApp
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-            const permitUrl = `${baseUrl}/permits/${permitId}`;
-            const whatsappMsg = `*¡PERMISO EN EJECUCIÓN!* ✅
-
-📄 *Número:* ${updatedPermitData.number}
-📍 *Área:* ${permitBeforeData.generalInfo?.areaEspecifica || 'N/A'}
-🛠️ *Tipo:* ${getWorkTypesString(permitBeforeData)}
-
-✅ Todas las firmas requeridas han sido completadas.
-El permiso está ahora EN EJECUCIÓN.
-
-Ver detalles: ${permitUrl}`;
-            
-            await sendWhatsAppNotification(whatsappMsg);
         }
 
         revalidatePath(`/permits/${permitId}`);
@@ -479,35 +485,36 @@ function validateStateTransition(currentStatus: PermitStatus, targetStatus: Perm
             'pendiente_revision': ['solicitante', 'lider_tarea', 'admin']
         },
         'pendiente_revision': {
-            'en_ejecucion': ['autorizante', 'admin'],
+            'en_ejecucion': ['autorizante', 'admin', 'lider_tarea'], // Permitir a lider_tarea iniciar si ya esta aprobado por otros
+            'aprobado': ['autorizante', 'admin'],
             'rechazado': ['autorizante', 'lider_sst', 'admin']
         },
-        'en_ejecucion': {
-            'suspendido': ['lider_sst', 'admin'],
-            'cerrado': ['lider_tarea', 'autorizante', 'admin']
-        },
-        'suspendido': {
-            'en_ejecucion': ['lider_sst', 'admin'],
-            'cerrado': ['lider_tarea', 'autorizante', 'admin']
-        },
-        // Mantener compatibilidad con permisos antiguos que tengan estado "aprobado"
         'aprobado': {
             'en_ejecucion': ['lider_tarea', 'admin'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin']
+            'rechazado': ['autorizante', 'lider_sst', 'admin'] // Permitir rechazar incluso si esta aprobado
+        },
+        'en_ejecucion': {
+            'suspendido': ['lider_sst', 'admin', 'autorizante'],
+            'cerrado': ['lider_tarea', 'admin', 'autorizante']
+        },
+        'suspendido': {
+            'en_ejecucion': ['lider_sst', 'admin', 'autorizante'],
+            'cerrado': ['lider_tarea', 'admin', 'autorizante']
         }
     };
     
     const allowedRoles = allowedTransitions[currentStatus]?.[targetStatus];
     if (!allowedRoles) {
-        return { allowed: false, reason: `Transición de '${currentStatus}' a '${targetStatus}' no está permitida.` };
+        return { allowed: false, reason: `Transición de '${getStatusText(currentStatus)}' a '${getStatusText(targetStatus)}' no está permitida.` };
     }
 
     if (!allowedRoles.includes(userRole) && userRole !== 'admin') {
-        return { allowed: false, reason: `Tu rol (${userRole}) no tiene permisos para cambiar el estado a '${targetStatus}'.` };
+        return { allowed: false, reason: `Tu rol (${userRole}) no tiene permisos para cambiar el estado a '${getStatusText(targetStatus)}'.` };
     }
 
     return { allowed: true };
 }
+
 
 export async function updatePermitStatus(
   permitId: string,
@@ -530,7 +537,6 @@ export async function updatePermitStatus(
         }
         const permitData = permitSnap.data() as Permit;
         
-        // ✅ Validar transición de estado
         const transition = validateStateTransition(permitData.status, status, currentUser.role);
         if (!transition.allowed) {
             return { success: false, error: transition.reason };
@@ -538,12 +544,10 @@ export async function updatePermitStatus(
 
         const updateData: UpdateData<Permit> = { status };
 
-        // ✅ Guardar razón de rechazo
         if (status === 'rechazado' && reason) {
             updateData.rejectionReason = reason;
         }
         
-        // ✅ Marcar fecha de cierre
         if (status === 'cerrado') {
             updateData['closure.fechaCierre'] = FieldValue.serverTimestamp();
             updateData['closure.terminado'] = 'si';
@@ -554,19 +558,32 @@ export async function updatePermitStatus(
         const updatedPermitData = { ...permitData, ...updateData, id: permitId } as Permit;
         const triggeredBy = currentUser;
         
+        // Mensajes de notificación mejorados
         let notificationType: Notification['type'] = 'status_change';
-        let message = `${currentUser.displayName || 'Un usuario'} ha cambiado el estado del permiso #${permitData.number} a: ${getStatusText(status)}.`;
+        let message = `El estado del permiso #${permitData.number} ha sido actualizado a: ${getStatusText(status)}.`;
 
-        if (status === 'en_ejecucion') {
-            notificationType = 'approval';
-            message = `El permiso #${permitData.number} ha sido puesto EN EJECUCIÓN manualmente.`;
-        } else if (status === 'rechazado') {
-            notificationType = 'rejection';
-            message = `${currentUser.displayName || 'Un usuario'} ha rechazado el permiso #${permitData.number}.`;
-            if (reason) message += ` Motivo: ${reason}`;
-        } else if (status === 'cerrado') {
-            notificationType = 'cancellation';
-            message = `${currentUser.displayName || 'Un usuario'} ha cerrado el permiso #${permitData.number}.`;
+        switch (status) {
+            case 'aprobado':
+                notificationType = 'approval';
+                message = `¡Buenas noticias! El permiso #${permitData.number} ha sido APROBADO y está listo para su ejecución.`;
+                break;
+            case 'en_ejecucion':
+                notificationType = 'status_change';
+                message = `El permiso #${permitData.number} ha sido puesto EN EJECUCIÓN.`;
+                break;
+            case 'rechazado':
+                notificationType = 'rejection';
+                message = `Atención: El permiso #${permitData.number} ha sido RECHAZADO.`;
+                if (reason) message += ` Motivo: ${reason}`;
+                break;
+            case 'cerrado':
+                notificationType = 'cancellation';
+                message = `El permiso #${permitData.number} ha sido CERRADO exitosamente.`;
+                break;
+            case 'suspendido':
+                notificationType = 'status_change';
+                message = `Alerta: El permiso #${permitData.number} ha sido SUSPENDIDO.`;
+                break;
         }
         
         const involvedUsers = await getInvolvedUsers(updatedPermitData);
@@ -575,23 +592,6 @@ export async function updatePermitStatus(
                 await createNotification(uid, updatedPermitData, message, notificationType, triggeredBy);
             }
         }
-
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-        const permitUrl = `${baseUrl}/permits/${permitId}`;
-
-        let messageBody = `*Actualización de Estado - SGTC* 🔄
-El estado del permiso *${permitData.number || permitId}* ha cambiado.
-
-*Nuevo Estado:* ${getStatusText(status)}
-
-Puede ver los detalles aquí:
-${permitUrl}`;
-
-        if (status === 'rechazado' && reason) {
-          messageBody += `\n\n*Motivo del rechazo:* ${reason}`;
-        }
-        
-        await sendWhatsAppNotification(messageBody);
         
         revalidatePath(`/permits/${permitId}`);
         revalidatePath('/permits');
@@ -752,22 +752,6 @@ export async function addDailyValidationSignature(
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    const permitUrl = `${baseUrl}/permits/${permitId}`;
-    const whatsappMessage = `*Validación Diaria - SGTC* ✍️
-Se ha registrado una nueva firma de validación diaria.
-
-📄 *Permiso:* ${fullPermitData.number || 'N/A'}
-🗓️ *Día:* ${day}
-👤 *Firmante:* ${user.displayName || 'N/A'}
-✅ *Rol:* ${validationRoleName}
-📋 *Anexo:* ${anexoDisplayName}
-
-Puede ver los detalles aquí:
-${permitUrl}`;
-    
-    await sendWhatsAppNotification(whatsappMessage);
-
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
 
@@ -853,23 +837,7 @@ export async function addDailyValidationClosureSignature(
         await createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
       }
     }
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    const permitUrl = `${baseUrl}/permits/${permitId}`;
-    const whatsappMessage = `*Cierre Diario Registrado - SGTC* 🔒
-Se ha registrado el cierre del trabajo del día.
-
-📄 *Permiso:* ${fullPermitData.number || 'N/A'}
-🗓️ *Día:* ${day}
-👤 *Responsable:* ${user.displayName || 'N/A'}
-📋 *Anexo:* ${anexoDisplayName}
-${data.observaciones ? `📝 *Observaciones:* ${data.observaciones}` : ''}
-
-Puede ver los detalles aquí:
-${permitUrl}`;
-
-    await sendWhatsAppNotification(whatsappMessage);
-
+    
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
 
@@ -931,7 +899,8 @@ export async function closePermitByAnyUser(
       }
     }
     
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    // ✅ WHATSAPP: Enviar notificación crítica por WhatsApp
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permitId}`;
     const whatsappMessage = `*Permiso Cerrado por Emergencia - SGTC* 🔒
 
@@ -1005,5 +974,3 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
-
-    

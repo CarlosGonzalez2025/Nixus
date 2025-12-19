@@ -16,6 +16,11 @@ export async function sendWhatsAppNotification(messageBody: string) {
     return { success: false, error: 'Servicio de notificaciones no configurado en el servidor.' };
   }
 
+  if (!accountSid.startsWith('AC')) {
+    console.warn(`⚠️ [Twilio] Configuration Error: TWILIO_ACCOUNT_SID must start with 'AC'. Current value: ${accountSid.substring(0, 5)}... Notifications Disabled.`);
+    return { success: false, error: 'Configuración de Twilio inválida.' };
+  }
+
   const client = twilio(accountSid, authToken);
 
   try {
