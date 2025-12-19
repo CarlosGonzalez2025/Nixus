@@ -1,6 +1,6 @@
 # SGTC Móvil - Sistema de Gestión de Tareas Críticas
 
-![SGTC Login](https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png)
+![SGTC Login](https://i.postimg.cc/VsZf5S1T/logo-header.png)
 
 **SGTC Móvil** es una aplicación web robusta y moderna, diseñada para digitalizar y optimizar el ciclo de vida completo de los permisos de trabajo para tareas de alto riesgo. El sistema reemplaza los procesos manuales basados en papel por un flujo de trabajo digital, centralizado y en tiempo real, mejorando radicalmente la seguridad, la trazabilidad y la eficiencia operativa.
 
@@ -56,16 +56,18 @@ Un flujo de varios pasos que asegura la recopilación completa y precisa de la i
 ### 4. Ciclo de Vida y Gestión de Permisos
 -   **Listado y Filtrado:** Una vista de tabla que permite filtrar permisos por estado (`Pendiente`, `Aprobado`, etc.) y buscar por palabras clave.
 -   **Vista de Detalles Completa:** Cada permiso tiene una página dedicada que muestra toda su información en un formato claro y legible, donde ocurren las aprobaciones.
--   **Notificaciones por WhatsApp:** El sistema se integra con **Twilio** para enviar notificaciones automáticas por WhatsApp a los supervisores cuando se crea un nuevo permiso o cuando el solicitante firma, agilizando el proceso de revisión.
+-   **Notificaciones por WhatsApp:** El sistema se integra con **Twilio** para enviar notificaciones automáticas por WhatsApp a los supervisores cuando se crea un nuevo permiso o cuando se realizan acciones clave, agilizando el proceso de revisión.
 
 ### 5. Flujo de Firmas Secuencial y Condicional
 Este es el corazón del sistema, garantizando un proceso de aprobación lógico y seguro:
 1.  **Firma del Solicitante:** Es el primer paso. Al firmar, el solicitante confirma que la información es correcta y el permiso ya no puede ser modificado por él. Se envía una notificación al autorizante.
-2.  **Firma del Autorizante:** Solo puede firmar DESPUÉS de que el solicitante haya firmado.
-3.  **Firma de Mantenimiento (Condicional):** Solo puede firmar DESPUÉS del autorizante, y únicamente si el permiso incluye "Control de Energías".
-4.  **Firma del Líder SST:** Solo puede firmar DESPUÉS de que tanto el solicitante como el autorizante hayan firmado.
-5.  **Aprobación/Rechazo Final:** Un `autorizante` o `admin` puede aprobar el permiso (cambia a estado `aprobado`) solo si todas las firmas requeridas están completas. También pueden rechazarlo en cualquier momento del proceso de revisión.
-6.  **Inicio y Cierre:** Un `lider_tarea` o `admin` puede cambiar el estado a `en_ejecucion` y, finalmente, a `cerrado`.
+2.  **Firma de Coordinador (Condicional):** En trabajos de altura, la firma del coordinador es requerida antes que la del solicitante.
+3.  **Firma del Autorizante:** Solo puede firmar DESPUÉS de que el solicitante haya firmado.
+4.  **Firma de Mantenimiento (Condicional):** Solo puede firmar DESPUÉS del autorizante, y únicamente si el permiso incluye "Control de Energías".
+5.  **Firma del Líder SST:** Solo puede firmar DESPUÉS de que tanto el solicitante como el autorizante hayan firmado.
+6.  **Aprobación/Rechazo Final:** Un `autorizante` o `admin` puede aprobar el permiso (cambia a estado `aprobado`) solo si todas las firmas requeridas están completas. También pueden rechazarlo en cualquier momento del proceso de revisión.
+7.  **Inicio y Cierre:** Un `lider_tarea` o `admin` puede cambiar el estado a `en_ejecucion` y, finalmente, a `cerrado`.
+8.  **Cierre de Emergencia:** Permite a un usuario autorizado forzar el cierre de un permiso activo. El sistema le informará de todas las firmas pendientes y le exigirá una justificación y una firma para registrar la acción excepcional.
 
 ---
 
@@ -75,8 +77,9 @@ Este es el corazón del sistema, garantizando un proceso de aprobación lógico 
 -   **Lenguaje:** [TypeScript](https://www.typescriptlang.org/)
 -   **UI y Estilos:** [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/), [ShadCN/UI](https://ui.shadcn.com/)
 -   **Backend y Base de Datos:** [Firebase](https://firebase.google.com/) (Authentication, Firestore con reglas de seguridad estrictas)
--   **Notificaciones:** [Twilio](https://www.twilio.com/) (para WhatsApp)
+-   **Notificaciones:** [Twilio](https://www.twilio.com/) (para WhatsApp), [Resend](https://resend.com/) (para correos electrónicos).
 -   **Exportación a PDF:** `jspdf` y `jspdf-autotable`
+-   **Inteligencia Artificial:** [Google Genkit](https://firebase.google.com/docs/genkit) (para evaluación de riesgos)
 
 ---
 
@@ -93,12 +96,13 @@ src/
 │   │   ├── permits/       # Creación y gestión de permisos
 │   │   │   ├── create/     # Asistente de creación de permisos
 │   │   │   └── [id]/       # Vista de detalle y ciclo de vida de un permiso
-│   │   └── guide/          # Guía visual del flujo de trabajo
+│   │   ├── guide/          # Guía visual del flujo de trabajo
+│   │   └── settings/       # Configuración de perfil y contraseña
 │   ├── login/              # Página de inicio de sesión
 │   └── ...
 ├── components/             # Componentes de UI reutilizables (Sidebar, SignaturePad, etc.)
 ├── hooks/                  # Hooks personalizados (useAuth, useUser, useIdleTimer)
-├── lib/                    # Librerías y utilidades (Firebase, notificaciones, errores)
+├── lib/                    # Librerías y utilidades (Firebase, notificaciones, errores, PDF)
 ├── types/                  # Definiciones de tipos de TypeScript (Permit, User, etc.)
 └── ...
 ```
@@ -109,10 +113,10 @@ src/
 
 ### **Módulo 2: Creación de Permisos (`/permits/create`)**
 -   **Cómo funciona:** Es un asistente de múltiples pasos que utiliza un `Context` de React (`PermitFormProvider`) para gestionar el estado del formulario a través de los diferentes componentes. La selección de "Tipo de Trabajo" en el primer paso renderiza condicionalmente los componentes de los anexos correspondientes.
--   **Envío del Permiso (`/permits/actions.ts`):** Al finalizar, se invoca la `Server Action` `createPermit`. Esta función se ejecuta en el servidor y es la única encargada de:
-    1.  Crear el documento del permiso en la colección `permits` de Firestore.
-    2.  Asignarle un número de permiso único y el estado inicial `pendiente_revision`.
-    3.  Disparar la notificación por WhatsApp a través de la integración con Twilio.
+-   **Envío del Permiso (`/permits/actions.ts`):** Al finalizar, se invoca la `Server Action` `savePermitDraft`. Esta función se ejecuta en el servidor y es la única encargada de:
+    1.  Crear o actualizar el documento del permiso en la colección `permits` de Firestore.
+    2.  Asignarle un número de permiso único y el estado inicial (`borrador` o `pendiente_revision`).
+    3.  Disparar las notificaciones por WhatsApp y correo electrónico a través de las integraciones con Twilio y Resend.
 -   **Seguridad:** Las reglas de Firestore prohíben la creación de permisos directamente desde el cliente (`allow create: false`), forzando el uso de esta `Server Action` segura.
 
 ### **Módulo 3: Ciclo de Vida del Permiso (`/permits`, `/permits/[id]`)**
@@ -127,6 +131,10 @@ src/
 -   **Gestión de Usuarios:** Permite crear y gestionar perfiles de usuario. Las acciones invocan `Server Actions` que utilizan el **Firebase Admin SDK**, un requisito para operaciones privilegiadas como crear un usuario en Firebase Authentication o modificar su rol.
 -   **Gestión de Listas:** Permite a los administradores añadir o eliminar elementos de las listas desplegables que se usan en los formularios (ej: Áreas, Plantas, Contratos), manteniendo la aplicación personalizable.
 
+### **Módulo 5: Inteligencia Artificial (`/ai/flows`)**
+-   **Cómo funciona:** El sistema integra un agente de IA construido con **Google Genkit**.
+-   **Evaluación de Riesgos (`risk-assessment-recommendation.ts`):** Una `Flow` de Genkit que recibe detalles del permiso (tipo de trabajo, factores ambientales) y utiliza un modelo de lenguaje para generar recomendaciones de controles de riesgo específicos para la tarea. Aunque no está implementado en la UI actualmente, sienta las bases para futuras funcionalidades de asistencia inteligente.
+
 ---
 
 ## ⚙️ Configuración y Ejecución Local
@@ -140,9 +148,9 @@ Para ejecutar el proyecto en un entorno de desarrollo, siga estos pasos:
     cd <nombre-del-repositorio>
     npm install
     ```
-3.  **Variables de Entorno:** Cree un archivo `.env` en la raíz del proyecto y agregue las credenciales de Firebase y Twilio.
+3.  **Variables de Entorno:** Cree un archivo `.env` en la raíz del proyecto y agregue las credenciales de Firebase y Twilio. Un archivo `.env.example` está disponible como guía.
 4.  **Ejecución:**
     ```bash
     npm run dev
     ```
-    La aplicación estará disponible en `http://localhost:9002`.
+    La aplicación estará disponible en `http://localhost:9003`.

@@ -56,10 +56,12 @@ const createNotification = async (
   // Enviar correo electrónico
   const userEmail = await getEmailForUser(userId);
   if (userEmail) {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const permitUrl = `${baseUrl}/permits/${permit.id}`;
     await sendPermitUpdateEmail({
       to: userEmail,
       subject: `Actualización en Permiso SGTC: ${permit.number || permit.id}`,
-      html: `<p>${message}</p><p>Puedes ver los detalles del permiso haciendo clic <a href="${process.env.NEXT_PUBLIC_BASE_URL}/permits/${permit.id}">aquí</a>.</p>`
+      html: `<p>${message}</p><p>Puedes ver los detalles del permiso haciendo clic <a href="${permitUrl}">aquí</a>.</p>`
     });
   }
 };
@@ -174,7 +176,7 @@ export async function createPermit(data: PermitCreateData) {
     }
 
     const workTypesText = getWorkTypesString(permitPayload);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const permitUrl = `${baseUrl}/permits/${docRef.id}`;
     
     const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
@@ -402,7 +404,7 @@ export async function addSignatureAndNotify(
             }
             
             // Notificación WhatsApp
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
             const permitUrl = `${baseUrl}/permits/${permitId}`;
             const whatsappMsg = `*¡PERMISO EN EJECUCIÓN!* ✅
 
@@ -574,7 +576,7 @@ export async function updatePermitStatus(
             }
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
         const permitUrl = `${baseUrl}/permits/${permitId}`;
 
         let messageBody = `*Actualización de Estado - SGTC* 🔄
@@ -750,7 +752,7 @@ export async function addDailyValidationSignature(
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgpt-movil.web.app';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const permitUrl = `${baseUrl}/permits/${permitId}`;
     const whatsappMessage = `*Validación Diaria - SGTC* ✍️
 Se ha registrado una nueva firma de validación diaria.
@@ -772,6 +774,185 @@ ${permitUrl}`;
   } catch (error: any) {
     console.error("❌ Error al guardar la validación diaria:", error);
     return { success: false, error: 'No se pudo guardar la firma de validación.' };
+  }
+}
+
+// ✨ NUEVA FUNCIÓN: Agregar firma de cierre diario
+export async function addDailyValidationClosureSignature(
+  permitId: string,
+  anexoName: string,
+  index: number,
+  data: {
+    dia: number;
+    fecha: string;
+    firma: string;
+    observaciones?: string;
+  },
+  user: User
+) {
+  if (!permitId || !anexoName || index < 0 || !data || !user) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
+  const docRef = adminDb.collection('permits').doc(permitId);
+  try {
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    // ✅ Verificar que el permiso esté en ejecución
+    if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
+      return { success: false, error: 'Solo se pueden agregar firmas de cierre diario en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
+    }
+
+    const anexoData = (permitData as any)[anexoName];
+    if (!anexoData) {
+      return { success: false, error: `El anexo ${anexoName} no existe en el permiso.` };
+    }
+
+    const anexoUpdate: any = { ...anexoData };
+    if (!anexoUpdate.validacion) {
+      anexoUpdate.validacion = { autoridad: [], responsable: [] };
+    }
+
+    const validationArray = (anexoUpdate.validacion.responsable as ValidacionDiaria[]) || [];
+
+    while (validationArray.length <= index) {
+      validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
+    }
+
+    // ✅ Agregar datos de cierre al registro existente
+    validationArray[index] = {
+      ...validationArray[index],
+      firmaCierre: data.firma,
+      fechaCierre: data.fecha,
+      observacionesCierre: data.observaciones || '',
+    };
+
+    const updatePath = `${anexoName}.validacion.responsable`;
+
+    await docRef.update({
+      [updatePath]: validationArray,
+    });
+
+    const fullPermitData = { id: docRef.id, ...permitData } as Permit;
+    const anexoDisplayName = anexoName.replace('anexo', 'Anexo ');
+    const day = index + 1;
+
+    const message = `${user.displayName || 'Un usuario'} ha registrado el cierre diario del DÍA ${day} en ${anexoDisplayName} del permiso #${fullPermitData.number}.${data.observaciones ? ` Observaciones: ${data.observaciones}` : ''}`;
+    
+    const involvedUsers = await getInvolvedUsers(fullPermitData);
+    for (const uid of involvedUsers) {
+      if (uid !== user.uid) {
+        await createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
+      }
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const permitUrl = `${baseUrl}/permits/${permitId}`;
+    const whatsappMessage = `*Cierre Diario Registrado - SGTC* 🔒
+Se ha registrado el cierre del trabajo del día.
+
+📄 *Permiso:* ${fullPermitData.number || 'N/A'}
+🗓️ *Día:* ${day}
+👤 *Responsable:* ${user.displayName || 'N/A'}
+📋 *Anexo:* ${anexoDisplayName}
+${data.observaciones ? `📝 *Observaciones:* ${data.observaciones}` : ''}
+
+Puede ver los detalles aquí:
+${permitUrl}`;
+
+    await sendWhatsAppNotification(whatsappMessage);
+
+    revalidatePath(`/permits/${permitId}`);
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("❌ Error al guardar la firma de cierre diario:", error);
+    return { success: false, error: 'No se pudo guardar la firma de cierre diario.' };
+  }
+}
+
+export async function closePermitByAnyUser(
+  permitId: string,
+  user: User,
+  observaciones: string,
+  signature: string
+) {
+  if (!permitId || !user || !observaciones || !signature) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
+  const docRef = adminDb.collection('permits').doc(permitId);
+  try {
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    if (!['pendiente_revision', 'aprobado', 'en_ejecucion', 'suspendido'].includes(permitData.status)) {
+      return { success: false, error: 'El permiso no puede ser cerrado en su estado actual.' };
+    }
+
+    const updateData: UpdateData<Permit> = {
+      status: 'cerrado',
+      'closure.fechaCierre': FieldValue.serverTimestamp(),
+      'closure.terminado': 'si',
+      'closure.observacionesCierre': `CIERRE DE EMERGENCIA: ${observaciones}`,
+      'closure.cerradoPorUsuario': {
+        uid: user.uid,
+        nombre: user.displayName || 'Usuario',
+        rol: user.role || 'N/A',
+        fecha: FieldValue.serverTimestamp(),
+        firma: signature,
+      }
+    };
+
+    await docRef.update(updateData);
+
+    const updatedPermitData = { ...permitData, ...updateData, id: permitId } as Permit;
+    const message = `${user.displayName || 'Un usuario'} ha forzado el cierre del permiso #${permitData.number}. Observaciones: ${observaciones}`;
+    const involvedUsers = await getInvolvedUsers(updatedPermitData);
+
+    for (const uid of involvedUsers) {
+      if (uid !== user.uid) {
+        await createNotification(uid, updatedPermitData, message, 'cancellation', { uid: user.uid, displayName: user.displayName || null });
+      }
+    }
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const permitUrl = `${baseUrl}/permits/${permitId}`;
+    const whatsappMessage = `*Permiso Cerrado por Emergencia - SGTC* 🔒
+
+📄 *Permiso:* ${permitData.number || 'N/A'}
+👤 *Cerrado por:* ${user.displayName || 'N/A'}
+🎭 *Rol:* ${user.role || 'N/A'}
+📝 *Observaciones:* ${observaciones}
+
+Puede ver los detalles aquí:
+${permitUrl}`;
+
+    await sendWhatsAppNotification(whatsappMessage);
+
+    revalidatePath(`/permits/${permitId}`);
+    revalidatePath('/permits');
+    revalidatePath('/dashboard');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("❌ Error al cerrar el permiso:", error);
+    return { success: false, error: 'No se pudo cerrar el permiso.' };
   }
 }
 
@@ -824,3 +1005,5 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
+
+    

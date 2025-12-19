@@ -86,11 +86,20 @@ service cloud.firestore {
                       // Un admin puede cambiar el estado en cualquier momento (para emergencias).
                       (isAdmin()) ||
 
-                      // Lógica de firmas: cualquier usuario con rol puede firmar si el permiso está pendiente.
-                      // Las validaciones de *qué* firma puede poner se hacen en la Server Action.
+                      // Lógica de firmas de apertura: permite firmar si el permiso está pendiente.
                       (resource.data.status == 'pendiente_revision') ||
 
-                      // Lógica de cierre: permite a los roles autorizados cambiar el estado a 'cerrado'
+                      // Lógica de firmas de validación y cierre diario: permite actualizar los anexos si está en ejecución.
+                      (
+                        (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
+                        hasAnyRole(['lider_tarea', 'admin', 'autorizante']) &&
+                        // Solo permite cambiar los anexos, nada más.
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                          'anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones', 'workers'
+                        ])
+                      ) ||
+
+                      // Lógica de cierre final: permite a los roles autorizados cambiar el estado a 'cerrado'
                       // si el permiso está en ejecución o suspendido.
                       (request.resource.data.status == 'cerrado' && 
                        (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&

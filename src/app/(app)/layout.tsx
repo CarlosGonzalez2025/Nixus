@@ -48,6 +48,7 @@ import type { UserRole } from '@/types';
 import { AlertsBell } from '@/components/AlertsBell';
 import { useSidebarBadges } from '@/hooks/use-sidebar-badges';
 import { NotificationBadge } from '@/components/ui/notification-badge';
+import { PWAUpdater } from '@/components/PWAUpdater';
 
 const getRoleName = (role?: UserRole) => {
   const roles: { [key in UserRole]: string } = {
@@ -70,7 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
   const { pendingPermits } = useSidebarBadges();
 
-  // 🔥 SOLUCIÓN: Estado para evitar hydration mismatch
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -93,15 +93,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       .toUpperCase();
   };
 
-  // Función para navegación con feedback háptico
   const handleNavigation = (path: string) => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(10);
-    }
     router.push(path);
   };
 
-  // 🔥 Renderizar un skeleton durante la hidratación inicial
   if (!isMounted) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -113,7 +108,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -125,7 +119,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not authenticated
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -141,40 +134,43 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <IdleTimerProvider timeout={30} warningTime={5}>
       <SidebarProvider>
         <FirebaseErrorListener />
+        <PWAUpdater />
         
-        {/* 🔥 AQUÍ ESTABA EL ERROR - FALTABA ABRIR <Sidebar> */}
         <Sidebar className="border-r">
           <SidebarHeader className="border-b">
-            <div className="flex flex-col items-center gap-3 p-4 text-center">
-              <div className="flex w-full items-start justify-between">
-                <div className="w-8" />
-                <div className="bg-white rounded-lg p-2 shadow-sm transition-all group-data-[collapsible=icon]:p-1">
+            <div className="flex flex-col items-center gap-3 p-4">
+              {/* Contenedor del logo con trigger en móvil */}
+              <div className="flex w-full items-center justify-center relative">
+                {/* Trigger móvil posicionado absolutamente a la izquierda */}
+                <SidebarTrigger className="absolute left-0 text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors md:hidden" />
+                
+                {/* Logo centrado */}
+                <div className="bg-white rounded-lg p-2.5 shadow-sm transition-all group-data-[collapsible=icon]:p-1.5">
                   <Image 
-                    src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" 
-                    alt="Logo SGTC" 
-                    width={240}
-                    height={200}
+                    src="https://i.postimg.cc/VsZBSkmH/Italcol.png" 
+                    alt="Logo Italcol" 
+                    width={120}
+                    height={60}
                     quality={100}
-                    className="h-auto w-full max-w-[120px] transition-all group-data-[collapsible=icon]:max-w-[32px]"
+                    className="h-auto w-full max-w-[100px] transition-all group-data-[collapsible=icon]:max-w-[32px]"
                     style={{
                       imageRendering: '-webkit-optimize-contrast',
                     }}
                     priority
-                    sizes="(max-width: 768px) 120px, 240px"
+                    sizes="(max-width: 768px) 100px, 120px"
                   />
                 </div>
-                <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors md:hidden -mr-2" />
               </div>
+              
+              {/* Título del sistema */}
               <span className="text-base md:text-lg font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                 SGTC Móvil
               </span>
             </div>
           </SidebarHeader>
 
-          {/* Contenido del Sidebar */}
           <SidebarContent className="px-2">
             <SidebarMenu>
-              {/* Grupo Principal */}
               <SidebarGroup>
                 <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
                   Principal
@@ -224,7 +220,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
               <SidebarSeparator className="my-2" />
 
-              {/* Grupo Ayuda */}
               <SidebarGroup>
                 <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
                   Ayuda
@@ -243,7 +238,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               </SidebarGroup>
 
-              {/* Grupo Administración (solo admin) */}
               {user.role === 'admin' && (
                 <>
                   <SidebarSeparator className="my-2" />
@@ -281,17 +275,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
 
-          {/* Footer del Sidebar */}
           <SidebarFooter className="border-t">
             <SidebarSeparator className="mb-2" />
             
-            {/* Alertas en una fila separada en móvil */}
             <div className="px-2 pb-2 md:hidden">
               <AlertsBell className="w-full" />
             </div>
 
             <div className="px-2 pb-2 flex items-center justify-between gap-2">
-              {/* Alertas solo en desktop */}
               <div className="hidden md:block">
                 <AlertsBell />
               </div>
@@ -367,11 +358,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </SidebarFooter>
         </Sidebar>
-        {/* 🔥 FIN DEL <Sidebar> */}
 
-        {/* Contenido Principal */}
         <main className="flex-1 flex flex-col min-h-screen">
-          {/* Header Móvil */}
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm md:hidden">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-foreground hover:bg-accent/20 rounded-md transition-colors" />
@@ -397,7 +385,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <AlertsBell />
           </header>
 
-          {/* Contenido de la página */}
           <SidebarInset className="flex-1 pb-safe md:pb-0">
             {children}
           </SidebarInset>

@@ -68,17 +68,22 @@ export default function LoginPage() {
     <div
       className="flex min-h-screen items-center justify-center p-2 sm:p-4"
       style={{
-        background: 'linear-gradient(135deg, #1DB5C1 0%, #17a3ad 100%)',
+        background: 'linear-gradient(135deg, #FFF5E6 0%, #FFE8CC 50%, #FFD9B3 100%)',
       }}
     >
       <Card className="w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl border-0">
         <CardHeader className="items-center p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-          {/* Logo NIXUS */}
+          {/* Logo Principal Italcol */}
           <div className="flex justify-center">
             <img 
-              src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" 
-              alt="NIXUS Logo" 
-              className="h-12 sm:h-16 w-auto"
+              src="https://i.postimg.cc/WzZf5S1T/logo-header.png" 
+              alt="Italcol Logo" 
+              className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain"
+              // Opciones de tamaño:
+              // Pequeño: h-16 sm:h-20
+              // Mediano: h-20 sm:h-24 md:h-28
+              // Grande: h-24 sm:h-28 md:h-32 lg:h-36
+              // Extra Grande: h-28 sm:h-32 md:h-36 lg:h-40
             />
           </div>
           
@@ -110,7 +115,7 @@ export default function LoginPage() {
                         placeholder="usuario@italcol.com"
                         {...field}
                         type="email"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all text-sm sm:text-base"
                       />
                     </FormControl>
                     <FormMessage />
@@ -126,7 +131,7 @@ export default function LoginPage() {
                       <FormLabel className="font-medium text-gray-700">
                         Contraseña
                       </FormLabel>
-                      <Link href="#" className="text-xs text-cyan-600 hover:text-cyan-800 transition-colors hover:underline whitespace-nowrap">
+                      <Link href="#" className="text-xs text-orange-600 hover:text-orange-800 transition-colors hover:underline whitespace-nowrap">
                         ¿Olvidaste tu contraseña?
                       </Link>
                     </div>
@@ -135,7 +140,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         {...field}
                         type="password"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all text-sm sm:text-base"
                       />
                     </FormControl>
                     <FormMessage />
@@ -144,7 +149,7 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white py-2.5 sm:py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-2.5 sm:py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
                 disabled={isLoading}
               >
                 {isLoading && (
@@ -152,6 +157,19 @@ export default function LoginPage() {
                 )}
                 Iniciar Sesión
               </Button>
+              
+              {/* Logo secundario debajo del botón */}
+              <div className="flex justify-center pt-2">
+                <img 
+                  src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" 
+                  alt="Logo Secundario" 
+                  className="h-8 sm:h-10 w-auto object-contain opacity-80"
+                  // Opciones de tamaño para logo secundario:
+                  // Muy pequeño: h-6 sm:h-8
+                  // Pequeño: h-8 sm:h-10 (recomendado)
+                  // Mediano: h-10 sm:h-12
+                />
+              </div>
             </form>
           </Form>
         </CardContent>
