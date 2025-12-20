@@ -1437,6 +1437,115 @@ export const handleExportPDF = async (
 // ✅ FUNCIÓN COMPATIBILIDAD - MANTIENE API ANTERIOR
 // ============================================================================
 
+// ============================================================================
+// 📘 GENERADOR MANUAL DE USUARIO
+// ============================================================================
+
+export const generateUserManualPDF = () => {
+  const doc = createNewPDF();
+  let yPos = 15;
+
+  // 1. HEADER
+  yPos = drawPageHeader(doc, 'Manual de Usuario - Permisos de Trabajo Digitales', 'MN-SST-001', '1', yPos);
+
+  // 2. INTRODUCCIÓN
+  yPos = drawSectionHeader(doc, '1. INTRODUCCIÓN', yPos);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  const introText = "Este manual describe el funcionamiento de la plataforma digital para la gestión de Permisos de Trabajo en Italcol. El objetivo es facilitar la solicitud, aprobación y cierre de permisos de alto riesgo, asegurando el cumplimiento de las normativas de seguridad.";
+  const splitIntro = doc.splitTextToSize(introText, PAGE_WIDTH - 2 * MARGIN);
+  doc.text(splitIntro, MARGIN, yPos);
+  yPos += splitIntro.length * 4 + 5;
+
+  // 3. ROLES DEL SISTEMA
+  yPos = drawSectionHeader(doc, '2. ROLES DEL SISTEMA', yPos);
+
+  const rolesData = [
+    ['Rol', 'Responsabilidad Principal'],
+    ['Solicitante / Líder', 'Crea el permiso, diligencia la información y solicita aprobación.'],
+    ['Jefe de Área', 'Revisa la solicitud, verifica condiciones y aprueba o rechaza.'],
+    ['Coordinador Alturas', 'Verifica y aprueba específicamente trabajos en alturas.'],
+    ['Emisor (SST)', 'Verificación final de seguridad, firma de apertura y cierre.'],
+    ['Aislador Competente', 'Encargado de bloqueo y etiquetado de energías.'],
+  ];
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Rol', 'Responsabilidad Principal']],
+    body: rolesData.slice(1),
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: ITALCOL_ORANGE as any, textColor: 255, fontStyle: 'bold', halign: 'left' },
+    margin: { left: MARGIN, right: MARGIN },
+    tableWidth: PAGE_WIDTH - 2 * MARGIN,
+  });
+
+  // @ts-ignore
+  yPos = doc.lastAutoTable.finalY + 10;
+
+  // 4. FLUJO DE TRABAJO
+  yPos = drawSectionHeader(doc, '3. FLUJO DE TRABAJO', yPos);
+
+  const steps = [
+    { title: '1. Iniciar Sesión', desc: 'Ingrese con su correo corporativo y contraseña asignada.' },
+    { title: '2. Crear Permiso', desc: 'Desde el Dashboard, clic en "Nuevo Permiso". Seleccione planta, área y marque los trabajos de alto riesgo (Alturas, Caliente, etc.).' },
+    { title: '3. Diligenciar Anexos', desc: 'Complete los checklists específicos (ATS, Alturas, etc.) que aparecen según su selección.' },
+    { title: '4. Firmas de Aprobación', desc: 'El sistema solicitará las firmas en orden: Jefe de Área -> Coordinador -> SST. El estado cambiará automáticamente.' },
+    { title: '5. Ejecución y Validación Diaria', desc: 'Una vez en estado "En Ejecución", se habilitan las pestañas de "Validación Diaria". Cada día debe firmar apertura y cierre.' },
+    { title: '6. Cierre del Permiso', desc: 'Al finalizar el trabajo, el SST realiza el cierre definitivo. El permiso pasa a estado "Cerrado" y se genera el PDF final.' },
+  ];
+
+  steps.forEach(step => {
+    // Check page break
+    if (yPos > PAGE_HEIGHT - 30) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(step.title, MARGIN, yPos);
+    yPos += 4;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const descLines = doc.splitTextToSize(step.desc, PAGE_WIDTH - 2 * MARGIN);
+    doc.text(descLines, MARGIN, yPos);
+    yPos += descLines.length * 4 + 3;
+  });
+
+  yPos += 5;
+
+  // 5. TIPS IMPORTANTES
+  if (yPos > PAGE_HEIGHT - 40) {
+    doc.addPage();
+    yPos = 20;
+  }
+  yPos = drawSectionHeader(doc, '4. INFORMACIÓN IMPORTANTE', yPos);
+
+  const tips = [
+    "• Guardado Automático: El sistema guarda borradores, pero asegúrese de dar clic en 'Guardar' antes de cerrar.",
+    "• Firmas: Las firmas son digitales. No comparta su usuario y contraseña.",
+    "• Cierre Diario: Si el permiso dura varios días, ES OBLIGATORIO firmar la validación diaria de inicio y cierre.",
+    "• Soporte: Si presenta fallas, contacte al área de sistemas o SST inmediato.",
+  ];
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  tips.forEach(tip => {
+    doc.text(tip, MARGIN, yPos);
+    yPos += 5;
+  });
+
+  // Footer final (se aplica a todas las páginas)
+  drawFooter(doc, 'MN-SST-001', '1');
+
+  // Descargar
+  const fileName = `Manual_Usuario_SST_${format(new Date(), 'yyyyMMdd')}.pdf`;
+  doc.save(fileName);
+};
+
 export const generateCompleteWorkPermitPDF = async (permit: any) => {
   try {
     await handleExportPDF(permit, 'all');
