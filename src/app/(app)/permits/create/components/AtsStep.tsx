@@ -125,6 +125,7 @@ const justificacionOptions = [
   { id: 'rutinario_sin_procedimiento', label: 'TRABAJO RUTINARIO QUE NO POSEE UN PROCEDIMIENTO SEGURO DE TRABAJO O INDICACIÓN CORRECTA DE RIESGOS O MEDIDAS PREVENTIVAS' },
   { id: 'no_rutinario_planeado', label: 'TRABAJO NO RUTINARIO (PLANEADO)' },
   { id: 'rutinario_condicion_especifica', label: 'TRABAJO RUTINARIO QUE POR UNA CONDICIÓN ESPECÍFICA/TEMPORAL, NO ES POSIBLE APLICAR UN PROCEDIMIENTO DE FORMA INTEGRAL' },
+  { id: 'no_aplica', label: 'NINGUNA / NO APLICA' },
 ];
 
 // Componente para items de EPP
@@ -515,8 +516,29 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   }, [onUpdateATS]);
 
   const handleJustificacionChange = React.useCallback((id: string, value: boolean) => {
+    const currentJustificacion = { ...(anexoATS.justificacion || {}) };
+
+    let newJustificacionState: { [key: string]: boolean };
+
+    if (id === 'no_aplica') {
+      if (value) {
+        // If "No aplica" is checked, uncheck all others.
+        newJustificacionState = { 'no_aplica': true };
+      } else {
+        // Just uncheck "No aplica".
+        newJustificacionState = { ...currentJustificacion, 'no_aplica': false };
+      }
+    } else {
+      // If any other option is being changed.
+      newJustificacionState = { ...currentJustificacion, [id]: value };
+      if (value) {
+        // If we are checking another option, uncheck "No aplica".
+        newJustificacionState['no_aplica'] = false;
+      }
+    }
+
     onUpdateATS({ 
-      justificacion: { ...anexoATS.justificacion, [id]: value } 
+      justificacion: newJustificacionState
     });
   }, [anexoATS.justificacion, onUpdateATS]);
 
