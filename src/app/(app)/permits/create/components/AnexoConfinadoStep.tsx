@@ -299,14 +299,14 @@ export function AnexoConfinadoStep() {
             <Label>En caso de emergencia contactar a:</Label>
             <Input 
               value={anexoConfinado?.emergencia?.contacto || ''} 
-              onChange={(e) => handleNestedFieldChange('emergencia', 'contacto', e.target.value)} 
+              onChange={(e) => handleFieldChange('emergencia', { ...anexoConfinado.emergencia, contacto: e.target.value })}
             />
           </div>
           <div>
             <Label>Teléfono:</Label>
             <Input 
               value={anexoConfinado?.emergencia?.telefono || ''} 
-              onChange={(e) => handleNestedFieldChange('emergencia', 'telefono', e.target.value)} 
+              onChange={(e) => handleFieldChange('emergencia', { ...anexoConfinado.emergencia, telefono: e.target.value })}
             />
           </div>
         </div>
@@ -701,5 +701,3 @@ export function AnexoConfinadoStep() {
     </>
   );
 }
-
-    

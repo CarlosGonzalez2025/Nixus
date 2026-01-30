@@ -180,8 +180,8 @@ export function AnexoIzajeStep() {
                     <div><Label>Área de Trabajo:</Label><Input value={generalInfo.areaEspecifica || ''} readOnly disabled /></div>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoIzaje.emergencia?.contacto || ''} onChange={(e) => handleNestedChange('emergencia', 'contacto', e.target.value)} /></div>
-                    <div><Label>Teléfono:</Label><Input value={anexoIzaje.emergencia?.telefono || ''} onChange={(e) => handleNestedChange('emergencia', 'telefono', e.target.value)} /></div>
+                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoIzaje.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoIzaje.emergencia || {}), contacto: e.target.value } })} /></div>
+                    <div><Label>Teléfono:</Label><Input value={anexoIzaje.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoIzaje.emergencia || {}), telefono: e.target.value } })} /></div>
                 </div>
             </SectionWrapper>
 

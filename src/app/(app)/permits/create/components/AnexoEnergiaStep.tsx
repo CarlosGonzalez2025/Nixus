@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
@@ -43,12 +44,15 @@ export function AnexoEnergiaStep() {
     const { state, dispatch } = usePermitForm();
     const { generalInfo, anexoEnergias } = state;
 
+    const handleUpdate = (payload: any) => {
+        dispatch({ type: 'UPDATE_ANEXO_ENERGIA', payload });
+    };
+    
     const handleFieldChange = (section: string, field: string, value: any) => {
-        const currentSection = (anexoEnergias as any)[section] || {};
-        dispatch({
-            type: 'UPDATE_ANEXO_ENERGIA',
-            payload: {
-                [section]: { ...currentSection, [field]: value }
+        handleUpdate({
+            [section]: {
+                ...((anexoEnergias as any)[section] || {}),
+                [field]: value
             }
         });
     };
@@ -88,8 +92,8 @@ export function AnexoEnergiaStep() {
                     <div><Label>Compañía:</Label><Input value={generalInfo.responsable?.compania || ''} readOnly disabled /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoEnergias?.emergencia?.contacto || ''} onChange={(e) => handleFieldChange('emergencia', 'contacto', e.target.value)} /></div>
-                    <div><Label>Teléfono:</Label><Input value={anexoEnergias?.emergencia?.telefono || ''} onChange={(e) => handleFieldChange('emergencia', 'telefono', e.target.value)} /></div>
+                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoEnergias?.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoEnergias.emergencia || {}), contacto: e.target.value } })} /></div>
+                    <div><Label>Teléfono:</Label><Input value={anexoEnergias?.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoEnergias.emergencia || {}), telefono: e.target.value } })} /></div>
                 </div>
             </SectionWrapper>
             

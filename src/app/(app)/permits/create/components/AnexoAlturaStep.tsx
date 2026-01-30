@@ -224,8 +224,12 @@ export function AnexoAlturaStep() {
   };
 
   const handleNestedChange = (section: keyof AnexoAltura, field: string, value: any) => {
-    const currentSection = (anexoAltura as any)[section] || {};
-    handleUpdate({ [section]: { ...currentSection, [field]: value } });
+    handleUpdate({
+      [section]: {
+        ...((anexoAltura as any)[section] || {}),
+        [field]: value,
+      },
+    });
   };
   
   React.useEffect(() => {
@@ -381,8 +385,8 @@ export function AnexoAlturaStep() {
             <div><Label>Compañía:</Label><Input value={generalInfo.responsable?.compania || ''} readOnly disabled /></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoAltura.emergencia?.contacto || ''} onChange={(e) => handleNestedChange('emergencia', 'contacto', e.target.value)} /></div>
-            <div><Label>Teléfono:</Label><Input value={anexoAltura.emergencia?.telefono || ''} onChange={(e) => handleNestedChange('emergencia', 'telefono', e.target.value)} /></div>
+            <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoAltura.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoAltura.emergencia || {}), contacto: e.target.value } })} /></div>
+            <div><Label>Teléfono:</Label><Input value={anexoAltura.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoAltura.emergencia || {}), telefono: e.target.value } })} /></div>
         </div>
         <div className="mt-4">
             <Label>Altura aproximada a la cual se va a desarrollar la actividad (Indicar en metros)</Label>
@@ -407,7 +411,7 @@ export function AnexoAlturaStep() {
             <Input 
               placeholder="Especifique otros" 
               value={anexoAltura.tipoEstructura.otrosCual || ''} 
-              onChange={(e) => handleNestedChange('tipoEstructura', 'otrosCual', e.target.value)} 
+              onChange={(e) => handleUpdate({ tipoEstructura: { ...anexoAltura.tipoEstructura, otrosCual: e.target.value } })} 
               className="mt-4" 
             />
         )}
@@ -443,7 +447,7 @@ export function AnexoAlturaStep() {
             <Input 
               placeholder="Especifique otra precaución" 
               value={anexoAltura.precauciones.otroCual || ''} 
-              onChange={(e) => handleNestedChange('precauciones', 'otroCual', e.target.value)} 
+              onChange={(e) => handleUpdate({ precauciones: { ...anexoAltura.precauciones, otroCual: e.target.value } })} 
               className="mt-4" 
             />
         )}
@@ -473,7 +477,7 @@ export function AnexoAlturaStep() {
               <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Observaciones:</Label>
               <Textarea 
                 value={anexoAltura.afectaciones?.observaciones || ''} 
-                onChange={(e) => handleNestedChange('afectaciones', 'observaciones', e.target.value)} 
+                onChange={(e) => handleUpdate({ afectaciones: { ...(anexoAltura.afectaciones || {}), observaciones: e.target.value } })} 
               />
             </div>
         </div>
