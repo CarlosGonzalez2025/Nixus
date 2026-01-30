@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -112,70 +111,104 @@ const RadioGroupField = ({ id, label, value, onChange }: { id: string; label: st
     </div>
 );
 
+// Componente SectionWrapper FUERA del componente principal
+interface SectionWrapperProps {
+  title: string;
+  children: React.ReactNode;
+  sectionId: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+const SectionWrapper = React.memo<SectionWrapperProps>(({ title, children, sectionId, isOpen, onToggle }) => (
+  <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <CollapsibleTrigger asChild>
+      <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
+        <h3 className="text-lg font-bold text-gray-700">{title}</h3>
+        <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+      </Button>
+    </CollapsibleTrigger>
+    <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
+      {children}
+    </CollapsibleContent>
+  </Collapsible>
+));
+
+SectionWrapper.displayName = 'SectionWrapper';
+
 export function AnexoConfinadoStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, anexoConfinado } = state;
   
   // Estado controlado para TODAS las secciones principales
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
-    informacionGeneral: true,    // Información General abierta por defecto
+    informacionGeneral: true,
     identificacionPeligros: false,
     precaucionesControles: false,
     resultadosPruebas: false,
     requerimientosEquipos: false,
     pruebasPeriodicas: false,
     autorizaciones: false,
-    // También para las subcategorías de peligros
     ...Object.fromEntries(peligroSections.map(section => [section.title, false]))
   });
   
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
   const [signingTarget, setSigningTarget] = React.useState<{ section: string; field: string; index?: number } | null>(null);
 
-  const toggleSection = (sectionId: string) => {
+  const toggleSection = React.useCallback((sectionId: string) => {
     setOpenSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]
     }));
-  };
+  }, []);
 
-  // Función principal para actualizar campos del anexo
-  const handleFieldChange = (field: string, value: any) => {
+  // Función principal para actualizar campos del anexo - MEMOIZADA
+  const handleFieldChange = React.useCallback((field: string, value: any) => {
     dispatch({
       type: 'UPDATE_ANEXO_CONFINADO',
       payload: { [field]: value }
     });
-  };
+  }, [dispatch]);
 
-  // Función para campos anidados (ej: emergencia.contacto)
-  const handleNestedFieldChange = (section: string, field: string, value: any) => {
-    const currentSection = (anexoConfinado as any)[section] || {};
-    handleFieldChange(section, {
-      ...currentSection,
-      [field]: value
+  // Función para campos anidados - MEMOIZADA (SOLO UNA DECLARACIÓN)
+  const handleNestedFieldChange = React.useCallback((section: string, field: string, value: any) => {
+    const currentSection = (anexoConfinado as any)[section];
+    
+    dispatch({
+      type: 'UPDATE_ANEXO_CONFINADO',
+      payload: { 
+        [section]: { 
+          ...(currentSection || {}),
+          [field]: value 
+        } 
+      }
     });
-  };
+  }, [dispatch, anexoConfinado]);
 
-  // Función para campos anidados profundos (ej: cierre.autoridad.nombre)
-  const handleDeepNestedChange = (section: string, subSection: string, field: string, value: any) => {
+  // Función para campos anidados profundos - MEMOIZADA
+  const handleDeepNestedChange = React.useCallback((section: string, subSection: string, field: string, value: any) => {
     const currentSection = (anexoConfinado as any)[section] || {};
     const currentSubSection = currentSection[subSection] || {};
     
-    handleFieldChange(section, {
-      ...currentSection,
-      [subSection]: {
-        ...currentSubSection,
-        [field]: value
+    dispatch({
+      type: 'UPDATE_ANEXO_CONFINADO',
+      payload: {
+        [section]: {
+          ...currentSection,
+          [subSection]: {
+            ...currentSubSection,
+            [field]: value
+          }
+        }
       }
     });
-  };
+  }, [dispatch, anexoConfinado]);
 
-  // Función para listas (ej: validacion.autoridad[index])
-  const handleListChange = (section: string, listName: string, index: number, field: string, value: any) => {
+  // Función para listas - MEMOIZADA
+  const handleListChange = React.useCallback((section: string, listName: string, index: number, field: string, value: any) => {
     const currentSection = (anexoConfinado as any)[section] || {};
     const currentList = [...(currentSection[listName] || [])];
     
-    // Asegurar que el índice existe
     while (currentList.length <= index) {
       if (listName === 'pruebas') {
         currentList.push({ 
@@ -199,77 +232,75 @@ export function AnexoConfinadoStep() {
     
     currentList[index] = { ...currentList[index], [field]: value };
     
-    handleFieldChange(section, {
-      ...currentSection,
-      [listName]: currentList
+    dispatch({
+      type: 'UPDATE_ANEXO_CONFINADO',
+      payload: {
+        [section]: {
+          ...currentSection,
+          [listName]: currentList
+        }
+      }
     });
-  };
+  }, [dispatch, anexoConfinado]);
 
-  // Función para agregar elementos a listas
-  const addToList = (section: string, listName: string, defaultItem: any) => {
+  // Función para agregar elementos a listas - MEMOIZADA
+  const addToList = React.useCallback((section: string, listName: string, defaultItem: any) => {
     const currentSection = (anexoConfinado as any)[section] || {};
     const currentList = [...(currentSection[listName] || [])];
     
     if (listName === 'pruebas' && currentList.length >= 4) {
-      return; // Límite de 4 pruebas
+      return;
     }
     
     currentList.push(defaultItem);
-    handleFieldChange(section, {
-      ...currentSection,
-      [listName]: currentList
+    dispatch({
+      type: 'UPDATE_ANEXO_CONFINADO',
+      payload: {
+        [section]: {
+          ...currentSection,
+          [listName]: currentList
+        }
+      }
     });
-  };
+  }, [dispatch, anexoConfinado]);
 
-  // Función para remover elementos de listas
-  const removeFromList = (section: string, listName: string, index: number) => {
+  // Función para remover elementos de listas - MEMOIZADA
+  const removeFromList = React.useCallback((section: string, listName: string, index: number) => {
     const currentSection = (anexoConfinado as any)[section] || {};
     const currentList = (currentSection[listName] || []).filter((_: any, i: number) => i !== index);
-    handleFieldChange(section, {
-      ...currentSection,
-      [listName]: currentList
+    
+    dispatch({
+      type: 'UPDATE_ANEXO_CONFINADO',
+      payload: {
+        [section]: {
+          ...currentSection,
+          [listName]: currentList
+        }
+      }
     });
-  };
+  }, [dispatch, anexoConfinado]);
 
-  const openSignatureDialog = (section: string, field: string, index?: number) => {
+  const openSignatureDialog = React.useCallback((section: string, field: string, index?: number) => {
     setSigningTarget({ section, field, index });
     setIsSignatureDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveSignature = (signature: string) => {
+  const handleSaveSignature = React.useCallback((signature: string) => {
     if (!signingTarget) return;
     const { section, field, index } = signingTarget;
 
     if (index !== undefined) {
-      // Para listas como validacion.autoridad[0].firma o pruebasGasesPeriodicas.pruebas[0].firma
       handleListChange(section, field, index, 'firma', signature);
     } else if (section.includes('.')) {
-      // Para campos anidados profundos como cierre.autoridad.firma
       const [mainSection, subSection] = section.split('.');
       handleDeepNestedChange(mainSection, subSection, 'firma', signature);
     } else {
-      // Para campos directos como resultadosPruebasGases.firmaQuienRealiza
       handleNestedFieldChange(section, 'firmaQuienRealiza', signature);
     }
 
     setIsSignatureDialogOpen(false);
     setSigningTarget(null);
-  };
-
-  // SectionWrapper con estado controlado
-  const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; sectionId: string }> = ({ title, children, sectionId }) => (
-    <Collapsible open={openSections[sectionId]} onOpenChange={() => toggleSection(sectionId)}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
-          <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-          <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
+  }, [signingTarget, handleListChange, handleDeepNestedChange, handleNestedFieldChange]);
 
   return (
     <>
@@ -283,7 +314,12 @@ export function AnexoConfinadoStep() {
         </p>
       </div>
 
-      <SectionWrapper title="Información General del Anexo" sectionId="informacionGeneral">
+      <SectionWrapper 
+        title="Información General del Anexo" 
+        sectionId="informacionGeneral"
+        isOpen={openSections.informacionGeneral}
+        onToggle={() => toggleSection('informacionGeneral')}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div><Label>Emitido por:</Label><Input value={generalInfo.nombreSolicitante || ''} readOnly disabled /></div>
           <div><Label>Área de Trabajo:</Label><Input value={generalInfo.areaEspecifica || ''} readOnly disabled /></div>
@@ -299,20 +335,25 @@ export function AnexoConfinadoStep() {
             <Label>En caso de emergencia contactar a:</Label>
             <Input 
               value={anexoConfinado?.emergencia?.contacto || ''} 
-              onChange={(e) => handleFieldChange('emergencia', { ...anexoConfinado.emergencia, contacto: e.target.value })}
+              onChange={(e) => handleNestedFieldChange('emergencia', 'contacto', e.target.value)}
             />
           </div>
           <div>
             <Label>Teléfono:</Label>
             <Input 
               value={anexoConfinado?.emergencia?.telefono || ''} 
-              onChange={(e) => handleFieldChange('emergencia', { ...anexoConfinado.emergencia, telefono: e.target.value })}
+              onChange={(e) => handleNestedFieldChange('emergencia', 'telefono', e.target.value)}
             />
           </div>
         </div>
       </SectionWrapper>
 
-      <SectionWrapper title="Identificación de Peligros y Aspectos" sectionId="identificacionPeligros">
+      <SectionWrapper 
+        title="Identificación de Peligros y Aspectos" 
+        sectionId="identificacionPeligros"
+        isOpen={openSections.identificacionPeligros}
+        onToggle={() => toggleSection('identificacionPeligros')}
+      >
         <div className="space-y-2">
             {peligroSections.map((section) => (
                 <Collapsible key={section.title} open={openSections[section.title]} onOpenChange={() => toggleSection(section.title)}>
@@ -351,7 +392,12 @@ export function AnexoConfinadoStep() {
         </div>
       </SectionWrapper>
       
-      <SectionWrapper title="Precauciones y Controles Específicos" sectionId="precaucionesControles">
+      <SectionWrapper 
+        title="Precauciones y Controles Específicos" 
+        sectionId="precaucionesControles"
+        isOpen={openSections.precaucionesControles}
+        onToggle={() => toggleSection('precaucionesControles')}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {precaucionesControles.map(item => (
                 <RadioGroupField 
@@ -365,7 +411,12 @@ export function AnexoConfinadoStep() {
         </div>
       </SectionWrapper>
       
-      <SectionWrapper title="Resultados de Pruebas de Gases" sectionId="resultadosPruebas">
+      <SectionWrapper 
+        title="Resultados de Pruebas de Gases" 
+        sectionId="resultadosPruebas"
+        isOpen={openSections.resultadosPruebas}
+        onToggle={() => toggleSection('resultadosPruebas')}
+      >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div>
               <Label>LEL (0%)</Label>
@@ -443,7 +494,12 @@ export function AnexoConfinadoStep() {
         </div>
       </SectionWrapper>
       
-       <SectionWrapper title="Requerimientos y Equipos Revisados" sectionId="requerimientosEquipos">
+      <SectionWrapper 
+        title="Requerimientos y Equipos Revisados" 
+        sectionId="requerimientosEquipos"
+        isOpen={openSections.requerimientosEquipos}
+        onToggle={() => toggleSection('requerimientosEquipos')}
+      >
          <div className="space-y-4">
            {requerimientosEquipos.map(item => (
               <RadioGroupField 
@@ -463,9 +519,14 @@ export function AnexoConfinadoStep() {
               placeholder="Ej: 30 minutos"
             />
          </div>
-       </SectionWrapper>
+      </SectionWrapper>
 
-      <SectionWrapper title="Pruebas de Gases Periódicas Requeridas" sectionId="pruebasPeriodicas">
+      <SectionWrapper 
+        title="Pruebas de Gases Periódicas Requeridas" 
+        sectionId="pruebasPeriodicas"
+        isOpen={openSections.pruebasPeriodicas}
+        onToggle={() => toggleSection('pruebasPeriodicas')}
+      >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              <div>
                <Label>Prueba realizada por:</Label>
@@ -590,7 +651,12 @@ export function AnexoConfinadoStep() {
           )}
       </SectionWrapper>
 
-       <SectionWrapper title="Autorizaciones" sectionId="autorizaciones">
+      <SectionWrapper 
+        title="Autorizaciones" 
+        sectionId="autorizaciones"
+        isOpen={openSections.autorizaciones}
+        onToggle={() => toggleSection('autorizaciones')}
+      >
         <div className="space-y-6">
           <div className="p-4 border rounded-lg">
               <p className="text-sm font-semibold mb-2">Autoridad del Área</p>
