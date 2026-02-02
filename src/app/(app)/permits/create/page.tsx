@@ -670,7 +670,7 @@ function CreatePermitWizard() {
                   }} />
                 )}
               </div>
-            )})};
+            )})}
           </div>
           <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
             {steps.map((s_info, s_idx) => (
