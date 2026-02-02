@@ -14,7 +14,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
 import { addUserDefinedTool } from '../actions';
-import { addListItem } from '../../../../admin/lists/actions';
+import { addListItem } from '../../../admin/lists/actions';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'general', name: 'Trabajo General' },
