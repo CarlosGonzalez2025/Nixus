@@ -334,15 +334,24 @@ function CreatePermitWizard() {
   const steps = baseSteps.filter(s => s.condition);
   const currentStepInfo = steps[step - 1];
 
-  // 🔥 FUNCIÓN DE VALIDACIÓN ÚNICA (SIN DUPLICADOS)
   const canProceed = () => {
     const currentLabel = steps[step - 1]?.label;
 
-    if (currentLabel === 'Info General') {
-        const { areaEspecifica, planta, nombreSolicitante, validFrom, validUntil, workDescription, numTrabajadores, responsable } = formData.generalInfo;
+    if (currentLabel === 'Info General') { 
+        const { 
+            areaEspecifica, planta, proceso, contrato, 
+            requiereArea, requierePlanta, requiereProceso, requiereContrato,
+            nombreSolicitante, validFrom, validUntil, workDescription, 
+            numTrabajadores, responsable, empresa 
+        } = formData.generalInfo;
+        
         const missingFields = [];
-        if (!areaEspecifica) missingFields.push("Área específica");
-        if (!planta) missingFields.push("Planta");
+
+        if (requiereArea === 'si' && !areaEspecifica) missingFields.push("Área o equipo específico");
+        if (requierePlanta === 'si' && !planta) missingFields.push("Planta");
+        if (requiereProceso === 'si' && !proceso) missingFields.push("Proceso");
+        if (requiereContrato === 'si' && !contrato) missingFields.push("Contrato");
+        if (!empresa) missingFields.push("Empresa");
         if (!nombreSolicitante) missingFields.push("Nombre solicitante");
         if (!validFrom) missingFields.push("Fecha de inicio");
         if (!validUntil) missingFields.push("Fecha de fin");

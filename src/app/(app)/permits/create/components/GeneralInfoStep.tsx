@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
 import { addUserDefinedTool } from '../actions';
 import { addListItem } from '../../../admin/lists/actions';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'general', name: 'Trabajo General' },
@@ -368,10 +369,50 @@ export function GeneralInfoStep() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true, true)}
-        {renderDynamicSelect('plantas', 'planta', 'Planta', true, true)}
-        {renderDynamicSelect('procesos', 'proceso', 'Proceso', true, true)}
-        {renderDynamicSelect('contratos', 'contrato', 'Contrato', true, true)}
+        <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
+          <Label className="font-bold text-gray-700">¿Se requiere Área o equipo específico?</Label>
+          <RadioGroup value={generalInfo.requiereArea || 'no'} onValueChange={(value) => { handleInputChange('requiereArea', value as 'si' | 'no'); if (value === 'no') handleInputChange('areaEspecifica', ''); }} className="flex gap-4">
+              <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="area-si" /><Label htmlFor="area-si">Sí</Label></div>
+              <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="area-no" /><Label htmlFor="area-no">No</Label></div>
+          </RadioGroup>
+          {generalInfo.requiereArea === 'si' && (
+              <div className="pt-2">{renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true, true)}</div>
+          )}
+        </div>
+
+        <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
+            <Label className="font-bold text-gray-700">¿Se requiere Planta?</Label>
+            <RadioGroup value={generalInfo.requierePlanta || 'no'} onValueChange={(value) => { handleInputChange('requierePlanta', value as 'si' | 'no'); if (value === 'no') handleInputChange('planta', ''); }} className="flex gap-4">
+                <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="planta-si" /><Label htmlFor="planta-si">Sí</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="planta-no" /><Label htmlFor="planta-no">No</Label></div>
+            </RadioGroup>
+            {generalInfo.requierePlanta === 'si' && (
+                <div className="pt-2">{renderDynamicSelect('plantas', 'planta', 'Planta', true, true)}</div>
+            )}
+        </div>
+
+        <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
+            <Label className="font-bold text-gray-700">¿Se requiere Proceso?</Label>
+            <RadioGroup value={generalInfo.requiereProceso || 'no'} onValueChange={(value) => { handleInputChange('requiereProceso', value as 'si' | 'no'); if (value === 'no') handleInputChange('proceso', ''); }} className="flex gap-4">
+                <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="proceso-si" /><Label htmlFor="proceso-si">Sí</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="proceso-no" /><Label htmlFor="proceso-no">No</Label></div>
+            </RadioGroup>
+            {generalInfo.requiereProceso === 'si' && (
+                <div className="pt-2">{renderDynamicSelect('procesos', 'proceso', 'Proceso', true, true)}</div>
+            )}
+        </div>
+
+        <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
+            <Label className="font-bold text-gray-700">¿Se requiere Contrato?</Label>
+            <RadioGroup value={generalInfo.requiereContrato || 'no'} onValueChange={(value) => { handleInputChange('requiereContrato', value as 'si' | 'no'); if (value === 'no') handleInputChange('contrato', ''); }} className="flex gap-4">
+                <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="contrato-si" /><Label htmlFor="contrato-si">Sí</Label></div>
+                <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="contrato-no" /><Label htmlFor="contrato-no">No</Label></div>
+            </RadioGroup>
+            {generalInfo.requiereContrato === 'si' && (
+                <div className="pt-2">{renderDynamicSelect('contratos', 'contrato', 'Contrato', true, true)}</div>
+            )}
+        </div>
+        
         {renderDynamicSelect('empresas', 'empresa', 'Empresa', true, false)}
         <div>
           <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Nombre del solicitante</Label>

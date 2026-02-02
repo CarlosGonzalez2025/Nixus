@@ -377,6 +377,10 @@ export type PermitGeneralInfo = {
     planta: string;
     proceso: string;
     contrato: string;
+    requiereArea?: 'si' | 'no';
+    requierePlanta?: 'si' | 'no';
+    requiereProceso?: 'si' | 'no';
+    requiereContrato?: 'si' | 'no';
     empresa: string;
     nombreSolicitante: string;
     fechaCreacion: string;
