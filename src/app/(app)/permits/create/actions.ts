@@ -20,7 +20,7 @@ export async function addUserDefinedTool(toolName: string) {
     
     // Check if the tool already exists to provide better feedback
     const doc = await docRef.get();
-    if (doc.exists()) {
+    if (doc.exists) { // ✅ CORRECCIÓN: Se usa la propiedad .exists en lugar del método .exists()
         const currentItems: string[] = doc.data()?.items || [];
         if (currentItems.map(item => item.toLowerCase()).includes(trimmedName.toLowerCase())) {
             return { success: false, error: 'Esta herramienta ya está en el catálogo.' };
