@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { usePermitForm } from '../form-context';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { 
   FileText, 
   CheckCircle, 
@@ -23,9 +23,10 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
+import { hazardCategories, eppOptions } from './AtsStep';
 
-const DetailField = ({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) => (
-    <div className="space-y-1">
+const DetailField = ({ label, value, icon, fullWidth = false }: { label: string; value: React.ReactNode; icon?: React.ReactNode, fullWidth?: boolean }) => (
+    <div className={`space-y-1 ${fullWidth ? 'md:col-span-2 lg:col-span-3' : ''}`}>
         <div className="flex items-center gap-2">
             {icon && <span className="text-primary">{icon}</span>}
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
@@ -69,17 +70,42 @@ export function ReviewStep() {
         
         return selected;
     };
-
-    const getCheckedItems = (obj: { [key: string]: any } | undefined) => {
-        if (!obj) return [];
-        return Object.entries(obj)
-            .filter(([, value]) => value === true || value === 'si')
-            .map(([key]) => key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-    };
+    
+    const getFormattedEpp = () => {
+      const eppData = state.anexoATS?.epp;
+      if (!eppData) return [];
+  
+      const selectedEpps: string[] = [];
+  
+      Object.values(eppOptions).flat().forEach(item => {
+          if (eppData[item.id]) {
+              let label = item.label;
+              let spec = '';
+  
+              if (item.type === 'custom_casco') {
+                  const details = [eppData.casco_seguridad_tipo, eppData.casco_seguridad_clase, eppData.casco_seguridad_barbuquejo].filter(Boolean).join(', ');
+                  if (details) spec = `(${details})`;
+              } else if (item.type === 'custom_guante_dielectrico') {
+                  const details = [eppData.guante_dielectrico_clase, eppData.guante_dielectrico_guantin ? 'guantín' : '', eppData.guante_dielectrico_proteccion ? 'protección' : ''].filter(Boolean).join(', ');
+                  if (details) spec = `(Clase: ${details})`;
+              } else if (item.type === 'select') {
+                  const specValue = eppData[`${item.id}_spec`];
+                  if (specValue) spec = `(${specValue.replace(/_/g, ' ')})`;
+              } else if (item.type === 'text') {
+                  const specValue = eppData[`${item.id}_spec`];
+                  if (specValue) spec = `(${specValue})`;
+              }
+              
+              selectedEpps.push(`${label} ${spec}`.trim());
+          }
+      });
+  
+      return selectedEpps;
+  };
 
     const workTypes = getWorkTypesString();
-    const peligrosIdentificados = getCheckedItems(state.anexoATS?.peligros);
-    const eppRequeridos = getCheckedItems(state.anexoATS?.epp);
+    const peligrosIdentificadosCount = Object.values(state.anexoATS?.peligros || {}).filter(v => v === 'si').length + (state.anexoATS?.peligrosAdicionales?.length || 0);
+    const eppRequeridos = getFormattedEpp();
     const workersSinFirma = state.workers?.filter(w => !w.firmaApertura).length || 0;
 
     return (
@@ -120,7 +146,7 @@ export function ReviewStep() {
                                 <AlertTriangle className="h-5 w-5 text-orange-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{peligrosIdentificados.length}</p>
+                                <p className="text-2xl font-bold">{peligrosIdentificadosCount}</p>
                                 <p className="text-xs text-muted-foreground">Peligros</p>
                             </div>
                         </div>
@@ -162,10 +188,10 @@ export function ReviewStep() {
                                     Identificación del Trabajo
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-6">
-                                    <DetailField label="Área Específica" value={state.generalInfo.areaEspecifica} />
-                                    <DetailField label="Planta" value={state.generalInfo.planta} />
-                                    <DetailField label="Proceso" value={state.generalInfo.proceso} />
-                                    <DetailField label="Contrato" value={state.generalInfo.contrato} />
+                                    {state.generalInfo.requiereArea === 'si' && <DetailField label="Área Específica" value={state.generalInfo.areaEspecifica} />}
+                                    {state.generalInfo.requierePlanta === 'si' && <DetailField label="Planta" value={state.generalInfo.planta} />}
+                                    {state.generalInfo.requiereProceso === 'si' && <DetailField label="Proceso" value={state.generalInfo.proceso} />}
+                                    {state.generalInfo.requiereContrato === 'si' && <DetailField label="Contrato" value={state.generalInfo.contrato} />}
                                     <DetailField label="Empresa" value={state.generalInfo.empresa} />
                                 </div>
                             </div>
@@ -280,24 +306,42 @@ export function ReviewStep() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="border-2 border-t-0 border-orange-200 rounded-b-lg bg-white">
                         <div className="p-6 space-y-6">
-                            {/* Peligros */}
+                            {/* Peligros y Controles */}
                             <div>
                                 <h4 className="text-sm font-bold text-orange-600 mb-3 flex items-center gap-2">
                                     <AlertTriangle className="h-4 w-4" />
-                                    Peligros Identificados ({peligrosIdentificados.length})
+                                    Peligros y Controles ({peligrosIdentificadosCount})
                                 </h4>
-                                <div className="pl-6">
-                                    {peligrosIdentificados.length > 0 ? (
-                                        <ul className="space-y-2">
-                                            {peligrosIdentificados.map((peligro, idx) => (
-                                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                                    <span className="text-orange-600 mt-0.5">•</span>
-                                                    <span>{peligro}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <span className="text-muted-foreground italic text-sm">Ningún peligro identificado</span>
+                                <div className="space-y-4 pl-2">
+                                    {Object.entries(hazardCategories).map(([category, hazards]) => {
+                                        const selectedInCat = hazards.filter(h => state.anexoATS?.peligros?.[h.id] === 'si');
+                                        if (selectedInCat.length === 0) return null;
+                                        return (
+                                            <div key={category} className="space-y-2">
+                                                <h5 className="font-semibold text-xs uppercase tracking-wider text-gray-500">{category}</h5>
+                                                <div className="space-y-3 pl-4">
+                                                    {selectedInCat.map(h => (
+                                                        <div key={h.id} className="p-3 bg-gray-50/50 border-l-4 border-orange-200">
+                                                            <p className="font-semibold text-sm">{h.label}</p>
+                                                            <p className="text-xs text-muted-foreground mt-1">{h.control}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {state.anexoATS?.peligrosAdicionales && state.anexoATS.peligrosAdicionales.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h5 className="font-semibold text-xs uppercase tracking-wider text-gray-500">OTROS PELIGROS (MANUALES)</h5>
+                                            <div className="space-y-3 pl-4">
+                                                {state.anexoATS.peligrosAdicionales.map((p, i) => (
+                                                    <div key={`add-${i}`} className="p-3 bg-gray-50/50 border-l-4 border-orange-200">
+                                                        <p className="font-semibold text-sm">{p.peligro}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">{p.descripcion}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -322,45 +366,45 @@ export function ReviewStep() {
                                     )}
                                 </div>
                             </div>
-
-                            <Separator />
-
-                            {/* Justificación */}
-                            <div>
-                                <h4 className="text-sm font-bold text-orange-600 mb-3">Justificación de Uso del ATS</h4>
-                                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 pl-6">
-                                    <p className="text-sm">
-                                        {getCheckedItems(state.anexoATS?.justificacion).join(', ') || <span className="text-muted-foreground italic">No especificada</span>}
-                                    </p>
-                                </div>
-                            </div>
                         </div>
                     </CollapsibleContent>
                 </Collapsible>
                 
                 {/* Anexos condicionales */}
-                {state.selectedWorkTypes.alturas && (
+                {state.selectedWorkTypes.alturas && state.anexoAltura && (
                     <Collapsible>
                         <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border-2 border-blue-200 bg-white hover:bg-gray-50 px-4 py-4 text-left font-semibold transition-colors">
                             <SectionHeader icon={<AlertTriangle className="h-5 w-5 text-blue-600" />} title="Anexo: Trabajo en Alturas" />
                             <ChevronDown className="h-5 w-5 text-blue-600 transition-transform data-[state=open]:rotate-180" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="border-2 border-t-0 border-blue-200 rounded-b-lg bg-white p-6">
-                            <DetailField label="Aspectos de Seguridad Verificados" value={
-                                getCheckedItems(state.anexoAltura?.aspectosSeguridad).join(', ') || 'Ninguno'
-                            } />
+                        <CollapsibleContent className="border-2 border-t-0 border-blue-200 rounded-b-lg bg-white p-6 space-y-4">
+                            <DetailField label="Tarea a Realizar" value={state.anexoAltura.tareaRealizar?.nombre} />
+                            {state.anexoAltura.tipoEstructura?.otros && <DetailField label="Otro Tipo de Estructura" value={state.anexoAltura.tipoEstructura.otrosCual} />}
+                            <DetailField label="Observaciones de Afectaciones" value={state.anexoAltura.afectaciones?.observaciones} fullWidth />
                         </CollapsibleContent>
                     </Collapsible>
                 )}
 
-                {state.selectedWorkTypes.confinado && (
+                {state.selectedWorkTypes.confinado && state.anexoConfinado && (
                     <Collapsible>
                         <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border-2 border-purple-200 bg-white hover:bg-gray-50 px-4 py-4 text-left font-semibold transition-colors">
                             <SectionHeader icon={<AlertTriangle className="h-5 w-5 text-purple-600" />} title="Anexo: Espacios Confinados" />
                             <ChevronDown className="h-5 w-5 text-purple-600 transition-transform data-[state=open]:rotate-180" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="border-2 border-t-0 border-purple-200 rounded-b-lg bg-white p-6">
-                            <p className="text-sm text-muted-foreground">Información del anexo de espacios confinados cargada.</p>
+                        <CollapsibleContent className="border-2 border-t-0 border-purple-200 rounded-b-lg bg-white p-6 space-y-4">
+                             {state.anexoConfinado?.identificacionPeligros?.procedimientoComunicacion === 'si' && <DetailField label="Procedimiento de Comunicación" value={state.anexoConfinado.procedimientoComunicacionCual} />}
+                             <DetailField label="Intervalo de Pruebas de Gases" value={state.anexoConfinado.pruebasGasesPeriodicas?.intervalo} />
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
+                 {state.selectedWorkTypes.energia && state.anexoEnergias && (
+                    <Collapsible>
+                        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border-2 border-yellow-300 bg-white hover:bg-gray-50 px-4 py-4 text-left font-semibold transition-colors">
+                            <SectionHeader icon={<AlertTriangle className="h-5 w-5 text-yellow-600" />} title="Anexo: Energías" />
+                            <ChevronDown className="h-5 w-5 text-yellow-600 transition-transform data-[state=open]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="border-2 border-t-0 border-yellow-300 rounded-b-lg bg-white p-6 space-y-4">
+                             {state.anexoEnergias.trabajosEnCaliente?.otro && <DetailField label="Otro (Trabajos en Caliente)" value={state.anexoEnergias.trabajosEnCaliente?.otro as string} />}
                         </CollapsibleContent>
                     </Collapsible>
                 )}

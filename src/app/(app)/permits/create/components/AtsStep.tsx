@@ -19,7 +19,7 @@ interface AtsStepProps {
   onUpdateATS: (updates: Partial<AnexoATS>) => void;
 }
 
-const hazardCategories = {
+export const hazardCategories = {
   LOCATIVOS: [
     { id: 'superficies_irregulares', label: 'Superficies irregulares', control: 'Uso de botas de seguridad con suela antideslizante. Controlar escapes, derrames o goteras sobre los sitios de desplazamiento. Limpiar de inmediato cualquier líquido que se derrame en el piso. Caminar con precaución. No cargar piezas o equipos que limiten la vista. Respetar la señalización. Transitar con precaución verificando rutas de tránsito; no pasar donde haya presencia de materiales u obstáculos; mantener el área ordenada.' },
     { id: 'superficies_deslizantes', label: 'Superficies deslizantes', control: 'Al subir o bajar escaleras utilizar todos los peldaños y sujetarse del pasamanos; mantener los tres puntos de apoyo; ascender y descender pausadamente.' },
