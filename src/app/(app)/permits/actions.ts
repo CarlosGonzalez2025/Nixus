@@ -130,12 +130,13 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas']: string } = {
+const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado']: string } = {
   coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
   solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   lider_sst: 'Firma SST',
+  supervisor_confinado: 'SUPERVISOR DE TRABAJO EN ESPACIOS CONFINADOS',
 };
 
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
@@ -161,6 +162,7 @@ export async function createPermit(data: PermitCreateData) {
     mantenimiento: { status: 'pendiente' as const },
     lider_sst: { status: 'pendiente' as const },
     coordinador_alturas: { status: 'pendiente' as const },
+    supervisor_confinado: { status: 'pendiente' as const },
   };
 
   const permitPayload: Omit<Permit, 'id'> = {
@@ -242,6 +244,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
     mantenimiento: { status: 'pendiente' as const },
     lider_sst: { status: 'pendiente' as const },
     coordinador_alturas: { status: 'pendiente' as const },
+    supervisor_confinado: { status: 'pendiente' as const },
   };
 
   const permitPayload: Omit<Permit, 'id' | 'createdAt'> = {
@@ -284,7 +287,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 
 export async function addSignatureAndNotify(
   permitId: string, 
-  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
+  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
   user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string },
@@ -457,6 +460,13 @@ async function checkAllRequiredSignaturesComplete(
     // Si hay trabajos en alturas, requiere firma del coordinador
     if (permitData.trabajoAlturas || permitData.selectedWorkTypes?.alturas) {
         if (approvals?.coordinador_alturas?.status !== 'aprobado') {
+            return false;
+        }
+    }
+    
+    // Si hay espacios confinados, requiere firma del supervisor
+    if (permitData.espaciosConfinados || permitData.selectedWorkTypes?.confinado) {
+        if (approvals?.supervisor_confinado?.status !== 'aprobado') {
             return false;
         }
     }
@@ -637,6 +647,17 @@ async function validateSignaturePermission(
             }
             break;
             
+        case 'supervisor_confinado':
+            // Debe haber trabajo en espacios confinados
+            if (!permit.espaciosConfinados && !permit.selectedWorkTypes?.confinado) {
+                return { allowed: false, reason: 'Esta firma solo aplica para trabajos en espacios confinados.' };
+            }
+            // Solo el creador o admin puede gestionar esta firma
+            if (permit.createdBy !== currentUser.uid && currentUser.role !== 'admin') {
+                return { allowed: false, reason: 'Solo el creador del permiso puede gestionar esta firma.' };
+            }
+            break;
+
         case 'solicitante':
             if (permit.createdBy !== currentUser.uid && currentUser.role !== 'admin') {
                 return { allowed: false, reason: 'Solo el creador del permiso puede firmar como solicitante.' };
@@ -645,6 +666,11 @@ async function validateSignaturePermission(
             if ((permit.trabajoAlturas || permit.selectedWorkTypes?.alturas) && 
                 permit.approvals?.coordinador_alturas?.status !== 'aprobado') {
                 return { allowed: false, reason: 'Se requiere primero la firma del Coordinador de Trabajos en Alturas.' };
+            }
+            // ✅ Si hay anexo de confinados, verificar firma del supervisor primero
+            if ((permit.espaciosConfinados || permit.selectedWorkTypes?.confinado) &&
+                permit.approvals?.supervisor_confinado?.status !== 'aprobado') {
+                return { allowed: false, reason: 'Se requiere primero la firma del Supervisor de Espacios Confinados.' };
             }
             break;
             
@@ -974,3 +1000,5 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
+
+    

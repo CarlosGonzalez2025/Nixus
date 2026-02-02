@@ -175,18 +175,20 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 };
 
 
-type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas';
+type SignatureRole = 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
 const signatureRoles: { [key in SignatureRole]: string } = {
   coordinador_alturas: 'COORDINADOR (ANEXO)',
   solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
   mantenimiento: 'MANTENIMIENTO (SI APLICA)',
   lider_sst: 'Firma SST',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
+  supervisor_confinado: 'SUPERVISOR (ESP. CONFINADO)',
 };
 
 const signatureConsents: { [key in SignatureRole]?: string } = {
   solicitante: "Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.",
   coordinador_alturas: "Al firmar como Coordinador de Trabajos en Alturas, manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias.",
+  supervisor_confinado: "Al firmar como Supervisor de Espacios Confinados, certifico que se han implementado todas las medidas de seguridad necesarias para el ingreso y trabajo en el área designada.",
 };
 
 
@@ -379,7 +381,7 @@ export default function PermitDetailPage() {
     if (!currentUser) return;
     setSigningRole({ role, type: signatureType });
     setSignatureObservation(""); // Limpiar observaciones anteriores
-    if (role === 'coordinador_alturas' || role.startsWith('cierre_') || role === 'cancelacion') {
+    if (role === 'coordinador_alturas' || role === 'supervisor_confinado' || role.startsWith('cierre_') || role === 'cancelacion') {
       setSignerName('');
     } else {
       setSignerName(currentUser?.displayName || '');
@@ -390,7 +392,7 @@ export default function PermitDetailPage() {
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
 
-    const isSpecialSignature = signingRole.role === 'coordinador_alturas' || signingRole.role.startsWith('cierre_') || signingRole.role === 'cancelacion';
+    const isSpecialSignature = signingRole.role === 'coordinador_alturas' || signingRole.role === 'supervisor_confinado' || signingRole.role.startsWith('cierre_') || signingRole.role === 'cancelacion';
     if (isSpecialSignature && !signerName.trim()) {
       toast({
         variant: 'destructive',
@@ -492,7 +494,7 @@ export default function PermitDetailPage() {
       return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
     }
 
-    const { solicitante, autorizante, mantenimiento, lider_sst, coordinador_alturas } = approvals;
+    const { solicitante, autorizante, mantenimiento, lider_sst, coordinador_alturas, supervisor_confinado } = approvals;
     const hasSigned = (approval: Partial<Approval> | undefined) => approval?.status === 'aprobado';
 
     const hasCorrectRole = (targetRole: UserRole | UserRole[]) => {
@@ -515,10 +517,18 @@ export default function PermitDetailPage() {
         if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede gestionar esta firma.' };
         return { can: true };
 
+      case 'supervisor_confinado':
+        if (!selectedWorkTypes?.confinado) return { can: false, reason: 'No se requiere para este trabajo.' };
+        if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede gestionar esta firma.' };
+        return { can: true };
+
       case 'solicitante':
         if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede firmar.' };
         if (selectedWorkTypes?.alturas && !hasSigned(coordinador_alturas)) {
           return { can: false, reason: 'Esperando firma del Coordinador de Trabajos en Alturas.' };
+        }
+        if (selectedWorkTypes?.confinado && !hasSigned(supervisor_confinado)) {
+          return { can: false, reason: 'Esperando firma del Supervisor de Espacios Confinados.' };
         }
         return { can: true };
 
@@ -990,6 +1000,9 @@ export default function PermitDetailPage() {
     const getRoleDisplayName = () => {
       if (role === 'coordinador_alturas') {
         return 'Coordinador de Trabajo en Alturas';
+      }
+       if (role === 'supervisor_confinado') {
+        return 'Supervisor Esp. Confinados';
       }
       if (approval?.userRole) {
         return roleNames[approval.userRole] || approval.userRole;
@@ -1788,6 +1801,7 @@ export default function PermitDetailPage() {
           <Section title="Aprobaciones del Permiso">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {permit.selectedWorkTypes?.alturas && <SignatureCard role="coordinador_alturas" />}
+              {permit.selectedWorkTypes?.confinado && <SignatureCard role="supervisor_confinado" />}
               <SignatureCard role="solicitante" />
               {isSSTSignatureRequired && <SignatureCard role="lider_sst" />}
               <SignatureCard role="autorizante" />
@@ -1808,7 +1822,7 @@ export default function PermitDetailPage() {
             <DialogTitle>Registrar Firma</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {(signingRole?.role === 'coordinador_alturas' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
+            {(signingRole?.role === 'coordinador_alturas' || signingRole?.role === 'supervisor_confinado' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
               <div className="space-y-1">
                 <Label htmlFor="signerName">Su Nombre Completo</Label>
                 <Input
@@ -2075,3 +2089,5 @@ export default function PermitDetailPage() {
     </div>
   );
 }
+
+    
