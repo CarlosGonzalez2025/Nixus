@@ -180,8 +180,8 @@ export function AnexoIzajeStep() {
                     <div><Label>Área de Trabajo:</Label><Input value={generalInfo.areaEspecifica || ''} readOnly disabled /></div>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoIzaje.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoIzaje.emergencia || {}), contacto: e.target.value } })} /></div>
-                    <div><Label>Teléfono:</Label><Input value={anexoIzaje.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoIzaje.emergencia || {}), telefono: e.target.value } })} /></div>
+                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoIzaje.emergencia?.contacto || ''} onChange={(e) => handleNestedChange('emergencia', 'contacto', e.target.value)} /></div>
+                    <div><Label>Teléfono:</Label><Input value={anexoIzaje.emergencia?.telefono || ''} onChange={(e) => handleNestedChange('emergencia', 'telefono', e.target.value)} /></div>
                 </div>
             </SectionWrapper>
 
@@ -231,31 +231,6 @@ export function AnexoIzajeStep() {
                     {precaucionesControles.map(p => (
                         <div key={p.id} className="flex items-center gap-2"><Checkbox id={`preca-${p.id}`} checked={anexoIzaje.precauciones?.[p.id] || false} onCheckedChange={(c) => handleNestedChange('precauciones', p.id, !!c)} /><Label htmlFor={`preca-${p.id}`}>{p.label}</Label></div>
                     ))}
-                </div>
-            </SectionWrapper>
-
-            <SectionWrapper title="Autorizaciones">
-                 <div className="space-y-6">
-                    <div className="p-4 border rounded-lg">
-                        <p className="text-sm font-semibold mb-2">Autoridad del Área</p>
-                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Autoridad del Area, estoy enterado del trabajo a realizar y apruebo su ejecucion bajo las medidas de seguridad contempladas en este permiso y sus documentos  complementarios."</p>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Nombre Completo" value={anexoIzaje.autoridadArea?.nombre || ''} onChange={(e) => handleNestedChange('autoridadArea', 'nombre', e.target.value)} />
-                            <Input type="time" placeholder="Hora" value={anexoIzaje.autoridadArea?.hora || ''} onChange={(e) => handleNestedChange('autoridadArea', 'hora', e.target.value)} />
-                        </div>
-                        <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('autoridadArea')}><Signature className="mr-2"/>Firmar</Button>
-                        {anexoIzaje.autoridadArea?.firma && <img src={anexoIzaje.autoridadArea.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                        <p className="text-sm font-semibold mb-2">Responsable del Trabajo</p>
-                        <p className="text-xs text-muted-foreground mb-4">"Al firmar como Responsable del Trabajo / Ejecutor, Manifiesto que entiendo el trabajo que voy a realizar y los riesgos asosciados a este, dispongo de los recursos necesarios y  tomare las medidas de seguridad."</p>
-                        <div className="grid grid-cols-2 gap-4">
-                             <Input placeholder="Nombre Completo" value={anexoIzaje.responsableTrabajo?.nombre || ''} onChange={(e) => handleNestedChange('responsableTrabajo', 'nombre', e.target.value)} />
-                             <Input type="time" placeholder="Hora" value={anexoIzaje.responsableTrabajo?.hora || ''} onChange={(e) => handleNestedChange('responsableTrabajo', 'hora', e.target.value)} />
-                        </div>
-                        <Button variant="outline" className="w-full mt-4" onClick={() => openSignatureDialog('responsableTrabajo')}><Signature className="mr-2"/>Firmar</Button>
-                        {anexoIzaje.responsableTrabajo?.firma && <img src={anexoIzaje.responsableTrabajo.firma} alt="Firma" className="mt-2 border rounded-md max-h-20" />}
-                    </div>
                 </div>
             </SectionWrapper>
             
