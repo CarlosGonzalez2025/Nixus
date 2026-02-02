@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -649,111 +650,6 @@ export function AnexoConfinadoStep() {
               <Plus className="mr-2 h-4 w-4"/>Agregar Prueba
             </Button>
           )}
-      </SectionWrapper>
-
-      <SectionWrapper 
-        title="Autorizaciones" 
-        sectionId="autorizaciones"
-        isOpen={openSections.autorizaciones}
-        onToggle={() => toggleSection('autorizaciones')}
-      >
-        <div className="space-y-6">
-          <div className="p-4 border rounded-lg">
-              <p className="text-sm font-semibold mb-2">Autoridad del Área</p>
-              <p className="text-xs text-muted-foreground mb-4">"Al firmar como Autoridad del Área..."</p>
-              <div className="grid grid-cols-2 gap-4">
-                <Input 
-                  placeholder="Nombre" 
-                  value={anexoConfinado?.autoridadDelArea?.nombre || ''} 
-                  onChange={e => handleNestedFieldChange('autoridadDelArea', 'nombre', e.target.value)} 
-                />
-                <Input 
-                  type="time" 
-                  placeholder="Hora" 
-                  value={anexoConfinado?.autoridadDelArea?.hora || ''} 
-                  onChange={e => handleNestedFieldChange('autoridadDelArea', 'hora', e.target.value)} 
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full mt-4" 
-                onClick={() => openSignatureDialog('autoridadDelArea', 'firma')}
-              >
-                <Signature className="mr-2"/>Firmar
-              </Button>
-              {anexoConfinado?.autoridadDelArea?.firma && (
-                <img 
-                  src={anexoConfinado.autoridadDelArea.firma} 
-                  alt="Firma" 
-                  className="mt-2 border rounded-md max-h-20" 
-                />
-              )}
-          </div>
-
-          <div className="p-4 border rounded-lg">
-              <p className="text-sm font-semibold mb-2">Responsable del Trabajo</p>
-              <p className="text-xs text-muted-foreground mb-4">"Al firmar como Responsable del Trabajo..."</p>
-              <div className="grid grid-cols-2 gap-4">
-                <Input 
-                  placeholder="Nombre" 
-                  value={anexoConfinado?.responsableDelTrabajo?.nombre || ''} 
-                  onChange={e => handleNestedFieldChange('responsableDelTrabajo', 'nombre', e.target.value)} 
-                />
-                <Input 
-                  type="time" 
-                  placeholder="Hora" 
-                  value={anexoConfinado?.responsableDelTrabajo?.hora || ''} 
-                  onChange={e => handleNestedFieldChange('responsableDelTrabajo', 'hora', e.target.value)} 
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full mt-4" 
-                onClick={() => openSignatureDialog('responsableDelTrabajo', 'firma')}
-              >
-                <Signature className="mr-2"/>Firmar
-              </Button>
-              {anexoConfinado?.responsableDelTrabajo?.firma && (
-                <img 
-                  src={anexoConfinado.responsableDelTrabajo.firma} 
-                  alt="Firma" 
-                  className="mt-2 border rounded-md max-h-20" 
-                />
-              )}
-          </div>
-
-          <div className="p-4 border rounded-lg">
-              <p className="text-sm font-semibold mb-2">Supervisor de Trabajo en Espacios Confinados</p>
-              <p className="text-xs text-muted-foreground mb-4">"Al firmar como Supervisor..."</p>
-              <div className="grid grid-cols-2 gap-4">
-                <Input 
-                  placeholder="Nombre" 
-                  value={anexoConfinado?.supervisorTrabajo?.nombre || ''} 
-                  onChange={e => handleNestedFieldChange('supervisorTrabajo', 'nombre', e.target.value)} 
-                />
-                <Input 
-                  type="time" 
-                  placeholder="Hora" 
-                  value={anexoConfinado?.supervisorTrabajo?.hora || ''} 
-                  onChange={e => handleNestedFieldChange('supervisorTrabajo', 'hora', e.target.value)} 
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full mt-4" 
-                onClick={() => openSignatureDialog('supervisorTrabajo', 'firma')}
-              >
-                <Signature className="mr-2"/>Firmar
-              </Button>
-              {anexoConfinado?.supervisorTrabajo?.firma && (
-                <img 
-                  src={anexoConfinado.supervisorTrabajo.firma} 
-                  alt="Firma" 
-                  className="mt-2 border rounded-md max-h-20" 
-                />
-              )}
-          </div>
-        </div>
       </SectionWrapper>
     </div>
     <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>

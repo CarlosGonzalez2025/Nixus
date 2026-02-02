@@ -445,6 +445,7 @@ export type Permit = {
     mantenimiento: Partial<Approval>;
     lider_sst: Partial<Approval>;
     coordinador_alturas: Partial<Approval>;
+    supervisor_confinado: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
   isSSTSignatureRequired?: boolean; // Campo para indicar firma SST
