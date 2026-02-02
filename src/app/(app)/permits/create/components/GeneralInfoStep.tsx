@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2, Check, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
+import { addUserDefinedTool } from '../actions';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'general', name: 'Trabajo General' },
@@ -77,10 +79,8 @@ export function GeneralInfoStep() {
         const items = docSnap.data().items || [];
         setHerramientasDisponibles(items.sort());
       } else {
-        // Si no existe el documento, crearlo con la lista inicial
-        setDoc(herramientasRef, { items: herramientasIniciales.sort() })
-          .then(() => setHerramientasDisponibles(herramientasIniciales.sort()))
-          .catch(error => console.error('Error creating herramientas list:', error));
+        // No hacer nada si no existe, la lista de admin puede crearlo
+        setHerramientasDisponibles(herramientasIniciales.sort());
       }
     }, (error) => {
       console.error('Error fetching herramientas:', error);
@@ -178,39 +178,29 @@ export function GeneralInfoStep() {
     });
   }, [generalInfo.tools, handleInputChange, toast]);
 
-  // Agregar nueva herramienta personalizada
-  const addNewToolToFirestore = async () => {
+  // Agregar nueva herramienta personalizada via Server Action
+  const handleAddNewTool = async () => {
     const trimmedName = newToolName.trim();
     if (!trimmedName) return;
-
-    if (herramientasDisponibles.includes(trimmedName)) {
-      toast({
-        variant: "destructive",
-        title: "Ya existe",
-        description: "Esta herramienta ya está en la lista disponible.",
-      });
-      setNewToolName('');
-      setIsAddingNew(false);
-      return;
-    }
-
+  
     try {
-      const herramientasRef = doc(db, 'dynamic_lists', 'herramientas');
-      const docSnap = await getDoc(herramientasRef);
-      const currentItems = docSnap.exists() ? docSnap.data().items || [] : [];
-      const updatedItems = [...currentItems, trimmedName].sort();
-      
-      await setDoc(herramientasRef, { items: updatedItems });
-      
-      addToolFromList(trimmedName);
-      
-      toast({
-        title: "✓ Herramienta creada",
-        description: `"${trimmedName}" se agregó al catálogo.`,
-      });
-      
-      setNewToolName('');
-      setIsAddingNew(false);
+      const result = await addUserDefinedTool(trimmedName);
+  
+      if (result.success) {
+        addToolFromList(trimmedName);
+        toast({
+          title: "✓ Herramienta creada",
+          description: `"${trimmedName}" se agregó al catálogo.`,
+        });
+        setNewToolName('');
+        setIsAddingNew(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al crear",
+          description: result.error || "No se pudo agregar la herramienta.",
+        });
+      }
     } catch (error) {
       console.error('Error adding tool:', error);
       toast({
@@ -510,7 +500,7 @@ export function GeneralInfoStep() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      addNewToolToFirestore();
+                      handleAddNewTool();
                     }
                     if (e.key === 'Escape') {
                       setIsAddingNew(false);
@@ -523,7 +513,7 @@ export function GeneralInfoStep() {
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    onClick={addNewToolToFirestore}
+                    onClick={handleAddNewTool}
                     disabled={!newToolName.trim()}
                     className="flex-1 sm:flex-none"
                   >
