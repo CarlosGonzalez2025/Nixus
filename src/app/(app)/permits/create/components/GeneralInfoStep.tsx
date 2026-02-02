@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -9,12 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Check, Search, X } from 'lucide-react';
+import { Plus, Trash2, Check, Search, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
 import { addUserDefinedTool } from '../actions';
+import { addListItem } from '../../../../admin/lists/actions';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'general', name: 'Trabajo General' },
@@ -237,25 +237,83 @@ export function GeneralInfoStep() {
     }
   };
 
-  const renderDynamicSelect = React.useCallback((listKey: keyof typeof dynamicLists, fieldKey: keyof typeof generalInfo, label: string, required: boolean) => (
-    <div>
-      <Label className={`font-bold text-gray-700 ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}>{label}</Label>
-      <Select
-        value={(generalInfo as any)[fieldKey] || ''}
-        onValueChange={(value) => handleInputChange(fieldKey, value)}
-        disabled={loadingLists}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder={loadingLists ? "Cargando..." : `Seleccione una opción...`} />
-        </SelectTrigger>
-        <SelectContent>
-          {dynamicLists[listKey].map((item) => (
-            <SelectItem key={item} value={item}>{item}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  ), [generalInfo, dynamicLists, loadingLists, handleInputChange]);
+  const renderDynamicSelect = React.useCallback((
+    listKey: keyof typeof dynamicLists, 
+    fieldKey: keyof typeof generalInfo, 
+    label: string, 
+    required: boolean,
+    creatable: boolean = false
+  ) => {
+    const [isAdding, setIsAdding] = React.useState(false);
+    const [newItem, setNewItem] = React.useState('');
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const handleAddItem = async () => {
+      if (!newItem.trim()) {
+        toast({ variant: 'destructive', title: 'El nombre no puede estar vacío.' });
+        return;
+      }
+      setIsSubmitting(true);
+      const result = await addListItem(listKey, newItem);
+      if (result.success) {
+        toast({ title: 'Elemento agregado', description: `"${newItem}" se agregó a la lista de ${label}.` });
+        handleInputChange(fieldKey, newItem);
+        setNewItem('');
+        setIsAdding(false);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+      }
+      setIsSubmitting(false);
+    };
+
+    return (
+      <div className="space-y-2">
+        <Label className={`font-bold text-gray-700 ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}>{label}</Label>
+        <div className="flex gap-2 items-center">
+          <Select
+            value={(generalInfo as any)[fieldKey] || ''}
+            onValueChange={(value) => handleInputChange(fieldKey, value)}
+            disabled={loadingLists}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={loadingLists ? "Cargando..." : `Seleccione una opción...`} />
+            </SelectTrigger>
+            <SelectContent>
+              {dynamicLists[listKey].map((item) => (
+                <SelectItem key={item} value={item}>{item}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {creatable && (
+            <Button variant="outline" size="icon" onClick={() => setIsAdding(prev => !prev)} type="button">
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        {creatable && isAdding && (
+          <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <Input 
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              placeholder={`Nuevo/a ${label.toLowerCase()}...`}
+              onKeyDown={(e) => {
+                  if(e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddItem();
+                  }
+              }}
+            />
+            <Button onClick={handleAddItem} disabled={isSubmitting} size="sm" type="button">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)} type="button">
+              <X className="h-4 w-4"/>
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }, [generalInfo, dynamicLists, loadingLists, handleInputChange, toast]);
 
   // Filtrar herramientas según búsqueda con optimización
   const filteredHerramientas = React.useMemo(() => {
@@ -310,11 +368,11 @@ export function GeneralInfoStep() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true)}
-        {renderDynamicSelect('plantas', 'planta', 'Planta', true)}
-        {renderDynamicSelect('procesos', 'proceso', 'Proceso', false)}
-        {renderDynamicSelect('contratos', 'contrato', 'Contrato', false)}
-        {renderDynamicSelect('empresas', 'empresa', 'Empresa', false)}
+        {renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true, true)}
+        {renderDynamicSelect('plantas', 'planta', 'Planta', true, true)}
+        {renderDynamicSelect('procesos', 'proceso', 'Proceso', true, true)}
+        {renderDynamicSelect('contratos', 'contrato', 'Contrato', true, true)}
+        {renderDynamicSelect('empresas', 'empresa', 'Empresa', true, false)}
         <div>
           <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Nombre del solicitante</Label>
           <Input value={generalInfo.nombreSolicitante || ''} readOnly disabled />
