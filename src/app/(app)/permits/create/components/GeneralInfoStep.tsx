@@ -16,6 +16,7 @@ import { addDays, format } from 'date-fns';
 import { addUserDefinedTool } from '../actions';
 import { addListItem } from '../../../admin/lists/actions';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useCallback, useMemo } from 'react';
 
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string }[] = [
   { key: 'general', name: 'Trabajo General' },
@@ -26,7 +27,6 @@ const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selecte
   { key: 'excavacion', name: 'Excavaciones' },
 ];
 
-// Lista genérica inicial de herramientas por defecto
 const herramientasIniciales = [
   'Taladro',
   'Martillo',
@@ -47,6 +47,108 @@ const herramientasIniciales = [
 
 const ITEMS_PER_PAGE = 20;
 const QUICK_SELECT_COUNT = 6;
+
+// ============================================================================
+// NEW COMPONENT TO FIX HOOK ORDER ERROR
+// ============================================================================
+interface DynamicSelectProps {
+  listKey: 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
+  label: string;
+  required: boolean;
+  creatable?: boolean;
+  value: string;
+  options: string[];
+  isLoading: boolean;
+  onValueChange: (value: string) => void;
+}
+
+const DynamicSelect: React.FC<DynamicSelectProps> = ({
+  listKey,
+  label,
+  required,
+  creatable = false,
+  value,
+  options,
+  isLoading,
+  onValueChange,
+}) => {
+  const [isAdding, setIsAdding] = React.useState(false);
+  const [newItem, setNewItem] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleAddItem = async () => {
+    if (!newItem.trim()) {
+      toast({ variant: 'destructive', title: 'El nombre no puede estar vacío.' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await addListItem(listKey, newItem);
+      if (result.success) {
+        toast({ title: 'Elemento agregado', description: `"${newItem}" se agregó a la lista de ${label}.` });
+        onValueChange(newItem);
+        setNewItem('');
+        setIsAdding(false);
+      } else {
+        throw new Error(result.error || `No se pudo agregar el/la ${label.toLowerCase()}.`);
+      }
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className={`font-bold text-gray-700 ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}>{label}</Label>
+      <div className="flex gap-2 items-center">
+        <Select
+          value={value}
+          onValueChange={onValueChange}
+          disabled={isLoading}
+        >
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder={isLoading ? "Cargando..." : `Seleccione una opción...`} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((item) => (
+              <SelectItem key={item} value={item}>{item}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {creatable && (
+          <Button variant="outline" size="icon" onClick={() => setIsAdding(prev => !prev)} type="button">
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      {creatable && isAdding && (
+        <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <Input
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            placeholder={`Nuevo/a ${label.toLowerCase()}...`}
+            onKeyDown={(e) => {
+                if(e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddItem();
+                }
+            }}
+          />
+          <Button onClick={handleAddItem} disabled={isSubmitting} size="sm" type="button">
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)} type="button">
+            <X className="h-4 w-4"/>
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export function GeneralInfoStep() {
   const { state, dispatch } = usePermitForm();
@@ -80,7 +182,6 @@ export function GeneralInfoStep() {
         const items = docSnap.data().items || [];
         setHerramientasDisponibles(items.sort());
       } else {
-        // No hacer nada si no existe, la lista de admin puede crearlo
         setHerramientasDisponibles(herramientasIniciales.sort());
       }
     }, (error) => {
@@ -93,7 +194,7 @@ export function GeneralInfoStep() {
 
   React.useEffect(() => {
     setLoadingLists(true);
-    const listNames = ['areas', 'plantas', 'procesos', 'contratos', 'empresas'];
+    const listNames: (keyof typeof dynamicLists)[] = ['areas', 'plantas', 'procesos', 'contratos', 'empresas'];
     const unsubscribers = listNames.map(listName => {
       const docRef = doc(db, 'dynamic_lists', listName);
       return onSnapshot(docRef, (docSnap) => {
@@ -111,10 +212,7 @@ export function GeneralInfoStep() {
       });
     });
 
-    Promise.all(listNames.map(listName => new Promise(resolve => {
-      const docRef = doc(db, 'dynamic_lists', listName);
-      onSnapshot(docRef, () => resolve(true), () => resolve(true));
-    }))).then(() => setLoadingLists(false));
+    setLoadingLists(false);
 
     return () => unsubscribers.forEach(unsub => unsub());
   }, [toast]);
@@ -136,21 +234,20 @@ export function GeneralInfoStep() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (field: keyof typeof generalInfo, value: any) => {
+  const handleInputChange = useCallback((field: keyof typeof generalInfo, value: any) => {
     dispatch({ type: 'UPDATE_GENERAL_INFO', payload: { [field]: value } });
-  };
+  }, [dispatch]);
 
-  const handleWorkTypeChange = (type: keyof typeof selectedWorkTypes, value: boolean) => {
+  const handleWorkTypeChange = useCallback((type: keyof typeof selectedWorkTypes, value: boolean) => {
     dispatch({ type: 'UPDATE_WORK_TYPES', payload: { type, value } });
-  };
+  }, [dispatch]);
   
-  const handleResponsableChange = (field: keyof typeof generalInfo.responsable, value: string) => {
+  const handleResponsableChange = useCallback((field: keyof typeof generalInfo.responsable, value: string) => {
     const newResponsable = { ...generalInfo.responsable, [field]: value };
     handleInputChange('responsable', newResponsable);
-  };
+  }, [generalInfo.responsable, handleInputChange]);
 
-  // Agregar herramienta seleccionada
-  const addToolFromList = React.useCallback((toolName: string) => {
+  const addToolFromList = useCallback((toolName: string) => {
     if (!toolName) return;
     
     const alreadyAdded = generalInfo.tools?.some(t => t.name === toolName);
@@ -166,12 +263,10 @@ export function GeneralInfoStep() {
     const newTools = [...(generalInfo.tools || []), { name: toolName, status: 'B' }];
     handleInputChange('tools', newTools);
     
-    // Limpiar búsqueda y cerrar resultados
     setSearchTerm('');
     setShowSearchResults(false);
     setDisplayCount(ITEMS_PER_PAGE);
     
-    // Toast de confirmación
     toast({
       title: "✓ Agregada",
       description: `${toolName}`,
@@ -179,8 +274,7 @@ export function GeneralInfoStep() {
     });
   }, [generalInfo.tools, handleInputChange, toast]);
 
-  // Agregar nueva herramienta personalizada via Server Action
-  const handleAddNewTool = async () => {
+  const handleAddNewTool = useCallback(async () => {
     const trimmedName = newToolName.trim();
     if (!trimmedName) return;
   
@@ -196,35 +290,30 @@ export function GeneralInfoStep() {
         setNewToolName('');
         setIsAddingNew(false);
       } else {
-        toast({
-          variant: "destructive",
-          title: "Error al crear",
-          description: result.error || "No se pudo agregar la herramienta.",
-        });
+        throw new Error(result.error || "No se pudo agregar la herramienta.");
       }
-    } catch (error) {
-      console.error('Error adding tool:', error);
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "No se pudo agregar la herramienta.",
+        title: "Error al crear",
+        description: error.message,
       });
     }
-  };
+  }, [newToolName, addToolFromList, toast]);
 
-  const removeTool = React.useCallback((index: number) => {
+  const removeTool = useCallback((index: number) => {
     const newTools = (generalInfo.tools || []).filter((_, i) => i !== index);
     handleInputChange('tools', newTools);
   }, [generalInfo.tools, handleInputChange]);
   
-  const maxDate = React.useMemo(() => {
+  const maxDate = useMemo(() => {
     if (!generalInfo.validFrom) return '';
     const startDate = new Date(generalInfo.validFrom);
     const maxDate = addDays(startDate, 7);
     return format(maxDate, "yyyy-MM-dd'T'HH:mm");
   }, [generalInfo.validFrom]);
 
-  const handleUntilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUntilChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newUntilDate = e.target.value;
     if (maxDate && newUntilDate > maxDate) {
         toast({
@@ -236,88 +325,9 @@ export function GeneralInfoStep() {
     } else {
         handleInputChange('validUntil', newUntilDate);
     }
-  };
+  }, [handleInputChange, maxDate, toast]);
 
-  const renderDynamicSelect = React.useCallback((
-    listKey: keyof typeof dynamicLists, 
-    fieldKey: keyof typeof generalInfo, 
-    label: string, 
-    required: boolean,
-    creatable: boolean = false
-  ) => {
-    const [isAdding, setIsAdding] = React.useState(false);
-    const [newItem, setNewItem] = React.useState('');
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-    const handleAddItem = async () => {
-      if (!newItem.trim()) {
-        toast({ variant: 'destructive', title: 'El nombre no puede estar vacío.' });
-        return;
-      }
-      setIsSubmitting(true);
-      const result = await addListItem(listKey, newItem);
-      if (result.success) {
-        toast({ title: 'Elemento agregado', description: `"${newItem}" se agregó a la lista de ${label}.` });
-        handleInputChange(fieldKey, newItem);
-        setNewItem('');
-        setIsAdding(false);
-      } else {
-        toast({ variant: 'destructive', title: 'Error', description: result.error });
-      }
-      setIsSubmitting(false);
-    };
-
-    return (
-      <div className="space-y-2">
-        <Label className={`font-bold text-gray-700 ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}>{label}</Label>
-        <div className="flex gap-2 items-center">
-          <Select
-            value={(generalInfo as any)[fieldKey] || ''}
-            onValueChange={(value) => handleInputChange(fieldKey, value)}
-            disabled={loadingLists}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={loadingLists ? "Cargando..." : `Seleccione una opción...`} />
-            </SelectTrigger>
-            <SelectContent>
-              {dynamicLists[listKey].map((item) => (
-                <SelectItem key={item} value={item}>{item}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {creatable && (
-            <Button variant="outline" size="icon" onClick={() => setIsAdding(prev => !prev)} type="button">
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        {creatable && isAdding && (
-          <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <Input 
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder={`Nuevo/a ${label.toLowerCase()}...`}
-              onKeyDown={(e) => {
-                  if(e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddItem();
-                  }
-              }}
-            />
-            <Button onClick={handleAddItem} disabled={isSubmitting} size="sm" type="button">
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setIsAdding(false)} type="button">
-              <X className="h-4 w-4"/>
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  }, [generalInfo, dynamicLists, loadingLists, handleInputChange, toast]);
-
-  // Filtrar herramientas según búsqueda con optimización
-  const filteredHerramientas = React.useMemo(() => {
+  const filteredHerramientas = useMemo(() => {
     if (!searchTerm) return herramientasDisponibles;
     const searchLower = searchTerm.toLowerCase();
     return herramientasDisponibles.filter(h => 
@@ -325,20 +335,17 @@ export function GeneralInfoStep() {
     );
   }, [searchTerm, herramientasDisponibles]);
 
-  // Herramientas a mostrar con lazy loading
-  const displayedHerramientas = React.useMemo(() => {
+  const displayedHerramientas = useMemo(() => {
     return filteredHerramientas.slice(0, displayCount);
   }, [filteredHerramientas, displayCount]);
 
-  // Herramientas para selección rápida (excluir ya agregadas)
-  const quickSelectTools = React.useMemo(() => {
+  const quickSelectTools = useMemo(() => {
     return herramientasDisponibles
       .slice(0, QUICK_SELECT_COUNT)
       .filter(h => !generalInfo.tools?.some(t => t.name === h));
   }, [herramientasDisponibles, generalInfo.tools]);
 
-  // Manejar scroll para lazy loading
-  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
     const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
     
@@ -376,10 +383,22 @@ export function GeneralInfoStep() {
               <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="area-no" /><Label htmlFor="area-no">No</Label></div>
           </RadioGroup>
           {generalInfo.requiereArea === 'si' && (
-              <div className="pt-2">{renderDynamicSelect('areas', 'areaEspecifica', 'Área o equipo específico', true, true)}</div>
+              <div className="pt-2">
+                <DynamicSelect
+                  listKey="areas"
+                  fieldKey="areaEspecifica"
+                  label="Área o equipo específico"
+                  required
+                  creatable
+                  value={generalInfo.areaEspecifica || ''}
+                  options={dynamicLists.areas}
+                  isLoading={loadingLists}
+                  onValueChange={(value) => handleInputChange('areaEspecifica', value)}
+                />
+              </div>
           )}
         </div>
-
+        
         <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
             <Label className="font-bold text-gray-700">¿Se requiere Planta?</Label>
             <RadioGroup value={generalInfo.requierePlanta || 'no'} onValueChange={(value) => { handleInputChange('requierePlanta', value as 'si' | 'no'); if (value === 'no') handleInputChange('planta', ''); }} className="flex gap-4">
@@ -387,7 +406,19 @@ export function GeneralInfoStep() {
                 <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="planta-no" /><Label htmlFor="planta-no">No</Label></div>
             </RadioGroup>
             {generalInfo.requierePlanta === 'si' && (
-                <div className="pt-2">{renderDynamicSelect('plantas', 'planta', 'Planta', true, true)}</div>
+                <div className="pt-2">
+                  <DynamicSelect
+                    listKey="plantas"
+                    fieldKey="planta"
+                    label="Planta"
+                    required
+                    creatable
+                    value={generalInfo.planta || ''}
+                    options={dynamicLists.plantas}
+                    isLoading={loadingLists}
+                    onValueChange={(value) => handleInputChange('planta', value)}
+                  />
+                </div>
             )}
         </div>
 
@@ -398,7 +429,19 @@ export function GeneralInfoStep() {
                 <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="proceso-no" /><Label htmlFor="proceso-no">No</Label></div>
             </RadioGroup>
             {generalInfo.requiereProceso === 'si' && (
-                <div className="pt-2">{renderDynamicSelect('procesos', 'proceso', 'Proceso', true, true)}</div>
+                <div className="pt-2">
+                  <DynamicSelect
+                    listKey="procesos"
+                    fieldKey="proceso"
+                    label="Proceso"
+                    required
+                    creatable
+                    value={generalInfo.proceso || ''}
+                    options={dynamicLists.procesos}
+                    isLoading={loadingLists}
+                    onValueChange={(value) => handleInputChange('proceso', value)}
+                  />
+                </div>
             )}
         </div>
 
@@ -409,11 +452,32 @@ export function GeneralInfoStep() {
                 <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="contrato-no" /><Label htmlFor="contrato-no">No</Label></div>
             </RadioGroup>
             {generalInfo.requiereContrato === 'si' && (
-                <div className="pt-2">{renderDynamicSelect('contratos', 'contrato', 'Contrato', true, true)}</div>
+                <div className="pt-2">
+                  <DynamicSelect
+                    listKey="contratos"
+                    fieldKey="contrato"
+                    label="Contrato"
+                    required
+                    creatable
+                    value={generalInfo.contrato || ''}
+                    options={dynamicLists.contratos}
+                    isLoading={loadingLists}
+                    onValueChange={(value) => handleInputChange('contrato', value)}
+                  />
+                </div>
             )}
         </div>
         
-        {renderDynamicSelect('empresas', 'empresa', 'Empresa', true, false)}
+        <DynamicSelect
+          listKey="empresas"
+          fieldKey="empresa"
+          label="Empresa"
+          required
+          value={generalInfo.empresa || ''}
+          options={dynamicLists.empresas}
+          isLoading={loadingLists}
+          onValueChange={(value) => handleInputChange('empresa', value)}
+        />
         <div>
           <Label className="font-bold text-gray-700 after:content-['*'] after:ml-0.5 after:text-red-500">Nombre del solicitante</Label>
           <Input value={generalInfo.nombreSolicitante || ''} readOnly disabled />
@@ -478,7 +542,6 @@ export function GeneralInfoStep() {
       <div>
         <Label className="font-bold text-gray-700">Equipos y/o Herramientas</Label>
         <div className="space-y-4 p-4 border rounded-lg mt-2">
-          {/* Herramientas seleccionadas - Optimizado para móvil */}
           {generalInfo.tools && generalInfo.tools.length > 0 && (
             <div className="space-y-2 pb-3 border-b">
               <p className="text-xs text-muted-foreground">Seleccionadas ({generalInfo.tools.length}):</p>
@@ -500,7 +563,6 @@ export function GeneralInfoStep() {
             </div>
           )}
           
-          {/* Campo de búsqueda - Optimizado para móvil */}
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -524,7 +586,6 @@ export function GeneralInfoStep() {
               )}
             </div>
             
-            {/* Lista de resultados con lazy loading - Optimizada */}
             {showSearchResults && searchTerm && (
               <div
                 ref={resultsContainerRef}
@@ -589,7 +650,6 @@ export function GeneralInfoStep() {
               </div>
             )}
 
-            {/* Agregar nueva herramienta */}
             {isAddingNew && (
               <div className="flex flex-col sm:flex-row gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <Input
@@ -649,7 +709,6 @@ export function GeneralInfoStep() {
             )}
           </div>
 
-          {/* Selección rápida - Solo herramientas no agregadas */}
           {quickSelectTools.length > 0 && (
             <div className="pt-3 border-t">
               <p className="text-xs text-muted-foreground mb-2">Acceso rápido:</p>
