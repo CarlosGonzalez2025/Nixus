@@ -68,7 +68,7 @@ export default function LoginPage() {
     <div
       className="flex min-h-screen items-center justify-center p-2 sm:p-4"
       style={{
-        background: 'linear-gradient(135deg, #FFF5E6 0%, #FFE8CC 50%, #FFD9B3 100%)',
+        background: 'linear-gradient(135deg, #e6f0ff 0%, #cce1ff 100%)',
       }}
     >
       <Card className="w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl border-0">
@@ -115,7 +115,7 @@ export default function LoginPage() {
                         placeholder="usuario@italcol.com"
                         {...field}
                         type="email"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm sm:text-base"
                       />
                     </FormControl>
                     <FormMessage />
@@ -131,7 +131,7 @@ export default function LoginPage() {
                       <FormLabel className="font-medium text-gray-700">
                         Contraseña
                       </FormLabel>
-                      <Link href="#" className="text-xs text-orange-600 hover:text-orange-800 transition-colors hover:underline whitespace-nowrap">
+                      <Link href="#" className="text-xs text-primary hover:text-primary/80 transition-colors hover:underline whitespace-nowrap">
                         ¿Olvidaste tu contraseña?
                       </Link>
                     </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
                         placeholder="••••••••"
                         {...field}
                         type="password"
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all text-sm sm:text-base"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm sm:text-base"
                       />
                     </FormControl>
                     <FormMessage />
@@ -149,7 +149,7 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-2.5 sm:py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 sm:py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
                 disabled={isLoading}
               >
                 {isLoading && (
