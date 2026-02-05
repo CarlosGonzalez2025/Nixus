@@ -147,7 +147,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* Logo centrado */}
                 <div className="bg-white rounded-lg p-2.5 shadow-sm transition-all group-data-[collapsible=icon]:p-1.5">
                   <Image 
-                    src="https://i.postimg.cc/VsZBSkmH/Italcol.png" 
+                    src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
                     alt="Logo Italcol" 
                     width={120}
                     height={60}

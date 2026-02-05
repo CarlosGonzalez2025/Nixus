@@ -103,7 +103,7 @@ export const eppOptions = {
     { id: 'proteccion_metatarso', label: 'Protección Metatarso', type: 'boolean' },
   ],
   'Protección Contra Caídas y Equipos Especiales': [
-    { id: 'arnes', label: 'Arnés', type: 'select', selectOptions: ['Cuerpo completo', 'Para escate'] },
+    { id: 'arnes', label: 'Arnés', type: 'select', selectOptions: ['Cuerpo completo', 'Para rescate'] },
     { id: 'mosqueton', label: 'Mosquetón', type: 'boolean' },
     { id: 'punto_de_anclaje', label: 'Punto de anclaje', type: 'select', selectOptions: ['Fijo estructural', 'Portátil/Móvil', 'Viga', 'Anclaje certificado'] },
     { id: 'eslinga', label: 'Eslinga tipo/absorbedor', type: 'select', selectOptions: ['Y con absorbedor', 'Simple con absorbedor', 'Doble sin absorbedor', 'Retráctil'] },

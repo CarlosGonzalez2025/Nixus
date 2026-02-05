@@ -76,7 +76,7 @@ export default function LoginPage() {
           {/* Logo Principal Italcol */}
           <div className="flex justify-center">
             <img 
-              src="https://i.postimg.cc/WzZf5S1T/logo-header.png" 
+              src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
               alt="Italcol Logo" 
               className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain"
               // Opciones de tamaño:

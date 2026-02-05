@@ -30,6 +30,7 @@ import Image from 'next/image';
 import { errorEmitter } from '@/lib/error-emitter';
 import { generateUserManualPDF } from '@/lib/pdf-generators';
 import { FirestorePermissionError } from '@/lib/errors';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const getStatusColor = (status: string) => {
   const statusColors: { [key: string]: string } = {
@@ -101,6 +102,7 @@ export default function Dashboard() {
     aprobado: 0,
     enEjecucion: 0
   });
+  const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
 
   useEffect(() => {
     if (userLoading) {
@@ -292,12 +294,13 @@ export default function Dashboard() {
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt blur"></div>
             <div className="relative bg-white rounded-full p-1">
               <Image
-                src="https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg"
+                src={user?.photoURL || userAvatar?.imageUrl || ''}
                 alt="Profile"
                 width={64}
                 height={64}
                 className="rounded-full object-cover border-2 border-white"
                 priority
+                data-ai-hint={userAvatar?.imageHint}
               />
             </div>
           </div>
@@ -522,4 +525,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
