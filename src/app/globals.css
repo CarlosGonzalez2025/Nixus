@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 22 100% 59%; /* Naranja Italcol #FF7A2F */
+    --primary: 212 100% 14%; /* Azul oscuro #002248 */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -22,22 +22,22 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 22 100% 59%; /* Ring con naranja Italcol */
+    --ring: 212 100% 14%; /* Ring con azul oscuro */
     --radius: 0.5rem;
 
     /* Colores adicionales específicos */
-    --info: 22 100% 59%; /* Info con naranja Italcol */
+    --info: 212 100% 14%; /* Info con azul oscuro */
     --success: 142 71% 45%; /* Verde para éxito */
     --warning: 45 100% 60%; /* Amarillo Italcol para advertencias */
     
-    /* Variables sidebar con colores Italcol */
-    --sidebar-background: 22 100% 59%; /* Fondo sidebar con naranja Italcol */
+    /* Variables sidebar con nuevos colores */
+    --sidebar-background: 212 100% 14%; /* Fondo sidebar con azul oscuro */
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%; /* Blanco para contraste */
-    --sidebar-primary-foreground: 22 100% 59%;
-    --sidebar-accent: 22 100% 54%; /* Versión más oscura del naranja Italcol */
+    --sidebar-primary-foreground: 212 100% 14%;
+    --sidebar-accent: 212 80% 25%; /* Versión más clara del azul para hover */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 22 100% 54%;
+    --sidebar-border: 212 80% 25%;
     --sidebar-ring: 0 0% 100%;
   }
 
@@ -48,8 +48,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 22 100% 59%; /* Naranja Italcol */
-    --primary-foreground: 0 0% 100%;
+    --primary: 212 90% 60%; /* Azul más claro para contraste en modo oscuro */
+    --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -60,17 +60,17 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 22 100% 59%;
+    --ring: 212 90% 60%;
     
-    /* Sidebar dark mode con Italcol */
-    --sidebar-background: 22 100% 35%; /* Versión más oscura para dark mode */
+    /* Sidebar dark mode con nuevos colores */
+    --sidebar-background: 212 100% 10%; /* Azul muy oscuro para fondo */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 22 100% 35%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-primary-foreground: 212 100% 10%;
+    --sidebar-accent: 212 90% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 22 100% 59%;
+    --sidebar-ring: 212 90% 60%;
   }
 }
 
