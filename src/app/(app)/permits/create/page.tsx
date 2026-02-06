@@ -619,7 +619,7 @@ function CreatePermitWizard() {
             <div>
               <div className="flex items-center gap-3">
                 <Image 
-                    src="https://i.postimg.cc/jShP2K6k/Whats-App-Image-2025-10-20-at-10-43-48-AM.jpg"
+                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05-at-10-19-08.jpg"
                     alt="Crear Permiso Icon"
                     width={48}
                     height={48}

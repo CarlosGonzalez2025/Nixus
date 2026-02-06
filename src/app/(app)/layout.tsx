@@ -366,7 +366,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <div className="relative h-8 w-8 flex-shrink-0 bg-white rounded p-0.5">
                   <Image 
-                    src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" 
+                    src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
                     alt="Logo" 
                     width={64}
                     height={64}

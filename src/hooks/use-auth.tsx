@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, {
@@ -88,7 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await signOut(auth);
-    router.push('/login');
+    // The redirect is handled by the AppLayout's useEffect hook,
+    // which is more robust as it reacts to the auth state change.
   };
 
   const value = {
