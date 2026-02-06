@@ -5,6 +5,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import * as z from 'zod';
 import type { User, UserRole } from '@/types';
+import { revalidatePath } from 'next/cache';
 
 const createFormSchema = z.object({
   fullName: z.string().min(3),
@@ -17,6 +18,9 @@ const createFormSchema = z.object({
   ciudad: z.string().optional(),
   planta: z.string().optional(),
 });
+
+// New schema for bulk creation
+const bulkCreateUserSchema = createFormSchema.extend({});
 
 const updateFormSchema = z.object({
   uid: z.string(),
@@ -66,6 +70,56 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
     }
     return { error: 'Ocurrió un error inesperado al crear el usuario.' };
   }
+}
+
+export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSchema>[]) {
+  const auth = getAuth();
+  const results = {
+    successCount: 0,
+    errorCount: 0,
+    errors: [] as { email: string; reason: string }[],
+  };
+
+  for (const userData of users) {
+    try {
+      const userRecord = await auth.createUser({
+        email: userData.email,
+        password: userData.password,
+        displayName: userData.fullName,
+        disabled: false,
+      });
+
+      const userProfile: User = {
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userData.fullName,
+        role: userData.role,
+        area: userData.area,
+        telefono: userData.telefono,
+        empresa: userData.empresa,
+        ciudad: userData.ciudad,
+        planta: userData.planta,
+        photoURL: userRecord.photoURL || '',
+        disabled: false,
+      };
+
+      await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
+      results.successCount++;
+    } catch (error: any) {
+      results.errorCount++;
+      let reason = 'Error desconocido';
+      if (error.code === 'auth/email-already-exists') {
+        reason = 'El correo ya existe.';
+      } else if (error.code === 'auth/invalid-password') {
+        reason = 'La contraseña no es válida (mínimo 6 caracteres).';
+      }
+      results.errors.push({ email: userData.email, reason });
+      console.error(`Error creating user ${userData.email}:`, error.code, error.message);
+    }
+  }
+
+  revalidatePath('/admin/users');
+  return results;
 }
 
 export async function updateUser(data: z.infer<typeof updateFormSchema>) {

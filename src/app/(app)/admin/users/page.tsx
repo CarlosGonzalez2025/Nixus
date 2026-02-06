@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -28,8 +29,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus } from './actions';
-import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown } from 'lucide-react';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers } from './actions';
+import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
@@ -63,10 +64,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const createFormSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -92,6 +93,9 @@ const updateFormSchema = z.object({
   planta: z.string().optional(),
 });
 
+const bulkCreateUserSchema = createFormSchema.extend({});
+type BulkUser = z.infer<typeof bulkCreateUserSchema>;
+
 
 const roleNames: { [key in UserRole]: string } = {
   solicitante: 'Solicitante de la Tarea',
@@ -113,6 +117,199 @@ const roleColors: { [key in UserRole]: string } = {
   mantenimiento: 'bg-cyan-100 text-cyan-700 border-cyan-200'
 };
 
+function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [parsedUsers, setParsedUsers] = useState<BulkUser[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDownloadTemplate = () => {
+    const headers = ['fullName', 'email', 'password', 'role', 'empresa', 'ciudad', 'planta', 'area', 'telefono'];
+    const exampleData = [
+      {
+        fullName: 'Juan Ejemplo',
+        email: 'juan@ejemplo.com',
+        password: 'password123',
+        role: 'solicitante',
+        empresa: 'Empresa Ejemplo',
+        ciudad: 'Bogotá',
+        planta: 'Planta Principal',
+        area: 'Mantenimiento',
+        telefono: '3001234567'
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(exampleData, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla Usuarios');
+    XLSX.writeFile(workbook, 'plantilla_usuarios.xlsx');
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setIsParsing(true);
+    setParsedUsers([]);
+
+    try {
+      const data = await selectedFile.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+      const users: BulkUser[] = [];
+      const requiredFields = ['fullName', 'email', 'password', 'role', 'empresa'];
+      
+      json.forEach((row, index) => {
+        const missingFields = requiredFields.filter(field => !row[field]);
+        if (missingFields.length > 0) {
+          throw new Error(`Fila ${index + 2}: Faltan campos obligatorios: ${missingFields.join(', ')}`);
+        }
+        
+        const validation = bulkCreateUserSchema.safeParse({
+          ...row,
+          telefono: row.telefono ? String(row.telefono) : undefined,
+        });
+
+        if (validation.success) {
+          users.push(validation.data);
+        } else {
+          const firstError = validation.error.errors[0];
+          throw new Error(`Fila ${index + 2}: Error en campo '${firstError.path.join('.')}': ${firstError.message}`);
+        }
+      });
+
+      setParsedUsers(users);
+      toast({ title: "Archivo Procesado", description: `Se encontraron ${users.length} usuarios para importar.` });
+
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: "Error al leer el archivo", description: error.message });
+      setFile(null);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (parsedUsers.length === 0) {
+      toast({ variant: 'destructive', title: 'No hay usuarios para importar' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await createMultipleUsers(parsedUsers);
+      toast({
+        title: "Importación Completada",
+        description: `Éxito: ${result.successCount}. Errores: ${result.errorCount}.`,
+        duration: 8000
+      });
+
+      if (result.errorCount > 0) {
+        // You could show a more detailed error report here
+        console.error("Errores de importación:", result.errors);
+      }
+      
+      // Reset state and close
+      setFile(null);
+      setParsedUsers([]);
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: "Error en la importación masiva", description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Upload className="h-5 w-5" />
+            Carga Masiva de Usuarios
+          </DialogTitle>
+          <DialogDescription>
+            Importe múltiples usuarios desde un archivo de Excel.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+          {/* Columna de Instrucciones */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Instrucciones</h3>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <li>Descargue la plantilla de Excel.</li>
+              <li>Llene los datos de los usuarios. Los campos con (*) son obligatorios.</li>
+              <li>Guarde el archivo y súbalo en el área de la derecha.</li>
+              <li>Revise los usuarios encontrados y haga clic en "Importar".</li>
+            </ol>
+            <Button variant="outline" onClick={handleDownloadTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Descargar Plantilla
+            </Button>
+            <div className="text-xs text-muted-foreground pt-4">
+              <p><span className="font-bold">Columnas:</span> fullName*, email*, password*, role*, empresa*, ciudad, planta, area, telefono</p>
+              <p className="mt-2"><span className="font-bold">Roles válidos:</span> solicitante, autorizante, lider_tarea, ejecutante, lider_sst, admin, mantenimiento</p>
+            </div>
+          </div>
+          {/* Columna de Carga */}
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+            <div 
+              className="flex justify-center items-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-muted/50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="text-center">
+                <FileUp className="mx-auto h-8 w-8 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">
+                  {file ? file.name : "Haga clic para seleccionar un archivo"}
+                </p>
+                <p className="text-xs text-gray-400">(.xlsx)</p>
+              </div>
+              <Input 
+                ref={fileInputRef}
+                type="file" 
+                className="hidden"
+                accept=".xlsx"
+                onChange={handleFileChange}
+              />
+            </div>
+            
+            {isParsing && <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />}
+
+            {parsedUsers.length > 0 && !isParsing && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Usuarios a Importar ({parsedUsers.length})</h4>
+                <ScrollArea className="h-40 rounded-md border p-2">
+                  <div className="space-y-1">
+                  {parsedUsers.map((user, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs p-1 bg-background rounded">
+                      <CircleCheck className="h-4 w-4 text-green-500" />
+                      <span className="font-medium flex-1 truncate">{user.fullName}</span>
+                      <span className="text-muted-foreground truncate">{user.email}</span>
+                      <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                    </div>
+                  ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={handleBulkImport} disabled={isParsing || isSubmitting || parsedUsers.length === 0}>
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            Importar {parsedUsers.length > 0 ? parsedUsers.length : ''} Usuarios
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function UsersPage() {
   const { user: adminUser, loading: adminLoading } = useUser();
   const router = useRouter();
@@ -126,6 +323,8 @@ export default function UsersPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   const createForm = useForm<z.infer<typeof createFormSchema>>({
     resolver: zodResolver(createFormSchema),
@@ -248,7 +447,6 @@ export default function UsersPage() {
     }
   }
 
-
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
     const originalStatus = users.find(u => u.uid === userId)?.disabled;
 
@@ -324,14 +522,23 @@ export default function UsersPage() {
                 </p>
               </div>
             </div>
-
-            <Button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="bg-blue-600 hover:bg-blue-700 shadow-md h-11"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Nuevo Usuario
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setIsBulkUploadOpen(true)}
+                variant="outline"
+                className="h-11"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Carga Masiva
+              </Button>
+              <Button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="bg-blue-600 hover:bg-blue-700 shadow-md h-11"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nuevo Usuario
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -704,6 +911,8 @@ export default function UsersPage() {
           </Card>
         </div>
       </div>
+
+      <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
