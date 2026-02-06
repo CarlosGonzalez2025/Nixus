@@ -74,7 +74,9 @@ service cloud.firestore {
                   (
                     (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
                     // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
-                    (request.query.where.createdBy == request.auth.uid)
+                    (request.query.where.createdBy == request.auth.uid) ||
+                    // Mantenimiento puede listar permisos que requieren su firma
+                    (hasRole('mantenimiento') && request.query.where.controlEnergia == true)
                   );
       
       // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
