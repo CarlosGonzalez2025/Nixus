@@ -11,7 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Bell, FileSignature, Sparkles, FilePlus, CheckCircle, XCircle, Lock } from 'lucide-react';
@@ -48,9 +47,12 @@ export function AlertsBell() {
       return;
     }
 
+    // Fetch only unread notifications, ordered by most recent
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
+      where('isRead', '==', false),
+      orderBy('createdAt', 'desc'),
       limit(20)
     );
 
@@ -59,10 +61,6 @@ export function AlertsBell() {
         id: doc.id,
         ...doc.data()
       } as Notification));
-      
-      // Ordenar las notificaciones en el cliente
-      notifsData.sort((a, b) => (b.createdAt?.toDate()?.getTime() || 0) - (a.createdAt?.toDate()?.getTime() || 0));
-
       setNotifications(notifsData);
     }, (error) => {
       console.error("Error fetching notifications:", error);
@@ -71,19 +69,21 @@ export function AlertsBell() {
     return () => unsubscribe();
   }, [user]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  // The number of unread notifications is simply the length of the state array
+  const unreadCount = notifications.length;
 
+  // When a notification is clicked, mark it as read. It will then disappear from the list.
   const handleMarkAsRead = async (notificationId: string) => {
     const notifRef = doc(db, 'notifications', notificationId);
     await updateDoc(notifRef, { isRead: true });
   };
   
+  // Mark all currently visible (i.e., unread) notifications as read.
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
     
-    const unreadNotifications = notifications.filter(n => !n.isRead);
-    
-    const updatePromises = unreadNotifications.map(n => {
+    // 'notifications' state only contains unread items.
+    const updatePromises = notifications.map(n => {
       const notifRef = doc(db, 'notifications', n.id);
       return updateDoc(notifRef, { isRead: true });
     });
@@ -122,7 +122,7 @@ export function AlertsBell() {
             ) : (
               notifications.map((notif) => (
                 <Link key={notif.id} href={`/permits/${notif.permitId}`} passHref onClick={() => handleMarkAsRead(notif.id)}>
-                  <DropdownMenuItem className={`cursor-pointer flex items-start gap-2 ${!notif.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}>
+                  <DropdownMenuItem className="cursor-pointer flex items-start gap-2">
                     <div className="mt-1">
                         {getNotificationIcon(notif.type)}
                     </div>
@@ -134,9 +134,6 @@ export function AlertsBell() {
                           : 'justo ahora'}
                       </p>
                     </div>
-                     {!notif.isRead && (
-                        <div className="mt-1 h-2 w-2 rounded-full bg-blue-500 self-center" aria-label="No leído" />
-                     )}
                   </DropdownMenuItem>
                 </Link>
               ))
