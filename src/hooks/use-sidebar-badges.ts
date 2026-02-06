@@ -26,13 +26,15 @@ export function useSidebarBadges() {
       return;
     }
     
-    const queryConstraints: QueryConstraint[] = [
-      where('status', '==', 'pendiente_revision')
-    ];
+    const queryConstraints: QueryConstraint[] = [];
     
     // Add specific constraints based on role to satisfy security rules.
     if (role === 'mantenimiento') {
       queryConstraints.push(where('controlEnergia', '==', true));
+    }
+    // For other approvers, we can filter by status for efficiency as their rules are broad.
+    else if (role === 'admin' || role === 'autorizante' || role === 'lider_sst') {
+        queryConstraints.push(where('status', '==', 'pendiente_revision'));
     }
 
     const q = query(collection(db, 'permits'), ...queryConstraints);
@@ -42,6 +44,12 @@ export function useSidebarBadges() {
       (snapshot) => {
         const pendingForMe = snapshot.docs.filter(doc => {
           const permit = doc.data() as Permit;
+
+          // Client-side filter for status if it wasn't in the query (for 'mantenimiento')
+          if (permit.status !== 'pendiente_revision') {
+            return false;
+          }
+          
           const approvals = permit.approvals || {};
 
           // Check if the current user's role is a pending approver for this permit.
@@ -66,7 +74,7 @@ export function useSidebarBadges() {
                 return isSolicitanteSigned && isAutorizanteSigned;
             }
             
-            // For admin or any other general approver
+            // For admin, the broad query is enough, but we double-check logic
             return isSolicitanteSigned;
           }
           

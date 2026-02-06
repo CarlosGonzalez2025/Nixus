@@ -48,21 +48,22 @@ export function AlertsBell() {
       return;
     }
 
-    // Fetch only unread notifications, ordered by most recent
+    // Fetch recent notifications for the user, and we will filter for unread on the client.
+    // This avoids a complex composite index and potential security rule issues.
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
-      where('isRead', '==', false),
       orderBy('createdAt', 'desc'),
-      limit(20)
+      limit(50) // Fetch more to account for client-side filtering
     );
 
     const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
-      const notifsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Notification));
-      setNotifications(notifsData);
+      // Filter for unread notifications on the client
+      const unreadNotifs = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Notification))
+        .filter(notif => !notif.isRead);
+
+      setNotifications(unreadNotifs);
     }, (error) => {
       console.error("Error fetching notifications:", error);
     });
