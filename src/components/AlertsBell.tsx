@@ -7,6 +7,7 @@ import type { Notification } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
