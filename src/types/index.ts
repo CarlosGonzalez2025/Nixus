@@ -462,6 +462,7 @@ export type Permit = {
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
+  solicitanteFirmaApertura?: string;
 }
 
 export type Notification = {

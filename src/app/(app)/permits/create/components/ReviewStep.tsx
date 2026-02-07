@@ -19,7 +19,8 @@ import {
   User,
   CalendarDays,
   ClipboardCheck,
-  Layers
+  Layers,
+  Signature
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,10 @@ import { Separator } from '@/components/ui/separator';
 import { hazardCategories, eppOptions, justificacionOptions } from './AtsStep';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { SignaturePad } from '@/components/ui/signature-pad';
 
 
 // ============================================================================
@@ -111,10 +116,10 @@ const SectionHeader = ({
 };
 
 const getStatusSymbol = (value: string | boolean | undefined): string => {
-    if (value === 'si' || value === true) return 'SÍ';
-    if (value === 'no' || value === false) return 'NO';
+    if (value === 'si' || value === true) return '✓ SÍ';
+    if (value === 'no' || value === false) return '✗ NO';
     if (value === 'na') return 'N/A';
-    return 'N/E';
+    return '—';
 };
 
 const getStatusVariant = (value: string | boolean | undefined) => {
@@ -289,7 +294,20 @@ const anexoConfinadoPeligros = [
 // ============================================================================
 
 export function ReviewStep() {
-    const { state } = usePermitForm();
+    const { state, dispatch } = usePermitForm();
+    const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
+
+    const handleSaveSignature = (signatureDataUrl: string) => {
+        dispatch({
+            type: 'UPDATE_SIGNATURE',
+            payload: {
+                target: 'solicitanteFirmaApertura',
+                signature: signatureDataUrl,
+                context: null
+            }
+        });
+        setIsSignatureDialogOpen(false);
+    };
 
     const getWorkTypesString = () => {
         return Object.entries(state.selectedWorkTypes)
@@ -501,7 +519,7 @@ export function ReviewStep() {
                                 value={state.generalInfo.nombreSolicitante}
                             />
                             <DetailField 
-                                label="Responsable del Trabajo" 
+                                label="LÍDER A CARGO DEL EQUIPO EJECUTANTE" 
                                 value={state.generalInfo.responsable?.nombre}
                             />
                             <DetailField 
@@ -795,6 +813,59 @@ export function ReviewStep() {
                         )}
                     </div>
                 </CollapsibleSection>
+
+                 {/* NEW SIGNATURE SECTION */}
+                <CollapsibleSection
+                    borderColor="border-green-200 hover:border-green-300"
+                    defaultOpen={true}
+                    trigger={
+                        <SectionHeader 
+                            icon={<Signature className="h-5 w-5" />} 
+                            title="Firma del Líder a Cargo y Envío"
+                            color="green"
+                        />
+                    }
+                >
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Como paso final, el líder a cargo del equipo ejecutante debe firmar para confirmar que toda la información es correcta y enviar el permiso al flujo de aprobación.
+                        </p>
+                        <Card className="p-4 bg-muted/30">
+                            <CardTitle className="text-base mb-2">LÍDER A CARGO DEL EQUIPO EJECUTANTE</CardTitle>
+                            <div className="text-sm space-y-1 text-muted-foreground">
+                                <p><span className="font-semibold text-foreground">{state.generalInfo.responsable?.nombre || 'No especificado'}</span></p>
+                                <p>{state.generalInfo.responsable?.cargo || 'Sin cargo'}</p>
+                                <p>{state.generalInfo.responsable?.compania || 'Sin compañía'}</p>
+                            </div>
+                        </Card>
+
+                        {state.solicitanteFirmaApertura ? (
+                            <div className="text-center space-y-3">
+                                <p className="text-sm font-medium text-green-600 flex items-center justify-center gap-2">
+                                    <CheckCircle className="h-4 w-4" />
+                                    ¡Permiso Firmado y Listo para Enviar!
+                                </p>
+                                <div className="flex justify-center p-2 border-2 border-dashed bg-green-50 rounded-lg">
+                                    <Image
+                                        src={state.solicitanteFirmaApertura}
+                                        alt="Firma del solicitante"
+                                        width={200}
+                                        height={100}
+                                    />
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => setIsSignatureDialogOpen(true)}>
+                                    Volver a Firmar
+                                </Button>
+                            </div>
+                        ) : (
+                             <Button className="w-full h-12" onClick={() => setIsSignatureDialogOpen(true)}>
+                                <Signature className="mr-2 h-5 w-5" />
+                                Firmar y Habilitar Envío
+                            </Button>
+                        )}
+                    </div>
+                </CollapsibleSection>
+
             </div>
 
             {/* Próximos Pasos mejorado */}
@@ -807,18 +878,9 @@ export function ReviewStep() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {[
-                        {
-                            step: 1,
-                            text: <>Al hacer clic en <strong>"Guardar Permiso"</strong>, se creará un borrador del permiso en el sistema.</>
-                        },
-                        {
-                            step: 2,
-                            text: <>Será redirigido a la página de detalles del permiso donde el <strong>solicitante principal</strong> deberá firmar digitalmente.</>
-                        },
-                        {
-                            step: 3,
-                            text: <>Una vez firmado, se activará el <strong>flujo de aprobación</strong> según las configuraciones de su organización.</>
-                        }
+                        { step: 1, text: <>Firme el permiso en la sección <strong>"Firma del Líder a Cargo"</strong>. Esto habilitará el botón de envío final.</> },
+                        { step: 2, text: <>Presione <strong>"Enviar Permiso"</strong> para guardar los cambios y enviarlo al flujo de aprobación.</> },
+                        { step: 3, text: <>El permiso cambiará de estado a "Pendiente de Revisión" y se notificará a los aprobadores correspondientes.</> }
                     ].map(({ step, text }) => (
                         <div key={step} className="flex items-start gap-4 group">
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-200 group-hover:scale-105 transition-transform">
@@ -831,6 +893,19 @@ export function ReviewStep() {
                     ))}
                 </CardContent>
             </Card>
+
+            {/* Signature Dialog */}
+            <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Firma del Líder a Cargo</DialogTitle>
+                        <DialogDescription>
+                            Al firmar, confirma que toda la información del permiso es correcta.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <SignaturePad onSave={handleSaveSignature} />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

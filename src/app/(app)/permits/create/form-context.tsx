@@ -4,7 +4,9 @@ import React, { createContext, useReducer, useContext, Dispatch, useEffect } fro
 import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes } from '@/types';
 
 // Define the shape of the form data
-type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'>;
+type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
+    solicitanteFirmaApertura?: string;
+};
 
 // Define the shape of the state
 interface FormState extends PermitFormData {}
@@ -30,6 +32,7 @@ type FormAction =
 
 // Initial state
 const initialState: FormState = {
+  solicitanteFirmaApertura: undefined,
   generalInfo: {
     areaEspecifica: '',
     planta: '',
@@ -42,7 +45,7 @@ const initialState: FormState = {
     validUntil: '',
     workDescription: '',
     tools: [],
-    numTrabajadores: '',
+    numTrabajadores: '1',
     reunionInicio: 'na',
     atsVerificado: 'na',
     responsable: { nombre: '', cargo: '', compania: '', alcance: '', area: '' },
@@ -183,7 +186,6 @@ function formReducer(state: FormState, action: FormAction): FormState {
         return {
             ...state,
             selectedWorkTypes: { ...state.selectedWorkTypes, [action.payload.type]: action.payload.value },
-            // Also update the old 'trabajoAlturas' field for compatibility with security rules
             ...(isAlturas && { trabajoAlturas: action.payload.value }),
         }
     case 'UPDATE_ATS':
@@ -236,9 +238,14 @@ function formReducer(state: FormState, action: FormAction): FormState {
             ...state,
             workers: [...(state.workers || []), action.payload]
         }
-    case 'UPDATE_SIGNATURE':
-      console.log('Signature update needs to be implemented in reducer:', action.payload);
-      return state;
+    case 'UPDATE_SIGNATURE': {
+        const { target, signature } = action.payload;
+        if (target === 'solicitanteFirmaApertura') {
+            return { ...state, solicitanteFirmaApertura: signature };
+        }
+        console.warn(`Signature update for target "${target}" not implemented in reducer.`);
+        return state;
+    }
     case 'SET_SST_REQUIRED':
         return {
             ...state,
@@ -261,6 +268,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
             verificacionPeligros: { ...initialState.verificacionPeligros, ...payload.verificacionPeligros },
             eppEmergencias: { ...initialState.eppEmergencias, ...payload.eppEmergencias },
             workers: payload.workers || initialState.workers,
+            solicitanteFirmaApertura: payload.solicitanteFirmaApertura || undefined,
         };
     case 'RESET_FORM':
       // Limpiar también el localStorage al resetear
