@@ -35,6 +35,7 @@ export type Approval = {
 }
 
 export interface ExternalWorker {
+  email?: string;
   nombre: string;
   cedula: string;
   rol: string;

@@ -193,29 +193,43 @@ function CreatePermitWizard() {
     }
   }, [user, formData.generalInfo.nombreSolicitante, dispatch]);
   
-  // Auto-add the logged-in user as the first worker if the list is empty
+  // ✅ CORRECCIÓN: Lógica mejorada para auto-agregar al solicitante
   useEffect(() => {
-    if (user && !isLoadingForm && (!formData.workers || formData.workers.length === 0)) {
-      const solicitorAsWorker: Partial<ExternalWorker> = {
-        nombre: user.displayName || '',
-        cedula: '',
-        rol: '',
-        otroRol: '',
-        eps: '',
-        arl: '',
-        pensiones: '',
-        tsaTec: { tec: false, tsa: false },
-        entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
-        firmaApertura: '',
-        firmaCierre: ''
-      };
-      dispatch({ type: 'ADD_WORKER', payload: solicitorAsWorker as ExternalWorker });
+    // Solo se ejecuta si: el usuario está cargado, no estamos cargando un borrador de Firestore,
+    // y no estamos en una sesión de edición de un permiso existente.
+    if (user && !isLoadingForm && !draftId) {
+      const isSolicitorInList = formData.workers?.some(
+        (worker) => worker.email === user.email
+      );
+
+      // Si el solicitante no está en la lista de trabajadores, lo agregamos.
+      if (!isSolicitorInList) {
+        const solicitorAsWorker: ExternalWorker = {
+          email: user.email || undefined,
+          nombre: user.displayName || 'Solicitante',
+          cedula: '',
+          rol: 'Solicitante', // Rol por defecto
+          otroRol: '',
+          eps: '',
+          arl: '',
+          pensiones: '',
+          tsaTec: { tec: false, tsa: false },
+          entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
+          firmaApertura: '',
+          firmaCierre: '',
+        };
+        // Lo agregamos al principio de la lista.
+        const newWorkers = [solicitorAsWorker, ...(formData.workers || [])];
+        dispatch({ type: 'SET_WORKERS', payload: newWorkers });
+      }
     }
-  }, [user, isLoadingForm, formData.workers, dispatch]);
+  }, [user, isLoadingForm, draftId, formData.workers, dispatch]);
+
 
   const openNewWorkerDialog = () => {
     setEditingWorkerIndex(null);
     setCurrentWorker({
+      email: undefined,
       nombre: '',
       cedula: '',
       rol: '',
@@ -478,7 +492,7 @@ function CreatePermitWizard() {
 
     // 🔥 VALIDACIÓN DE EMERGENCIAS
     if (currentLabel === 'Emergencias') {
-        const validation = validateEmergencias(formData.eppEmergencias);
+        const validation = validateEmergencias(formData.eppEmergencias as EppEmergencias);
         
         if (!validation.isValid) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
