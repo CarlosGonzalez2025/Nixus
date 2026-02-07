@@ -674,15 +674,6 @@ async function validateSignaturePermission(
             }
             break;
             
-        case 'autorizante':
-            if (currentUser.role !== 'autorizante' && currentUser.role !== 'admin') {
-                return { allowed: false, reason: 'Rol de autorizante requerido para esta firma.' };
-            }
-            if (permit.approvals?.solicitante?.status !== 'aprobado') {
-                return { allowed: false, reason: 'Se requiere primero la firma del solicitante.' };
-            }
-            break;
-            
         case 'lider_sst':
             if (currentUser.role !== 'lider_sst' && currentUser.role !== 'admin') {
                 return { allowed: false, reason: 'Rol de Líder SST requerido para esta firma.' };
@@ -703,8 +694,23 @@ async function validateSignaturePermission(
             if (!permit.controlEnergia) {
                 return { allowed: false, reason: 'Firma de Mantenimiento solo aplica cuando hay control de energías.' };
             }
-            if (permit.approvals?.autorizante?.status !== 'aprobado') {
-                return { allowed: false, reason: 'Se requiere primero la firma del autorizante.' };
+            if (permit.approvals?.solicitante?.status !== 'aprobado') {
+                return { allowed: false, reason: 'Se requiere primero la firma del solicitante.' };
+            }
+            break;
+
+        case 'autorizante':
+            if (currentUser.role !== 'autorizante' && currentUser.role !== 'admin') {
+                return { allowed: false, reason: 'Rol de autorizante requerido para esta firma.' };
+            }
+            if (permit.approvals?.solicitante?.status !== 'aprobado') {
+                return { allowed: false, reason: 'Se requiere primero la firma del solicitante.' };
+            }
+            if (permit.isSSTSignatureRequired && permit.approvals?.lider_sst?.status !== 'aprobado') {
+                return { allowed: false, reason: 'Se requiere primero la firma del Líder SST.' };
+            }
+            if (permit.controlEnergia && permit.approvals?.mantenimiento?.status !== 'aprobado') {
+                return { allowed: false, reason: 'Se requiere primero la firma de Mantenimiento.' };
             }
             break;
     }

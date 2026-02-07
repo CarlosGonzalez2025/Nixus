@@ -538,15 +538,21 @@ export default function PermitDetailPage() {
         if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
         return { can: true };
 
-      case 'autorizante':
-        if (!hasCorrectRole('autorizante')) return { can: false, reason: 'No tienes el rol requerido.' };
-        if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
-        return { can: true };
-
       case 'mantenimiento':
         if (!permit.controlEnergia) return { can: false, reason: 'No se requiere para este trabajo.' };
         if (!hasCorrectRole('mantenimiento')) return { can: false, reason: 'No tienes el rol requerido.' };
-        if (!hasSigned(autorizante)) return { can: false, reason: 'Esperando firma del Autorizante.' };
+        if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
+        return { can: true };
+
+      case 'autorizante':
+        if (!hasCorrectRole('autorizante')) return { can: false, reason: 'No tienes el rol requerido.' };
+        if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Solicitante.' };
+        if (isSSTSignatureRequired && !hasSigned(lider_sst)) {
+          return { can: false, reason: 'Esperando firma del Líder SST.' };
+        }
+        if (permit.controlEnergia && !hasSigned(mantenimiento)) {
+          return { can: false, reason: 'Esperando firma de Mantenimiento.' };
+        }
         return { can: true };
 
       default:

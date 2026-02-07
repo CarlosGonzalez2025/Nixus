@@ -102,7 +102,7 @@ export default function GuidePage() {
     <div className="flex flex-1 flex-col gap-8 p-4 md:p-8 bg-gray-50/50">
       <div className="flex items-center gap-4">
         <Image
-          src="https://i.postimg.cc/RZ16KqFY/Whats_App_Image_2026_02_05_at_10_19_08.jpg"
+          src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026_02_05_at_10_19_08.jpg"
           alt="Guide Icon"
           width={56}
           height={56}
@@ -156,9 +156,9 @@ export default function GuidePage() {
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
                 <SignatureFlowItem role="Solicitante" condition="Siempre requerido" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
-                <SignatureFlowItem role="Autorizante" condition="Siempre requerido" icon={UserCheck} />
-                <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
                 <SignatureFlowItem role="Líder SST / Mantenimiento" condition="Si aplican" icon={UserCheck} />
+                <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
+                <SignatureFlowItem role="Autorizante" condition="Siempre requerido" icon={UserCheck} />
               </div>
                <p className="text-xs text-muted-foreground mt-4 text-center">
                  El sistema habilita el botón de firma para cada rol solo cuando se cumple la secuencia.
