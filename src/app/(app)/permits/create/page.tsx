@@ -185,12 +185,6 @@ function CreatePermitWizard() {
   }, [searchParams, dispatch, router, toast]);
 
   useEffect(() => {
-    if (user && !formData.generalInfo.nombreSolicitante) {
-      dispatch({ type: 'UPDATE_GENERAL_INFO', payload: { nombreSolicitante: user.displayName || '' } });
-    }
-  }, [user, formData.generalInfo.nombreSolicitante, dispatch]);
-  
-  useEffect(() => {
     if (user && !isLoadingForm && !draftId) {
       const isSolicitorInList = formData.workers?.some(
         (worker) => worker.email === user.email
@@ -538,7 +532,6 @@ function CreatePermitWizard() {
 
     setIsSubmitting(true);
     try {
-      // Primero, guardar el estado actual para obtener un ID si es nuevo
       const draftResult = await savePermitDraft({
           userId: user.uid, 
           userDisplayName: user.displayName || null, 
@@ -557,7 +550,6 @@ function CreatePermitWizard() {
         setDraftId(currentPermitId);
       }
       
-      // Ahora, aplicar la firma y enviar a revisión
       const signatureResult = await addSignatureAndNotify(
         currentPermitId,
         'solicitante',
@@ -575,7 +567,18 @@ function CreatePermitWizard() {
         dispatch({ type: 'RESET_FORM' });
         router.push(`/permits/${currentPermitId}`);
       } else {
-        throw new Error(signatureResult.error || "No se pudo aplicar la firma para enviar el permiso.");
+        if (signatureResult.error && signatureResult.error.includes('Se requiere primero la firma')) {
+          toast({
+            title: 'Paso Adicional Requerido',
+            description: signatureResult.error,
+            className: 'bg-blue-100 dark:bg-blue-900',
+            duration: 8000,
+          });
+          dispatch({ type: 'RESET_FORM' });
+          router.push(`/permits/${currentPermitId}`);
+        } else {
+          throw new Error(signatureResult.error || "No se pudo aplicar la firma para enviar el permiso.");
+        }
       }
     } catch (error: any) {
       toast({
@@ -653,7 +656,7 @@ function CreatePermitWizard() {
             <div>
               <div className="flex items-center gap-3">
                 <Image 
-                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02_05_at_10_19_08.jpg"
+                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05_at_10_19_08.jpg"
                     alt="Crear Permiso Icon"
                     width={48}
                     height={48}
