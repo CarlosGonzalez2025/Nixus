@@ -192,6 +192,26 @@ function CreatePermitWizard() {
       dispatch({ type: 'UPDATE_GENERAL_INFO', payload: { nombreSolicitante: user.displayName || '' } });
     }
   }, [user, formData.generalInfo.nombreSolicitante, dispatch]);
+  
+  // Auto-add the logged-in user as the first worker if the list is empty
+  useEffect(() => {
+    if (user && !isLoadingForm && (!formData.workers || formData.workers.length === 0)) {
+      const solicitorAsWorker: Partial<ExternalWorker> = {
+        nombre: user.displayName || '',
+        cedula: '',
+        rol: '',
+        otroRol: '',
+        eps: '',
+        arl: '',
+        pensiones: '',
+        tsaTec: { tec: false, tsa: false },
+        entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
+        firmaApertura: '',
+        firmaCierre: ''
+      };
+      dispatch({ type: 'ADD_WORKER', payload: solicitorAsWorker as ExternalWorker });
+    }
+  }, [user, isLoadingForm, formData.workers, dispatch]);
 
   const openNewWorkerDialog = () => {
     setEditingWorkerIndex(null);

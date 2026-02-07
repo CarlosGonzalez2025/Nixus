@@ -169,8 +169,8 @@ export default function GuidePage() {
           <FlowStep
             step="3"
             title="Aprobación o Rechazo del Permiso"
-            role="Rol: Autorizante / Admin"
-            description="Una vez que TODAS las firmas requeridas (según los anexos seleccionados) han sido recolectadas, el 'Autorizante' o 'Admin' tendrá la opción de 'Aprobar' el permiso. Si en cualquier punto del proceso de revisión se detecta un problema, puede 'Rechazarlo', dejando un comentario."
+            role="Rol: Autorizante"
+            description="Una vez que TODAS las firmas requeridas (según los anexos seleccionados) han sido recolectadas, el 'Autorizante' tendrá la opción de 'Aprobar' el permiso. Si en cualquier punto del proceso de revisión se detecta un problema, puede 'Rechazarlo', dejando un comentario."
             icon={FileCheck}
           />
           
@@ -179,7 +179,7 @@ export default function GuidePage() {
                 <CheckCircle className="h-8 w-8 text-green-500 mt-1" />
                 <div>
                   <h5 className="font-bold">Permiso Aprobado</h5>
-                  <p className="text-xs text-muted-foreground">El permiso está listo para que el trabajo comience.</p>
+                  <p className="text-xs text-muted-foreground">El permiso está listo para que el trabajo comience. El Solicitante es Notificado.</p>
                   <Badge className="mt-2 bg-green-100 text-green-800">Estado: Aprobado</Badge>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function GuidePage() {
           <FlowStep
             step="4"
             title="Inicio y Ejecución del Trabajo"
-            role="Rol: Líder de Tarea / Admin"
+            role="Rol: Líder de Tarea / Solicitante"
             description="Con el permiso en estado 'Aprobado', el líder a cargo presiona 'Iniciar Ejecución' justo antes de comenzar las labores en el sitio. Esto indica que el trabajo está activo."
             icon={PlayCircle}
             badgeText="En Ejecución"
@@ -216,8 +216,8 @@ export default function GuidePage() {
            <FlowStep
             step="6"
             title="Suspensión del Permiso (Opcional)"
-            role="Rol: Líder SST / Admin"
-            description="Si durante la ejecución se detecta una condición de riesgo inminente, un Líder SST o Admin puede 'Suspender' el permiso. El trabajo se detiene hasta que se corrijan las condiciones y se reactive el permiso."
+            role="Rol: Líder SST"
+            description="Si durante la ejecución se detecta una condición de riesgo inminente, un Líder SST puede 'Suspender' el permiso. El trabajo se detiene hasta que se corrijan las condiciones y se reactive el permiso."
             icon={PauseCircle}
             badgeText="Suspendido"
             badgeColor="bg-orange-100 text-orange-800"
@@ -226,7 +226,7 @@ export default function GuidePage() {
           <FlowStep
             step="7"
             title="Cierre Final del Permiso"
-            role="Rol: Líder de Tarea / Admin"
+            role="Rol: Líder de Tarea"
             description="Una vez finalizado todo el trabajo y asegurado que el área está en condiciones seguras, se procede con el 'Cierre de Permiso'. Este paso requiere las firmas de cierre del Responsable y la Autoridad del Área."
             icon={Lock}
             badgeText="Cerrado"

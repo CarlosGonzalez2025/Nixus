@@ -1288,14 +1288,14 @@ export default function PermitDetailPage() {
             {canQuickClose && (
               <Button variant="destructive" size="sm" onClick={handleEmergencyClosure}>
                 <Lock className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">Cerrar</span>
+                <span className="hidden md:inline">Cerrar Permiso</span>
               </Button>
             )}
 
             {canBeCancelled && (
               <Button variant="outline" size="sm" onClick={handleOpenCancellationDialog} className="border-red-300 text-red-600 hover:bg-red-50">
                 <FileX className="h-4 w-4 md:mr-2" />
-                <span className="hidden lg:inline">Cancelar</span>
+                <span className="hidden lg:inline">Cancelar Permiso</span>
               </Button>
             )}
           </div>
@@ -1336,10 +1336,6 @@ export default function PermitDetailPage() {
                 <div className="md:mb-1">
                   <span className="text-[10px] text-gray-500 block">Versión</span>
                   <span className="text-xs md:text-sm font-bold text-gray-800">05</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-gray-500 block">Fecha</span>
-                  <span className="text-xs md:text-sm font-semibold text-gray-700">{safeFormat(permit.createdAt, 'dd/MM/yyyy')}</span>
                 </div>
               </div>
             </div>
