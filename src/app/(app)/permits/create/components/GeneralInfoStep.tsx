@@ -1062,11 +1062,11 @@ export function GeneralInfoStep() {
       <FormSection>
         <SectionTitle 
           icon={<User className="h-5 w-5" />} 
-          title="Responsable del Trabajo / Ejecutor"
+          title="LÍDER A CARGO DEL EQUIPO EJECUTANTE"
           required
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <RequiredLabel>Nombre completo</RequiredLabel>
             <Input 
@@ -1101,6 +1101,15 @@ export function GeneralInfoStep() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <RequiredLabel required={false}>Área</RequiredLabel>
+            <Input 
+              placeholder="Área (ej: Mantenimiento)" 
+              value={generalInfo.responsable?.area || ''} 
+              onChange={e => handleResponsableChange('area', e.target.value)}
+              className="h-11"
+            />
           </div>
         </div>
       </FormSection>

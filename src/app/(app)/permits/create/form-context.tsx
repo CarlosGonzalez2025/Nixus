@@ -45,7 +45,7 @@ const initialState: FormState = {
     numTrabajadores: '',
     reunionInicio: 'na',
     atsVerificado: 'na',
-    responsable: { nombre: '', cargo: '', compania: '', alcance: '' },
+    responsable: { nombre: '', cargo: '', compania: '', alcance: '', area: '' },
     requiereArea: 'no',
     requierePlanta: 'no',
     requiereProceso: 'no',

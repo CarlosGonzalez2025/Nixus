@@ -397,6 +397,7 @@ export type PermitGeneralInfo = {
         cargo: string;
         compania: string;
         alcance: string;
+        area?: string;
     }
 }
 
