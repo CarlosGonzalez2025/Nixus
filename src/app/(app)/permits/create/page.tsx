@@ -731,30 +731,17 @@ function CreatePermitWizard() {
               Anterior
             </Button>
             
-            <Button
-                onClick={handleSaveDraft}
-                variant="secondary"
-                disabled={isSavingDraft || isSubmitting}
-                className="px-4 py-3 h-auto md:px-6"
-            >
-                {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
-                Borrador
-            </Button>
-
-            {step < steps.length ? (
-              <Button
-                onClick={() => {
-                  if (canProceed()) {
-                    setStep(step + 1);
-                  }
-                }}
-                disabled={isSubmitting}
-                className="flex-1 py-3 h-auto"
-              >
-                Siguiente
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
+            {step === steps.length ? (
+              <>
+                <Button
+                    onClick={handleSaveDraft}
+                    variant="secondary"
+                    disabled={isSavingDraft || isSubmitting}
+                    className="px-4 py-3 h-auto md:px-6"
+                >
+                    {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                    Borrador
+                </Button>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                          <Button
@@ -784,6 +771,20 @@ function CreatePermitWizard() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+              </>
+            ) : (
+              <Button
+                onClick={() => {
+                  if (canProceed()) {
+                    setStep(step + 1);
+                  }
+                }}
+                disabled={isSubmitting}
+                className="flex-1 py-3 h-auto"
+              >
+                Siguiente
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
