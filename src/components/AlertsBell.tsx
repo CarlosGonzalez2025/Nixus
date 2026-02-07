@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
@@ -48,20 +49,25 @@ export function AlertsBell() {
       return;
     }
 
-    // Fetch recent notifications for the user, and we will filter for unread on the client.
-    // This avoids a complex composite index and potential security rule issues.
+    // To avoid a composite index, we query only by userId and then sort/filter on the client.
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(50) // Fetch more to account for client-side filtering
+      limit(50) 
     );
 
     const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
-      // Filter for unread notifications on the client
-      const unreadNotifs = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Notification))
-        .filter(notif => !notif.isRead);
+      const allUserNotifs = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+
+      // Filter for unread and sort on the client side
+      const unreadNotifs = allUserNotifs
+        .filter(notif => !notif.isRead)
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis() || 0;
+          const timeB = b.createdAt?.toMillis() || 0;
+          return timeB - timeA; // Sort descending (newest first)
+        });
 
       setNotifications(unreadNotifs);
     }, (error) => {

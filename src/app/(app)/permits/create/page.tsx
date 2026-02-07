@@ -662,7 +662,7 @@ function CreatePermitWizard() {
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de {steps.length}: {currentStepInfo.label}
+                    Paso {step} de {steps.length}: {currentStepInfo?.label}
                   </p>
                 </div>
               </div>
@@ -746,7 +746,7 @@ function CreatePermitWizard() {
                     <AlertDialogTrigger asChild>
                          <Button
                             disabled={isSubmitting || !formData.solicitanteFirmaApertura}
-                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
                         >
                             {isSubmitting ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
