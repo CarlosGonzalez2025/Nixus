@@ -27,7 +27,7 @@ interface WorkersStepProps {
 export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }: WorkersStepProps) {
   const { state } = usePermitForm();
   const additionalWorkersCount = parseInt(state.generalInfo.numTrabajadores || '0', 10);
-  const totalRequiredWorkers = (additionalWorkersCount >= 0 ? additionalWorkersCount : 0) + 1;
+  const totalRequiredWorkers = additionalWorkersCount + 1; // Solicitante + adicionales
   
   const hasWorkerWithoutSignature = workers.some(worker => !worker.firmaApertura);
   const isLimitReached = workers.length >= totalRequiredWorkers;
@@ -92,8 +92,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Ha alcanzado el límite total de {totalRequiredWorkers} trabajador{totalRequiredWorkers !== 1 ? 'es' : ''}. 
-                Si necesita agregar más, actualice el número de trabajadores adicionales en la sección de Información General.
+                Ha alcanzado el límite de {totalRequiredWorkers} trabajador{totalRequiredWorkers !== 1 ? 'es' : ''}. Si necesita agregar más, actualice el número en la sección de Información General.
               </AlertDescription>
             </Alert>
           )}

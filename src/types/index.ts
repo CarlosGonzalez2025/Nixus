@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
@@ -29,7 +28,6 @@ export type Approval = {
   area?: string;
   firmaApertura?: string | null;
   firmaCierre?: string | null;
-  // ✨ CORRECCIÓN: Nuevos campos para detalles del firmante
   userRole?: UserRole;
   userEmpresa?: string;
 }
@@ -56,6 +54,8 @@ export interface ExternalWorker {
   foto?: string;
   firmaApertura?: string;
   firmaCierre?: string;
+  fechaFirmaApertura?: string;
+  fechaFirmaCierre?: string;
 }
 
 export type Tool = {
@@ -80,10 +80,12 @@ export type PermitClosure = {
   horaCierre: string;
   autoridad?: Partial<AutorizacionPersona>;
   responsable?: Partial<AutorizacionPersona>;
-  // Adicional para Cancelación
   cancelado?: 'si' | 'no' | 'na';
   razonCancelacion?: string;
   canceladoPor?: Partial<AutorizacionPersona>;
+  terminado?: 'si' | 'no';
+  observacionesCierre?: string;
+  cerradoPorUsuario?: Partial<AutorizacionPersona> & { rol?: string; uid?: string };
 }
 
 export type JustificacionATS = {
@@ -108,6 +110,9 @@ export type ValidacionDiaria = {
   fecha: string;
   nombre: string;
   firma: string;
+  firmaCierre?: string;
+  fechaCierre?: string;
+  observacionesCierre?: string;
 };
 
 export type AutorizacionPersona = {
@@ -426,8 +431,6 @@ export type Permit = {
   generalInfo: Partial<PermitGeneralInfo>;
   selectedWorkTypes: SelectedWorkTypes;
 
-  // Old structure (for compatibility) - can be removed later
-  workType?: string[];
   trabajoAlturas?: boolean;
   espaciosConfinados?: boolean;
   controlEnergia?: boolean;
@@ -436,7 +439,7 @@ export type Permit = {
   trabajoGeneral?: boolean;
 
 
-  hazards?: { [key: string]: string }; // e.g. { ruido: 'si', vibracion: 'no', ... }
+  hazards?: { [key: string]: string };
   ppe?: { [key:string]: string };
   ppeSystems?: { [key: string]: string };
   emergency?: { [key: string]: string } & { notification: boolean };
@@ -450,7 +453,7 @@ export type Permit = {
     supervisor_confinado: Partial<Approval>;
   };
   closure?: Partial<PermitClosure>;
-  isSSTSignatureRequired?: boolean; // Campo para indicar firma SST
+  isSSTSignatureRequired?: boolean;
   anexoATS?: Partial<AnexoATS>;
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
@@ -475,6 +478,3 @@ export type Notification = {
     displayName: string | null;
   };
 };
-
-
-    

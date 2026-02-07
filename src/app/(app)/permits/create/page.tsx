@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
-import { createPermit, savePermitDraft } from '../actions';
+import { savePermitDraft, addSignatureAndNotify } from '../actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle,
@@ -86,7 +86,6 @@ const workerRoles = [
   "Otro"
 ];
 
-// Listas de entidades colombianas
 const epsEntidades = [
   "Salud Total",
   "Sanitas",
@@ -142,17 +141,14 @@ function CreatePermitWizard() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [newPermitInfo, setNewPermitInfo] = useState({ id: '', number: '' });
 
-  // Worker Dialog State
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
   
-  // Signature Pad State
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
   
-  // Scroll to top on step change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
@@ -194,7 +190,6 @@ function CreatePermitWizard() {
     }
   }, [user, formData.generalInfo.nombreSolicitante, dispatch]);
   
-  // Auto-agregar al solicitante como trabajador si es un permiso nuevo
   useEffect(() => {
     if (user && !isLoadingForm && !draftId) {
       const isSolicitorInList = formData.workers?.some(
@@ -220,7 +215,7 @@ function CreatePermitWizard() {
         dispatch({ type: 'SET_WORKERS', payload: newWorkers });
       }
     }
-  }, [user, isLoadingForm, draftId, dispatch]);
+  }, [user, isLoadingForm, draftId, dispatch, formData.workers]);
 
 
   const openNewWorkerDialog = () => {
@@ -507,14 +502,14 @@ function CreatePermitWizard() {
 
     if (currentLabel === 'Trabajadores') {
       const additionalWorkers = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
-      const totalRequired = (additionalWorkers > 0 ? additionalWorkers : 0) + 1;
+      const totalRequired = additionalWorkers + 1; // Solicitante + adicionales
       const workers = formData.workers || [];
 
       if (workers.length !== totalRequired) {
         toast({
           variant: "destructive",
           title: "Número de Trabajadores no Coincide",
-          description: `Se requiere un total de ${totalRequired} trabajadores (tú + ${additionalWorkers} adicionales), pero has registrado ${workers.length}. Por favor, ajusta la lista.`,
+          description: `Ha especificado ${additionalWorkers} trabajador(es) adicional(es), para un total de ${totalRequired}, pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
           duration: 6000,
         });
         return false;
@@ -534,41 +529,53 @@ function CreatePermitWizard() {
 
     return true;
   };
-
-  const handleSavePermit = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error de Autenticación' });
+  
+  const handleSaveAndSubmit = async () => {
+    if (!user || !user.role || !formData.solicitanteFirmaApertura) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma o la información del usuario.' });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const result = await savePermitDraft({
-        userId: user.uid,
-        userDisplayName: user.displayName || null,
-        userEmail: user.email || null,
-        userPhotoURL: user.photoURL || null,
-        draftId: draftId,
-        ...formData,
+      // Primero, guardar el estado actual para obtener un ID si es nuevo
+      const draftResult = await savePermitDraft({
+          userId: user.uid, 
+          userDisplayName: user.displayName || null, 
+          userEmail: user.email || null,
+          userPhotoURL: user.photoURL || null,
+          draftId: draftId,
+          ...formData
       });
 
-      if (result.success && result.permitId) {
-        toast({
-          title: '¡Permiso Guardado!',
-          description: 'Redirigiendo a la página de detalles para la firma.',
-        });
-        
-        const newPermitId = result.permitId;
-        
-        dispatch({ type: 'RESET_FORM' });
-        setStep(1);
-        setDraftId(undefined);
-
-        router.push(`/permits/${newPermitId}`);
+      if (!draftResult.success || !draftResult.permitId) {
+        throw new Error(draftResult.error || "No se pudo guardar el borrador antes de enviar.");
       }
-
-       else {
-        throw new Error(result.error || 'Hubo un error guardando el permiso.');
+      
+      const currentPermitId = draftResult.permitId;
+      if (!draftId) {
+        setDraftId(currentPermitId);
+      }
+      
+      // Ahora, aplicar la firma y enviar a revisión
+      const signatureResult = await addSignatureAndNotify(
+        currentPermitId,
+        'solicitante',
+        'firmaApertura',
+        formData.solicitanteFirmaApertura,
+        { uid: user.uid, displayName: user.displayName, role: user.role, empresa: user.empresa },
+        "Firma inicial de creación de permiso."
+      );
+      
+      if (signatureResult.success) {
+        toast({
+          title: '¡Permiso Enviado!',
+          description: 'El permiso ha sido enviado para su aprobación.',
+        });
+        dispatch({ type: 'RESET_FORM' });
+        router.push(`/permits/${currentPermitId}`);
+      } else {
+        throw new Error(signatureResult.error || "No se pudo aplicar la firma para enviar el permiso.");
       }
     } catch (error: any) {
       toast({
@@ -580,7 +587,7 @@ function CreatePermitWizard() {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleUpdateATS = useCallback((updates: Partial<AnexoATS>) => {
     dispatch({ type: 'UPDATE_ATS', payload: updates });
   }, [dispatch]);
@@ -712,7 +719,6 @@ function CreatePermitWizard() {
           {renderStepContent()}
         </div>
 
-        {/* Navigation Buttons */}
         <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20">
           <div className="max-w-5xl mx-auto px-4 py-3 flex gap-2 sm:gap-4">
             <Button
@@ -752,7 +758,7 @@ function CreatePermitWizard() {
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                          <Button
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !formData.solicitanteFirmaApertura}
                             className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
                         >
                             {isSubmitting ? (
@@ -760,20 +766,20 @@ function CreatePermitWizard() {
                             ) : (
                             <Save size={22} className="mr-2" />
                             )}
-                            <span>Guardar Permiso</span>
+                            <span>Enviar Permiso</span>
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>¿Está seguro de guardar el permiso?</AlertDialogTitle>
+                            <AlertDialogTitle>¿Está seguro de enviar el permiso?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Se creará un borrador del permiso. Deberá ir a la página de detalles para firmar y activar el flujo de aprobación.
+                                Una vez enviado, el permiso cambiará a "Pendiente de Revisión" y se notificará a los aprobadores. No podrá editarlo después de este punto.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleSavePermit} disabled={isSubmitting}>
-                                 {isSubmitting ? 'Guardando...' : 'Sí, guardar ahora'}
+                            <AlertDialogAction onClick={handleSaveAndSubmit} disabled={isSubmitting}>
+                                 {isSubmitting ? 'Enviando...' : 'Sí, enviar ahora'}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -817,7 +823,6 @@ function CreatePermitWizard() {
                 
                 <div className="flex-1 overflow-y-auto px-1">
                     <div className="space-y-6 py-4">
-                        {/* Información Personal */}
                         <div className="bg-gray-50 p-4 rounded-lg space-y-4">
                             <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4"/>
@@ -881,7 +886,6 @@ function CreatePermitWizard() {
                             </div>
                         </div>
 
-                        {/* Certificaciones */}
                         <div className="bg-blue-50 p-4 rounded-lg space-y-4">
                             <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
                                 <Shield className="h-4 w-4"/>
@@ -951,7 +955,6 @@ function CreatePermitWizard() {
                             </div>
                         </div>
 
-                        {/* Afiliaciones a Seguridad Social */}
                         <div className="bg-green-50 p-4 rounded-lg space-y-4">
                             <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
                                 <FileText className="h-4 w-4"/>
@@ -1012,7 +1015,6 @@ function CreatePermitWizard() {
                             </div>
                         </div>
 
-                        {/* Firma */}
                         <div className="bg-purple-50 p-4 rounded-lg space-y-3">
                             <h3 className="font-semibold text-sm text-primary flex items-center gap-2">
                                 <Signature className="h-4 w-4"/>

@@ -40,10 +40,6 @@ import { useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selectedWorkTypes'], name: string, icon: React.ReactNode }[] = [
   { key: 'general', name: 'Trabajo General', icon: <Wrench className="h-4 w-4" /> },
   { key: 'alturas', name: 'Trabajo en Alturas', icon: <AlertCircle className="h-4 w-4" /> },
@@ -73,10 +69,6 @@ const herramientasIniciales = [
 
 const ITEMS_PER_PAGE = 20;
 const QUICK_SELECT_COUNT = 6;
-
-// ============================================================================
-// HELPER COMPONENTS
-// ============================================================================
 
 const SectionTitle = ({ 
   icon, 
@@ -139,10 +131,6 @@ const RequiredLabel = ({
     {children}
   </Label>
 );
-
-// ============================================================================
-// DYNAMIC SELECT COMPONENT
-// ============================================================================
 
 interface DynamicSelectProps {
   listKey: 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
@@ -276,10 +264,6 @@ const DynamicSelect: React.FC<DynamicSelectProps> = ({
   );
 };
 
-// ============================================================================
-// CONDITIONAL FIELD COMPONENT
-// ============================================================================
-
 interface ConditionalFieldProps {
   label: string;
   radioValue: 'si' | 'no' | undefined;
@@ -330,10 +314,6 @@ const ConditionalField: React.FC<ConditionalFieldProps> = ({
   </div>
 );
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
 export function GeneralInfoStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, selectedWorkTypes } = state;
@@ -357,7 +337,6 @@ export function GeneralInfoStep() {
   });
   const [loadingLists, setLoadingLists] = React.useState(true);
 
-  // Cargar herramientas desde Firestore
   React.useEffect(() => {
     const herramientasRef = doc(db, 'dynamic_lists', 'herramientas');
     
@@ -401,7 +380,6 @@ export function GeneralInfoStep() {
     return () => unsubscribers.forEach(unsub => unsub());
   }, [toast]);
 
-  // Cerrar resultados al hacer click fuera
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -554,7 +532,6 @@ export function GeneralInfoStep() {
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg shadow-primary/10">
           <FileText className="w-8 h-8 text-primary" />
@@ -569,7 +546,6 @@ export function GeneralInfoStep() {
         </div>
       </div>
 
-      {/* Ubicación y Contexto */}
       <FormSection>
         <SectionTitle 
           icon={<MapPin className="h-5 w-5" />} 
@@ -664,7 +640,6 @@ export function GeneralInfoStep() {
         </div>
       </FormSection>
 
-      {/* Empresa y Solicitante */}
       <FormSection>
         <SectionTitle 
           icon={<Building2 className="h-5 w-5" />} 
@@ -695,7 +670,6 @@ export function GeneralInfoStep() {
         </div>
       </FormSection>
 
-      {/* Tipos de Trabajo */}
       <FormSection>
         <SectionTitle 
           icon={<ClipboardList className="h-5 w-5" />} 
@@ -755,7 +729,6 @@ export function GeneralInfoStep() {
         )}
       </FormSection>
 
-      {/* Duración del Permiso */}
       <FormSection>
         <SectionTitle 
           icon={<Calendar className="h-5 w-5" />} 
@@ -796,7 +769,6 @@ export function GeneralInfoStep() {
         </div>
       </FormSection>
 
-      {/* Descripción de la Tarea */}
       <FormSection>
         <SectionTitle 
           icon={<FileText className="h-5 w-5" />} 
@@ -813,7 +785,6 @@ export function GeneralInfoStep() {
         />
       </FormSection>
 
-      {/* Equipos y Herramientas */}
       <FormSection>
         <SectionTitle 
           icon={<Wrench className="h-5 w-5" />} 
@@ -822,7 +793,6 @@ export function GeneralInfoStep() {
         />
         
         <div className="space-y-4">
-          {/* Herramientas seleccionadas */}
           {generalInfo.tools && generalInfo.tools.length > 0 && (
             <div className="space-y-2 pb-4 border-b">
               <div className="flex items-center justify-between">
@@ -854,7 +824,6 @@ export function GeneralInfoStep() {
             </div>
           )}
           
-          {/* Buscador */}
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -878,7 +847,6 @@ export function GeneralInfoStep() {
               )}
             </div>
             
-            {/* Resultados de búsqueda */}
             {showSearchResults && searchTerm && (
               <div
                 ref={resultsContainerRef}
@@ -950,7 +918,6 @@ export function GeneralInfoStep() {
               </div>
             )}
 
-            {/* Agregar nueva herramienta */}
             {isAddingNew && (
               <div className="flex flex-col sm:flex-row gap-2 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 animate-in slide-in-from-top-2 duration-200">
                 <Input
@@ -1009,7 +976,6 @@ export function GeneralInfoStep() {
             )}
           </div>
 
-          {/* Acceso rápido */}
           {quickSelectTools.length > 0 && (
             <div className="pt-4 border-t space-y-2">
               <p className="text-xs font-medium text-muted-foreground">Acceso rápido</p>
@@ -1033,11 +999,10 @@ export function GeneralInfoStep() {
         </div>
       </FormSection>
 
-      {/* Número de Trabajadores */}
       <FormSection>
         <SectionTitle 
           icon={<Users className="h-5 w-5" />} 
-          title="Número de Trabajadores"
+          title="Número de Trabajadores Adicionales"
           required
         />
         
@@ -1053,13 +1018,12 @@ export function GeneralInfoStep() {
           <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
-              Este número representa el total de personas <strong>adicionales</strong> en el equipo (excluyéndote a ti). El sistema te sumará automáticamente.
+              Este número representa el total de personas <strong>adicionales</strong> en el equipo (excluyéndote a ti). El sistema te sumará automáticamente al total.
             </p>
           </div>
         </div>
       </FormSection>
 
-      {/* Responsable del Trabajo */}
       <FormSection>
         <SectionTitle 
           icon={<User className="h-5 w-5" />} 
