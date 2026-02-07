@@ -509,8 +509,8 @@ function CreatePermitWizard() {
         toast({
           variant: "destructive",
           title: "Número de Trabajadores no Coincide",
-          description: `Ha especificado ${additionalWorkers} trabajador(es) adicional(es), para un total de ${totalRequired}, pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
-          duration: 6000,
+          description: `Ha especificado ${additionalWorkers} trabajador(es) adicional(es) (total: ${totalRequired}), pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
+          duration: 8000,
         });
         return false;
       }
@@ -735,7 +735,7 @@ function CreatePermitWizard() {
               <>
                 <Button
                     onClick={handleSaveDraft}
-                    variant="secondary"
+                    variant="outline"
                     disabled={isSavingDraft || isSubmitting}
                     className="px-4 py-3 h-auto md:px-6"
                 >
@@ -746,7 +746,7 @@ function CreatePermitWizard() {
                     <AlertDialogTrigger asChild>
                          <Button
                             disabled={isSubmitting || !formData.solicitanteFirmaApertura}
-                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
+                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
