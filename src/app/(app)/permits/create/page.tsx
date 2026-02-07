@@ -186,30 +186,9 @@ function CreatePermitWizard() {
 
   useEffect(() => {
     if (user && !isLoadingForm && !draftId) {
-      const isSolicitorInList = formData.workers?.some(
-        (worker) => worker.email === user.email
-      );
-
-      if (!isSolicitorInList) {
-        const solicitorAsWorker: ExternalWorker = {
-          email: user.email || undefined,
-          nombre: user.displayName || 'Solicitante',
-          cedula: '',
-          rol: 'Solicitante',
-          otroRol: '',
-          eps: '',
-          arl: '',
-          pensiones: '',
-          tsaTec: { tec: false, tsa: false },
-          entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
-          firmaApertura: '',
-          firmaCierre: '',
-        };
-        const newWorkers = [solicitorAsWorker, ...(formData.workers || [])];
-        dispatch({ type: 'SET_WORKERS', payload: newWorkers });
-      }
+      dispatch({ type: 'INITIALIZE_WITH_USER', payload: user });
     }
-  }, [user, isLoadingForm, draftId, dispatch, formData.workers]);
+  }, [user, isLoadingForm, draftId, dispatch]);
 
 
   const openNewWorkerDialog = () => {
@@ -529,56 +508,59 @@ function CreatePermitWizard() {
       toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma o la información del usuario.' });
       return;
     }
-
+  
     setIsSubmitting(true);
     try {
-      const draftResult = await savePermitDraft({
-          userId: user.uid, 
-          userDisplayName: user.displayName || null, 
-          userEmail: user.email || null,
-          userPhotoURL: user.photoURL || null,
-          draftId: draftId,
-          ...formData
-      });
-
-      if (!draftResult.success || !draftResult.permitId) {
-        throw new Error(draftResult.error || "No se pudo guardar el borrador antes de enviar.");
-      }
-      
-      const currentPermitId = draftResult.permitId;
-      if (!draftId) {
-        setDraftId(currentPermitId);
-      }
-      
+      // Primero, se guarda la firma y el estado en 'borrador'
       const signatureResult = await addSignatureAndNotify(
-        currentPermitId,
+        draftId || '', // Si no hay draftId, es un nuevo permiso (debe ser creado primero)
         'solicitante',
         'firmaApertura',
         formData.solicitanteFirmaApertura,
         { uid: user.uid, displayName: user.displayName, role: user.role, empresa: user.empresa },
-        "Firma inicial de creación de permiso."
+        "Firma inicial de creación de permiso.",
+        true // Nuevo parámetro para solo guardar y no cambiar estado
       );
-      
-      if (signatureResult.success) {
+  
+      if (!signatureResult.success || !signatureResult.permitId) {
+        throw new Error(signatureResult.error || "No se pudo guardar la firma inicial.");
+      }
+  
+      const currentPermitId = signatureResult.permitId;
+      if (!draftId) {
+        setDraftId(currentPermitId);
+      }
+  
+      // Ahora, se intenta enviar a revisión (esto cambia el estado y notifica)
+      const submitResult = await savePermitDraft({
+        userId: user.uid,
+        userDisplayName: user.displayName || null,
+        userEmail: user.email || null,
+        userPhotoURL: user.photoURL || null,
+        draftId: currentPermitId,
+        ...formData,
+        status: 'pendiente_revision', // Se intenta cambiar el estado
+      });
+  
+      if (submitResult.success) {
         toast({
           title: '¡Permiso Enviado!',
           description: 'El permiso ha sido enviado para su aprobación.',
         });
         dispatch({ type: 'RESET_FORM' });
         router.push(`/permits/${currentPermitId}`);
+      } else if (submitResult.error && submitResult.error.includes('Se requiere primero la firma')) {
+        // Caso especial: falta firma de coordinador/etc.
+        toast({
+          title: 'Paso Adicional Requerido',
+          description: submitResult.error,
+          className: 'bg-blue-100 dark:bg-blue-900',
+          duration: 8000,
+        });
+        dispatch({ type: 'RESET_FORM' });
+        router.push(`/permits/${currentPermitId}`);
       } else {
-        if (signatureResult.error && signatureResult.error.includes('Se requiere primero la firma')) {
-          toast({
-            title: 'Paso Adicional Requerido',
-            description: signatureResult.error,
-            className: 'bg-blue-100 dark:bg-blue-900',
-            duration: 8000,
-          });
-          dispatch({ type: 'RESET_FORM' });
-          router.push(`/permits/${currentPermitId}`);
-        } else {
-          throw new Error(signatureResult.error || "No se pudo aplicar la firma para enviar el permiso.");
-        }
+        throw new Error(submitResult.error || "No se pudo enviar el permiso a revisión.");
       }
     } catch (error: any) {
       toast({
@@ -665,7 +647,7 @@ function CreatePermitWizard() {
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de {steps.length}: {currentStepInfo?.label}
+                    Paso {step} de {steps.length}: {currentStepInfo?.label || ''}
                   </p>
                 </div>
               </div>

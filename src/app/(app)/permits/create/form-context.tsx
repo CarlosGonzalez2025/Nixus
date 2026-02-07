@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch, useEffect } from 'react';
-import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes, User } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
@@ -13,6 +13,7 @@ interface FormState extends PermitFormData {}
 
 // Define the actions
 type FormAction =
+  | { type: 'INITIALIZE_WITH_USER'; payload: User }
   | { type: 'UPDATE_GENERAL_INFO'; payload: Partial<FormState['generalInfo']> }
   | { type: 'UPDATE_WORK_TYPES'; payload: { type: keyof FormState['selectedWorkTypes'], value: boolean } }
   | { type: 'UPDATE_ATS'; payload: Partial<FormState['anexoATS']> }
@@ -176,6 +177,50 @@ const LOCAL_STORAGE_KEY = 'permitFormDraft';
 // Reducer function
 function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
+    case 'INITIALIZE_WITH_USER': {
+      const user = action.payload;
+
+      // If the form is already populated (e.g., from localStorage or edit mode), 
+      // and the user is the same, don't re-initialize.
+      if (state.generalInfo.nombreSolicitante === (user.displayName || '')) {
+          return state;
+      }
+      
+      const newState = { ...state };
+      
+      newState.generalInfo = {
+          ...state.generalInfo,
+          nombreSolicitante: user.displayName || '',
+          responsable: {
+              ...state.generalInfo.responsable,
+              nombre: user.displayName || '',
+              compania: user.empresa || '',
+          }
+      };
+
+      const workers = state.workers || [];
+      const isSolicitorInList = workers.some(worker => worker.email === user.email);
+
+      if (!isSolicitorInList) {
+          const solicitorAsWorker: ExternalWorker = {
+            email: user.email || undefined,
+            nombre: user.displayName || 'Solicitante',
+            cedula: '',
+            rol: 'Solicitante',
+            otroRol: '',
+            eps: '',
+            arl: '',
+            pensiones: '',
+            tsaTec: { tec: false, tsa: false },
+            entrenamiento: { tec: false, tsa: false, otro: false, otroCual: '' },
+            firmaApertura: '',
+            firmaCierre: '',
+          };
+          newState.workers = [solicitorAsWorker, ...workers];
+      }
+
+      return newState;
+    }
     case 'UPDATE_GENERAL_INFO':
       return {
         ...state,
