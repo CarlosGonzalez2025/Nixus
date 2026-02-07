@@ -69,8 +69,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
           <div className="space-y-1">
             <CardTitle>Lista de Trabajadores</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Ten presente que de acuerdo a la información relacionada en información general, 
-              puede registrar máximo <span className="font-semibold text-primary">{maxTrabajadores}</span> trabajador{maxTrabajadores !== 1 ? 'es' : ''}.
+              El número de trabajadores incluye al solicitante. Puede registrar un total de <span className="font-semibold text-primary">{maxTrabajadores}</span> persona(s).
             </p>
           </div>
           <Button 

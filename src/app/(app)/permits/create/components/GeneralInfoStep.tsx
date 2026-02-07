@@ -1052,8 +1052,7 @@ export function GeneralInfoStep() {
           <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
-              El número de trabajadores aquí relacionados debe coincidir con el número de firmantes. 
-              Si no coincide, el sistema no permitirá generar el permiso.
+              Este número representa el <strong>total de personas</strong> en el equipo (incluyéndote a ti). Debe coincidir con la lista de trabajadores que registrarás.
             </p>
           </div>
         </div>
