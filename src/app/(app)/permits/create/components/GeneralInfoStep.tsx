@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -1045,14 +1046,14 @@ export function GeneralInfoStep() {
             type="number" 
             value={generalInfo.numTrabajadores} 
             onChange={e => handleInputChange('numTrabajadores', e.target.value)} 
-            placeholder="Cantidad de trabajadores"
+            placeholder="Cantidad de trabajadores adicionales"
             className="h-11 max-w-xs"
-            min={1}
+            min={0}
           />
           <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
-              Este número representa el <strong>total de personas</strong> en el equipo (incluyéndote a ti). Debe coincidir con la lista de trabajadores que registrarás.
+              Este número representa el total de personas <strong>adicionales</strong> en el equipo (excluyéndote a ti). El sistema te sumará automáticamente.
             </p>
           </div>
         </div>

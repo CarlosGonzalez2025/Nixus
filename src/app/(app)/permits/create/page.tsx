@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -193,22 +194,19 @@ function CreatePermitWizard() {
     }
   }, [user, formData.generalInfo.nombreSolicitante, dispatch]);
   
-  // ✅ CORRECCIÓN: Lógica mejorada para auto-agregar al solicitante
+  // Auto-agregar al solicitante como trabajador si es un permiso nuevo
   useEffect(() => {
-    // Solo se ejecuta si: el usuario está cargado, no estamos cargando un borrador de Firestore,
-    // y no estamos en una sesión de edición de un permiso existente.
     if (user && !isLoadingForm && !draftId) {
       const isSolicitorInList = formData.workers?.some(
         (worker) => worker.email === user.email
       );
 
-      // Si el solicitante no está en la lista de trabajadores, lo agregamos.
       if (!isSolicitorInList) {
         const solicitorAsWorker: ExternalWorker = {
           email: user.email || undefined,
           nombre: user.displayName || 'Solicitante',
           cedula: '',
-          rol: 'Solicitante', // Rol por defecto
+          rol: 'Solicitante',
           otroRol: '',
           eps: '',
           arl: '',
@@ -218,12 +216,11 @@ function CreatePermitWizard() {
           firmaApertura: '',
           firmaCierre: '',
         };
-        // Lo agregamos al principio de la lista.
         const newWorkers = [solicitorAsWorker, ...(formData.workers || [])];
         dispatch({ type: 'SET_WORKERS', payload: newWorkers });
       }
     }
-  }, [user, isLoadingForm, draftId, formData.workers, dispatch]);
+  }, [user, isLoadingForm, draftId, dispatch]);
 
 
   const openNewWorkerDialog = () => {
@@ -490,7 +487,6 @@ function CreatePermitWizard() {
         }
     }
 
-    // 🔥 VALIDACIÓN DE EMERGENCIAS
     if (currentLabel === 'Emergencias') {
         const validation = validateEmergencias(formData.eppEmergencias as EppEmergencias);
         
@@ -509,16 +505,16 @@ function CreatePermitWizard() {
         }
     }
 
-    // 🔥 VALIDACIÓN DE TRABAJADORES
     if (currentLabel === 'Trabajadores') {
-      const numTrabajadores = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
+      const additionalWorkers = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
+      const totalRequired = (additionalWorkers > 0 ? additionalWorkers : 0) + 1;
       const workers = formData.workers || [];
 
-      if (workers.length !== numTrabajadores) {
+      if (workers.length !== totalRequired) {
         toast({
           variant: "destructive",
           title: "Número de Trabajadores no Coincide",
-          description: `Ha especificado ${numTrabajadores} trabajadores, pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
+          description: `Se requiere un total de ${totalRequired} trabajadores (tú + ${additionalWorkers} adicionales), pero has registrado ${workers.length}. Por favor, ajusta la lista.`,
           duration: 6000,
         });
         return false;
@@ -556,22 +552,18 @@ function CreatePermitWizard() {
         ...formData,
       });
 
-      // ESTE ES EL CÓDIGO NUEVO Y CORRECTO
       if (result.success && result.permitId) {
         toast({
           title: '¡Permiso Guardado!',
           description: 'Redirigiendo a la página de detalles para la firma.',
         });
         
-        // 1. Guarda el ID del nuevo permiso para la redirección.
         const newPermitId = result.permitId;
         
-        // 2. Limpia el estado del formulario para la próxima vez que se use.
         dispatch({ type: 'RESET_FORM' });
         setStep(1);
         setDraftId(undefined);
 
-        // 3. Finalmente, redirige al usuario a la página de detalles del nuevo permiso.
         router.push(`/permits/${newPermitId}`);
       }
 
@@ -654,7 +646,7 @@ function CreatePermitWizard() {
             <div>
               <div className="flex items-center gap-3">
                 <Image 
-                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05-at-10-19-08.jpg"
+                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02_05_at_10_19_08.jpg"
                     alt="Crear Permiso Icon"
                     width={48}
                     height={48}

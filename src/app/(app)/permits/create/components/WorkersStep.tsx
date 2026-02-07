@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -25,15 +26,11 @@ interface WorkersStepProps {
 
 export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker }: WorkersStepProps) {
   const { state } = usePermitForm();
-  const maxTrabajadores = parseInt(state.generalInfo.numTrabajadores || '0', 10);
+  const additionalWorkersCount = parseInt(state.generalInfo.numTrabajadores || '0', 10);
+  const totalRequiredWorkers = (additionalWorkersCount >= 0 ? additionalWorkersCount : 0) + 1;
   
-  // Verificar si hay trabajadores sin firma
   const hasWorkerWithoutSignature = workers.some(worker => !worker.firmaApertura);
-  
-  // Verificar si se alcanzó el límite de trabajadores
-  const isLimitReached = workers.length >= maxTrabajadores;
-  
-  // Determinar si se puede agregar un nuevo trabajador
+  const isLimitReached = workers.length >= totalRequiredWorkers;
   const canAddWorker = !isLimitReached && !hasWorkerWithoutSignature;
 
   return (
@@ -69,7 +66,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
           <div className="space-y-1">
             <CardTitle>Lista de Trabajadores</CardTitle>
             <p className="text-sm text-muted-foreground">
-              El número de trabajadores incluye al solicitante. Puede registrar un total de <span className="font-semibold text-primary">{maxTrabajadores}</span> persona(s).
+              Se requiere un total de <span className="font-semibold text-primary">{totalRequiredWorkers}</span> persona(s) para este permiso.
             </p>
           </div>
           <Button 
@@ -95,16 +92,16 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Ha alcanzado el límite de {maxTrabajadores} trabajador{maxTrabajadores !== 1 ? 'es' : ''}. 
-                Si necesita agregar más, actualice el número en la sección de Información General.
+                Ha alcanzado el límite total de {totalRequiredWorkers} trabajador{totalRequiredWorkers !== 1 ? 'es' : ''}. 
+                Si necesita agregar más, actualice el número de trabajadores adicionales en la sección de Información General.
               </AlertDescription>
             </Alert>
           )}
 
           {/* Badge de contador */}
           <div className="flex justify-between items-center pb-2">
-            <Badge variant={workers.length === maxTrabajadores ? "default" : "secondary"}>
-              {workers.length} de {maxTrabajadores} trabajador{maxTrabajadores !== 1 ? 'es' : ''} registrado{workers.length !== 1 ? 's' : ''}
+            <Badge variant={workers.length === totalRequiredWorkers ? "default" : "secondary"}>
+              {workers.length} de {totalRequiredWorkers} trabajador{totalRequiredWorkers !== 1 ? 'es' : ''} registrado{workers.length !== 1 ? 's' : ''}
             </Badge>
             {workers.length > 0 && (
               <Badge variant={hasWorkerWithoutSignature ? "destructive" : "outline"}>
