@@ -102,7 +102,7 @@ export default function GuidePage() {
     <div className="flex flex-1 flex-col gap-8 p-4 md:p-8 bg-gray-50/50">
       <div className="flex items-center gap-4">
         <Image
-          src="https://i.postimg.cc/VsZBSkmH/Italcol.png"
+          src="https://i.postimg.cc/RZ16KqFY/Whats_App_Image_2026_02_05_at_10_19_08.jpg"
           alt="Guide Icon"
           width={56}
           height={56}

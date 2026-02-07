@@ -81,6 +81,7 @@ const workerRoles = [
   "Soldador",
   "Operador de equipo para elevación de personas",
   "Vigía",
+  "Trabajador Entrante",
   "Otro"
 ];
 

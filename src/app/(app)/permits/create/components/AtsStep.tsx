@@ -86,6 +86,7 @@ export const eppOptions = {
   'Protección Corporal, Manos y Pies': [
     { id: 'overol_trabajo', label: 'Overol de trabajo', type: 'boolean' },
     { id: 'overol_ignifugo', label: 'Overol ignífugo clase', type: 'select', selectOptions: ['Clase 1', 'Clase 2', 'Clase 3'] },
+    { id: 'traje_tyvek', label: 'Traje tyvek', type: 'boolean' },
     { id: 'dotacion', label: 'Dotación', type: 'select', selectOptions: ['Pantalón y camisa', 'Overol', 'Pantalón y camiseta'] },
     { id: 'chaleco_reflectivo', label:'Chaleco reflectivo', type: 'boolean' },
     { id: 'chaqueta_cuero_carnaza', label: 'Chaqueta de cuero o carnaza', type: 'boolean' },
