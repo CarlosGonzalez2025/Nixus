@@ -311,6 +311,77 @@ function CreatePermitWizard() {
     }
   };
 
+  const handleSaveAndSubmit = async () => {
+    if (!user || !user.role || !formData.solicitanteFirmaApertura) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma o la información del usuario.' });
+      return;
+    }
+  
+    setIsSubmitting(true);
+    let currentPermitId = draftId;
+  
+    try {
+      // Siempre guardar el borrador primero para asegurar que el ID existe
+      if (!currentPermitId) {
+        const draftResult = await savePermitDraft({
+          userId: user.uid, 
+          userDisplayName: user.displayName || null, 
+          userEmail: user.email || null,
+          userPhotoURL: user.photoURL || null,
+          ...formData
+        });
+  
+        if (!draftResult.success || !draftResult.permitId) {
+          throw new Error(draftResult.error || "No se pudo crear el borrador inicial.");
+        }
+        currentPermitId = draftResult.permitId;
+        setDraftId(currentPermitId);
+      }
+  
+      // Ahora, intenta agregar la firma y enviar
+      const signatureResult = await addSignatureAndNotify(
+        currentPermitId,
+        'solicitante',
+        'firmaApertura',
+        formData.solicitanteFirmaApertura,
+        { uid: user.uid, displayName: user.displayName, role: user.role, empresa: user.empresa },
+        "Firma inicial de creación de permiso."
+      );
+  
+      if (signatureResult.success) {
+        toast({
+          title: '¡Permiso Enviado!',
+          description: 'El permiso ha sido enviado para su aprobación.',
+        });
+        dispatch({ type: 'RESET_FORM' });
+        router.push(`/permits/${currentPermitId}`);
+      } else {
+        // Manejar el caso específico de prerrequisito
+        if (signatureResult.error && signatureResult.error.includes('Se requiere primero la firma')) {
+          toast({
+            title: 'Paso Adicional Requerido',
+            description: signatureResult.error,
+            className: 'bg-blue-100 dark:bg-blue-900',
+            duration: 8000,
+          });
+          dispatch({ type: 'RESET_FORM' });
+          router.push(`/permits/${currentPermitId}`);
+        } else {
+          // Es un error diferente
+          throw new Error(signatureResult.error || "No se pudo enviar el permiso a revisión.");
+        }
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Falló el Envío',
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const colors = {
     primary: 'hsl(var(--primary))',
     dark: 'hsl(var(--primary))', 
@@ -335,7 +406,8 @@ function CreatePermitWizard() {
   const currentStepInfo = steps[step - 1];
 
   const canProceed = () => {
-    const currentLabel = steps[step - 1]?.label;
+    if (!currentStepInfo) return false;
+    const currentLabel = currentStepInfo.label;
 
     if (currentLabel === 'Info General') { 
         const { 
@@ -502,76 +574,6 @@ function CreatePermitWizard() {
 
     return true;
   };
-  
-  const handleSaveAndSubmit = async () => {
-    if (!user || !user.role || !formData.solicitanteFirmaApertura) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma o la información del usuario.' });
-      return;
-    }
-  
-    setIsSubmitting(true);
-    try {
-      // Primero, se guarda la firma y el estado en 'borrador'
-      const signatureResult = await addSignatureAndNotify(
-        draftId || '', // Si no hay draftId, es un nuevo permiso (debe ser creado primero)
-        'solicitante',
-        'firmaApertura',
-        formData.solicitanteFirmaApertura,
-        { uid: user.uid, displayName: user.displayName, role: user.role, empresa: user.empresa },
-        "Firma inicial de creación de permiso.",
-        true // Nuevo parámetro para solo guardar y no cambiar estado
-      );
-  
-      if (!signatureResult.success || !signatureResult.permitId) {
-        throw new Error(signatureResult.error || "No se pudo guardar la firma inicial.");
-      }
-  
-      const currentPermitId = signatureResult.permitId;
-      if (!draftId) {
-        setDraftId(currentPermitId);
-      }
-  
-      // Ahora, se intenta enviar a revisión (esto cambia el estado y notifica)
-      const submitResult = await savePermitDraft({
-        userId: user.uid,
-        userDisplayName: user.displayName || null,
-        userEmail: user.email || null,
-        userPhotoURL: user.photoURL || null,
-        draftId: currentPermitId,
-        ...formData,
-        status: 'pendiente_revision', // Se intenta cambiar el estado
-      });
-  
-      if (submitResult.success) {
-        toast({
-          title: '¡Permiso Enviado!',
-          description: 'El permiso ha sido enviado para su aprobación.',
-        });
-        dispatch({ type: 'RESET_FORM' });
-        router.push(`/permits/${currentPermitId}`);
-      } else if (submitResult.error && submitResult.error.includes('Se requiere primero la firma')) {
-        // Caso especial: falta firma de coordinador/etc.
-        toast({
-          title: 'Paso Adicional Requerido',
-          description: submitResult.error,
-          className: 'bg-blue-100 dark:bg-blue-900',
-          duration: 8000,
-        });
-        dispatch({ type: 'RESET_FORM' });
-        router.push(`/permits/${currentPermitId}`);
-      } else {
-        throw new Error(submitResult.error || "No se pudo enviar el permiso a revisión.");
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Falló el Envío',
-        description: error.message,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleUpdateATS = useCallback((updates: Partial<AnexoATS>) => {
     dispatch({ type: 'UPDATE_ATS', payload: updates });
@@ -590,7 +592,16 @@ function CreatePermitWizard() {
       );
     }
 
-    const currentStepLabel = steps[step - 1]?.label;
+    if (!currentStepInfo) {
+        return (
+            <div className="text-center p-8">
+                <h3 className="text-xl font-bold">Error de Carga</h3>
+                <p className="text-muted-foreground">No se pudo cargar el paso actual.</p>
+            </div>
+        );
+    }
+    const currentStepLabel = currentStepInfo.label;
+
     switch (currentStepLabel) {
       case "Info General":
         return <GeneralInfoStep />;
@@ -647,7 +658,7 @@ function CreatePermitWizard() {
                 <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
                   <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
                   <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de {steps.length}: {currentStepInfo?.label || ''}
+                    Paso {step} de {steps.length}: {currentStepInfo?.label}
                   </p>
                 </div>
               </div>
@@ -716,17 +727,17 @@ function CreatePermitWizard() {
               Anterior
             </Button>
             
+            <Button
+                onClick={handleSaveDraft}
+                variant="outline"
+                disabled={isSavingDraft || isSubmitting}
+                className="px-4 py-3 h-auto md:px-6"
+            >
+                {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                Borrador
+            </Button>
+
             {step === steps.length ? (
-              <>
-                <Button
-                    onClick={handleSaveDraft}
-                    variant="outline"
-                    disabled={isSavingDraft || isSubmitting}
-                    className="px-4 py-3 h-auto md:px-6"
-                >
-                    {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
-                    Borrador
-                </Button>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                          <Button
@@ -756,7 +767,6 @@ function CreatePermitWizard() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-              </>
             ) : (
               <Button
                 onClick={() => {
