@@ -173,7 +173,11 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         // Sanitize the role value to be more robust
         const sanitizedRow = { ...row };
         if (sanitizedRow.role && typeof sanitizedRow.role === 'string') {
-          sanitizedRow.role = sanitizedRow.role.trim().replace(/ /g, '_');
+          sanitizedRow.role = sanitizedRow.role.trim().toLowerCase().replace(/ /g, '_');
+        }
+        // Sanitize email to remove leading/trailing spaces
+        if (sanitizedRow.email && typeof sanitizedRow.email === 'string') {
+          sanitizedRow.email = sanitizedRow.email.trim();
         }
 
         const validation = bulkCreateUserSchema.safeParse({
