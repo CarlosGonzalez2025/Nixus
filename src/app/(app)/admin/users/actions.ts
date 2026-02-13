@@ -50,14 +50,14 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
     
     const userProfile: User = {
       uid: userRecord.uid,
-      email: userRecord.email,
+      email: userRecord.email ?? '',
       displayName: data.fullName,
       role: data.role,
-      area: data.area,
-      telefono: data.telefono,
+      area: data.area ?? '',
+      telefono: data.telefono ?? '',
       empresa: data.empresa,
-      ciudad: data.ciudad,
-      planta: data.planta,
+      ciudad: data.ciudad ?? '',
+      planta: data.planta ?? '',
       photoURL: userRecord.photoURL || '',
       disabled: false,
     };
@@ -102,14 +102,14 @@ export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSc
 
       const userProfile: User = {
         uid: userRecord.uid,
-        email: userRecord.email,
+        email: userRecord.email ?? '',
         displayName: userData.fullName,
         role: userData.role,
-        area: userData.area,
-        telefono: userData.telefono,
+        area: userData.area ?? '',
+        telefono: userData.telefono ?? '',
         empresa: userData.empresa,
-        ciudad: userData.ciudad,
-        planta: userData.planta,
+        ciudad: userData.ciudad ?? '',
+        planta: userData.planta ?? '',
         photoURL: userRecord.photoURL || '',
         disabled: false,
       };
@@ -118,14 +118,26 @@ export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSc
       results.successCount++;
     } catch (error: any) {
       results.errorCount++;
-      let reason = 'Error desconocido';
-      if (error.code === 'auth/email-already-exists') {
-        reason = 'El correo ya existe.';
-      } else if (error.code === 'auth/invalid-password') {
-        reason = 'La contraseña no es válida (mínimo 6 caracteres).';
+      let reason = 'Error desconocido al crear usuario.';
+      
+      if (error.code?.startsWith('auth/')) {
+        switch (error.code) {
+          case 'auth/email-already-exists':
+            reason = 'El correo ya existe en Autenticación.';
+            break;
+          case 'auth/invalid-password':
+            reason = 'La contraseña no es válida (mínimo 6 caracteres).';
+            break;
+          default:
+            reason = `Error de autenticación: ${error.message}`;
+            break;
+        }
+      } else {
+        reason = `Error al guardar en base de datos: ${error.message}`;
       }
+      
       results.errors.push({ email: userData.email, reason });
-      console.error(`Error creating user ${userData.email}:`, error.code, error.message);
+      console.error(`Error creando usuario ${userData.email}:`, error);
     }
   }
 
