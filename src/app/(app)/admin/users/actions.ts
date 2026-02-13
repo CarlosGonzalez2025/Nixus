@@ -171,3 +171,59 @@ export async function updateUserStatus(userId: string, disabled: boolean) {
         return { error: 'No se pudo actualizar el estado del usuario.'};
     }
 }
+
+export async function syncAuthAndFirestoreUsers() {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
+
+  try {
+    const auth = getAuth();
+    const firestoreUsersSnap = await adminDb.collection('users').get();
+    const firestoreUserIds = new Set(firestoreUsersSnap.docs.map(doc => doc.id));
+
+    const listAuthUsersResult = await auth.listUsers(1000); // Max 1000 users per page
+    const authUsers = listAuthUsersResult.users;
+
+    const missingUserIds = authUsers
+      .map(userRecord => userRecord.uid)
+      .filter(uid => !firestoreUserIds.has(uid));
+
+    if (missingUserIds.length === 0) {
+      return { success: true, created: 0, message: 'No hay usuarios para sincronizar. Todo está al día.' };
+    }
+
+    const batch = adminDb.batch();
+    let createdCount = 0;
+
+    for (const uid of missingUserIds) {
+      const userRecord = await auth.getUser(uid);
+      const userProfile: User = {
+        uid: userRecord.uid,
+        email: userRecord.email || '',
+        displayName: userRecord.displayName || 'Usuario sin nombre',
+        photoURL: userRecord.photoURL || '',
+        role: 'ejecutante', // Assign a default role
+        empresa: 'Empresa no especificada',
+        ciudad: '',
+        planta: '',
+        area: '',
+        telefono: '',
+        disabled: userRecord.disabled || false,
+      };
+      const userDocRef = adminDb.collection('users').doc(uid);
+      batch.set(userDocRef, userProfile);
+      createdCount++;
+    }
+
+    await batch.commit();
+    
+    revalidatePath('/admin/users');
+
+    return { success: true, created: createdCount, message: `${createdCount} usuarios han sido creados en la base de datos.` };
+
+  } catch (error: any) {
+    console.error('Error sincronizando usuarios:', error);
+    return { error: 'Ocurrió un error inesperado durante la sincronización.' };
+  }
+}

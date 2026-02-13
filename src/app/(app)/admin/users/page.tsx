@@ -29,8 +29,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers } from './actions';
-import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX } from 'lucide-react';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers } from './actions';
+import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
@@ -335,6 +335,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const createForm = useForm<z.infer<typeof createFormSchema>>({
     resolver: zodResolver(createFormSchema),
@@ -354,6 +355,28 @@ export default function UsersPage() {
   const updateForm = useForm<z.infer<typeof updateFormSchema>>({
     resolver: zodResolver(updateFormSchema),
   });
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncAuthAndFirestoreUsers();
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      toast({
+        title: 'Sincronización Completa',
+        description: result.message,
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de Sincronización',
+        description: error.message,
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     if (!adminLoading && adminUser?.role !== 'admin') {
@@ -533,6 +556,19 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={handleSync}
+                variant="outline"
+                className="h-11"
+                disabled={isSyncing}
+              >
+                {isSyncing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Sincronizar
+              </Button>
               <Button
                 onClick={() => setIsBulkUploadOpen(true)}
                 variant="outline"
