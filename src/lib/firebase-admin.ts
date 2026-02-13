@@ -40,7 +40,7 @@ function initializeAdminApp() {
 initializeAdminApp();
 
 // Función para verificar si el SDK de Admin está listo
-export const isAdminReady = () => !!adminApp;
+export const isAdminReady = () => !!adminApp && !!adminFirestoreDb;
 
 // Exportamos la instancia de la base de datos de manera segura
 // Si no está inicializada, las funciones que la usen fallarán con el nuevo chequeo.
