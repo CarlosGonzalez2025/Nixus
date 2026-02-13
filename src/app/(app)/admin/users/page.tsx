@@ -217,11 +217,6 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         description: `Éxito: ${result.successCount}. Errores: ${result.errorCount}.`,
         duration: 8000
       });
-
-      if (result.errorCount > 0) {
-        // You could show a more detailed error report here
-        console.error("Errores de importación:", result.errors);
-      }
       
       // Reset state and close
       setFile(null);
