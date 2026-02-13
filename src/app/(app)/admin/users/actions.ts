@@ -2,7 +2,7 @@
 'use server';
 
 import { getAuth } from 'firebase-admin/auth';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import * as z from 'zod';
 import type { User, UserRole } from '@/types';
 import { revalidatePath } from 'next/cache';
@@ -36,6 +36,9 @@ const updateFormSchema = z.object({
 
 
 export async function createUser(data: z.infer<typeof createFormSchema>) {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
   try {
     const auth = getAuth();
     
@@ -73,6 +76,14 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
 }
 
 export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSchema>[]) {
+  if (!isAdminReady()) {
+    return {
+      successCount: 0,
+      errorCount: users.length,
+      errors: users.map(u => ({ email: u.email, reason: 'El servicio de base de datos no está configurado en el servidor.' })),
+    };
+  }
+
   const auth = getAuth();
   const results = {
     successCount: 0,
@@ -123,6 +134,9 @@ export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSc
 }
 
 export async function updateUser(data: z.infer<typeof updateFormSchema>) {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
   try {
     const auth = getAuth();
     
@@ -144,6 +158,9 @@ export async function updateUser(data: z.infer<typeof updateFormSchema>) {
 }
 
 export async function updateUserStatus(userId: string, disabled: boolean) {
+    if (!isAdminReady()) {
+      return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+    }
     try {
         const auth = getAuth();
         await auth.updateUser(userId, { disabled });
