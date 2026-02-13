@@ -170,9 +170,15 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
           throw new Error(`Fila ${index + 2}: Faltan campos obligatorios: ${missingFields.join(', ')}`);
         }
         
+        // Sanitize the role value to be more robust
+        const sanitizedRow = { ...row };
+        if (sanitizedRow.role && typeof sanitizedRow.role === 'string') {
+          sanitizedRow.role = sanitizedRow.role.trim().replace(/ /g, '_');
+        }
+
         const validation = bulkCreateUserSchema.safeParse({
-          ...row,
-          telefono: row.telefono ? String(row.telefono) : undefined,
+          ...sanitizedRow,
+          telefono: sanitizedRow.telefono ? String(sanitizedRow.telefono) : undefined,
         });
 
         if (validation.success) {
