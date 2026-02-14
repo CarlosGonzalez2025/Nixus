@@ -218,6 +218,10 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         duration: 8000
       });
       
+      if (result.errorCount > 0) {
+        // You could show a more detailed error report here
+      }
+      
       // Reset state and close
       setFile(null);
       setParsedUsers([]);
@@ -350,6 +354,49 @@ export default function UsersPage() {
   const updateForm = useForm<z.infer<typeof updateFormSchema>>({
     resolver: zodResolver(updateFormSchema),
   });
+
+  const handleExportExcel = () => {
+    if (users.length === 0) {
+      toast({
+        title: "No hay usuarios",
+        description: "No hay usuarios para exportar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const usersToExport = users.map(user => ({
+        'Nombre Completo': user.displayName || '',
+        'Correo Electrónico': user.email || '',
+        'Rol': user.role ? roleNames[user.role] : 'N/A',
+        'Empresa': user.empresa || '',
+        'Ciudad': user.ciudad || '',
+        'Planta': user.planta || '',
+        'Área': user.area || '',
+        'Teléfono': user.telefono || '',
+        'Estado': user.disabled ? 'Inactivo' : 'Activo'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(usersToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios SGTC');
+      
+      XLSX.writeFile(workbook, `reporte_usuarios_sgtc_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "✅ Exportación Exitosa",
+        description: `Se exportaron ${users.length} usuarios.`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error de Exportación",
+        description: "No se pudo generar el archivo de Excel.",
+        variant: "destructive"
+      });
+      console.error("Error exporting to excel:", error);
+    }
+  };
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -571,6 +618,14 @@ export default function UsersPage() {
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Carga Masiva
+              </Button>
+              <Button
+                onClick={handleExportExcel}
+                variant="outline"
+                className="h-11"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
               </Button>
               <Button
                 onClick={() => setShowCreateForm(!showCreateForm)}
