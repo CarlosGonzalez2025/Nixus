@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -394,7 +395,6 @@ export default function UsersPage() {
         description: "No se pudo generar el archivo de Excel.",
         variant: "destructive"
       });
-      console.error("Error exporting to excel:", error);
     }
   };
 
@@ -598,19 +598,6 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={handleSync}
-                variant="outline"
-                className="h-11"
-                disabled={isSyncing}
-              >
-                {isSyncing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                )}
-                Sincronizar
-              </Button>
               <Button
                 onClick={() => setIsBulkUploadOpen(true)}
                 variant="outline"
@@ -1159,3 +1146,5 @@ export default function UsersPage() {
     </>
   );
 }
+
+    
