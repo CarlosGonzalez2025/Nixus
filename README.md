@@ -58,16 +58,60 @@ Un flujo de varios pasos que asegura la recopilación completa y precisa de la i
 -   **Vista de Detalles Completa:** Cada permiso tiene una página dedicada que muestra toda su información en un formato claro y legible, donde ocurren las aprobaciones.
 -   **Notificaciones por WhatsApp:** El sistema se integra con **Twilio** para enviar notificaciones automáticas por WhatsApp a los supervisores cuando se crea un nuevo permiso o cuando se realizan acciones clave, agilizando el proceso de revisión.
 
-### 5. Flujo de Firmas Secuencial y Condicional
-Este es el corazón del sistema, garantizando un proceso de aprobación lógico y seguro:
-1.  **Firma del Solicitante:** Es el primer paso. Al firmar, el solicitante confirma que la información es correcta y el permiso ya no puede ser modificado por él. Se envía una notificación al autorizante.
-2.  **Firma de Coordinador (Condicional):** En trabajos de altura, la firma del coordinador es requerida antes que la del solicitante.
-3.  **Firma del Autorizante:** Solo puede firmar DESPUÉS de que el solicitante haya firmado.
-4.  **Firma de Mantenimiento (Condicional):** Solo puede firmar DESPUÉS del autorizante, y únicamente si el permiso incluye "Control de Energías".
-5.  **Firma del Líder SST:** Solo puede firmar DESPUÉS de que tanto el solicitante como el autorizante hayan firmado.
-6.  **Aprobación/Rechazo Final:** Un `autorizante` o `admin` puede aprobar el permiso (cambia a estado `aprobado`) solo si todas las firmas requeridas están completas. También pueden rechazarlo en cualquier momento del proceso de revisión.
-7.  **Inicio y Cierre:** Un `lider_tarea` o `admin` puede cambiar el estado a `en_ejecucion` y, finalmente, a `cerrado`.
-8.  **Cierre de Emergencia:** Permite a un usuario autorizado forzar el cierre de un permiso activo. El sistema le informará de todas las firmas pendientes y le exigirá una justificación y una firma para registrar la acción excepcional.
+### 5. Flujo de Trabajo Completo: Paso a Paso
+
+A continuación, se detalla el ciclo de vida completo de un permiso, desde el inicio de sesión hasta su cierre.
+
+**Paso 1: Inicio de Sesión y Acceso**
+-   Cada usuario ingresa a la plataforma con su correo electrónico y contraseña.
+-   El sistema lo redirige al **Dashboard**, que muestra una vista personalizada según su rol.
+
+**Paso 2: Creación del Permiso (Rol: `solicitante` / `lider_tarea`)**
+-   El usuario inicia el asistente de "Nuevo Permiso".
+-   Completa la información del permiso (ubicación, fechas, descripción de la tarea).
+-   **Clave:** Selecciona los **Tipos de Trabajo** (Altura, Confinados, etc.). Esto determina qué anexos y firmas condicionales se requerirán más adelante.
+-   Completa el ATS y todos los anexos activados.
+-   En el último paso, **el solicitante firma digitalmente**.
+-   Al guardar, el permiso se crea con estado **`borrador`** y la firma del solicitante ya queda registrada.
+
+**Paso 3: Firmas de Prerrequisito (Condicional)**
+-   El sistema ahora verifica si se necesitan firmas adicionales antes de la aprobación principal. El permiso **permanece en `borrador`**.
+    -   **Si se seleccionó "Trabajo en Alturas"**: Se requiere la firma del **Coordinador de Alturas**.
+    -   **Si se seleccionó "Espacios Confinados"**: Se requiere la firma del **Supervisor de Espacios Confinados**.
+-   El creador del permiso debe gestionar que estas personas firmen desde la página de detalles del permiso.
+
+**Paso 4: Envío a Revisión (Automático) y Flujo de Aprobación Principal**
+-   El permiso cambia **automáticamente** su estado a **`pendiente_revision`** en el momento en que se cumplen dos condiciones:
+    1.  El **solicitante** ha firmado.
+    2.  **Y** todas las firmas de prerrequisito (Coordinador, Supervisor, etc., si aplicaban) están completas.
+-   En este instante, el sistema **envía las notificaciones por WhatsApp y correo electrónico** a los siguientes aprobadores.
+-   Comienza la secuencia principal de firmas. El sistema habilita los botones en el siguiente orden estricto:
+    1.  **Líder SST (Condicional):** Firma si el permiso fue marcado para requerir su intervención.
+    2.  **Mantenimiento (Condicional):** Firma si el permiso incluye "Control de Energías".
+    3.  **Autorizante / Jefe de Área (Firma Obligatoria):** Firma al final. Solo puede firmar cuando todas las firmas anteriores (Solicitante, SST, Mantenimiento) están completas.
+
+**Paso 5: Decisión Final (Aprobación / Rechazo)**
+-   **Quién decide:** Un rol con permisos de aprobación, como `autorizante` o `admin`.
+-   **Para Aprobar:**
+    -   **Condición:** Todas las firmas del Paso 4 deben estar completas.
+    -   **Acción:** El usuario presiona "Aprobar". El estado del permiso cambia a **`aprobado`**.
+-   **Para Rechazar:**
+    -   **Condición:** Puede rechazar en cualquier momento mientras el permiso esté `pendiente_revision`.
+    -   **Acción:** El usuario presiona "Rechazar", debe ingresar un motivo. El estado cambia a **`rechazado`** y el flujo se detiene.
+
+**Paso 6: Ejecución y Cierre del Permiso**
+-   **Inicio de Ejecución:** Un `lider_tarea` o `admin`, con el permiso `aprobado`, presiona "Iniciar Ejecución". El estado cambia a **`en_ejecucion`**.
+-   **Validación Diaria:** Para permisos de varios días, es obligatorio realizar el cierre y la apertura diaria en las tablas de validación de cada anexo.
+-   **Suspensión:** Un `lider_sst` o `admin` puede `suspender` un permiso `en_ejecucion` si detecta un riesgo. El trabajo se detiene hasta que el mismo rol lo reactive.
+-   **Cierre Final:**
+    -   **Quién:** Un `lider_tarea` o `admin`.
+    -   **Condición:** Todas las validaciones diarias y firmas de trabajadores deben estar completas. Se requieren las firmas de cierre del Responsable y la Autoridad del Área.
+    -   **Acción:** Se presiona "Cerrar Permiso". El estado cambia a **`cerrado`**.
+
+**Step 7: Cierre de Emergencia (Acción Excepcional)**
+-   **Quién:** Roles de supervisión (`lider_tarea`, `autorizante`, `lider_sst`, `admin`).
+-   **Cuándo:** En cualquier estado activo (`pendiente_revision`, `aprobado`, `en_ejecucion`).
+-   **Acción:** El usuario presiona "Cierre de Emergencia". El sistema le muestra las tareas/firmas pendientes, exige una justificación y una firma. El estado del permiso cambia forzosamente a **`cerrado`**.
 
 ---
 
