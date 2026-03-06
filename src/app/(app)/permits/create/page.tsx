@@ -749,14 +749,14 @@ function CreatePermitWizard() {
                             ) : (
                             <Save size={22} className="mr-2" />
                             )}
-                            <span>Enviar Permiso</span>
+                            <span>Enviar Permiso para Autorización</span>
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>¿Está seguro de enviar el permiso?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Una vez enviado, el permiso cambiará a "Pendiente de Revisión" y se notificará a los aprobadores. No podrá editarlo después de este punto.
+                                Una vez enviado, el permiso cambiará a "Pendiente de Autorización" y se notificará a los autorizantes. No podrá editarlo después de este punto.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

@@ -204,9 +204,9 @@ function formReducer(state: FormState, action: FormAction): FormState {
       if (!isSolicitorInList) {
           const solicitorAsWorker: ExternalWorker = {
             email: user.email || undefined,
-            nombre: user.displayName || 'Solicitante',
+            nombre: user.displayName || 'Ejecutante del trabajo',
             cedula: '',
-            rol: 'Solicitante',
+            rol: 'Ejecutante del trabajo',
             otroRol: '',
             eps: '',
             arl: '',

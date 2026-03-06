@@ -659,7 +659,7 @@ export function GeneralInfoStep() {
           />
           
           <div className="space-y-2">
-            <RequiredLabel>Nombre del solicitante</RequiredLabel>
+            <RequiredLabel>Ejecutante del trabajo</RequiredLabel>
             <Input 
               value={generalInfo.nombreSolicitante || ''} 
               readOnly 

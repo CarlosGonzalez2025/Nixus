@@ -125,7 +125,7 @@ export default function GuidePage() {
           <FlowStep
             step="1"
             title="Creación y Solicitud del Permiso"
-            role="Rol: Solicitante / Líder de Tarea"
+            role="Rol: Ejecutante del trabajo / Líder de Tarea"
             description="El proceso inicia cuando un usuario completa el formulario de 'Nuevo Permiso'. Se debe llenar la información general, seleccionar los tipos de trabajo (lo que activará los anexos correspondientes), y diligenciar el ATS y las listas de verificación. Al guardar, el permiso queda en estado 'Borrador'."
             icon={FilePlus}
             badgeText="Borrador"
@@ -135,8 +135,8 @@ export default function GuidePage() {
           <FlowStep
             step="2"
             title="Flujo de Firmas de Apertura (Secuencial)"
-            role="Roles: Solicitante, Coordinador, Autorizante, Mantenimiento, SST"
-            description="Una vez creado el borrador, comienza el proceso de firmas. Este flujo es secuencial y condicional, lo que significa que ciertos roles deben firmar antes que otros. Al firmar, el solicitante envía formalmente el permiso a revisión."
+            role="Roles: Ejecutante del trabajo, Coordinador, Autorizante, Mantenimiento, SST"
+            description="Una vez creado el borrador, comienza el proceso de firmas. Este flujo es secuencial y condicional, lo que significa que ciertos roles deben firmar antes que otros. Al firmar, el Ejecutante del trabajo envía formalmente el permiso a revisión."
             icon={FileSignature}
             badgeText="Pendiente de Revisión"
             badgeColor="bg-yellow-100 text-yellow-800"
@@ -152,9 +152,9 @@ export default function GuidePage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row items-stretch justify-around gap-4 text-center">
-                <SignatureFlowItem role="Coordinador Alturas" condition="Si aplica" icon={UserCheck} />
+                <SignatureFlowItem role="Ejecutante del trabajo / Líder del equipo Ejecutante" condition="Siempre requerido" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
-                <SignatureFlowItem role="Solicitante" condition="Siempre requerido" icon={UserCheck} />
+                <SignatureFlowItem role="Coordinador Alturas" condition="Si aplica" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
                 <SignatureFlowItem role="Líder SST / Mantenimiento" condition="Si aplican" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
@@ -179,7 +179,7 @@ export default function GuidePage() {
                 <CheckCircle className="h-8 w-8 text-green-500 mt-1" />
                 <div>
                   <h5 className="font-bold">Permiso Aprobado</h5>
-                  <p className="text-xs text-muted-foreground">El permiso está listo para que el trabajo comience. El Solicitante es Notificado.</p>
+                  <p className="text-xs text-muted-foreground">El permiso está listo para que el trabajo comience. El Ejecutante del trabajo es Notificado.</p>
                   <Badge className="mt-2 bg-green-100 text-green-800">Estado: Aprobado</Badge>
                 </div>
               </div>
@@ -187,7 +187,7 @@ export default function GuidePage() {
                 <FileX className="h-8 w-8 text-red-500 mt-1" />
                 <div>
                   <h5 className="font-bold">Permiso Rechazado</h5>
-                  <p className="text-xs text-muted-foreground">El permiso se cancela y no puede ser ejecutado. El solicitante es notificado.</p>
+                  <p className="text-xs text-muted-foreground">El permiso se cancela y no puede ser ejecutado. El Ejecutante del trabajoe es notificado.</p>
                    <Badge className="mt-2 bg-red-100 text-red-800">Estado: Rechazado</Badge>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function GuidePage() {
           <FlowStep
             step="4"
             title="Inicio y Ejecución del Trabajo"
-            role="Rol: Líder de Tarea / Solicitante"
+            role="Rol: Líder de Tarea / Ejecutante del trabajo"
             description="Con el permiso en estado 'Aprobado', el líder a cargo presiona 'Iniciar Ejecución' justo antes de comenzar las labores en el sitio. Esto indica que el trabajo está activo."
             icon={PlayCircle}
             badgeText="En Ejecución"

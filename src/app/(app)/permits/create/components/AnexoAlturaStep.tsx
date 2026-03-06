@@ -365,7 +365,7 @@ export function AnexoAlturaStep() {
                   <Info className="h-4 w-4 text-red-800" />
                   <AlertTitle className="font-semibold">Firma SST Requerida</AlertTitle>
                   <AlertDescription className="text-xs">
-                    Al seleccionar "Otro", este permiso requerirá obligatoriamente la firma de un Líder SST para su aprobación.
+                    Al seleccionar "Otro", este permiso requerirá obligatoriamente la firma del SST para su aprobación.
                   </AlertDescription>
                 </Alert>
                 {state.isSSTSignatureRequired !== undefined && (
