@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -659,7 +658,7 @@ export function GeneralInfoStep() {
           />
           
           <div className="space-y-2">
-            <RequiredLabel>Ejecutante del trabajo</RequiredLabel>
+            <RequiredLabel>Ejecutante del trabajo / Líder del equipo Ejecutante</RequiredLabel>
             <Input 
               value={generalInfo.nombreSolicitante || ''} 
               readOnly 

@@ -180,8 +180,6 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'INITIALIZE_WITH_USER': {
       const user = action.payload;
 
-      // If the form is already populated (e.g., from localStorage or edit mode), 
-      // and the user is the same, don't re-initialize.
       if (state.generalInfo.nombreSolicitante === (user.displayName || '')) {
           return state;
       }
@@ -204,9 +202,9 @@ function formReducer(state: FormState, action: FormAction): FormState {
       if (!isSolicitorInList) {
           const solicitorAsWorker: ExternalWorker = {
             email: user.email || undefined,
-            nombre: user.displayName || 'Ejecutante del trabajo',
+            nombre: user.displayName || 'Ejecutante del trabajo / Líder del equipo Ejecutante',
             cedula: '',
-            rol: 'Ejecutante del trabajo',
+            rol: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
             otroRol: '',
             eps: '',
             arl: '',
@@ -299,7 +297,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'SET_ENTIRE_STATE':
         const { payload } = action;
         return {
-            ...initialState, // Start with a clean initial state
+            ...initialState, 
             generalInfo: { ...initialState.generalInfo, ...payload.generalInfo },
             selectedWorkTypes: { ...initialState.selectedWorkTypes, ...payload.selectedWorkTypes },
             trabajoAlturas: payload.trabajoAlturas || false,
@@ -316,7 +314,6 @@ function formReducer(state: FormState, action: FormAction): FormState {
             solicitanteFirmaApertura: payload.solicitanteFirmaApertura || undefined,
         };
     case 'RESET_FORM':
-      // Limpiar también el localStorage al resetear
       try {
         localStorage.removeItem(LOCAL_STORAGE_KEY);
       } catch (error) {
@@ -395,7 +392,6 @@ export function PermitFormProvider({ children }: { children: React.ReactNode }) 
   // Efecto para guardar en localStorage cada vez que el estado cambia
   useEffect(() => {
     try {
-      // No guardar si el estado es el inicial (formulario vacío)
       if (state !== initialState) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
       }

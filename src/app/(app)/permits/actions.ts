@@ -38,8 +38,6 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   autorizantesSnap.forEach(doc => userIds.add(doc.id));
 
   // Buscar Líderes SST (Solo si es requerido o hay riesgo alto)
-  // Se asume que si el permiso requiere firma SST, se debe notificar a los SST.
-  // También se podría validar por tipos de trabajo de alto riesgo, pero isSSTSignatureRequired suele cubrir esto.
   if (permit.isSSTSignatureRequired || permit.trabajoAlturas || permit.espaciosConfinados || permit.controlEnergia || permit.izajeCargas || permit.excavaciones) {
      let sstQuery = adminDb.collection('users').where('role', '==', 'lider_sst');
      if (permitPlant) {
@@ -48,8 +46,6 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
      const sstSnap = await sstQuery.get();
      sstSnap.forEach(doc => userIds.add(doc.id));
   }
-
-  // Nota: Ya NO se notifica a 'admin' genéricos automáticamente, a menos que sean firmantes.
 
   return Array.from(userIds);
 };
@@ -107,7 +103,6 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   
   if (selectedTypes.length === 0) {
     if (permit.trabajoGeneral) return 'Trabajo General';
-    // Fallback for old data structure
     if (permit.workType && Array.isArray(permit.workType)) {
       return permit.workType.map(key => workTypesMap[key] || key).join(', ');
     }
@@ -129,13 +124,13 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado']: string } = {
-  coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
-  solicitante: 'LÍDER A CARGO DEL EQUIPO EJECUTANTE',
-  autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
-  mantenimiento: 'PERSONAL DE MANTENIMIENTO',
-  lider_sst: 'Firma SST',
-  supervisor_confinado: 'SUPERVISOR DE TRABAJO EN ESPACIOS CONFINADOS',
+const signatureRoles: { [key: string]: string } = {
+  coordinador_alturas: 'Coordinador Alturas',
+  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
+  autorizante: 'Autorizante',
+  mantenimiento: 'Mantenimiento',
+  lider_sst: 'Líder SST',
+  supervisor_confinado: 'Supervisor Esp. Confinado',
 };
 
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
@@ -211,7 +206,6 @@ Se ha creado una nueva solicitud de permiso de trabajo.
 Por favor, revise la solicitud para su aprobación en el siguiente enlace:
 ${permitUrl}`;
     
-    // ✅ WHATSAPP: Solo se envía en la creación del permiso.
     await sendWhatsAppNotification(messageBody);
     
     revalidatePath('/permits');
@@ -262,14 +256,12 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 
   try {
     if (draftId) {
-      // Actualizar un borrador existente
       const docRef = adminDb.collection('permits').doc(draftId);
       await docRef.update({ ...permitPayload, updatedAt: FieldValue.serverTimestamp() });
       revalidatePath(`/permits/${draftId}`);
       revalidatePath('/permits');
       return { success: true, permitId: draftId, isUpdate: true };
     } else {
-      // Crear un nuevo borrador
       const payloadWithTimestamp = { ...permitPayload, createdAt: FieldValue.serverTimestamp() };
       const docRef = await adminDb.collection('permits').add(payloadWithTimestamp as any);
       revalidatePath('/permits');
@@ -308,7 +300,6 @@ export async function addSignatureAndNotify(
 
         const updateData: UpdateData<Permit> = {};
 
-        // Lógica para manejar firmas de cierre y cancelación
         if (role.startsWith('cierre_') || role === 'cancelacion') {
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
@@ -327,7 +318,6 @@ export async function addSignatureAndNotify(
                 updateData['closure.cancelado'] = 'si';
             }
         } else {
-            // ✅ VALIDACIÓN DE PERMISOS ANTES DE FIRMAR
             const canSign = await validateSignaturePermission(permitId, role, user);
             if (!canSign.allowed) {
                 return { success: false, error: canSign.reason };
@@ -346,9 +336,7 @@ export async function addSignatureAndNotify(
             
             updateData[`approvals.${role}`] = approvalData;
 
-            // ✅ LÓGICA DE FIRMA DE SOLICITANTE
             if (role === 'solicitante') {
-                // Copia la firma a la validación diaria del Día 1
                 const validationPayload: ValidacionDiaria = { 
                     dia: 1, 
                     nombre: user.displayName || '', 
@@ -365,21 +353,17 @@ export async function addSignatureAndNotify(
                     }
                 });
 
-                 // Primero, guarda la firma del solicitante pero MANTIENE el estado borrador
                 await docRef.update(updateData);
                 
-                // Recarga los datos del permiso para la verificación de prerrequisitos
                 const updatedPermitAfterSign = (await docRef.get()).data() as Permit;
                 
-                // Ahora, verifica los prerrequisitos
                 if ((updatedPermitAfterSign.trabajoAlturas || updatedPermitAfterSign.selectedWorkTypes?.alturas) && updatedPermitAfterSign.approvals?.coordinador_alturas?.status !== 'aprobado') {
-                    return { success: false, error: 'Se requiere primero la firma del Coordinador de Trabajos en Alturas.' };
+                    return { success: false, error: 'Se requiere primero la firma del Coordinador Alturas.' };
                 }
                 if ((updatedPermitAfterSign.espaciosConfinados || updatedPermitAfterSign.selectedWorkTypes?.confinado) && updatedPermitAfterSign.approvals?.supervisor_confinado?.status !== 'aprobado') {
-                    return { success: false, error: 'Se requiere primero la firma del Supervisor de Espacios Confinados.' };
+                    return { success: false, error: 'Se requiere primero la firma del Supervisor Esp. Confinado.' };
                 }
 
-                // Si todos los prerrequisitos están bien, actualiza el estado y número
                 if (updatedPermitAfterSign.status === 'borrador') {
                     const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                     await docRef.update({
@@ -395,7 +379,6 @@ export async function addSignatureAndNotify(
         const permitDoc = await docRef.get();
         const updatedPermitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
 
-        // Si el estado acaba de cambiar de 'borrador' a 'pendiente_revision', envía las notificaciones
         if (permitBeforeData.status === 'borrador' && updatedPermitData.status === 'pendiente_revision') {
             const message = `El permiso #${updatedPermitData.number} ha sido enviado y está pendiente de revisión.`;
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
@@ -408,18 +391,17 @@ export async function addSignatureAndNotify(
              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
              const permitUrl = `${baseUrl}/permits/${permitId}`;
              const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
- Se ha creado una nueva solicitud de permiso de trabajo.
+Se ha enviado una nueva solicitud de permiso de trabajo.
  
-  📄 *Número:* ${updatedPermitData.number}
- 👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}
- 🛠️ *Tipo de Trabajo:* ${workTypesText}
+📄 *Número:* ${updatedPermitData.number}
+👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}
+🛠️ *Tipo de Trabajo:* ${workTypesText}
  
- Por favor, revise la solicitud para su aprobación en el siguiente enlace:
- ${permitUrl}`;
+Por favor, revise la solicitud:
+${permitUrl}`;
             await sendWhatsAppNotification(messageBody);
 
         } else if (role !== 'solicitante' && permitBeforeData.status === 'borrador' && updatedPermitData.approvals?.solicitante?.status === 'aprobado') {
-             // Lógica de promoción automática después de la firma de un prerrequisito
             const allPrereqsMet =
                 (!updatedPermitData.trabajoAlturas || updatedPermitData.approvals?.coordinador_alturas?.status === 'aprobado') &&
                 (!updatedPermitData.espaciosConfinados || updatedPermitData.approvals?.supervisor_confinado?.status === 'aprobado');
@@ -455,7 +437,6 @@ ${permitUrl}`;
             }
 
         } else if (!role.startsWith('cierre_') && role !== 'cancelacion') {
-            // Notificación genérica de firma si no se promocionó el estado
             const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
             const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${updatedPermitData.number} como ${signatureRoleName}.`;
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
@@ -485,38 +466,32 @@ async function checkAllRequiredSignaturesComplete(
 ): Promise<boolean> {
     const { approvals } = permitData;
     
-    // Firma del solicitante es SIEMPRE requerida
     if (approvals?.solicitante?.status !== 'aprobado') {
         return false;
     }
     
-    // Firma del autorizante es SIEMPRE requerida
     if (approvals?.autorizante?.status !== 'aprobado') {
         return false;
     }
     
-    // Si hay trabajos en alturas, requiere firma del coordinador
     if (permitData.trabajoAlturas || permitData.selectedWorkTypes?.alturas) {
         if (approvals?.coordinador_alturas?.status !== 'aprobado') {
             return false;
         }
     }
     
-    // Si hay espacios confinados, requiere firma del supervisor
     if (permitData.espaciosConfinados || permitData.selectedWorkTypes?.confinado) {
         if (approvals?.supervisor_confinado?.status !== 'aprobado') {
             return false;
         }
     }
     
-    // Si hay control de energía, requiere firma de mantenimiento
     if (permitData.controlEnergia) {
         if (approvals?.mantenimiento?.status !== 'aprobado') {
             return false;
         }
     }
     
-    // Si SST es requerido, validar su firma
     if (permitData.isSSTSignatureRequired) {
         if (approvals?.lider_sst?.status !== 'aprobado') {
             return false;
@@ -533,13 +508,13 @@ function validateStateTransition(currentStatus: PermitStatus, targetStatus: Perm
             'pendiente_revision': ['solicitante', 'lider_tarea', 'admin']
         },
         'pendiente_revision': {
-            'en_ejecucion': ['autorizante', 'admin', 'lider_tarea'], // Permitir a lider_tarea iniciar si ya esta aprobado por otros
+            'en_ejecucion': ['autorizante', 'admin', 'lider_tarea'],
             'aprobado': ['autorizante', 'admin'],
             'rechazado': ['autorizante', 'lider_sst', 'admin']
         },
         'aprobado': {
             'en_ejecucion': ['lider_tarea', 'admin'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin'] // Permitir rechazar incluso si esta aprobado
+            'rechazado': ['autorizante', 'lider_sst', 'admin']
         },
         'en_ejecucion': {
             'suspendido': ['lider_sst', 'admin', 'autorizante'],
@@ -606,7 +581,6 @@ export async function updatePermitStatus(
         const updatedPermitData = { ...permitData, ...updateData, id: permitId } as Permit;
         const triggeredBy = currentUser;
         
-        // Mensajes de notificación mejorados
         let notificationType: Notification['type'] = 'status_change';
         let message = `El estado del permiso #${permitData.number} ha sido actualizado a: ${getStatusText(status)}.`;
 
@@ -668,7 +642,6 @@ async function validateSignaturePermission(
     }
     const permit = permitDoc.data() as Permit;
     
-    // ✅ Verificar que el permiso esté en un estado válido para firmar
     if (!['borrador', 'pendiente_revision'].includes(permit.status)) {
         return { allowed: false, reason: `No se puede firmar un permiso en estado '${permit.status}'.` };
     }
@@ -694,7 +667,7 @@ async function validateSignaturePermission(
 
         case 'solicitante':
             if (permit.createdBy !== currentUser.uid && currentUser.role !== 'admin') {
-                return { allowed: false, reason: 'Solo el creador del permiso puede firmar como solicitante.' };
+                return { allowed: false, reason: 'Solo el creador del permiso puede firmar.' };
             }
             break;
             
@@ -703,7 +676,7 @@ async function validateSignaturePermission(
                 return { allowed: false, reason: 'Rol de Líder SST requerido para esta firma.' };
             }
             if (!permit.isSSTSignatureRequired) {
-                return { allowed: false, reason: 'Firma de SST no es requerida para este permiso.' };
+                return { allowed: false, reason: 'Firma de Líder SST no es requerida para este permiso.' };
             }
             if (permit.approvals?.solicitante?.status !== 'aprobado') {
                 return { allowed: false, reason: 'Se requiere primero la firma del solicitante.' };
@@ -765,7 +738,6 @@ export async function addDailyValidationSignature(
     }
     const permitData = permitSnap.data() as Permit;
 
-    // ✅ Verificar que el permiso esté en ejecución para validaciones diarias
     if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
         return { success: false, error: 'Solo se pueden agregar validaciones diarias en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
     }
@@ -783,7 +755,7 @@ export async function addDailyValidationSignature(
     const validationArray = (anexoUpdate.validacion[validationType] as ValidacionDiaria[]) || [];
     
     while (validationArray.length <= index) {
-        validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
+        validationArray.push({ dia: validationArray.length + 1, nombre: '', firma: '', fecha: '' });
     }
 
     validationArray[index] = data;
@@ -816,7 +788,6 @@ export async function addDailyValidationSignature(
   }
 }
 
-// ✨ NUEVA FUNCIÓN: Agregar firma de cierre diario
 export async function addDailyValidationClosureSignature(
   permitId: string,
   anexoName: string,
@@ -845,7 +816,6 @@ export async function addDailyValidationClosureSignature(
     }
     const permitData = permitSnap.data() as Permit;
 
-    // ✅ Verificar que el permiso esté en ejecución
     if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
       return { success: false, error: 'Solo se pueden agregar firmas de cierre diario en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
     }
@@ -863,10 +833,9 @@ export async function addDailyValidationClosureSignature(
     const validationArray = (anexoUpdate.validacion.responsable as ValidacionDiaria[]) || [];
 
     while (validationArray.length <= index) {
-      validationArray.push({ dia: validationArray.length + 1, nombre: '', fecha: '', firma: '' });
+      validationArray.push({ dia: validationArray.length + 1, nombre: '', firma: '', fecha: '' });
     }
 
-    // ✅ Agregar datos de cierre al registro existente
     validationArray[index] = {
       ...validationArray[index],
       firmaCierre: data.firma,
@@ -954,7 +923,6 @@ export async function closePermitByAnyUser(
       }
     }
     
-    // ✅ WHATSAPP: Enviar notificación crítica por WhatsApp
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permitId}`;
     const whatsappMessage = `*Permiso Cerrado por Emergencia - SGTC* 🔒
@@ -997,7 +965,6 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
 
         const permitData = permitSnap.data() as Permit;
         
-        // ✅ CORRECCIÓN: Validación de estado corregida para firma de apertura
         if (signatureType === 'firmaApertura' && !['pendiente_revision', 'aprobado', 'en_ejecucion', 'borrador'].includes(permitData.status)) {
             return { success: false, error: 'Solo se puede firmar apertura cuando el permiso está pendiente, aprobado, en ejecución o en borrador.' };
         }

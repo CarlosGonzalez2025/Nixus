@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, use } from 'react';
@@ -176,16 +175,16 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 
 
 type SignatureRole = 'Ejecutante del trabajo' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
-const signatureRoles: { [key in SignatureRole]: string } = {
-  coordinador_alturas: 'COORDINADOR (ANEXO)',
-  solicitante: 'LÍDER A CARGO DEL EQUIPO EJECUTANTE',
-  mantenimiento: 'MANTENIMIENTO (SI APLICA)',
-  lider_sst: 'Firma SST',
-  autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
-  supervisor_confinado: 'SUPERVISOR (ESP. CONFINADO)',
+const signatureRoles: { [key: string]: string } = {
+  coordinador_alturas: 'Coordinador Alturas',
+  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
+  mantenimiento: 'Mantenimiento',
+  lider_sst: 'Líder SST',
+  autorizante: 'Autorizante',
+  supervisor_confinado: 'Supervisor Esp. Confinado',
 };
 
-const signatureConsents: { [key in SignatureRole]?: string } = {
+const signatureConsents: { [key: string]?: string } = {
   solicitante: "Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.",
   coordinador_alturas: "Al firmar como Coordinador de Trabajos en Alturas, manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias.",
   supervisor_confinado: "Al firmar como Supervisor de Espacios Confinados, certifico que se han implementado todas las medidas de seguridad necesarias para el ingreso y trabajo en el área designada.",
@@ -204,7 +203,7 @@ export default function PermitDetailPage() {
   const { toast } = useToast();
 
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-  const [signingRole, setSigningRole] = useState<{ role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', type: 'firmaApertura' | 'firmaCierre' } | null>(null);
+  const [signingRole, setSigningRole] = useState<{ role: string | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', type: 'firmaApertura' | 'firmaCierre' } | null>(null);
   const [signerName, setSignerName] = useState('');
   const [isSigning, setIsSigning] = useState(false);
   const [signatureObservation, setSignatureObservation] = useState("");
@@ -377,7 +376,7 @@ export default function PermitDetailPage() {
     setIsDailyClosureSignatureOpen(true);
   };
 
-  const openSignatureDialog = (role: SignatureRole | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
+  const openSignatureDialog = (role: string | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', signatureType: 'firmaApertura' | 'firmaCierre') => {
     if (!currentUser) return;
     setSigningRole({ role, type: signatureType });
     setSignatureObservation(""); // Limpiar observaciones anteriores
@@ -414,7 +413,7 @@ export default function PermitDetailPage() {
 
       const result = await addSignatureAndNotify(
         permit.id,
-        signingRole.role,
+        signingRole.role as any,
         signingRole.type,
         signatureDataUrl,
         simpleUser,
@@ -525,15 +524,15 @@ export default function PermitDetailPage() {
       case 'solicitante':
         if (!isCreator && !hasCorrectRole('admin')) return { can: false, reason: 'Solo el creador del permiso puede firmar.' };
         if (selectedWorkTypes?.alturas && !hasSigned(coordinador_alturas)) {
-          return { can: false, reason: 'Esperando firma del Coordinador de Trabajos en Alturas.' };
+          return { can: false, reason: 'Esperando firma del Coordinador Alturas.' };
         }
         if (selectedWorkTypes?.confinado && !hasSigned(supervisor_confinado)) {
-          return { can: false, reason: 'Esperando firma del Supervisor de Espacios Confinados.' };
+          return { can: false, reason: 'Esperando firma del Supervisor Esp. Confinado.' };
         }
         return { can: true };
 
       case 'lider_sst':
-        if (!isSSTSignatureRequired) return { can: false, reason: 'Firma de SST no requerida para esta tarea.' };
+        if (!isSSTSignatureRequired) return { can: false, reason: 'Firma de Líder SST no requerida para esta tarea.' };
         if (!hasCorrectRole('lider_sst')) return { can: false, reason: 'No tienes el rol requerido.' };
         if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Ejecutante del trabajo.' };
         return { can: true };
@@ -983,9 +982,9 @@ export default function PermitDetailPage() {
   ];
 
 
-  const SignatureCard: React.FC<{ role: SignatureRole }> = ({ role }) => {
+  const SignatureCard: React.FC<{ role: string }> = ({ role }) => {
     const approval = permit.approvals?.[role as keyof typeof permit.approvals];
-    const { can, reason } = canSign(role);
+    const { can, reason } = canSign(role as SignatureRole);
     const consentText = signatureConsents[role];
 
     const SignButton = () => (
@@ -995,7 +994,7 @@ export default function PermitDetailPage() {
     );
 
     const roleNames: { [key in UserRole]: string } = {
-      solicitante: 'Ejecutante del trabajo',
+      solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
       autorizante: 'Autorizante',
       lider_tarea: 'Líder de Tarea',
       ejecutante: 'Ejecutante',
@@ -1005,10 +1004,10 @@ export default function PermitDetailPage() {
     };
     const getRoleDisplayName = () => {
       if (role === 'coordinador_alturas') {
-        return 'Coordinador de Trabajo en Alturas';
+        return 'Coordinador Alturas';
       }
        if (role === 'supervisor_confinado') {
-        return 'Supervisor Esp. Confinados';
+        return 'Supervisor Esp. Confinado';
       }
       if (approval?.userRole) {
         return roleNames[approval.userRole] || approval.userRole;
@@ -1019,7 +1018,7 @@ export default function PermitDetailPage() {
     return (
       <Card className="flex flex-col">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role]}</CardTitle>
+          <CardTitle className="text-sm font-bold uppercase text-gray-500">{signatureRoles[role] || role}</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col justify-between gap-4">
           <div className="flex-grow">
@@ -1072,7 +1071,7 @@ export default function PermitDetailPage() {
                 </Tooltip>
               </TooltipProvider>
             )}
-            {role === 'Ejecutante del trabajo' && permit.status === 'borrador' && (
+            {role === 'solicitante' && permit.status === 'borrador' && (
               <Button variant="outline" onClick={() => router.push(`/permits/create?edit=${permit.id}`)} className="flex-1">
                 <Edit className="mr-2" /> Modificar
               </Button>
@@ -1355,7 +1354,7 @@ export default function PermitDetailPage() {
           <Section title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
               <Field label="Número de Permiso" value={<span className="font-bold text-primary">{permit.number || permit.id.substring(0, 8)}</span>} />
-              <Field label="Ejecutante del trabajo" value={permit.user?.displayName} />
+              <Field label="Responsable de la Solicitud" value={permit.user?.displayName} />
               <Field label="Fecha Creación" value={safeFormat(permit.createdAt, 'dd/MM/yyyy HH:mm')} />
               <Field label="Área Específica" value={permit.generalInfo?.areaEspecifica} />
               <Field label="Planta" value={permit.generalInfo?.planta} />
@@ -1804,7 +1803,7 @@ export default function PermitDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {permit.selectedWorkTypes?.alturas && <SignatureCard role="coordinador_alturas" />}
               {permit.selectedWorkTypes?.confinado && <SignatureCard role="supervisor_confinado" />}
-              <SignatureCard role="Ejecutante del trabajo" />
+              <SignatureCard role="solicitante" />
               {isSSTSignatureRequired && <SignatureCard role="lider_sst" />}
               <SignatureCard role="autorizante" />
               {permit.controlEnergia && <SignatureCard role="mantenimiento" />}
@@ -1871,7 +1870,7 @@ export default function PermitDetailPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => openSignatureDialog('Ejecutante del trabajo', 'firmaApertura')}>
+            <AlertDialogAction onClick={() => openSignatureDialog('solicitante', 'firmaApertura')}>
               Confirmar y Firmar
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -2091,5 +2090,3 @@ export default function PermitDetailPage() {
     </div>
   );
 }
-
-    

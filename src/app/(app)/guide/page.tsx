@@ -125,7 +125,7 @@ export default function GuidePage() {
           <FlowStep
             step="1"
             title="Creación y Solicitud del Permiso"
-            role="Rol: Ejecutante del trabajo / Líder de Tarea"
+            role="Rol: Ejecutante del trabajo / Líder del equipo Ejecutante"
             description="El proceso inicia cuando un usuario completa el formulario de 'Nuevo Permiso'. Se debe llenar la información general, seleccionar los tipos de trabajo (lo que activará los anexos correspondientes), y diligenciar el ATS y las listas de verificación. Al guardar, el permiso queda en estado 'Borrador'."
             icon={FilePlus}
             badgeText="Borrador"
@@ -135,7 +135,7 @@ export default function GuidePage() {
           <FlowStep
             step="2"
             title="Flujo de Firmas de Apertura (Secuencial)"
-            role="Roles: Ejecutante del trabajo, Coordinador, Autorizante, Mantenimiento, SST"
+            role="Roles: Ejecutante, Coordinador Alturas, Autorizante, Mantenimiento, SST"
             description="Una vez creado el borrador, comienza el proceso de firmas. Este flujo es secuencial y condicional, lo que significa que ciertos roles deben firmar antes que otros. Al firmar, el Ejecutante del trabajo envía formalmente el permiso a revisión."
             icon={FileSignature}
             badgeText="Pendiente de Revisión"

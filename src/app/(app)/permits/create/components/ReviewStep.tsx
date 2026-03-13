@@ -178,7 +178,6 @@ const ReviewChecklist = ({
     </div>
 );
 
-// Componente de Card de Estadística mejorado
 const StatCard = ({
     icon: Icon,
     value,
@@ -204,7 +203,6 @@ const StatCard = ({
     </div>
 );
 
-// Componente Collapsible Section mejorado
 const CollapsibleSection = ({
     children,
     trigger,
@@ -269,24 +267,20 @@ const anexoConfinadoPeligros = [
     { id: 'fuentesEnergiaAisladas', label: 'A. ESTAN LAS FUENTES DE ENERGIA (ELECTRICA, MECANICA, HIDRAULICA, TERMICA NEUMATICA) AISLADAS' },
     { id: 'ejecutantesConocenMedidas', label: 'B. TODOS LOS EJECUTANTES CONOCEN LAS MEDIDAS DE PRECAUCIÓN ESTABLECIDAS EN LA EVALUACIÓN DE RIESGOS?' },
     { id: 'ejecutantesEntrenados', label: 'C. ESTÁN LOS EJECUTANTES ENTRENADOS' },
-    { id: 'entradasSalidasFlujoBloqueadas', label: 'D. ESTAN BLOQUEADAS LAS ENTRADAS Y SALIDAS DE FLUJO - SE INSTALARON AISLAMIENTOS (COLOMBINAS, CIEGOS)' },
-    { id: 'areaDelimitada', label: 'E. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO PARA PREVENIR EL INGRESO AL ESPACIO CONFINADO DE PERSONAL NO AUTORIZADO O AJENO A LA ACTIVIDAD' },
-    { id: 'monitorAtmosferasCalibrado', label: 'F. SE TIENE EN SITIO UN MONITOR DE ATMOSFERAS PELIGROSAS, CALIBRADO' },
-    { id: 'equiposIluminacionExplosion', label: 'G. SON A PRUEBA DE EXPLOSION LOS EQUIPOS DE ILUMINACION, Y LAS CONEXIONES DE LOS EQUIPOS' },
-    { id: 'equiposVentilacionExplosion', label: 'H. SON A PRUEBA DE EXPLOSION LOS EQUIPOS DE VENTILACION O SUMINISTRO DE AIRE FORZADO Y SUS CONEXIONES' },
-    { id: 'medidasSeguridadEquiposNoExplosion', label: 'I. EN CASO DE QUE LOS EQUIPOS NO SEAN A PRUEBA DE EXPLOSION SE SE TOMARON LAS MEDIDAS DE SEGURUDAD NECESARIA PARA EVITAR RIESGOS' },
+    { id: 'entradasSalidasFlujoBloqueadas', label: 'D. ENTRADAS Y SALIDAS DE FLUJO BLOQUEADAS?' },
+    { id: 'areaDelimitada', label: 'E. ESTA DELIMITADA Y SEÑALIZADA EL AREA DE TRABAJO' },
+    { id: 'monitorAtmosferasCalibrado', label: 'F. MONITOR DE ATMÓSFERAS CALIBRADO?' },
+    { id: 'equiposIluminacionExplosion', label: 'G. SON A PRUEBA DE EXPLOSION LOS EQUIPOS DE ILUMINACION' },
+    { id: 'equiposVentilacionExplosion', label: 'H. SON A PRUEBA DE EXPLOSION LOS EQUIPOS DE VENTILACION' },
     { id: 'equiposVentilacionSuficientes', label: 'J. LOS EQUIPOS DE VENTILACION ESTAN DISPONIBLES Y SON SUFICIENTES' },
-    { id: 'equiposRespiracionAutonoma', label: 'K. ESTAN DISPONIBLES EN EL SITIO EQUIPOS DE RESPIRACION AUTONOMA (AUTOCONTENIDO) EN CASO DE EMERGENCIA' },
+    { id: 'equiposRespiracionAutonoma', label: 'K. ESTAN DISPONIBLES EN EL SITIO EQUIPOS DE RESPIRACION AUTONOMA EN CASO DE EMERGENCIA' },
     { id: 'elementosAtencionEmergencias', label: 'L. SE CUENTA CON ELEMENTOS PARA ATENCION DE EMERGENCIAS EN EL AREA' },
     { id: 'planEmergenciaRescate', label: 'M. SE CUENTA CON PLAN DE EMERGENCIA PARA RESCATE' },
-    { id: 'hojasSeguridadDisponibles', label: 'N. ESTAN DISPONIBLES LAS HOJAS DE SEGURIDAD DE PRODUCTOS QUIMICOS EN CASO DE USARSE.' },
-    { id: 'verificadoConexionesPuestaTierra', label: 'Ñ.SE HA VERIFICADO EL ESTADO DE CONEXIONES Y PUESTA A TIERRA DE EQUIPOS Y ELEMENTOS A USAR.' },
-    { id: 'vigiaPermanente', label: 'O.SE VERIFICA QUE PARA EL INGRESO A ESPACIOS CONFINADOS SE CUENTE UN VIGIA PERMANENTE EN EL AREA' },
-    { id: 'herramientasAdecuadas', label: 'P. SE VERIFICO QUE LAS HERRAMIENTAS MANUALES Y OTROS ELEMENTOS SEAN LOS ADECUADOS PARA LAS CONDICIONES Y ATMOSFERAS DEL LUGAR' },
-    { id: 'personalSaludable', label: 'Q.EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD' },
-    { id: 'verificadoEpp', label: 'R.SE VERIFICO EL EQUIPO Y ELEMENTOS DE PROTECCION PERSONAL A UTILIZAR' },
-    { id: 'circunstanciaModificadora', label: 'S.EXISTE ALGUNA CIRCUSTANCIA O FACTOR QUE PUEDA MODIFICAR EL TRABAJO' },
-    { id: 'procedimientoComunicacion', label: 'SE CUENTA CON PROCEDMIENTO DE COMUNICACIÓN CUAL ?' }
+    { id: 'hojasSeguridadDisponibles', label: 'N. ESTAN DISPONIBLES LAS HOJAS DE SEGURIDAD DE PRODUCTOS QUIMICOS' },
+    { id: 'vigiaPermanente', label: 'O. SE VERIFICA QUE PARA EL INGRESO A ESPACIOS CONFINADOS SE CUENTE CON UN VIGIA PERMANENTE EN EL AREA' },
+    { id: 'herramientasAdecuadas', label: 'P. SE VERIFICO QUE LAS HERRAMIENTAS SEAN LAS ADECUADAS' },
+    { id: 'personalSaludable', label: 'Q. EL PERSONAL SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD' },
+    { id: 'verificadoEpp', label: 'R. SE VERIFICO EL EQUIPO Y ELEMENTOS DE PROTECCION PERSONAL' }
 ];
 
 // ============================================================================
@@ -361,7 +355,6 @@ export function ReviewStep() {
     const workTypes = getWorkTypesString();
     const peligrosIdentificadosCount = Object.values(state.anexoATS?.peligros || {}).filter(v => v === 'si').length + (state.anexoATS?.peligrosAdicionales?.length || 0);
     const eppRequeridos = getFormattedEpp();
-    const workersSinFirma = state.workers?.filter(w => !w.firmaApertura).length || 0;
 
     return (
         <div className="space-y-8 pb-8">
@@ -519,7 +512,7 @@ export function ReviewStep() {
                                 value={state.generalInfo.nombreSolicitante}
                             />
                             <DetailField 
-                                label="LÍDER A CARGO DEL EQUIPO EJECUTANTE" 
+                                label="Responsable" 
                                 value={state.generalInfo.responsable?.nombre}
                             />
                             <DetailField 
