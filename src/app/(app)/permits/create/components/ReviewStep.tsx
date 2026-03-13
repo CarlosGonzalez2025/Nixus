@@ -281,7 +281,7 @@ const anexoConfinadoPeligros = [
     { id: 'planEmergenciaRescate', label: 'M. SE CUENTA CON PLAN DE EMERGENCIA PARA RESCATE' },
     { id: 'hojasSeguridadDisponibles', label: 'N. ESTAN DISPONIBLES LAS HOJAS DE SEGURIDAD DE PRODUCTOS QUIMICOS EN CASO DE USARSE.' },
     { id: 'verificadoConexionesPuestaTierra', label: 'Ñ.SE HA VERIFICADO EL ESTADO DE CONEXIONES Y PUESTA A TIERRA DE EQUIPOS Y ELEMENTOS A USAR.' },
-    { id: 'vigiaPermanente', label: 'O.SE VERIFICA QUE PARA EL INGRESO A ESPACIOS CONFINADOS SE CUENTE CON UN VIGIA PERMANENTE EN EL AREA' },
+    { id: 'vigiaPermanente', label: 'O.SE VERIFICA QUE PARA EL INGRESO A ESPACIOS CONFINADOS SE CUENTE UN VIGIA PERMANENTE EN EL AREA' },
     { id: 'herramientasAdecuadas', label: 'P. SE VERIFICO QUE LAS HERRAMIENTAS MANUALES Y OTROS ELEMENTOS SEAN LOS ADECUADOS PARA LAS CONDICIONES Y ATMOSFERAS DEL LUGAR' },
     { id: 'personalSaludable', label: 'Q.EL PERSONAL QUE REALIZA EL TRABAJO SE ENCUENTRA EN CONDICIONES ADECUADAS DE SALUD PARA LA ACTIVIDAD' },
     { id: 'verificadoEpp', label: 'R.SE VERIFICO EL EQUIPO Y ELEMENTOS DE PROTECCION PERSONAL A UTILIZAR' },
@@ -879,7 +879,7 @@ export function ReviewStep() {
                 <CardContent className="space-y-4">
                     {[
                         { step: 1, text: <>Firme el permiso en la sección <strong>"Firma del Líder a Cargo"</strong>. Esto habilitará el botón de envío final.</> },
-                        { step: 2, text: <>Presione <strong>"Enviar Permiso"</strong> para guardar los cambios y enviarlo al flujo de aprobación.</> },
+                        { step: 2, text: <>Presione <strong>"Enviar Permiso para Autorización"</strong> para guardar los cambios y enviarlo al flujo de aprobación.</> },
                         { step: 3, text: <>El permiso cambiará de estado a "Pendiente de Revisión" y se notificará a los aprobadores correspondientes.</> }
                     ].map(({ step, text }) => (
                         <div key={step} className="flex items-start gap-4 group">

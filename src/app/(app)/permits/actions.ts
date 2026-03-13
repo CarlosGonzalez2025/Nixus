@@ -1,4 +1,3 @@
-
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
@@ -132,7 +131,7 @@ const getStatusText = (status: string) => {
 
 const signatureRoles: { [key in 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado']: string } = {
   coordinador_alturas: 'COORDINADOR DE TRABAJOS EN ALTURAS',
-  solicitante: 'QUIEN SOLICITA (LÍDER A CARGO DEL EQUIPO EJECUTANTE)',
+  solicitante: 'LÍDER A CARGO DEL EQUIPO EJECUTANTE',
   autorizante: 'QUIEN AUTORIZA (JEFES Y DUEÑOS DE AREA)',
   mantenimiento: 'PERSONAL DE MANTENIMIENTO',
   lider_sst: 'Firma SST',
@@ -411,7 +410,7 @@ export async function addSignatureAndNotify(
              const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
  Se ha creado una nueva solicitud de permiso de trabajo.
  
- 📄 *Número:* ${updatedPermitData.number}
+  📄 *Número:* ${updatedPermitData.number}
  👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}
  🛠️ *Tipo de Trabajo:* ${workTypesText}
  
@@ -1030,4 +1029,3 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
-    
