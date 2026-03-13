@@ -128,7 +128,7 @@ const signatureRoles: { [key: string]: string } = {
   coordinador_alturas: 'Coordinador Alturas',
   solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
   autorizante: 'Autorizante',
-  mantenimiento: 'Mantenimiento',
+  mantenimiento: 'Mantenimiento / Aislador Competente',
   lider_sst: 'Líder SST',
   supervisor_confinado: 'Supervisor Esp. Confinado',
 };

@@ -8,7 +8,7 @@ Este documento detalla el cronograma de actividades ejecutadas durante el diseñ
 ### 1. Fase de Planeación y Diseño
 *   **Reunión inicial:** Sesión de alineación con el equipo HSE y stakeholders de NIXUS para definir objetivos.
 *   **Análisis de procesos:** Levantamiento de los procesos actuales basados en papel para su digitalización.
-*   **Definición de Roles (RBAC):** Definición estricta de permisos para roles: `admin`, `solicitante`, `autorizante`, `lider_sst` y `mantenimiento`.
+*   **Definición de Roles (RBAC):** Definición estricta de permisos para roles: `admin`, `solicitante` (Ejecutante / Líder), `autorizante`, `lider_sst` y `mantenimiento` (Aislador Competente).
 *   **Diseño de Datos:** Estructuración del modelo NoSQL en Firestore (Colecciones: `permits`, `users`, `dynamic_lists`, `notifications`).
 *   **Diseño de Flujo:** Mapeo del ciclo de vida del permiso y la secuencia lógica de firmas digitales.
 *   **Validación de Requisitos:** Firma de requerimientos y aprobación técnica para inicio de obra.

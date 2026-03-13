@@ -135,7 +135,7 @@ export default function GuidePage() {
           <FlowStep
             step="2"
             title="Flujo de Firmas de Apertura (Secuencial)"
-            role="Roles: Ejecutante, Coordinador Alturas, Autorizante, Mantenimiento, SST"
+            role="Roles: Ejecutante, Coordinador Alturas, Autorizante, Mantenimiento / Aislador Competente, SST"
             description="Una vez creado el borrador, comienza el proceso de firmas. Este flujo es secuencial y condicional, lo que significa que ciertos roles deben firmar antes que otros. Al firmar, el Ejecutante del trabajo envía formalmente el permiso a revisión."
             icon={FileSignature}
             badgeText="Pendiente de Revisión"
@@ -156,7 +156,7 @@ export default function GuidePage() {
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
                 <SignatureFlowItem role="Coordinador Alturas" condition="Si aplica" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
-                <SignatureFlowItem role="Líder SST / Mantenimiento" condition="Si aplican" icon={UserCheck} />
+                <SignatureFlowItem role="Líder SST / Mantenimiento / Aislador Competente" condition="Si aplican" icon={UserCheck} />
                 <ChevronRight className="h-6 w-6 text-gray-300 self-center hidden md:block" />
                 <SignatureFlowItem role="Autorizante" condition="Siempre requerido" icon={UserCheck} />
               </div>

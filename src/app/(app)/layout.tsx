@@ -52,13 +52,13 @@ import { PWAUpdater } from '@/components/PWAUpdater';
 
 const getRoleName = (role?: UserRole) => {
   const roles: { [key in UserRole]: string } = {
-    solicitante: 'Solicitante de la Tarea',
-    autorizante: 'Quien Autoriza',
+    solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
+    autorizante: 'Autorizante',
     lider_tarea: 'Líder de la Tarea',
     ejecutante: 'Ejecutante del Trabajo',
     lider_sst: 'Líder SST',
     admin: 'Administrador',
-    mantenimiento: 'Mantenimiento',
+    mantenimiento: 'Mantenimiento / Aislador Competente',
   };
   return role ? roles[role] || 'Usuario' : 'Usuario';
 };

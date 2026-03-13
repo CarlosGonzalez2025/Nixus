@@ -58,6 +58,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
 import { format, differenceInCalendarDays, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { handleExportPDF } from '@/lib/pdf-generators';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
@@ -104,7 +105,7 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
 // ✅ Helper seguro para formatear fechas (NUEVO)
 const safeFormat = (date: any, fmt: string): string => {
   const parsedDate = parseFirestoreDate(date);
-  return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt) : 'N/A';
+  return parsedDate && isValid(parsedDate) ? format(parsedDate, fmt, { locale: es }) : 'N/A';
 };
 
 
@@ -174,11 +175,11 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 };
 
 
-type SignatureRole = 'Ejecutante del trabajo' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
+type SignatureRole = 'Ejecutante del trabajo / Líder del equipo Ejecutante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
 const signatureRoles: { [key: string]: string } = {
   coordinador_alturas: 'Coordinador Alturas',
   solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-  mantenimiento: 'Mantenimiento',
+  mantenimiento: 'Mantenimiento / Aislador Competente',
   lider_sst: 'Líder SST',
   autorizante: 'Autorizante',
   supervisor_confinado: 'Supervisor Esp. Confinado',
@@ -1000,7 +1001,7 @@ export default function PermitDetailPage() {
       ejecutante: 'Ejecutante',
       lider_sst: 'Líder SST',
       admin: 'Administrador',
-      mantenimiento: 'Mantenimiento'
+      mantenimiento: 'Mantenimiento / Aislador Competente'
     };
     const getRoleDisplayName = () => {
       if (role === 'coordinador_alturas') {
@@ -1361,8 +1362,8 @@ export default function PermitDetailPage() {
               <Field label="Proceso" value={permit.generalInfo?.proceso} />
               <Field label="Empresa" value={permit.generalInfo?.empresa} />
               <Field label="Contrato" value={permit.generalInfo?.contrato} />
-              <Field label="Validez Desde" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yyyy HH:mm') : 'N/A'} />
-              <Field label="Validez Hasta" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yyyy HH:mm') : 'N/A'} />
+              <Field label="Validez Desde" value={permit.generalInfo?.validFrom ? format(new Date(permit.generalInfo.validFrom), 'dd/MM/yyyy HH:mm', { locale: es }) : 'N/A'} />
+              <Field label="Validez Hasta" value={permit.generalInfo?.validUntil ? format(new Date(permit.generalInfo.validUntil), 'dd/MM/yyyy HH:mm', { locale: es }) : 'N/A'} />
               <div className="md:col-span-2 lg:col-span-3">
                 <Field label="Tipos de Trabajo" value={<span className="font-semibold text-primary">{getWorkTypesString(permit)}</span>} />
               </div>

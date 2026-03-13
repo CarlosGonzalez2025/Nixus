@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -99,13 +98,13 @@ type BulkUser = z.infer<typeof bulkCreateUserSchema>;
 
 
 const roleNames: { [key in UserRole]: string } = {
-  solicitante: 'Solicitante de la Tarea',
-  autorizante: 'Quien Autoriza',
+  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
+  autorizante: 'Autorizante',
   lider_tarea: 'Líder de la Tarea',
   ejecutante: 'Ejecutante del Trabajo',
   lider_sst: 'Líder SST',
   admin: 'Administrador',
-  mantenimiento: 'Mantenimiento'
+  mantenimiento: 'Mantenimiento / Aislador Competente'
 };
 
 const roleColors: { [key in UserRole]: string } = {
@@ -1111,7 +1110,7 @@ export default function UsersPage() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rol</FormLabel>
+                    <FormLabel>Rol</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="h-11">
@@ -1146,5 +1145,3 @@ export default function UsersPage() {
     </>
   );
 }
-
-    
