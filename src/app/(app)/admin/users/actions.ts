@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getAuth } from 'firebase-admin/auth';
@@ -166,6 +165,25 @@ export async function updateUser(data: z.infer<typeof updateFormSchema>) {
   } catch (error: any) {
      console.error('Error updating user:', error);
      return { error: 'No se pudo actualizar el usuario.' };
+  }
+}
+
+export async function deleteUser(userId: string) {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
+  try {
+    const auth = getAuth();
+    // 1. Delete from Firebase Authentication
+    await auth.deleteUser(userId);
+    // 2. Delete from Firestore
+    await adminDb.collection('users').doc(userId).delete();
+    
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting user:', error);
+    return { error: 'No se pudo eliminar el usuario.' };
   }
 }
 

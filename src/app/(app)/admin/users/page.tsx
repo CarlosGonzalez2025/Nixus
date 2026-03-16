@@ -29,7 +29,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers } from './actions';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, deleteUser } from './actions';
 import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -64,6 +64,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
@@ -521,6 +522,35 @@ export default function UsersPage() {
     }
   }
 
+  const handleDeleteUser = async (userId: string) => {
+    if (userId === adminUser?.uid) {
+      toast({
+        variant: 'destructive',
+        title: 'Acción No Permitida',
+        description: 'No puede eliminarse a sí mismo.'
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await deleteUser(userId);
+      if (result.error) throw new Error(result.error);
+      toast({
+        title: '🗑️ Usuario Eliminado',
+        description: 'El usuario ha sido eliminado correctamente.'
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error al eliminar',
+        description: error.message
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
     const originalStatus = users.find(u => u.uid === userId)?.disabled;
 
@@ -905,10 +935,32 @@ export default function UsersPage() {
                             </Badge>
                             <span className="text-xs text-gray-500">{user.empresa}</span>
                           </div>
-                          <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta acción eliminará a <strong>{user.displayName}</strong> permanentemente del sistema. No se puede deshacer.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-red-600 hover:bg-red-700">
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       </div>
                     )) : (
@@ -958,15 +1010,38 @@ export default function UsersPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditModal(user)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Editar
-                                </Button>
+                                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditModal(user)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Editar
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Eliminar
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Está absolutamente seguro?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Esta acción eliminará al usuario <strong>{user.displayName}</strong> permanentemente. El usuario perderá acceso inmediato al sistema.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-red-600 hover:bg-red-700">
+                                          Eliminar Usuario
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                                 <Switch
                                   checked={!user.disabled}
                                   onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
