@@ -27,10 +27,17 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
   const { state } = usePermitForm();
   const additionalWorkersCount = parseInt(state.generalInfo.numTrabajadores || '0', 10);
   const totalRequiredWorkers = additionalWorkersCount + 1; // Solicitante + adicionales
-  
+
   const hasWorkerWithoutSignature = workers.some(worker => !worker.firmaApertura);
   const isLimitReached = workers.length >= totalRequiredWorkers;
   const canAddWorker = !isLimitReached && !hasWorkerWithoutSignature;
+
+  const needsCoordinadorTA = !!state.selectedWorkTypes?.alturas;
+  const needsSupervisorEC = !!state.selectedWorkTypes?.confinado;
+  const hasCoordinadorTA = workers.some(w => w.rol === 'Coordinador de TA');
+  const hasSupervisorEC = workers.some(w => w.rol === 'Supervisor de EC');
+  const coordinadorTASinFirma = workers.some(w => w.rol === 'Coordinador de TA' && !w.firmaApertura);
+  const supervisorECSinFirma = workers.some(w => w.rol === 'Supervisor de EC' && !w.firmaApertura);
 
   return (
     <div className="space-y-6">
@@ -78,6 +85,42 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Alertas de validación */}
+          {needsCoordinadorTA && !hasCoordinadorTA && (
+            <Alert className="border-orange-300 bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-700">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertDescription>
+                <span className="font-semibold">Trabajo en Alturas:</span> Se requiere registrar y firmar al <span className="font-semibold">Coordinador de TA</span> en esta lista antes de enviar el permiso.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {needsCoordinadorTA && hasCoordinadorTA && coordinadorTASinFirma && (
+            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-700">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription>
+                <span className="font-semibold">Trabajo en Alturas:</span> El <span className="font-semibold">Coordinador de TA</span> está registrado pero aún no ha firmado.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {needsSupervisorEC && !hasSupervisorEC && (
+            <Alert className="border-orange-300 bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-700">
+              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertDescription>
+                <span className="font-semibold">Espacios Confinados:</span> Se requiere registrar y firmar al <span className="font-semibold">Supervisor de EC</span> en esta lista antes de enviar el permiso.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {needsSupervisorEC && hasSupervisorEC && supervisorECSinFirma && (
+            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-700">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription>
+                <span className="font-semibold">Espacios Confinados:</span> El <span className="font-semibold">Supervisor de EC</span> está registrado pero aún no ha firmado.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {hasWorkerWithoutSignature && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -86,7 +129,7 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
               </AlertDescription>
             </Alert>
           )}
-          
+
           {isLimitReached && !hasWorkerWithoutSignature && (
             <Alert>
               <AlertCircle className="h-4 w-4" />

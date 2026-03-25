@@ -659,11 +659,10 @@ export function GeneralInfoStep() {
           
           <div className="space-y-2">
             <RequiredLabel>Ejecutante del trabajo / Líder del equipo Ejecutante</RequiredLabel>
-            <Input 
-              value={generalInfo.nombreSolicitante || ''} 
-              readOnly 
-              disabled 
-              className="h-11 bg-muted/50 cursor-not-allowed"
+            <Input
+              value={generalInfo.nombreSolicitante || ''}
+              onChange={(e) => handleInputChange('nombreSolicitante', e.target.value)}
+              className="h-11"
             />
           </div>
         </div>

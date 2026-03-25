@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Signature, Trash2, Plus, ChevronDown, Info } from 'lucide-react';
+import { PiLadderBold } from 'react-icons/pi';
 import {
   Table,
   TableBody,
@@ -274,6 +275,9 @@ export function AnexoAlturaStep() {
     <>
     <div className="space-y-8">
       <div className="text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary shadow-lg mb-4">
+          <PiLadderBold className="w-10 h-10 text-yellow-400" />
+        </div>
         <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
           Anexo de Trabajo en Alturas
         </h2>

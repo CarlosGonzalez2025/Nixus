@@ -312,8 +312,10 @@ function CreatePermitWizard() {
   };
 
   const handleSaveAndSubmit = async () => {
-    if (!user || !user.role || !formData.solicitanteFirmaApertura) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma o la información del usuario.' });
+    const solicitanteWorker = formData.workers?.[0];
+    const firmaParaEnvio = solicitanteWorker?.firmaApertura || formData.solicitanteFirmaApertura;
+    if (!user || !user.role || !firmaParaEnvio) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma del solicitante o la información del usuario.' });
       return;
     }
   
@@ -338,13 +340,44 @@ function CreatePermitWizard() {
         setDraftId(currentPermitId);
       }
   
-      // Ahora, intenta agregar la firma y enviar
+      // Registrar firma del Coordinador de TA si aplica
+      if (formData.selectedWorkTypes?.alturas) {
+        const coordWorker = formData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+        if (coordWorker?.firmaApertura) {
+          await addSignatureAndNotify(
+            currentPermitId,
+            'coordinador_alturas',
+            'firmaApertura',
+            coordWorker.firmaApertura,
+            { uid: user.uid, displayName: coordWorker.nombre || user.displayName || null, role: user.role, empresa: user.empresa },
+            "Firma de Coordinador de Trabajo en Alturas."
+          );
+        }
+      }
+
+      // Registrar firma del Supervisor de EC si aplica
+      if (formData.selectedWorkTypes?.confinado) {
+        const supervisorWorker = formData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+        if (supervisorWorker?.firmaApertura) {
+          await addSignatureAndNotify(
+            currentPermitId,
+            'supervisor_confinado',
+            'firmaApertura',
+            supervisorWorker.firmaApertura,
+            { uid: user.uid, displayName: supervisorWorker.nombre || user.displayName || null, role: user.role, empresa: user.empresa },
+            "Firma de Supervisor de Espacios Confinados."
+          );
+        }
+      }
+
+      // Ahora, intenta agregar la firma del solicitante y enviar
+      const nombreSolicitante = solicitanteWorker?.nombre || user.displayName || null;
       const signatureResult = await addSignatureAndNotify(
         currentPermitId,
         'solicitante',
         'firmaApertura',
-        formData.solicitanteFirmaApertura,
-        { uid: user.uid, displayName: user.displayName, role: user.role, empresa: user.empresa },
+        firmaParaEnvio,
+        { uid: user.uid, displayName: nombreSolicitante, role: user.role, empresa: user.empresa },
         "Firma inicial de creación de permiso."
       );
   
@@ -741,7 +774,7 @@ function CreatePermitWizard() {
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                          <Button
-                            disabled={isSubmitting || !formData.solicitanteFirmaApertura}
+                            disabled={isSubmitting || (!formData.workers?.[0]?.firmaApertura && !formData.solicitanteFirmaApertura)}
                             className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
                         >
                             {isSubmitting ? (

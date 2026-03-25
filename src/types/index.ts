@@ -11,6 +11,7 @@ export interface User {
   displayName?: string | null;
   photoURL?: string | null;
   role?: UserRole;
+  otherRoles?: UserRole[];
   area?: string;
   telefono?: string;
   empresa?: string;

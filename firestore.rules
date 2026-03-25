@@ -13,24 +13,26 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      let data = getUserData();
+      return data.role == role || (data.otherRoles != null && role in data.otherRoles);
     }
 
     function isAdmin() {
-      return isSignedIn() && getRole() == 'admin';
+      return isSignedIn() && hasRole('admin');
     }
     
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
 
-    function hasRole(role) {
-      return getRole() == role;
-    }
-
     function hasAnyRole(roles) {
-      return getRole() in roles;
+      let data = getUserData();
+      return (data.role in roles) || (data.otherRoles != null && data.otherRoles.hasAny(roles));
     }
     
     // --- Colección de Usuarios (users) ---

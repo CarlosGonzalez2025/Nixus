@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Signature } from 'lucide-react';
+import { FaPersonDigging } from 'react-icons/fa6';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -138,6 +139,9 @@ export function AnexoExcavacionesStep() {
     return (
         <div className="space-y-8">
             <div className="text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary shadow-lg mb-4">
+                  <FaPersonDigging className="w-10 h-10 text-yellow-400" />
+                </div>
                 <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Anexo de Excavaciones</h2>
                 <p className="text-muted-foreground text-sm">Complete la información requerida para la excavación.</p>
             </div>
