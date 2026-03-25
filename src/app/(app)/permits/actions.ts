@@ -9,6 +9,24 @@ import { getEmailForUser, sendPermitUpdateEmail } from '@/lib/email';
 import { config } from 'dotenv';
 config();
 
+function getActionErrorMessage(error: unknown, fallback: string) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : fallback;
+
+  if (
+    message.includes('Getting metadata from plugin failed') ||
+    message.includes('DECODER routines::unsupported')
+  ) {
+    return 'No se pudo autenticar Firebase Admin. Reinicie el servidor y valide FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL y FIREBASE_PROJECT_ID.';
+  }
+
+  return message || fallback;
+}
+
 // --- Funciones Auxiliares para Notificaciones ---
 
 const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
@@ -216,7 +234,7 @@ ${permitUrl}`;
     console.error("❌ [Action] Error al crear permiso:", error);
     return { 
       success: false, 
-      error: error.message || 'Could not create permit. Please try again.' 
+      error: getActionErrorMessage(error, 'Could not create permit. Please try again.')
     };
   }
 }
@@ -271,7 +289,7 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
     console.error("❌ [Action] Error al guardar borrador:", error);
     return { 
       success: false, 
-      error: error.message || 'Could not save draft. Please try again.' 
+      error: getActionErrorMessage(error, 'Could not save draft. Please try again.')
     };
   }
 }
@@ -454,7 +472,7 @@ ${permitUrl}`;
         console.error("❌ Error al guardar firma y notificar:", error);
         return {
             success: false,
-            error: error.message || 'No se pudo guardar la firma.'
+            error: getActionErrorMessage(error, 'No se pudo guardar la firma.')
         };
     }
 }
