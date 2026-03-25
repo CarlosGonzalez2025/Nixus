@@ -185,7 +185,7 @@ const signatureRoles: { [key: string]: string } = {
   supervisor_confinado: 'Supervisor Esp. Confinado',
 };
 
-const signatureConsents: { [key: string]?: string } = {
+const signatureConsents: Partial<Record<string, string>> = {
   solicitante: "Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.",
   coordinador_alturas: "Al firmar como Coordinador de Trabajos en Alturas, manifiesto que entiendo el trabajo que se va a realizar y sus peligros, se han verificado las condiciones y formulado las medidas de prevención necesarias.",
   supervisor_confinado: "Al firmar como Supervisor de Espacios Confinados, certifico que se han implementado todas las medidas de seguridad necesarias para el ingreso y trabajo en el área designada.",

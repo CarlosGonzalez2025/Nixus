@@ -64,7 +64,7 @@ const getRoleName = (role?: UserRole) => {
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useUser();
+  const { user, loading, switchRole } = useUser();
   const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -135,7 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <FirebaseErrorListener />
         <PWAUpdater />
-        
+
         <Sidebar className="border-r">
           <SidebarHeader className="border-b">
             <div className="flex flex-col items-center gap-3 p-4">
@@ -143,12 +143,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex w-full items-center justify-center relative">
                 {/* Trigger móvil posicionado absolutamente a la izquierda */}
                 <SidebarTrigger className="absolute left-0 text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors md:hidden" />
-                
+
                 {/* Logo centrado */}
                 <div className="bg-white rounded-lg p-2.5 shadow-sm transition-all group-data-[collapsible=icon]:p-1.5">
-                  <Image 
-                    src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
-                    alt="Logo Italcol" 
+                  <Image
+                    src="https://i.postimg.cc/CLg66nhr/Piloso.png"
+                    alt="Logo Italcol"
                     width={120}
                     height={60}
                     quality={100}
@@ -161,7 +161,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   />
                 </div>
               </div>
-              
+
               {/* Título del sistema */}
               <span className="text-base md:text-lg font-bold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
                 SGTC Móvil
@@ -175,7 +175,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
                   Principal
                 </SidebarGroupLabel>
-                
+
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/dashboard')}
@@ -224,7 +224,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
                   Ayuda
                 </SidebarGroupLabel>
-                
+
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/guide')}
@@ -245,7 +245,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
                       Administración
                     </SidebarGroupLabel>
-                    
+
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() => handleNavigation('/admin/users')}
@@ -277,7 +277,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <SidebarFooter className="border-t">
             <SidebarSeparator className="mb-2" />
-            
+
             <div className="px-2 pb-2 md:hidden">
               <AlertsBell className="w-full" />
             </div>
@@ -331,14 +331,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  {user.otherRoles && user.otherRoles.length > 0 && (
+                    <>
+                      <DropdownMenuLabel>Cambiar Rol</DropdownMenuLabel>
+                      {[user.role, ...user.otherRoles].filter((role, index, self) => self.indexOf(role) === index).map((role) => (
+                        <DropdownMenuItem
+                          key={role}
+                          onClick={() => switchRole && switchRole(role!)}
+                          className="cursor-pointer"
+                        >
+                          <Users className="mr-2 h-4 w-4" />
+                          <span>{getRoleName(role)}</span>
+                          {user.role === role && <span className="ml-auto text-xs text-muted-foreground">(Actual)</span>}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
                     onClick={() => handleNavigation('/settings')}
                     className="cursor-pointer"
                   >
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Configuración</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => handleNavigation('/settings/whatsapp')}
                     className="cursor-pointer"
                   >
@@ -346,8 +363,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>Notificaciones WhatsApp</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={logout} 
+                  <DropdownMenuItem
+                    onClick={logout}
                     className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -365,9 +382,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="text-foreground hover:bg-accent/20 rounded-md transition-colors" />
               <div className="flex items-center gap-2">
                 <div className="relative h-8 w-8 flex-shrink-0 bg-white rounded p-0.5">
-                  <Image 
-                    src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
-                    alt="Logo" 
+                  <Image
+                    src="https://i.postimg.cc/CLg66nhr/Piloso.png"
+                    alt="Logo"
                     width={64}
                     height={64}
                     quality={100}

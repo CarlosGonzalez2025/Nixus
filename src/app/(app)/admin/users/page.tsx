@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -29,7 +30,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, deleteUser } from './actions';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers } from './actions';
 import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -64,11 +65,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+import { Checkbox } from '@/components/ui/checkbox';
 
 const createFormSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
@@ -87,6 +89,7 @@ const updateFormSchema = z.object({
   displayName: z.string().min(3, { message: "El nombre es requerido." }),
   email: z.string().email({ message: "Correo electrónico inválido." }),
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
+  otherRoles: z.array(z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento'])).optional(),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: "La empresa es requerida." }),
@@ -99,13 +102,13 @@ type BulkUser = z.infer<typeof bulkCreateUserSchema>;
 
 
 const roleNames: { [key in UserRole]: string } = {
-  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-  autorizante: 'Autorizante',
+  solicitante: 'Solicitante de la Tarea',
+  autorizante: 'Quien Autoriza',
   lider_tarea: 'Líder de la Tarea',
   ejecutante: 'Ejecutante del Trabajo',
   lider_sst: 'Líder SST',
   admin: 'Administrador',
-  mantenimiento: 'Mantenimiento / Aislador Competente'
+  mantenimiento: 'Mantenimiento'
 };
 
 const roleColors: { [key in UserRole]: string } = {
@@ -164,13 +167,13 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
 
       const users: BulkUser[] = [];
       const requiredFields = ['fullName', 'email', 'password', 'role', 'empresa'];
-      
+
       json.forEach((row, index) => {
         const missingFields = requiredFields.filter(field => !row[field]);
         if (missingFields.length > 0) {
           throw new Error(`Fila ${index + 2}: Faltan campos obligatorios: ${missingFields.join(', ')}`);
         }
-        
+
         // Sanitize the role value to be more robust
         const sanitizedRow = { ...row };
         if (sanitizedRow.role && typeof sanitizedRow.role === 'string') {
@@ -218,11 +221,11 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         description: `Éxito: ${result.successCount}. Errores: ${result.errorCount}.`,
         duration: 8000
       });
-      
+
       if (result.errorCount > 0) {
         // You could show a more detailed error report here
       }
-      
+
       // Reset state and close
       setFile(null);
       setParsedUsers([]);
@@ -267,7 +270,7 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
           </div>
           {/* Columna de Carga */}
           <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-            <div 
+            <div
               className="flex justify-center items-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-muted/50"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -278,15 +281,15 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
                 </p>
                 <p className="text-xs text-gray-400">(.xlsx)</p>
               </div>
-              <Input 
+              <Input
                 ref={fileInputRef}
-                type="file" 
+                type="file"
                 className="hidden"
                 accept=".xlsx"
                 onChange={handleFileChange}
               />
             </div>
-            
+
             {isParsing && <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />}
 
             {parsedUsers.length > 0 && !isParsing && (
@@ -294,14 +297,14 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
                 <h4 className="font-semibold text-sm">Usuarios a Importar ({parsedUsers.length})</h4>
                 <ScrollArea className="h-40 rounded-md border p-2">
                   <div className="space-y-1">
-                  {parsedUsers.map((user, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs p-1 bg-background rounded">
-                      <CircleCheck className="h-4 w-4 text-green-500" />
-                      <span className="font-medium flex-1 truncate">{user.fullName}</span>
-                      <span className="text-muted-foreground truncate">{user.email}</span>
-                      <Badge variant="outline" className="text-xs">{user.role}</Badge>
-                    </div>
-                  ))}
+                    {parsedUsers.map((user, index) => (
+                      <div key={index} className="flex items-center gap-2 text-xs p-1 bg-background rounded">
+                        <CircleCheck className="h-4 w-4 text-green-500" />
+                        <span className="font-medium flex-1 truncate">{user.fullName}</span>
+                        <span className="text-muted-foreground truncate">{user.email}</span>
+                        <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                      </div>
+                    ))}
                   </div>
                 </ScrollArea>
               </div>
@@ -333,7 +336,7 @@ export default function UsersPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  
+
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -365,7 +368,7 @@ export default function UsersPage() {
       });
       return;
     }
-    
+
     try {
       const usersToExport = users.map(user => ({
         'Nombre Completo': user.displayName || '',
@@ -382,7 +385,7 @@ export default function UsersPage() {
       const worksheet = XLSX.utils.json_to_sheet(usersToExport);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios SGTC');
-      
+
       XLSX.writeFile(workbook, `reporte_usuarios_sgtc_${new Date().toISOString().split('T')[0]}.xlsx`);
 
       toast({
@@ -522,35 +525,6 @@ export default function UsersPage() {
     }
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (userId === adminUser?.uid) {
-      toast({
-        variant: 'destructive',
-        title: 'Acción No Permitida',
-        description: 'No puede eliminarse a sí mismo.'
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await deleteUser(userId);
-      if (result.error) throw new Error(result.error);
-      toast({
-        title: '🗑️ Usuario Eliminado',
-        description: 'El usuario ha sido eliminado correctamente.'
-      });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error al eliminar',
-        description: error.message
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleStatusChange = async (userId: string, newStatus: boolean) => {
     const originalStatus = users.find(u => u.uid === userId)?.disabled;
 
@@ -580,6 +554,7 @@ export default function UsersPage() {
       displayName: user.displayName || '',
       email: user.email || '',
       role: user.role || 'ejecutante',
+      otherRoles: user.otherRoles || [],
       area: user.area || '',
       telefono: user.telefono || '',
       empresa: user.empresa || '',
@@ -935,32 +910,10 @@ export default function UsersPage() {
                             </Badge>
                             <span className="text-xs text-gray-500">{user.empresa}</span>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción eliminará a <strong>{user.displayName}</strong> permanentemente del sistema. No se puede deshacer.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-red-600 hover:bg-red-700">
-                                    Eliminar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
                         </div>
                       </div>
                     )) : (
@@ -1010,38 +963,15 @@ export default function UsersPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openEditModal(user)}
-                                  >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Editar
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        Eliminar
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Está absolutamente seguro?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Esta acción eliminará al usuario <strong>{user.displayName}</strong> permanentemente. El usuario perderá acceso inmediato al sistema.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteUser(user.uid)} className="bg-red-600 hover:bg-red-700">
-                                          Eliminar Usuario
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditModal(user)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Editar
+                                </Button>
                                 <Switch
                                   checked={!user.disabled}
                                   onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
@@ -1204,6 +1134,56 @@ export default function UsersPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={updateForm.control}
+                name="otherRoles"
+                render={() => (
+                  <FormItem>
+                    <div className="mb-4 mt-4">
+                      <FormLabel className="text-base">Roles Secundarios</FormLabel>
+                      <DialogDescription>
+                        Seleccione roles adicionales para este usuario.
+                      </DialogDescription>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(roleNames).map(([key, value]) => (
+                        <FormField
+                          key={key}
+                          control={updateForm.control}
+                          name="otherRoles"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={key}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(key as any)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...(field.value || []), key])
+                                        : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== key
+                                          )
+                                        )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {value}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter className="pt-4 gap-2">
                 <DialogClose asChild>
                   <Button type="button" variant="outline" className="h-11">Cancelar</Button>
@@ -1220,3 +1200,4 @@ export default function UsersPage() {
     </>
   );
 }
+

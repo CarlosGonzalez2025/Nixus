@@ -26,6 +26,7 @@ const updateFormSchema = z.object({
   displayName: z.string().min(3, { message: "El nombre es requerido." }),
   email: z.string().email({ message: "Correo electrónico inválido." }),
   role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
+  otherRoles: z.array(z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento'])).optional(),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: "La empresa es requerida." }),
@@ -33,20 +34,19 @@ const updateFormSchema = z.object({
   planta: z.string().optional(),
 });
 
-
 export async function createUser(data: z.infer<typeof createFormSchema>) {
   if (!isAdminReady()) {
     return { error: 'El servicio de base de datos no está configurado en el servidor.' };
   }
   try {
     const auth = getAuth();
-    
+
     const userRecord = await auth.createUser({
       email: data.email,
       password: data.password,
       displayName: data.fullName,
     });
-    
+
     const userProfile: User = {
       uid: userRecord.uid,
       email: userRecord.email ?? '',
@@ -60,9 +60,9 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
       photoURL: userRecord.photoURL || '',
       disabled: false,
     };
-    
+
     await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
-    
+
     return { success: true, userId: userRecord.uid };
 
   } catch (error: any) {
@@ -118,7 +118,7 @@ export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSc
     } catch (error: any) {
       results.errorCount++;
       let reason = 'Error desconocido al crear usuario.';
-      
+
       if (error.code?.startsWith('auth/')) {
         switch (error.code) {
           case 'auth/email-already-exists':
@@ -134,7 +134,7 @@ export async function createMultipleUsers(users: z.infer<typeof bulkCreateUserSc
       } else {
         reason = `Error al guardar en base de datos: ${error.message}`;
       }
-      
+
       results.errors.push({ email: userData.email, reason });
       console.error(`Error creando usuario ${userData.email}:`, error);
     }
@@ -150,21 +150,21 @@ export async function updateUser(data: z.infer<typeof updateFormSchema>) {
   }
   try {
     const auth = getAuth();
-    
+
     // 1. Update Firebase Authentication
     await auth.updateUser(data.uid, {
-        email: data.email,
-        displayName: data.displayName,
+      email: data.email,
+      displayName: data.displayName,
     });
 
     // 2. Update Firestore document
     const { uid, ...profileData } = data;
     await adminDb.collection('users').doc(uid).update(profileData);
-    
+
     return { success: true };
   } catch (error: any) {
-     console.error('Error updating user:', error);
-     return { error: 'No se pudo actualizar el usuario.' };
+    console.error('Error updating user:', error);
+    return { error: 'No se pudo actualizar el usuario.' };
   }
 }
 
@@ -188,18 +188,18 @@ export async function deleteUser(userId: string) {
 }
 
 export async function updateUserStatus(userId: string, disabled: boolean) {
-    if (!isAdminReady()) {
-      return { error: 'El servicio de base de datos no está configurado en el servidor.' };
-    }
-    try {
-        const auth = getAuth();
-        await auth.updateUser(userId, { disabled });
-        await adminDb.collection('users').doc(userId).update({ disabled });
-        return { success: true };
-    } catch (error: any) {
-        console.error('Error updating user status:', error);
-        return { error: 'No se pudo actualizar el estado del usuario.'};
-    }
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
+  try {
+    const auth = getAuth();
+    await auth.updateUser(userId, { disabled });
+    await adminDb.collection('users').doc(userId).update({ disabled });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating user status:', error);
+    return { error: 'No se pudo actualizar el estado del usuario.' };
+  }
 }
 
 export async function syncAuthAndFirestoreUsers() {
@@ -247,7 +247,7 @@ export async function syncAuthAndFirestoreUsers() {
     }
 
     await batch.commit();
-    
+
     revalidatePath('/admin/users');
 
     return { success: true, created: createdCount, message: `${createdCount} usuarios han sido creados en la base de datos.` };
