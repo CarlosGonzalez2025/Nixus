@@ -922,7 +922,7 @@ export default function UsersPage() {
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-2">
                             <Badge className={`text-xs ${roleColors[user.role || 'ejecutante']}`}>
-                              {roleNames[user.role || 'ejecutante'].split(' ')[0]}
+                              {(roleNames[user.role || 'ejecutante'] ?? 'Ejecutante').split(' ')[0]}
                             </Badge>
                             <span className="text-xs text-gray-500">{user.empresa}</span>
                           </div>
