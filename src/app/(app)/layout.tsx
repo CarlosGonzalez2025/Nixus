@@ -45,23 +45,12 @@ import {
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { IdleTimerProvider } from '@/components/IdleTimerProvider';
 import type { UserRole } from '@/types';
+import { getRoleName } from '@/lib/role-config';
 import { AlertsBell } from '@/components/AlertsBell';
 import { useSidebarBadges } from '@/hooks/use-sidebar-badges';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { PWAUpdater } from '@/components/PWAUpdater';
 
-const getRoleName = (role?: UserRole) => {
-  const roles: { [key in UserRole]: string } = {
-    solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-    autorizante: 'Autorizante',
-    lider_tarea: 'Líder de la Tarea',
-    ejecutante: 'Ejecutante del Trabajo',
-    lider_sst: 'Líder SST',
-    admin: 'Administrador',
-    mantenimiento: 'Mantenimiento / Aislador Competente',
-  };
-  return role ? roles[role] || 'Usuario' : 'Usuario';
-};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, switchRole } = useUser();

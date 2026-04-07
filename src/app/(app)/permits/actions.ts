@@ -1,6 +1,7 @@
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
+import { SIGNATURE_ROLE_LABELS } from '@/lib/role-config';
 import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
@@ -142,14 +143,7 @@ const getStatusText = (status: string) => {
     return statusText[status] || status;
   };
 
-const signatureRoles: { [key: string]: string } = {
-  coordinador_alturas: 'Coordinador Alturas',
-  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-  autorizante: 'Autorizante',
-  mantenimiento: 'Mantenimiento / Aislador Competente',
-  lider_sst: 'Líder SST',
-  supervisor_confinado: 'Supervisor Esp. Confinado',
-};
+const signatureRoles: { [key: string]: string } = SIGNATURE_ROLE_LABELS;
 
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
     userId: string;

@@ -3,14 +3,15 @@
 import { getAuth } from 'firebase-admin/auth';
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import * as z from 'zod';
-import type { User, UserRole } from '@/types';
+import type { User } from '@/types';
+import { USER_ROLES } from '@/lib/role-config';
 import { revalidatePath } from 'next/cache';
 
 const createFormSchema = z.object({
   fullName: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
+  role: z.enum(USER_ROLES),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2),
@@ -25,8 +26,8 @@ const updateFormSchema = z.object({
   uid: z.string(),
   displayName: z.string().min(3, { message: "El nombre es requerido." }),
   email: z.string().email({ message: "Correo electrónico inválido." }),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
-  otherRoles: z.array(z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento'])).optional(),
+  role: z.enum(USER_ROLES),
+  otherRoles: z.array(z.enum(USER_ROLES)).optional(),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: "La empresa es requerida." }),

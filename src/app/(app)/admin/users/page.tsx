@@ -35,6 +35,7 @@ import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, Che
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
+import { USER_ROLES, ROLE_LABELS } from '@/lib/role-config';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
@@ -76,7 +77,7 @@ const createFormSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
   email: z.string().email({ message: 'Correo electrónico inválido.' }),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
+  role: z.enum(USER_ROLES),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: 'La empresa es requerida.' }),
@@ -88,8 +89,8 @@ const updateFormSchema = z.object({
   uid: z.string(),
   displayName: z.string().min(3, { message: "El nombre es requerido." }),
   email: z.string().email({ message: "Correo electrónico inválido." }),
-  role: z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento']),
-  otherRoles: z.array(z.enum(['solicitante', 'autorizante', 'lider_tarea', 'ejecutante', 'lider_sst', 'admin', 'mantenimiento'])).optional(),
+  role: z.enum(USER_ROLES),
+  otherRoles: z.array(z.enum(USER_ROLES)).optional(),
   area: z.string().optional(),
   telefono: z.string().optional(),
   empresa: z.string().min(2, { message: "La empresa es requerida." }),
@@ -101,15 +102,7 @@ const bulkCreateUserSchema = createFormSchema.extend({});
 type BulkUser = z.infer<typeof bulkCreateUserSchema>;
 
 
-const roleNames: { [key in UserRole]: string } = {
-  solicitante: 'Solicitante de la Tarea',
-  autorizante: 'Quien Autoriza',
-  lider_tarea: 'Líder de la Tarea',
-  ejecutante: 'Ejecutante del Trabajo',
-  lider_sst: 'Líder SST',
-  admin: 'Administrador',
-  mantenimiento: 'Mantenimiento'
-};
+const roleNames: { [key in UserRole]: string } = ROLE_LABELS;
 
 const roleColors: { [key in UserRole]: string } = {
   solicitante: 'bg-blue-100 text-blue-700 border-blue-200',

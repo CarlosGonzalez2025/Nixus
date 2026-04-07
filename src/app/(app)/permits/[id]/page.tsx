@@ -67,6 +67,7 @@ import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
 import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature, addDailyValidationClosureSignature, closePermitByAnyUser } from '../actions';
+import { SIGNATURE_ROLE_LABELS, ROLE_LABELS_FULL } from '@/lib/role-config';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -176,14 +177,7 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 
 
 type SignatureRole = 'Ejecutante del trabajo / Líder del equipo Ejecutante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
-const signatureRoles: { [key: string]: string } = {
-  coordinador_alturas: 'Coordinador Alturas',
-  solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-  mantenimiento: 'Mantenimiento / Aislador Competente',
-  lider_sst: 'Líder SST',
-  autorizante: 'Autorizante',
-  supervisor_confinado: 'Supervisor Esp. Confinado',
-};
+const signatureRoles: { [key: string]: string } = SIGNATURE_ROLE_LABELS;
 
 const signatureConsents: Partial<Record<string, string>> = {
   solicitante: "Al firmar, confirma que la información del permiso, ATS y anexos es correcta. El permiso se enviará para autorización y ya no podrá ser modificado.",
@@ -994,15 +988,7 @@ export default function PermitDetailPage() {
       </Button>
     );
 
-    const roleNames: { [key in UserRole]: string } = {
-      solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
-      autorizante: 'Autorizante',
-      lider_tarea: 'Líder de Tarea',
-      ejecutante: 'Ejecutante',
-      lider_sst: 'Líder SST',
-      admin: 'Administrador',
-      mantenimiento: 'Mantenimiento / Aislador Competente'
-    };
+    const roleNames: { [key in UserRole]: string } = ROLE_LABELS_FULL;
     const getRoleDisplayName = () => {
       if (role === 'coordinador_alturas') {
         return 'Coordinador Alturas';
