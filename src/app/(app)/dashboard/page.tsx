@@ -174,6 +174,38 @@ export default function Dashboard() {
       unsubscribers.push(unsub1, unsub2);
       fetchData();
 
+    } else if (user.role === 'mantenimiento') {
+      // Mantenimiento: solo permisos con Control de Energías que requieren su firma
+      const q = query(permitsCollection, where('controlEnergia', '==', true));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const permitsData = snapshot.docs
+          .map(doc => ({
+            id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
+          } as Permit))
+          .filter(permit =>
+            permit.status === 'pendiente_revision' &&
+            permit.approvals?.mantenimiento?.status === 'pendiente' &&
+            permit.approvals?.solicitante?.status === 'aprobado'
+          )
+          .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+
+        setPermits(permitsData.slice(0, 10));
+        setStats({
+          total: permitsData.length,
+          pendiente: permitsData.length, // todos son pendientes de su firma
+          aprobado: 0,
+          enEjecucion: 0,
+        });
+        setLoading(false);
+      }, (error) => {
+        const permissionError = new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoading(false);
+      });
+
+      unsubscribers.push(unsubscribe);
+
     } else {
       let finalQuery: QueryConstraint[] = [];
       const isSolicitante = user.role === 'solicitante';
