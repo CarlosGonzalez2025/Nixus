@@ -192,7 +192,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {(user.role === 'lider_tarea' || user.role === 'solicitante' || user.role === 'admin') && (
+                {(user.role === 'solicitante' || user.role === 'admin') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/permits/create')}

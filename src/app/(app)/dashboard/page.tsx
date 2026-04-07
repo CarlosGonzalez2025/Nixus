@@ -176,7 +176,7 @@ export default function Dashboard() {
 
     } else {
       let finalQuery: QueryConstraint[] = [];
-      const isSolicitante = user.role === 'solicitante' || user.role === 'lider_tarea';
+      const isSolicitante = user.role === 'solicitante';
 
       if (isSolicitante) {
         finalQuery.push(where('createdBy', '==', user.uid));
@@ -316,7 +316,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
+        {(user?.role === 'solicitante' || user?.role === 'admin') && (
           <Button asChild size="lg" className="shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all duration-300">
             <Link href="/permits/create">
               <PlusCircle className="mr-2 h-5 w-5" /> Nuevo Permiso

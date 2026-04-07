@@ -30,7 +30,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers } from './actions';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles } from './actions';
 import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -107,7 +107,6 @@ const roleNames: { [key in UserRole]: string } = ROLE_LABELS;
 const roleColors: { [key in UserRole]: string } = {
   solicitante: 'bg-blue-100 text-blue-700 border-blue-200',
   autorizante: 'bg-purple-100 text-purple-700 border-purple-200',
-  lider_tarea: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   ejecutante: 'bg-gray-100 text-gray-700 border-gray-200',
   lider_sst: 'bg-orange-100 text-orange-700 border-orange-200',
   admin: 'bg-red-100 text-red-700 border-red-200',
@@ -258,7 +257,7 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
             </Button>
             <div className="text-xs text-muted-foreground pt-4">
               <p><span className="font-bold">Columnas:</span> fullName*, email*, password*, role*, empresa*, ciudad, planta, area, telefono</p>
-              <p className="mt-2"><span className="font-bold">Roles válidos:</span> solicitante, autorizante, lider_tarea, ejecutante, lider_sst, admin, mantenimiento</p>
+              <p className="mt-2"><span className="font-bold">Roles válidos:</span> solicitante, autorizante, ejecutante, lider_sst, admin, mantenimiento</p>
             </div>
           </div>
           {/* Columna de Carga */}
@@ -332,6 +331,7 @@ export default function UsersPage() {
 
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   const createForm = useForm<z.infer<typeof createFormSchema>>({
     resolver: zodResolver(createFormSchema),
@@ -391,6 +391,19 @@ export default function UsersPage() {
         description: "No se pudo generar el archivo de Excel.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleMigrateRoles = async () => {
+    setIsMigrating(true);
+    try {
+      const result = await migrateObsoleteRoles();
+      if (result.error) throw new Error(result.error);
+      toast({ title: 'Migración Completa', description: result.message });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error de Migración', description: error.message });
+    } finally {
+      setIsMigrating(false);
     }
   };
 
@@ -595,6 +608,16 @@ export default function UsersPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={handleMigrateRoles}
+                disabled={isMigrating}
+                variant="outline"
+                className="h-11"
+                title="Migrar usuarios con rol obsoleto 'Líder de Tarea' a 'Ejecutante del trabajo'"
+              >
+                {isMigrating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Migrar Roles
+              </Button>
               <Button
                 onClick={() => setIsBulkUploadOpen(true)}
                 variant="outline"

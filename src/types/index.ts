@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
 
-export type UserRole = 'solicitante' | 'autorizante' | 'lider_tarea' | 'ejecutante' | 'lider_sst' | 'admin' | 'mantenimiento';
+export type UserRole = 'solicitante' | 'autorizante' | 'ejecutante' | 'lider_sst' | 'admin' | 'mantenimiento';
 
 export interface User {
   uid: string;

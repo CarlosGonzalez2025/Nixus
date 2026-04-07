@@ -98,13 +98,13 @@ service cloud.firestore {
                       (
                         request.resource.data.status == 'cerrado' &&
                         ['pendiente_revision', 'aprobado', 'en_ejecucion', 'suspendido'].hasAny([resource.data.status]) &&
-                        hasAnyRole(['solicitante', 'lider_tarea', 'autorizante', 'lider_sst', 'admin'])
+                        hasAnyRole(['solicitante', 'autorizante', 'lider_sst', 'admin'])
                       ) ||
 
                       // Lógica de firmas de validación y cierre diario: permite actualizar los anexos si está en ejecución.
                       (
                         (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
-                        hasAnyRole(['lider_tarea', 'admin', 'autorizante']) &&
+                        hasAnyRole(['solicitante', 'admin', 'autorizante']) &&
                         request.resource.data.diff(resource.data).affectedKeys().hasAny(['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones', 'anexoEnergias', 'workers', 'closure'])
                       ) ||
                       
@@ -112,7 +112,7 @@ service cloud.firestore {
                       // si el permiso está en ejecución o suspendido.
                       (request.resource.data.status == 'cerrado' && 
                        (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
-                       hasAnyRole(['lider_tarea', 'admin'])) ||
+                       hasAnyRole(['solicitante', 'admin'])) ||
                        
                       // Lógica de suspensión y reactivación
                       (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && hasAnyRole(['lider_sst', 'admin'])) ||

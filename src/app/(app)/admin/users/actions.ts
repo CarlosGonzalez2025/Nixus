@@ -203,6 +203,62 @@ export async function updateUserStatus(userId: string, disabled: boolean) {
   }
 }
 
+/**
+ * Migra usuarios con roles obsoletos a los roles actuales:
+ * - lider_tarea → solicitante
+ */
+export async function migrateObsoleteRoles() {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
+  try {
+    const usersSnap = await adminDb.collection('users').get();
+    const batch = adminDb.batch();
+    let migratedCount = 0;
+
+    for (const docSnap of usersSnap.docs) {
+      const data = docSnap.data();
+      let needsUpdate = false;
+      const update: { role?: string; otherRoles?: string[] } = {};
+
+      // Migrar rol principal
+      if (data.role === 'lider_tarea') {
+        update.role = 'solicitante';
+        needsUpdate = true;
+      }
+
+      // Migrar roles adicionales
+      if (Array.isArray(data.otherRoles) && data.otherRoles.includes('lider_tarea')) {
+        update.otherRoles = data.otherRoles
+          .map((r: string) => r === 'lider_tarea' ? 'solicitante' : r)
+          .filter((r: string, i: number, arr: string[]) => arr.indexOf(r) === i); // deduplicar
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        batch.update(docSnap.ref, update);
+        migratedCount++;
+      }
+    }
+
+    if (migratedCount > 0) {
+      await batch.commit();
+    }
+
+    revalidatePath('/admin/users');
+    return {
+      success: true,
+      migrated: migratedCount,
+      message: migratedCount > 0
+        ? `${migratedCount} usuario(s) migrados correctamente a 'Ejecutante del trabajo'.`
+        : 'No se encontraron usuarios con roles obsoletos.',
+    };
+  } catch (error: any) {
+    console.error('Error migrando roles obsoletos:', error);
+    return { error: 'Ocurrió un error durante la migración de roles.' };
+  }
+}
+
 export async function syncAuthAndFirestoreUsers() {
   if (!isAdminReady()) {
     return { error: 'El servicio de base de datos no está configurado en el servidor.' };

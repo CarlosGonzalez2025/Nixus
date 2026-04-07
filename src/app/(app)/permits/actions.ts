@@ -517,24 +517,24 @@ async function checkAllRequiredSignaturesComplete(
 function validateStateTransition(currentStatus: PermitStatus, targetStatus: PermitStatus, userRole: UserRole): { allowed: boolean, reason?: string } {
     const allowedTransitions: Partial<Record<PermitStatus, Partial<Record<PermitStatus, UserRole[]>>>> = {
         'borrador': {
-            'pendiente_revision': ['solicitante', 'lider_tarea', 'admin']
+            'pendiente_revision': ['solicitante', 'admin']
         },
         'pendiente_revision': {
-            'en_ejecucion': ['autorizante', 'admin', 'lider_tarea'],
+            'en_ejecucion': ['autorizante', 'admin', 'solicitante'],
             'aprobado': ['autorizante', 'admin'],
             'rechazado': ['autorizante', 'lider_sst', 'admin']
         },
         'aprobado': {
-            'en_ejecucion': ['lider_tarea', 'admin'],
+            'en_ejecucion': ['solicitante', 'admin'],
             'rechazado': ['autorizante', 'lider_sst', 'admin']
         },
         'en_ejecucion': {
             'suspendido': ['lider_sst', 'admin', 'autorizante'],
-            'cerrado': ['lider_tarea', 'admin', 'autorizante']
+            'cerrado': ['solicitante', 'admin', 'autorizante']
         },
         'suspendido': {
             'en_ejecucion': ['lider_sst', 'admin', 'autorizante'],
-            'cerrado': ['lider_tarea', 'admin', 'autorizante']
+            'cerrado': ['solicitante', 'admin', 'autorizante']
         }
     };
     

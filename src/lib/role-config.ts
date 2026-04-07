@@ -7,7 +7,6 @@ import type { UserRole } from '@/types';
 export const USER_ROLES = [
   'solicitante',
   'autorizante',
-  'lider_tarea',
   'ejecutante',
   'lider_sst',
   'admin',
@@ -21,7 +20,6 @@ export const USER_ROLES = [
 export const ROLE_LABELS: Record<UserRole, string> = {
   solicitante: 'Ejecutante del trabajo',
   autorizante: 'Autorizante',
-  lider_tarea: 'Líder de la Tarea',
   ejecutante: 'Ejecutante del Trabajo',
   lider_sst: 'Líder SST',
   admin: 'Administrador',

@@ -560,7 +560,7 @@ export default function PermitDetailPage() {
     const reasons: string[] = [];
 
     // Condición 1: Rol de usuario
-    if (currentUser?.role !== 'lider_tarea' && currentUser?.role !== 'admin') {
+    if (currentUser?.role !== 'solicitante' && currentUser?.role !== 'admin') {
       // Esta condición ya está en canChangeStatus, pero la mantenemos por claridad
     }
 
@@ -622,7 +622,7 @@ export default function PermitDetailPage() {
 
   const canChangeStatus = (newStatus: 'cerrado' | 'en_ejecucion'): boolean => {
     if (!currentUser || !permit) return false;
-    const hasRole = currentUser.role === 'lider_tarea' || currentUser.role === 'admin';
+    const hasRole = currentUser.role === 'solicitante' || currentUser.role === 'admin';
 
     if (newStatus === 'en_ejecucion') {
       return hasRole && permit.status === 'aprobado';
@@ -1094,10 +1094,10 @@ export default function PermitDetailPage() {
             canSignValidation = (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
             tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
           } else if (type === 'responsable') {
-            canSignValidation = (currentUser?.uid === permit.createdBy || currentUser?.role === 'lider_tarea') && !v?.firma;
+            canSignValidation = (currentUser?.uid === permit.createdBy || currentUser?.role === 'solicitante') && !v?.firma;
             // ✨ NUEVO: Permitir firma de cierre solo si ya firmó apertura
-            canSignClosure = (currentUser?.uid === permit.createdBy || currentUser?.role === 'lider_tarea') && !!v?.firma && !v?.firmaCierre;
-            tooltipContent = "Solo el creador o líder de la tarea puede firmar.";
+            canSignClosure = (currentUser?.uid === permit.createdBy || currentUser?.role === 'solicitante') && !!v?.firma && !v?.firmaCierre;
+            tooltipContent = "Solo el creador o ejecutante del trabajo puede firmar.";
           }
         } else {
           tooltipContent = "El permiso no está en ejecución.";

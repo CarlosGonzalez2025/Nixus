@@ -196,16 +196,16 @@ export default function PermitsPage() {
         // Para otros roles, se usa una sola consulta
         let finalQuery: QueryConstraint[] = [];
         
-        if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+        if (user.role === 'solicitante') {
           // Solo filtrar, la ordenación se hará en el cliente
           finalQuery.push(where('createdBy', '==', user.uid));
         } else {
           // Para admin/autorizante, ordenar por fecha en la consulta
           finalQuery.push(orderBy('createdAt', 'desc'));
         }
-        
+
         const q = query(permitsCollection, ...finalQuery);
-        
+
         const unsub = onSnapshot(q, (snapshot) => {
           let permitsData = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -217,7 +217,7 @@ export default function PermitsPage() {
           });
 
           // Si es solicitante, ordenar en el cliente
-          if (user.role === 'solicitante' || user.role === 'lider_tarea') {
+          if (user.role === 'solicitante') {
             permitsData = permitsData.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
           }
 
@@ -438,7 +438,7 @@ export default function PermitsPage() {
             Gestione todos sus permisos de trabajo aquí.
           </p>
         </div>
-        {(user?.role === 'lider_tarea' || user?.role === 'solicitante' || user?.role === 'admin') && (
+        {(user?.role === 'solicitante' || user?.role === 'admin') && (
             <Button asChild>
             <Link href="/permits/create">
                 <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Permiso

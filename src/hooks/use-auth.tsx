@@ -26,7 +26,7 @@ const demoUsers: { [email: string]: Partial<User> & { name: string, role: User['
   'info@nixus.com': { name: 'Admin Nixus', role: 'admin', empresa: 'NIXUS', ciudad: 'Bogotá', planta: 'Principal' },
   'juan@nixus.com': { name: 'Juan Pérez', role: 'solicitante', empresa: 'NIXUS', ciudad: 'Cali', planta: 'Yumbo' },
   'maria@nixus.com': { name: 'María García', role: 'autorizante', empresa: 'NIXUS', ciudad: 'Barranquilla', planta: 'Malambo' },
-  'carlos@nixus.com': { name: 'Carlos López', role: 'lider_tarea', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
+  'carlos@nixus.com': { name: 'Carlos López', role: 'solicitante', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
   'ana@nixus.com': { name: 'Ana Martínez', role: 'ejecutante', empresa: 'CONTRATISTA ABC', ciudad: 'Bogotá', planta: 'Faca' },
   'roberto@nixus.com': { name: 'Roberto Sánchez', role: 'lider_sst', empresa: 'NIXUS', ciudad: 'Bogotá', planta: 'Sede Principal' }
 };
