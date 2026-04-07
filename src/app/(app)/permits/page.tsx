@@ -192,10 +192,50 @@ export default function PermitsPage() {
         
         unsubscribers.push(unsub1, unsub2);
 
+    } else if (user.role === 'mantenimiento') {
+        // Mantenimiento: solo permisos con Control de Energías que requieren su firma
+        const q = query(
+          permitsCollection,
+          where('controlEnergia', '==', true)
+        );
+
+        const unsub = onSnapshot(q, (snapshot) => {
+          const permitsData = snapshot.docs
+            .map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+                createdAt: parseFirestoreDate(data.createdAt),
+              } as Permit;
+            })
+            .filter(permit =>
+              // Solo permisos en estado pendiente de revisión
+              permit.status === 'pendiente_revision' &&
+              // Su firma aún está pendiente
+              permit.approvals?.mantenimiento?.status === 'pendiente' &&
+              // El solicitante ya firmó (es su turno)
+              permit.approvals?.solicitante?.status === 'aprobado'
+            )
+            .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+
+          setAllPermits(permitsData);
+          setLoading(false);
+        }, (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: permitsCollection.path,
+            operation: 'list',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          setLoading(false);
+        });
+
+        unsubscribers.push(unsub);
+
     } else {
         // Para otros roles, se usa una sola consulta
         let finalQuery: QueryConstraint[] = [];
-        
+
         if (user.role === 'solicitante') {
           // Solo filtrar, la ordenación se hará en el cliente
           finalQuery.push(where('createdBy', '==', user.uid));

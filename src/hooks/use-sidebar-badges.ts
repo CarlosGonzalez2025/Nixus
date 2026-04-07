@@ -68,10 +68,9 @@ export function useSidebarBadges() {
                 return isSolicitanteSigned;
             }
 
-            // Mantenimiento can sign after solicitante AND autorizante.
+            // Mantenimiento firma después del solicitante (y antes del autorizante).
             if (role === 'mantenimiento') {
-                const isAutorizanteSigned = approvals.autorizante?.status === 'aprobado';
-                return isSolicitanteSigned && isAutorizanteSigned;
+                return isSolicitanteSigned;
             }
             
             // For admin, the broad query is enough, but we double-check logic
