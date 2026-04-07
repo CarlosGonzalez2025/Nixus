@@ -25,7 +25,7 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && hasRole('admin');
     }
-    
+
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
@@ -34,22 +34,21 @@ service cloud.firestore {
       let data = getUserData();
       return (data.role in roles) || (data.otherRoles != null && data.otherRoles.hasAny(roles));
     }
-    
+
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      // CORRECCIÓN: Se reemplaza isOwner(userId) por la comprobación directa para romper la dependencia circular.
-      // Un usuario siempre debe poder leer su propio perfil para que getRole() funcione.
+      // Un usuario siempre debe poder leer su propio perfil para que hasRole() funcione.
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
     }
-    
+
     // --- Colección de Notificaciones (notifications) ---
     match /notifications/{notificationId} {
       // Un usuario puede leer y listar sus propias notificaciones.
       allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
+
       // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
 
@@ -60,28 +59,30 @@ service cloud.firestore {
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
       // LECTURA: Permite leer a los involucrados directamente.
-      allow read: if isSignedIn() && 
-                    (isAdmin() || 
-                     hasRole('autorizante') || 
+      allow read: if isSignedIn() &&
+                    (isAdmin() ||
+                     hasRole('autorizante') ||
                      isCreator(resource.data) ||
                      (hasRole('lider_sst') && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true)) ||
                      (hasRole('mantenimiento') && resource.data.controlEnergia == true)
                     );
 
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
-      allow list: if isSignedIn() && 
+      allow list: if isSignedIn() &&
                   (
                     (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
                     // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
-                    (request.query.where.createdBy == request.auth.uid)
+                    (request.query.where.createdBy == request.auth.uid) ||
+                    // Mantenimiento puede listar permisos que requieren su firma
+                    (hasRole('mantenimiento') && request.query.where.controlEnergia == true)
                   );
-      
+
       // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
       allow create, delete: if false;
 
       // ACTUALIZAR: La lógica más compleja, define quién puede modificar el permiso y en qué estado.
       allow update: if isSignedIn() &&
-                    ( 
+                    (
                       // El creador puede editarlo solo si está en estado 'borrador'.
                       (isCreator(resource.data) && resource.data.status == 'borrador') ||
 
@@ -91,26 +92,30 @@ service cloud.firestore {
                       // Lógica de firmas de apertura: permite firmar si el permiso está pendiente.
                       (resource.data.status == 'pendiente_revision') ||
 
+                      // Lógica para CIERRE DE EMERGENCIA: Permite a roles autorizados forzar el cierre.
+                      (
+                        request.resource.data.status == 'cerrado' &&
+                        ['pendiente_revision', 'aprobado', 'en_ejecucion', 'suspendido'].hasAny([resource.data.status]) &&
+                        hasAnyRole(['solicitante', 'autorizante', 'lider_sst', 'admin'])
+                      ) ||
+
                       // Lógica de firmas de validación y cierre diario: permite actualizar los anexos si está en ejecución.
                       (
                         (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
-                        hasAnyRole(['lider_tarea', 'admin', 'autorizante']) &&
-                        // Solo permite cambiar los anexos, nada más.
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                          'anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones', 'workers'
-                        ])
+                        hasAnyRole(['solicitante', 'admin', 'autorizante']) &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasAny(['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones', 'anexoEnergias', 'workers', 'closure'])
                       ) ||
 
                       // Lógica de cierre final: permite a los roles autorizados cambiar el estado a 'cerrado'
                       // si el permiso está en ejecución o suspendido.
-                      (request.resource.data.status == 'cerrado' && 
+                      (request.resource.data.status == 'cerrado' &&
                        (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
-                       hasAnyRole(['lider_tarea', 'admin'])) ||
-                       
+                       hasAnyRole(['solicitante', 'admin'])) ||
+
                       // Lógica de suspensión y reactivación
                       (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && hasAnyRole(['lider_sst', 'admin'])) ||
                       (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'suspendido' && hasAnyRole(['lider_sst', 'admin'])) ||
-                      
+
                       // Lógica de rechazo: permite a roles de aprobación rechazar un permiso.
                       (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && hasAnyRole(['autorizante', 'lider_sst', 'admin']))
                     );
