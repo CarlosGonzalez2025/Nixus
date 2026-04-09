@@ -480,3 +480,46 @@ export type Notification = {
     displayName: string | null;
   };
 };
+
+// ─── Gestión de Hallazgos ──────────────────────────────────────────────────────
+
+export type HallazgoClase = 'A' | 'B' | 'C';
+export type HallazgoIntervencion = 'Inmediata' | 'Pronta' | 'Posterior';
+export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado';
+
+export interface Hallazgo {
+  id: string;
+  numero: number;
+  // Información general
+  frenteTrabajo: string;
+  centroCosto: string;
+  area: string;
+  tipoActividad: 'Rutinario' | 'No Rutinario';
+  fechaIdentificacion: Timestamp;
+  peligroInspeccionado: string;
+  // Evidencia del hallazgo
+  hallazgo: string;
+  evidenciasFotograficas: string[];       // URLs de fotos "antes"
+  // Clasificación
+  clase: HallazgoClase;
+  intervencion: HallazgoIntervencion;
+  descripcion: string;
+  // Reportado por
+  reportadoPorNombre: string;
+  reportadoPorCargo: string;
+  // Plan de acción (opcional)
+  fechaMedidaImplementada?: Timestamp;
+  responsable?: string;
+  fechaSeguimiento1?: Timestamp;
+  porcentajeCumplimiento?: number;
+  evidenciasPlanAccion?: string[];        // URLs de fotos "después / cierre"
+  fechaCierre?: Timestamp;
+  porcentajeCumplimientoTotal?: number;
+  cumplimientoEstado?: HallazgoEstado;
+  observacion?: string;
+  // Metadata
+  empresaId: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}

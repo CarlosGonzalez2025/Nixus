@@ -35,6 +35,17 @@ service cloud.firestore {
       return (data.role in roles) || (data.otherRoles != null && data.otherRoles.hasAny(roles));
     }
 
+    // Devuelve el campo 'empresa' del usuario. El get() es cacheado por Firestore
+    // dentro de la misma evaluación; no genera lectura extra si getUserData() ya se llamó.
+    function getEmpresa() {
+      return getUserData().empresa;
+    }
+
+    // Módulo Hallazgos: acceso exclusivo para admins y usuarios de Nixus Capital.
+    function canAccessHallazgos() {
+      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital');
+    }
+
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
       // Un usuario siempre debe poder leer su propio perfil para que hasRole() funcione.
@@ -125,6 +136,26 @@ service cloud.firestore {
     match /dynamic_lists/{listName} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    // --- Colección de Hallazgos (hallazgos) ---
+    // Acceso exclusivo: admins globales + usuarios cuya empresa sea 'Nixus Capital'.
+    match /hallazgos/{hallazgoId} {
+      // 'read' cubre get y list. Para queries, Firestore verifica que el where()
+      // del cliente (empresaId == user.empresa) satisface resource.data.empresaId == getEmpresa().
+      allow read: if canAccessHallazgos() &&
+                  (isAdmin() || resource.data.empresaId == getEmpresa());
+
+      // Solo se puede crear un hallazgo bajo la propia empresa del usuario.
+      allow create: if canAccessHallazgos() &&
+                    (isAdmin() || request.resource.data.empresaId == getEmpresa());
+
+      // Solo se puede actualizar un hallazgo de la propia empresa.
+      allow update: if canAccessHallazgos() &&
+                    (isAdmin() || resource.data.empresaId == getEmpresa());
+
+      // Solo admins pueden eliminar hallazgos.
+      allow delete: if isAdmin();
     }
   }
 }

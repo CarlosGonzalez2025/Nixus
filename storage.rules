@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Funciones de ayuda ─────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Valida que el archivo sea imagen o PDF y no supere 10 MB.
+    function isValidFile() {
+      return request.resource.size <= 10 * 1024 * 1024 &&
+             request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    // ── Evidencias de Hallazgos ────────────────────────────────────────────────
+    //
+    // Rutas gestionadas por el módulo Gestión de Hallazgos:
+    //   hallazgos/evidencias/{fileId}   → fotos "antes" del hallazgo
+    //   hallazgos/plan-accion/{fileId}  → fotos "después" / cierre del plan
+    //
+    // La autorización de acceso al módulo se controla a nivel de Firestore.
+    // En Storage solo garantizamos:
+    //   • Usuario autenticado
+    //   • Tipo de archivo válido (imagen o PDF)
+    //   • Tamaño máximo de 10 MB por archivo
+
+    match /hallazgos/evidencias/{fileId} {
+      // Lectura: cualquier usuario autenticado puede leer (necesario para
+      // mostrar las imágenes en el formulario de detalle).
+      allow read: if isSignedIn();
+
+      // Escritura: autenticado + archivo válido.
+      allow write: if isSignedIn() && isValidFile();
+
+      // Eliminar: solo el autor del upload o lectura directa.
+      // En la práctica se gestiona desde el formulario; dejamos delete
+      // habilitado para autenticados para permitir el botón "Eliminar".
+      allow delete: if isSignedIn();
+    }
+
+    match /hallazgos/plan-accion/{fileId} {
+      allow read:   if isSignedIn();
+      allow write:  if isSignedIn() && isValidFile();
+      allow delete: if isSignedIn();
+    }
+
+    // ── Bloqueo global ─────────────────────────────────────────────────────────
+    // Cualquier ruta no declarada explícitamente queda denegada.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

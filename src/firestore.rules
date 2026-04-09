@@ -32,7 +32,19 @@ service cloud.firestore {
     function hasAnyRole(roles) {
       return getRole() in roles;
     }
-    
+
+    // Obtiene el campo 'empresa' del perfil del usuario autenticado.
+    // El get() es cacheado por Firestore dentro de la misma evaluación,
+    // por lo que no genera una lectura adicional si getRole() ya lo invocó.
+    function getEmpresa() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.empresa;
+    }
+
+    // Un usuario pertenece a Nixus Capital o es admin global.
+    function canAccessHallazgos() {
+      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital');
+    }
+
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
       // CORRECCIÓN: Se reemplaza isOwner(userId) por la comprobación directa para romper la dependencia circular.
@@ -127,6 +139,32 @@ service cloud.firestore {
     match /dynamic_lists/{listName} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    // --- Colección de Hallazgos (hallazgos) ---
+    // Visible ÚNICAMENTE para admins y usuarios cuya empresa sea 'Nixus Capital'.
+    match /hallazgos/{hallazgoId} {
+
+      // LECTURA (get + list): 'read' cubre ambas operaciones y evita conflictos.
+      // Para queries (list), Firestore verifica automáticamente que el where()
+      // del cliente garantiza que todos los resultados cumplen la condición
+      // resource.data.empresaId == getEmpresa(). La query del cliente SIEMPRE
+      // debe incluir where('empresaId', '==', user.empresa).
+      allow read: if canAccessHallazgos() &&
+                  (isAdmin() || resource.data.empresaId == getEmpresa());
+
+      // CREAR: solo si el empresaId del documento nuevo coincide con la empresa
+      // del usuario. Los admins pueden crear sin esta restricción.
+      allow create: if canAccessHallazgos() &&
+                    (isAdmin() || request.resource.data.empresaId == getEmpresa());
+
+      // ACTUALIZAR: el hallazgo debe pertenecer a la empresa del usuario.
+      // Los admins pueden actualizar cualquiera.
+      allow update: if canAccessHallazgos() &&
+                    (isAdmin() || resource.data.empresaId == getEmpresa());
+
+      // ELIMINAR: solo administradores.
+      allow delete: if isAdmin();
     }
   }
 }

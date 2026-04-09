@@ -31,6 +31,7 @@ import {
   MessageSquare,
   BookOpen,
   List,
+  ShieldAlert,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -205,6 +206,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/hallazgos')}
+                    isActive={pathname.startsWith('/hallazgos')}
+                    tooltip="Gestión de Hallazgos"
+                    className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <ShieldAlert className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="font-medium">Hallazgos</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarGroup>
 
               <SidebarSeparator className="my-2" />
