@@ -7,12 +7,12 @@ import { es } from 'date-fns/locale';
 import type { Hallazgo } from '@/types';
 
 // ─── Paleta de colores ──────────────────────────────────────────────────────
-const ORANGE: [number, number, number] = [239, 123, 0];
+const ORANGE: [number, number, number] = [0, 34, 72];
 const DARK: [number, number, number] = [30, 30, 30];
 const LIGHT_GRAY: [number, number, number] = [245, 245, 245];
 const MID_GRAY: [number, number, number] = [180, 180, 180];
 const WHITE: [number, number, number] = [255, 255, 255];
-const RED: [number, number, number] = [220, 38, 38];
+const RED: [number, number, number] = [120, 120, 120];
 const AMBER: [number, number, number] = [217, 119, 6];
 const BLUE: [number, number, number] = [37, 99, 235];
 const GREEN: [number, number, number] = [22, 163, 74];
@@ -51,14 +51,38 @@ const fmt = (v: any, pattern = 'dd/MM/yyyy') => {
 
 const safe = (v: any) => (v && String(v).trim() ? String(v).trim() : '—');
 
+const fetchImageAsBase64 = async (url: string): Promise<string | null> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
+
 // ─── Función principal ───────────────────────────────────────────────────────
 export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
+  const logoBase64 = await fetchImageAsBase64('https://i.postimg.cc/CLg66nhr/Piloso.png');
+  const helmetBase64 = await fetchImageAsBase64('https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05_at_10_19_08.jpg');
+  const eviAntesBase64 = hallazgo.evidenciasFotograficas?.length 
+      ? await Promise.all(hallazgo.evidenciasFotograficas.map(fetchImageAsBase64))
+      : [];
+  const eviDespuesBase64 = hallazgo.evidenciasPlanAccion?.length
+      ? await Promise.all(hallazgo.evidenciasPlanAccion.map(fetchImageAsBase64))
+      : [];
+
   const pdf = new jsPDF('p', 'mm', 'letter');
   const PW = pdf.internal.pageSize.width;
   const PH = pdf.internal.pageSize.height;
   const ML = 12;
   const MR = 12;
-  const MT = 12;
+  const MT = 20;
   const CONTENT_W = PW - ML - MR;
   let y = MT;
 
@@ -84,13 +108,32 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
   };
 
   const drawPageHeader = () => {
-    // Barra naranja superior
+    // Barra superior
     pdf.setFillColor(...ORANGE);
-    pdf.rect(0, 0, PW, 8, 'F');
+    pdf.rect(0, 0, PW, 14, 'F');
     pdf.setTextColor(...WHITE);
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('REGISTRO DE HALLAZGO DE SEGURIDAD — ITALCOL', PW / 2, 5.5, { align: 'center' });
+    pdf.text('REGISTRO DE HALLAZGO DE SEGURIDAD', PW / 2, 8, { align: 'center' });
+    
+    // Logo izquierdo
+    if (logoBase64) {
+      try {
+        const match = logoBase64.match(/^data:image\/(png|jpeg|jpg);base64,/i);
+        const format = match ? match[1].toUpperCase() : 'PNG';
+        pdf.addImage(logoBase64, format, 12, 2, 20, 10);
+      } catch(e){}
+    }
+
+    // Logo derecho (Casco)
+    if (helmetBase64) {
+      try {
+        const match = helmetBase64.match(/^data:image\/(png|jpeg|jpg);base64,/i);
+        const format = match ? match[1].toUpperCase() : 'JPEG';
+        pdf.addImage(helmetBase64, format, PW - 22, 2, 10, 10);
+      } catch(e){}
+    }
+
     pdf.setTextColor(...DARK);
   };
 
@@ -104,14 +147,14 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
     pdf.setFont('helvetica', 'normal');
     pdf.text(`Generado el ${format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`, ML, footY + 3);
     pdf.text(`Página ${pageNum} de ${totalPages}`, PW - MR, footY + 3, { align: 'right' });
-    pdf.text('ITALCOL — Sistema de Gestión SST', PW / 2, footY + 3, { align: 'center' });
+    pdf.text('Sistema de Gestión SST', PW / 2, footY + 3, { align: 'center' });
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PÁGINA 1
   // ═══════════════════════════════════════════════════════════════════════════
   drawPageHeader();
-  y = 14;
+  y = 20;
 
   // ── Título y número ────────────────────────────────────────────────────────
   // Caja de número prominente
@@ -330,6 +373,47 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
     }
   }
 
+  // ── FOTOGRAFÍAS ────────────────────────────────────────────────────────
+  const validAntes = eviAntesBase64.filter(b => b) as string[];
+  const validDespues = eviDespuesBase64.filter(b => b) as string[];
+
+  if (validAntes.length > 0 || validDespues.length > 0) {
+    pageBreakIfNeeded(40);
+    drawSectionHeader('Evidencias Fotográficas', BLUE);
+    
+    const drawImages = (images: string[], title: string) => {
+        if (images.length === 0) return;
+        pageBreakIfNeeded(20);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(title, ML, y);
+        y += 6;
+        
+        const imgW = 60;
+        const imgH = 45;
+        let currX = ML;
+        let rowMaxH = imgH;
+        
+        for (const img of images) {
+            if (currX + imgW > PW - MR) {
+                currX = ML;
+                y += rowMaxH + 5;
+                pageBreakIfNeeded(imgH + 10);
+            }
+            try {
+                const match = img.match(/^data:image\/(png|jpeg|jpg);base64,/i);
+                const format = match ? match[1].toUpperCase() : 'JPEG';
+                pdf.addImage(img, format, currX, y, imgW, imgH);
+            } catch(e){}
+            currX += imgW + 5;
+        }
+        y += rowMaxH + 10;
+    }
+    
+    drawImages(validAntes, 'Evidencias del Hallazgo (Antes)');
+    drawImages(validDespues, 'Evidencias del Plan de Acción (Cierre / Después)');
+  }
+
   // ── FIRMA / CIERRE ────────────────────────────────────────────────────────
   pageBreakIfNeeded(30);
   drawSectionHeader('Registro de Creación');
@@ -360,7 +444,7 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
   drawSectionHeader('Firmas');
 
   const sigBoxW = (CONTENT_W - 6) / 2;
-  const sigBoxH = 38;
+  const sigBoxH = 28;
   pdf.setDrawColor(...MID_GRAY);
   pdf.setLineWidth(0.3);
 
@@ -378,23 +462,23 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
     if (sigDataUrl) {
       // Renderizar imagen de firma (base64 PNG)
       try {
-        pdf.addImage(sigDataUrl, 'PNG', bx + 4, y + 2, sigBoxW - 8, sigBoxH - 18);
+        pdf.addImage(sigDataUrl, 'PNG', bx + 6, y + 2, sigBoxW - 12, sigBoxH - 16);
       } catch { /* ignorar si la imagen falla */ }
     }
 
     // Línea base de firma
     pdf.setDrawColor(...MID_GRAY);
-    pdf.line(bx + 6, y + sigBoxH - 14, bx + sigBoxW - 6, y + sigBoxH - 14);
+    pdf.line(bx + 6, y + sigBoxH - 12, bx + sigBoxW - 6, y + sigBoxH - 12);
 
-    pdf.setFontSize(7);
+    pdf.setFontSize(6.5);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(60, 60, 60);
-    pdf.text(label, bx + sigBoxW / 2, y + sigBoxH - 10, { align: 'center' });
+    pdf.text(label, bx + sigBoxW / 2, y + sigBoxH - 8.5, { align: 'center' });
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(6);
     pdf.setTextColor(100, 100, 100);
-    if (name && name !== '—') pdf.text(name, bx + sigBoxW / 2, y + sigBoxH - 6, { align: 'center' });
-    if (role && role !== '—') pdf.text(role, bx + sigBoxW / 2, y + sigBoxH - 2, { align: 'center' });
+    if (name && name !== '—') pdf.text(name, bx + sigBoxW / 2, y + sigBoxH - 5, { align: 'center' });
+    if (role && role !== '—') pdf.text(role, bx + sigBoxW / 2, y + sigBoxH - 1.5, { align: 'center' });
     pdf.setTextColor(...DARK);
   };
 

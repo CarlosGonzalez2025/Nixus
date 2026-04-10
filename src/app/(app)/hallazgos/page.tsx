@@ -80,7 +80,7 @@ export default function HallazgosPage() {
         if (!db || !user) return;
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
-        if (user.empresa) {
+        if (user.empresa && user.role !== 'admin') {
             constraints.unshift(where('empresaId', '==', user.empresa));
         }
 
