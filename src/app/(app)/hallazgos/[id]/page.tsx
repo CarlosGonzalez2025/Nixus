@@ -5,20 +5,23 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Pencil, Eye, ChevronLeft } from 'lucide-react';
+import { Loader2, Pencil, Eye, ChevronLeft, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HallazgoForm } from '../components/hallazgo-form';
 import type { Hallazgo } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HallazgoDetailPage() {
     const { id } = useParams<{ id: string }>();
     const { user } = useUser();
     const router = useRouter();
+    const { toast } = useToast();
 
     const [hallazgo, setHallazgo] = useState<Hallazgo | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
 
     useEffect(() => {
         if (!db || !id) return;
@@ -33,6 +36,20 @@ export default function HallazgoDetailPage() {
 
     const canEdit = user?.role === 'lider_sst' || user?.role === 'admin' ||
         (user?.role === 'solicitante' && hallazgo?.createdBy === user?.uid);
+
+    const handleDownloadPdf = async () => {
+        if (!hallazgo) return;
+        setGeneratingPdf(true);
+        try {
+            const { generateHallazgoPDF } = await import('@/lib/pdf-hallazgo');
+            await generateHallazgoPDF(hallazgo);
+        } catch (err) {
+            console.error('Error generando PDF:', err);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo generar el PDF.' });
+        } finally {
+            setGeneratingPdf(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -61,11 +78,11 @@ export default function HallazgoDetailPage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 max-w-3xl">
+        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6 w-full max-w-4xl mx-auto">
 
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                         <button
                             onClick={() => router.push('/hallazgos')}
@@ -75,24 +92,36 @@ export default function HallazgoDetailPage() {
                             Hallazgos
                         </button>
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                         Hallazgo #{hallazgo.numero}
                     </h1>
-                    <p className="text-muted-foreground line-clamp-1">{hallazgo.hallazgo}</p>
+                    <p className="text-muted-foreground text-sm line-clamp-1">{hallazgo.hallazgo}</p>
                 </div>
-                {canEdit && (
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                     <Button
-                        variant={isEditing ? 'outline' : 'default'}
+                        variant="outline"
                         size="sm"
-                        onClick={() => setIsEditing(v => !v)}
-                        className="flex-shrink-0"
+                        onClick={handleDownloadPdf}
+                        disabled={generatingPdf}
                     >
-                        {isEditing
-                            ? <><Eye className="mr-2 h-3.5 w-3.5" />Ver</>
-                            : <><Pencil className="mr-2 h-3.5 w-3.5" />Editar</>
+                        {generatingPdf
+                            ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Generando...</>
+                            : <><FileDown className="mr-2 h-3.5 w-3.5" />Descargar PDF</>
                         }
                     </Button>
-                )}
+                    {canEdit && (
+                        <Button
+                            variant={isEditing ? 'outline' : 'default'}
+                            size="sm"
+                            onClick={() => setIsEditing(v => !v)}
+                        >
+                            {isEditing
+                                ? <><Eye className="mr-2 h-3.5 w-3.5" />Ver</>
+                                : <><Pencil className="mr-2 h-3.5 w-3.5" />Editar</>
+                            }
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <HallazgoForm hallazgo={hallazgo} isViewMode={!isEditing} />

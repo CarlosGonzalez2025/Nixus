@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,12 +14,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUpload } from '@/components/ui/file-upload';
+import { SignaturePad } from '@/components/ui/signature-pad';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import {
     collection, addDoc, updateDoc, doc, serverTimestamp,
-    query, orderBy, limit, getDocs,
+    query, orderBy, limit, getDocs, onSnapshot,
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -29,26 +31,42 @@ import {
     ClipboardList, User, CalendarCheck,
     CheckCircle2, Clock, TrendingUp, XCircle,
     AlertTriangle, Timer, Shield, Hash, Camera, CheckSquare,
+    Plus, X, MapPin, Building2, Factory, Layers,
+    Navigation, WifiOff, PenLine, CheckCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import type { Hallazgo } from '@/types';
+import { addListItem } from '@/app/(app)/admin/lists/actions';
+import { notifyHallazgoCreated } from '../actions';
 
 // ─── Schema ────────────────────────────────────────────────────────────────────
+const geoSchema = z.object({
+    lat: z.number(),
+    lng: z.number(),
+    accuracy: z.number().optional(),
+});
+
 const hallazgoSchema = z.object({
-    frenteTrabajo: z.string().min(1, 'El frente de trabajo es requerido'),
-    centroCosto: z.string().min(1, 'El centro de costo es requerido'),
+    empresa: z.string().min(1, 'La empresa es requerida'),
+    planta: z.string().min(1, 'La planta es requerida'),
     area: z.string().min(1, 'El área es requerida'),
     tipoActividad: z.enum(['Rutinario', 'No Rutinario'], { required_error: 'Selecciona el tipo de actividad' }),
-    fechaIdentificacion: z.date({ required_error: 'La fecha de identificación es requerida' }),
+    fechaVisita: z.date({ required_error: 'La fecha de visita es requerida' }),
+    geolocalizacion: geoSchema.refine(v => v !== null && v !== undefined, {
+        message: 'La geolocalización es requerida',
+    }),
     peligroInspeccionado: z.string().min(1, 'El peligro inspeccionado es requerido'),
     hallazgo: z.string().min(1, 'La descripción del hallazgo es requerida'),
     evidenciasFotograficas: z.array(z.string()).optional().default([]),
     clase: z.enum(['A', 'B', 'C'], { required_error: 'Selecciona la clase del hallazgo' }),
     intervencion: z.enum(['Inmediata', 'Pronta', 'Posterior'], { required_error: 'Selecciona el tipo de intervención' }),
     descripcion: z.string().min(1, 'La descripción de recomendaciones es requerida'),
+    accionInmediata: z.string().optional(),
     reportadoPorNombre: z.string().min(1, 'El nombre del reportador es requerido'),
     reportadoPorCargo: z.string().min(1, 'El cargo del reportador es requerido'),
+    firmaReportador: z.string().optional(),
+    firmaResponsable: z.string().optional(),
     // Plan de acción (opcional)
     fechaMedidaImplementada: z.date({ invalid_type_error: 'Fecha inválida' }).optional(),
     responsable: z.string().optional(),
@@ -124,42 +142,203 @@ function DateField({
     );
 }
 
+// ─── Combo Select + Add New ────────────────────────────────────────────────────
+type DynListName = 'empresas' | 'plantas' | 'areas';
+
+function ComboListField({
+    value, onChange, items, listName, disabled, placeholder, onItemAdded,
+}: {
+    value: string;
+    onChange: (val: string) => void;
+    items: string[];
+    listName: DynListName;
+    disabled?: boolean;
+    placeholder?: string;
+    onItemAdded: (listName: DynListName, item: string) => void;
+}) {
+    const { toast } = useToast();
+    const [showAdd, setShowAdd] = useState(false);
+    const [newItem, setNewItem] = useState('');
+    const [adding, setAdding] = useState(false);
+
+    const handleAdd = async () => {
+        const trimmed = newItem.trim();
+        if (!trimmed) return;
+        setAdding(true);
+        try {
+            const result = await addListItem(listName, trimmed);
+            if (result.success) {
+                onItemAdded(listName, trimmed);
+                onChange(trimmed);
+                setNewItem('');
+                setShowAdd(false);
+                toast({ title: 'Registro agregado', description: `"${trimmed}" fue agregado a la lista.` });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: result.error });
+            }
+        } catch {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agregar el registro.' });
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    return (
+        <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+                <Select value={value} onValueChange={onChange} disabled={disabled}>
+                    <SelectTrigger className="h-10 border-border/60 flex-1">
+                        <SelectValue placeholder={placeholder || 'Seleccionar...'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {items.map(item => (
+                            <SelectItem key={item} value={item}>{item}</SelectItem>
+                        ))}
+                        {items.length === 0 && (
+                            <div className="py-2 px-3 text-xs text-muted-foreground">Sin registros. Agrega uno nuevo.</div>
+                        )}
+                    </SelectContent>
+                </Select>
+                {!disabled && (
+                    <Button type="button" variant="outline" size="icon"
+                        className="h-10 w-10 flex-shrink-0 border-border/60"
+                        title="Agregar nuevo registro"
+                        onClick={() => setShowAdd(v => !v)}>
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                )}
+            </div>
+            {showAdd && !disabled && (
+                <div className="flex items-center gap-2 pl-1 pt-0.5">
+                    <Input
+                        value={newItem}
+                        onChange={e => setNewItem(e.target.value)}
+                        placeholder="Nuevo registro..."
+                        className="h-9 border-border/60 text-sm flex-1"
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
+                        autoFocus
+                    />
+                    <Button type="button" size="sm" className="h-9 px-3"
+                        disabled={adding || !newItem.trim()} onClick={handleAdd}>
+                        {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Agregar'}
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9"
+                        onClick={() => { setShowAdd(false); setNewItem(''); }}>
+                        <X className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [costCenters, setCostCenters] = useState<{ id: string; name: string }[]>([]);
+    const [sigDialog, setSigDialog] = useState<'reportador' | 'responsable' | null>(null);
 
-    // Cargar centros de costo
+    // Dynamic lists
+    const [empresas, setEmpresas] = useState<string[]>([]);
+    const [plantas, setPlantas] = useState<string[]>([]);
+    const [areas, setAreas] = useState<string[]>([]);
+
+    // Geolocation state
+    const [geoStatus, setGeoStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [geoError, setGeoError] = useState('');
+
+    // Cargar listas dinámicas desde dynamic_lists
     useEffect(() => {
         if (!db) return;
-        getDocs(query(collection(db, 'lists_cost_centers'), orderBy('name', 'asc')))
-            .then(snap => setCostCenters(snap.docs.map(d => ({ id: d.id, name: d.data().name }))))
-            .catch(() => { /* silencioso */ });
+        const unsubs: (() => void)[] = [];
+
+        const lists: { name: DynListName; setter: (v: string[]) => void }[] = [
+            { name: 'empresas', setter: setEmpresas },
+            { name: 'plantas', setter: setPlantas },
+            { name: 'areas', setter: setAreas },
+        ];
+
+        lists.forEach(({ name, setter }) => {
+            const unsub = onSnapshot(
+                doc(db!, 'dynamic_lists', name),
+                (snap) => {
+                    const items: string[] = snap.data()?.items || [];
+                    setter([...items].sort((a, b) => a.localeCompare(b)));
+                },
+                () => { /* silencioso */ }
+            );
+            unsubs.push(unsub);
+        });
+
+        return () => unsubs.forEach(u => u());
+    }, []);
+
+    const handleItemAdded = useCallback((listName: DynListName, item: string) => {
+        // El onSnapshot actualizará la lista automáticamente
+        // Solo necesitamos esta callback para sincronizar la vista
     }, []);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(hallazgoSchema),
         defaultValues: {
-            frenteTrabajo: '',
-            centroCosto: '',
+            empresa: '',
+            planta: '',
             area: '',
             tipoActividad: 'Rutinario',
-            fechaIdentificacion: new Date(),
+            fechaVisita: new Date(),
+            geolocalizacion: undefined as any,
             peligroInspeccionado: '',
             hallazgo: '',
             evidenciasFotograficas: [],
             clase: 'C',
             intervencion: 'Posterior',
             descripcion: '',
+            accionInmediata: '',
             reportadoPorNombre: '',
             reportadoPorCargo: '',
+            firmaReportador: '',
+            firmaResponsable: '',
             evidenciasPlanAccion: [],
             cumplimientoEstado: 'Pendiente',
         },
     });
+
+    // Captura automática de geolocalización
+    const captureGeo = useCallback(() => {
+        setGeoStatus('loading');
+        setGeoError('');
+        if (!navigator.geolocation) {
+            setGeoError('Geolocalización no disponible en este dispositivo');
+            setGeoStatus('error');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                form.setValue('geolocalizacion', {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
+                }, { shouldValidate: true });
+                setGeoStatus('success');
+            },
+            (err) => {
+                setGeoError(err.message || 'No se pudo obtener la ubicación');
+                setGeoStatus('error');
+            },
+            { enableHighAccuracy: true, timeout: 15000 }
+        );
+    }, [form]);
+
+    // Auto-capturar geo al crear un nuevo hallazgo
+    useEffect(() => {
+        if (!hallazgo && !isViewMode) {
+            captureGeo();
+        } else if (hallazgo?.geolocalizacion) {
+            setGeoStatus('success');
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Autocompletar nombre y cargo del usuario logueado
     useEffect(() => {
@@ -172,20 +351,31 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
     // Cargar datos al editar
     useEffect(() => {
         if (hallazgo) {
+            // Compatibilidad hacia atrás: si tiene los campos legacy los usamos
+            const empresaVal = hallazgo.empresa || hallazgo.frenteTrabajo || '';
+            const plantaVal = hallazgo.planta || hallazgo.centroCosto || '';
+            const fechaVal = hallazgo.fechaVisita
+                ? hallazgo.fechaVisita.toDate()
+                : hallazgo.fechaIdentificacion?.toDate() || new Date();
+
             form.reset({
-                frenteTrabajo: hallazgo.frenteTrabajo,
-                centroCosto: hallazgo.centroCosto,
+                empresa: empresaVal,
+                planta: plantaVal,
                 area: hallazgo.area,
                 tipoActividad: hallazgo.tipoActividad,
-                fechaIdentificacion: hallazgo.fechaIdentificacion.toDate(),
+                fechaVisita: fechaVal,
+                geolocalizacion: hallazgo.geolocalizacion as any,
                 peligroInspeccionado: hallazgo.peligroInspeccionado,
                 hallazgo: hallazgo.hallazgo,
                 evidenciasFotograficas: hallazgo.evidenciasFotograficas || [],
                 clase: hallazgo.clase,
                 intervencion: hallazgo.intervencion,
                 descripcion: hallazgo.descripcion,
+                accionInmediata: hallazgo.accionInmediata || '',
                 reportadoPorNombre: hallazgo.reportadoPorNombre,
                 reportadoPorCargo: hallazgo.reportadoPorCargo,
+                firmaReportador: hallazgo.firmaReportador || '',
+                firmaResponsable: hallazgo.firmaResponsable || '',
                 fechaMedidaImplementada: hallazgo.fechaMedidaImplementada?.toDate(),
                 responsable: hallazgo.responsable,
                 fechaSeguimiento1: hallazgo.fechaSeguimiento1?.toDate(),
@@ -196,6 +386,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 cumplimientoEstado: hallazgo.cumplimientoEstado,
                 observacion: hallazgo.observacion,
             });
+            if (hallazgo.geolocalizacion) setGeoStatus('success');
         }
     }, [hallazgo, form]);
 
@@ -206,13 +397,14 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
         if (draft) {
             try {
                 const parsed = JSON.parse(draft);
-                if (parsed.fechaIdentificacion) parsed.fechaIdentificacion = new Date(parsed.fechaIdentificacion);
+                if (parsed.fechaVisita) parsed.fechaVisita = new Date(parsed.fechaVisita);
                 if (parsed.fechaMedidaImplementada) parsed.fechaMedidaImplementada = new Date(parsed.fechaMedidaImplementada);
                 if (parsed.fechaSeguimiento1) parsed.fechaSeguimiento1 = new Date(parsed.fechaSeguimiento1);
                 if (parsed.fechaCierre) parsed.fechaCierre = new Date(parsed.fechaCierre);
                 if (!Array.isArray(parsed.evidenciasFotograficas)) parsed.evidenciasFotograficas = [];
                 if (!Array.isArray(parsed.evidenciasPlanAccion)) parsed.evidenciasPlanAccion = [];
                 form.reset(parsed);
+                if (parsed.geolocalizacion?.lat) setGeoStatus('success');
                 toast({ title: 'Borrador recuperado', description: 'Se restauraron los datos guardados.', duration: 4000 });
             } catch { /* ignorar */ }
         }
@@ -229,6 +421,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
     const watchedClase = form.watch('clase');
     const watchedPct = form.watch('porcentajeCumplimiento') ?? 0;
     const watchedPctTotal = form.watch('porcentajeCumplimientoTotal') ?? 0;
+    const watchedGeo = form.watch('geolocalizacion');
 
     const onSubmit = async (data: FormValues) => {
         if (!db || !user) {
@@ -239,7 +432,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
 
         // Firestore no acepta undefined — eliminar campos opcionales sin valor
         const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([, v]) => v !== undefined)
+            Object.entries(data).filter(([, v]) => v !== undefined && v !== '')
         );
 
         try {
@@ -253,7 +446,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 const snap = await getDocs(query(collection(db, 'hallazgos'), orderBy('numero', 'desc'), limit(1)));
                 const lastNumero = snap.docs[0]?.data().numero || 0;
                 const nextNumero = lastNumero + 1;
-                await addDoc(collection(db, 'hallazgos'), {
+                const newDocRef = await addDoc(collection(db, 'hallazgos'), {
                     ...cleanData,
                     numero: nextNumero,
                     empresaId: user.empresa || '',
@@ -263,6 +456,12 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 });
                 toast({ title: 'Hallazgo creado', description: `Hallazgo #${nextNumero} registrado correctamente.` });
                 localStorage.removeItem('draft_hallazgo');
+                // Notificar a Líderes SST en segundo plano
+                notifyHallazgoCreated({
+                    ...cleanData,
+                    id: newDocRef.id,
+                    numero: nextNumero,
+                } as any).catch(err => console.error('Error enviando notificaciones:', err));
                 router.push('/hallazgos');
             }
         } catch (error) {
@@ -319,49 +518,92 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="frenteTrabajo" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={labelClass}><Req>Frente de Trabajo</Req></FormLabel>
-                                        <FormControl>
-                                            <Input {...field} disabled={loading || isViewMode} placeholder="Ej: Torre 1" className="h-10 border-border/60" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
 
-                                <FormField control={form.control} name="centroCosto" render={({ field }) => (
+                                {/* Empresa */}
+                                <FormField control={form.control} name="empresa" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={labelClass}><Req>Centro de Costo</Req></FormLabel>
+                                        <FormLabel className={labelClass}>
+                                            <span className="flex items-center gap-1.5">
+                                                <Building2 className="w-3 h-3" />
+                                                <Req>Empresa</Req>
+                                            </span>
+                                        </FormLabel>
                                         <FormControl>
-                                            {costCenters.length > 0 ? (
-                                                <Select value={field.value} onValueChange={field.onChange} disabled={loading || isViewMode}>
-                                                    <SelectTrigger className="h-10 border-border/60">
-                                                        <SelectValue placeholder="Seleccione un centro de costo" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {costCenters.map(cc => (
-                                                            <SelectItem key={cc.id} value={cc.name}>{cc.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                            {isViewMode ? (
+                                                <Input value={field.value} disabled className="h-10 border-border/60" />
                                             ) : (
-                                                <Input {...field} disabled={loading || isViewMode} placeholder="Centro de costo" className="h-10 border-border/60" />
+                                                <ComboListField
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    items={empresas}
+                                                    listName="empresas"
+                                                    placeholder="Seleccionar empresa"
+                                                    disabled={loading}
+                                                    onItemAdded={handleItemAdded}
+                                                />
                                             )}
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
 
-                                <FormField control={form.control} name="area" render={({ field }) => (
+                                {/* Planta */}
+                                <FormField control={form.control} name="planta" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={labelClass}><Req>Área</Req></FormLabel>
+                                        <FormLabel className={labelClass}>
+                                            <span className="flex items-center gap-1.5">
+                                                <Factory className="w-3 h-3" />
+                                                <Req>Planta</Req>
+                                            </span>
+                                        </FormLabel>
                                         <FormControl>
-                                            <Input {...field} disabled={loading || isViewMode} placeholder="Ej: Construcción" className="h-10 border-border/60" />
+                                            {isViewMode ? (
+                                                <Input value={field.value} disabled className="h-10 border-border/60" />
+                                            ) : (
+                                                <ComboListField
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    items={plantas}
+                                                    listName="plantas"
+                                                    placeholder="Seleccionar planta"
+                                                    disabled={loading}
+                                                    onItemAdded={handleItemAdded}
+                                                />
+                                            )}
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
 
+                                {/* Área */}
+                                <FormField control={form.control} name="area" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}>
+                                            <span className="flex items-center gap-1.5">
+                                                <Layers className="w-3 h-3" />
+                                                <Req>Área</Req>
+                                            </span>
+                                        </FormLabel>
+                                        <FormControl>
+                                            {isViewMode ? (
+                                                <Input value={field.value} disabled className="h-10 border-border/60" />
+                                            ) : (
+                                                <ComboListField
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    items={areas}
+                                                    listName="areas"
+                                                    placeholder="Seleccionar área"
+                                                    disabled={loading}
+                                                    onItemAdded={handleItemAdded}
+                                                />
+                                            )}
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Tipo de Actividad */}
                                 <FormField control={form.control} name="tipoActividad" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className={labelClass}><Req>Tipo de Actividad</Req></FormLabel>
@@ -390,10 +632,68 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     </FormItem>
                                 )} />
 
-                                <FormField control={form.control} name="fechaIdentificacion" render={({ field }) => (
-                                    <DateField label="Fecha de Identificación *" field={field} loading={loading} disabled={isViewMode} />
+                                {/* Fecha de Visita */}
+                                <FormField control={form.control} name="fechaVisita" render={({ field }) => (
+                                    <DateField label="Fecha de Visita *" field={field} loading={loading} disabled={isViewMode} />
                                 )} />
 
+                                {/* Geolocalización */}
+                                <FormField control={form.control} name="geolocalizacion" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}>
+                                            <span className="flex items-center gap-1.5">
+                                                <MapPin className="w-3 h-3" />
+                                                <Req>Geolocalización</Req>
+                                            </span>
+                                        </FormLabel>
+                                        <FormControl>
+                                            <div className="space-y-2">
+                                                {geoStatus === 'success' && watchedGeo?.lat ? (
+                                                    <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                                                        <Navigation className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                                        <span className="text-xs text-emerald-700 dark:text-emerald-400 tabular-nums flex-1 truncate">
+                                                            {watchedGeo.lat.toFixed(6)}, {watchedGeo.lng.toFixed(6)}
+                                                            {watchedGeo.accuracy && (
+                                                                <span className="text-muted-foreground ml-1.5">±{Math.round(watchedGeo.accuracy)}m</span>
+                                                            )}
+                                                        </span>
+                                                        {!isViewMode && (
+                                                            <button type="button" onClick={captureGeo}
+                                                                className="text-xs text-emerald-600 hover:text-emerald-800 font-medium flex-shrink-0">
+                                                                Actualizar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : geoStatus === 'loading' ? (
+                                                    <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-border/60 bg-muted/20">
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                                                        <span className="text-xs text-muted-foreground">Obteniendo ubicación...</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-1.5">
+                                                        {geoStatus === 'error' && (
+                                                            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-red-500/30 bg-red-500/5">
+                                                                <WifiOff className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                                                                <span className="text-xs text-red-600 flex-1 truncate">{geoError}</span>
+                                                            </div>
+                                                        )}
+                                                        {!isViewMode && (
+                                                            <Button type="button" variant="outline" size="sm"
+                                                                className="h-9 w-full border-border/60"
+                                                                onClick={captureGeo} disabled={geoStatus === 'loading'}>
+                                                                <MapPin className="mr-2 h-3.5 w-3.5" />
+                                                                Capturar ubicación
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Peligro Inspeccionado */}
                                 <FormField control={form.control} name="peligroInspeccionado" render={({ field }) => (
                                     <FormItem className="sm:col-span-2">
                                         <FormLabel className={labelClass}><Req>Peligro Inspeccionado</Req></FormLabel>
@@ -431,8 +731,8 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                             value={field.value || []}
                                             onChange={field.onChange}
                                             disabled={loading || isViewMode}
-                                            label="Subir fotos del hallazgo"
-                                            maxFiles={8}
+                                            label="Subir fotos del hallazgo (múltiples permitidas)"
+                                            maxFiles={10}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -518,6 +818,18 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     <FormMessage />
                                 </FormItem>
                             )} />
+
+                            <FormField control={form.control} name="accionInmediata" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={labelClass}>Acción Inmediata</FormLabel>
+                                    <FormControl>
+                                        <Textarea {...field} value={field.value || ''} disabled={loading || isViewMode}
+                                            placeholder="Describe la acción inmediata a tomar..."
+                                            rows={3} className="resize-none border-border/60 text-sm" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
                         </AccordionContent>
                     </AccordionItem>
 
@@ -547,6 +859,85 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                         <FormLabel className={labelClass}><Req>Cargo</Req></FormLabel>
                                         <FormControl>
                                             <Input {...field} disabled={loading || isViewMode} placeholder="Cargo del reportador" className="h-10 border-border/60" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+
+                            {/* Firmas */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                                {/* Firma Reportador */}
+                                <FormField control={form.control} name="firmaReportador" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}>Firma Reportador</FormLabel>
+                                        <FormControl>
+                                            <div className="rounded-lg border border-border/60 bg-muted/10 p-3 min-h-[120px] flex flex-col items-center justify-center gap-2">
+                                                {field.value ? (
+                                                    <>
+                                                        <img src={field.value} alt="Firma reportador"
+                                                            className="max-h-[90px] object-contain" />
+                                                        {!isViewMode && (
+                                                            <button type="button"
+                                                                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                                                                onClick={() => field.onChange('')}>
+                                                                <X className="inline w-3 h-3 mr-1" />Eliminar firma
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    !isViewMode && (
+                                                        <Button type="button" variant="outline" size="sm"
+                                                            className="gap-2 h-9"
+                                                            disabled={loading}
+                                                            onClick={() => setSigDialog('reportador')}>
+                                                            <PenLine className="h-3.5 w-3.5" />
+                                                            Firmar
+                                                        </Button>
+                                                    )
+                                                )}
+                                                {isViewMode && !field.value && (
+                                                    <span className="text-xs text-muted-foreground">Sin firma</span>
+                                                )}
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Firma Responsable */}
+                                <FormField control={form.control} name="firmaResponsable" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}>Firma Responsable SST</FormLabel>
+                                        <FormControl>
+                                            <div className="rounded-lg border border-border/60 bg-muted/10 p-3 min-h-[120px] flex flex-col items-center justify-center gap-2">
+                                                {field.value ? (
+                                                    <>
+                                                        <img src={field.value} alt="Firma responsable"
+                                                            className="max-h-[90px] object-contain" />
+                                                        {!isViewMode && (
+                                                            <button type="button"
+                                                                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                                                                onClick={() => field.onChange('')}>
+                                                                <X className="inline w-3 h-3 mr-1" />Eliminar firma
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    !isViewMode && (
+                                                        <Button type="button" variant="outline" size="sm"
+                                                            className="gap-2 h-9"
+                                                            disabled={loading}
+                                                            onClick={() => setSigDialog('responsable')}>
+                                                            <PenLine className="h-3.5 w-3.5" />
+                                                            Firmar
+                                                        </Button>
+                                                    )
+                                                )}
+                                                {isViewMode && !field.value && (
+                                                    <span className="text-xs text-muted-foreground">Sin firma</span>
+                                                )}
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -630,8 +1021,8 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                             value={field.value || []}
                                             onChange={field.onChange}
                                             disabled={loading || isViewMode}
-                                            label="Subir fotos de la solución implementada"
-                                            maxFiles={8}
+                                            label="Subir fotos de la solución implementada (múltiples permitidas)"
+                                            maxFiles={10}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -735,6 +1126,30 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     </div>
                 )}
             </form>
+
+            {/* ── Diálogo de firma ─────────────────────────────────────── */}
+            <Dialog open={sigDialog !== null} onOpenChange={open => { if (!open) setSigDialog(null); }}>
+                <DialogContent className="sm:max-w-[520px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <PenLine className="h-4 w-4 text-primary" />
+                            {sigDialog === 'reportador' ? 'Firma del Reportador' : 'Firma del Responsable SST'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <SignaturePad
+                            onSave={(dataUrl) => {
+                                if (sigDialog === 'reportador') {
+                                    form.setValue('firmaReportador', dataUrl, { shouldValidate: true });
+                                } else {
+                                    form.setValue('firmaResponsable', dataUrl, { shouldValidate: true });
+                                }
+                                setSigDialog(null);
+                            }}
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </Form>
     );
 }

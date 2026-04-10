@@ -158,12 +158,14 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
       const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
       const users: BulkUser[] = [];
+      const errors: string[] = [];
       const requiredFields = ['fullName', 'email', 'password', 'role', 'empresa'];
 
       json.forEach((row, index) => {
         const missingFields = requiredFields.filter(field => !row[field]);
         if (missingFields.length > 0) {
-          throw new Error(`Fila ${index + 2}: Faltan campos obligatorios: ${missingFields.join(', ')}`);
+          errors.push(`Fila ${index + 2}: Faltan campos: ${missingFields.join(', ')}`);
+          return;
         }
 
         // Sanitize the role value to be more robust
@@ -171,9 +173,9 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         if (sanitizedRow.role && typeof sanitizedRow.role === 'string') {
           sanitizedRow.role = sanitizedRow.role.trim().toLowerCase().replace(/ /g, '_');
         }
-        // Sanitize email to remove leading/trailing spaces
+        // Sanitize email to remove ALL spaces and hidden characters, convert to lowercase
         if (sanitizedRow.email && typeof sanitizedRow.email === 'string') {
-          sanitizedRow.email = sanitizedRow.email.trim();
+          sanitizedRow.email = sanitizedRow.email.trim().replace(/[\s\u200B-\u200D\uFEFF]/g, '').toLowerCase();
         }
 
         const validation = bulkCreateUserSchema.safeParse({
@@ -185,9 +187,13 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
           users.push(validation.data);
         } else {
           const firstError = validation.error.errors[0];
-          throw new Error(`Fila ${index + 2}: Error en campo '${firstError.path.join('.')}': ${firstError.message}`);
+          errors.push(`Fila ${index + 2}: Campo '${firstError.path.join('.')}': ${firstError.message}`);
         }
       });
+
+      if (errors.length > 0) {
+        throw new Error(`Se detallaron ${errors.length} errores. Revisa el archivo:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}`);
+      }
 
       setParsedUsers(users);
       toast({ title: "Archivo Procesado", description: `Se encontraron ${users.length} usuarios para importar.` });

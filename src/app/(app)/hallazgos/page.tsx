@@ -108,6 +108,8 @@ export default function HallazgosPage() {
             const s = search.toLowerCase();
             const matchSearch = !s ||
                 h.hallazgo?.toLowerCase().includes(s) ||
+                h.empresa?.toLowerCase().includes(s) ||
+                h.planta?.toLowerCase().includes(s) ||
                 h.frenteTrabajo?.toLowerCase().includes(s) ||
                 h.area?.toLowerCase().includes(s) ||
                 h.reportadoPorNombre?.toLowerCase().includes(s) ||
@@ -161,7 +163,7 @@ export default function HallazgosPage() {
                         const claseCfg = CLASE_CONFIG[h.clase] || CLASE_CONFIG.C;
                         const estado = (h.cumplimientoEstado || 'Pendiente') as HallazgoEstado;
                         const estadoCfg = ESTADO_CONFIG[estado];
-                        const fecha = parseDate(h.fechaIdentificacion);
+                        const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
                         const pct = h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento;
 
                         return (
@@ -204,7 +206,7 @@ export default function HallazgosPage() {
                                     )}
 
                                     <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t">
-                                        <span className="truncate max-w-[55%]">{h.frenteTrabajo} · {h.area}</span>
+                                        <span className="truncate max-w-[55%]">{h.empresa || h.frenteTrabajo} · {h.area}</span>
                                         <span>{fecha ? format(fecha, 'dd/MM/yyyy', { locale: es }) : '—'}</span>
                                     </div>
                                 </CardContent>
@@ -214,14 +216,14 @@ export default function HallazgosPage() {
                 </div>
 
                 {/* ── Desktop: tabla ── */}
-                <div className="rounded-md border hidden md:block">
+                <div className="rounded-md border hidden md:block overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-14">#</TableHead>
                                 <TableHead>Hallazgo</TableHead>
                                 <TableHead>Clase / Intervención</TableHead>
-                                <TableHead>Frente / Área</TableHead>
+                                <TableHead>Empresa / Área</TableHead>
                                 <TableHead>Reportado por</TableHead>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Cumplimiento</TableHead>
@@ -233,7 +235,7 @@ export default function HallazgosPage() {
                                 const claseCfg = CLASE_CONFIG[h.clase] || CLASE_CONFIG.C;
                                 const estado = (h.cumplimientoEstado || 'Pendiente') as HallazgoEstado;
                                 const estadoCfg = ESTADO_CONFIG[estado];
-                                const fecha = parseDate(h.fechaIdentificacion);
+                                const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
                                 const pct = h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento;
 
                                 return (
@@ -256,8 +258,8 @@ export default function HallazgosPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <p className="text-sm font-medium">{h.frenteTrabajo}</p>
-                                            <p className="text-xs text-muted-foreground">{h.area}</p>
+                                            <p className="text-sm font-medium">{h.empresa || h.frenteTrabajo}</p>
+                                            <p className="text-xs text-muted-foreground">{h.planta ? `${h.planta} · ` : ''}{h.area}</p>
                                         </TableCell>
                                         <TableCell className="text-sm">{h.reportadoPorNombre}</TableCell>
                                         <TableCell className="text-sm">
@@ -296,33 +298,33 @@ export default function HallazgosPage() {
     };
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:p-6 min-w-0">
 
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Gestión de Hallazgos</h1>
-                    <p className="text-muted-foreground">Registro y seguimiento de hallazgos de seguridad.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Gestión de Hallazgos</h1>
+                    <p className="text-muted-foreground text-sm">Registro y seguimiento de hallazgos de seguridad.</p>
                 </div>
                 {canCreate && (
-                    <Button onClick={() => router.push('/hallazgos/crear')}>
+                    <Button onClick={() => router.push('/hallazgos/crear')} size="sm" className="sm:h-9">
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Nuevo Hallazgo
+                        <span className="hidden xs:inline">Nuevo</span> Hallazgo
                     </Button>
                 )}
             </div>
 
             {/* Card principal con tabs y filtros */}
-            <Card>
-                <CardContent className="p-4">
+            <Card className="min-w-0 overflow-hidden">
+                <CardContent className="p-3 sm:p-4">
                     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as TabEstado)}>
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
 
-                            {/* Tabs de estado */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <TabsList className="grid grid-cols-3 sm:flex w-full sm:w-auto">
+                            {/* Tabs de estado — scroll horizontal en móvil */}
+                            <div className="overflow-x-auto -mx-1 px-1">
+                                <TabsList className="inline-flex w-max min-w-full sm:w-auto">
                                     {tabEstados.map(t => (
-                                        <TabsTrigger key={t.key} value={t.key} className="whitespace-nowrap">
+                                        <TabsTrigger key={t.key} value={t.key} className="whitespace-nowrap text-xs sm:text-sm">
                                             {t.label}
                                             {countByTab(t.key) > 0 && (
                                                 <span className="ml-1.5 text-[10px] font-bold bg-muted rounded-full px-1.5 py-0.5 tabular-nums">
@@ -336,20 +338,20 @@ export default function HallazgosPage() {
 
                             {/* Filtros */}
                             <div className="flex flex-col sm:flex-row gap-2">
-                                <div className="relative flex-1">
+                                <div className="relative flex-1 min-w-0">
                                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="search"
-                                        placeholder="Buscar por número, hallazgo, área, frente..."
-                                        className="w-full rounded-lg bg-background pl-8"
+                                        placeholder="Buscar por número, hallazgo, empresa, área..."
+                                        className="w-full rounded-lg bg-background pl-8 text-sm"
                                         value={search}
                                         onChange={e => setSearch(e.target.value)}
                                     />
                                 </div>
                                 <Select value={filterClase} onValueChange={setFilterClase}>
-                                    <SelectTrigger className="w-full sm:w-[180px]">
-                                        <Filter className="mr-2 h-4 w-4" />
-                                        <SelectValue placeholder="Filtrar por clase" />
+                                    <SelectTrigger className="w-full sm:w-[160px] text-sm">
+                                        <Filter className="mr-2 h-3.5 w-3.5" />
+                                        <SelectValue placeholder="Clase" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todas las clases</SelectItem>
@@ -361,13 +363,13 @@ export default function HallazgosPage() {
                             </div>
 
                             {/* Contador */}
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                                 Mostrando {filtered.length} de {countByTab(activeTab)} hallazgos
                             </p>
                         </div>
 
                         {tabEstados.map(t => (
-                            <TabsContent key={t.key} value={t.key} className="mt-4">
+                            <TabsContent key={t.key} value={t.key} className="mt-3">
                                 {renderList(filtered)}
                             </TabsContent>
                         ))}

@@ -487,15 +487,22 @@ export type HallazgoClase = 'A' | 'B' | 'C';
 export type HallazgoIntervencion = 'Inmediata' | 'Pronta' | 'Posterior';
 export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado';
 
+export interface HallazgoGeolocalizacion {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+}
+
 export interface Hallazgo {
   id: string;
   numero: number;
   // Información general
-  frenteTrabajo: string;
-  centroCosto: string;
+  empresa: string;
+  planta: string;
   area: string;
   tipoActividad: 'Rutinario' | 'No Rutinario';
-  fechaIdentificacion: Timestamp;
+  fechaVisita: Timestamp;
+  geolocalizacion?: HallazgoGeolocalizacion;
   peligroInspeccionado: string;
   // Evidencia del hallazgo
   hallazgo: string;
@@ -504,9 +511,12 @@ export interface Hallazgo {
   clase: HallazgoClase;
   intervencion: HallazgoIntervencion;
   descripcion: string;
+  accionInmediata?: string;
   // Reportado por
   reportadoPorNombre: string;
   reportadoPorCargo: string;
+  firmaReportador?: string;
+  firmaResponsable?: string;
   // Plan de acción (opcional)
   fechaMedidaImplementada?: Timestamp;
   responsable?: string;
@@ -517,6 +527,10 @@ export interface Hallazgo {
   porcentajeCumplimientoTotal?: number;
   cumplimientoEstado?: HallazgoEstado;
   observacion?: string;
+  // Campos legacy (compatibilidad hacia atrás)
+  frenteTrabajo?: string;
+  centroCosto?: string;
+  fechaIdentificacion?: Timestamp;
   // Metadata
   empresaId: string;
   createdBy: string;
