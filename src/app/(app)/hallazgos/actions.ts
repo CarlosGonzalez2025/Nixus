@@ -30,7 +30,7 @@ const fmtDate = (v: any) => {
   return d ? format(d, "dd 'de' MMMM 'de' yyyy", { locale: es }) : '—';
 };
 
-function buildHallazgoEmailHtml(hallazgo: Hallazgo, hallazgoUrl: string): string {
+function buildHallazgoEmailHtml(hallazgo: Hallazgo, publicUrl: string, hallazgoUrl: string): string {
   const claseColor = CLASE_COLOR[hallazgo.clase] || '#2563eb';
   const claseLabel = CLASE_LABEL[hallazgo.clase] || hallazgo.clase;
   const empresa = hallazgo.empresa || hallazgo.frenteTrabajo || '—';
@@ -184,10 +184,17 @@ function buildHallazgoEmailHtml(hallazgo: Hallazgo, hallazgoUrl: string): string
           <!-- CTA -->
           <tr>
             <td style="padding:24px 32px;" align="center">
-              <a href="${hallazgoUrl}"
-                 style="background:#ef7b00;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-size:14px;font-weight:bold;display:inline-block;">
-                Ver Hallazgo Completo →
+              <a href="${publicUrl}"
+                 style="background:#3062C8;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:bold;display:inline-block;margin-bottom:12px;margin-right:10px;">
+                📄 Ver Documento Oficial
               </a>
+              <a href="${hallazgoUrl}"
+                 style="background:#ef7b00;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:bold;display:inline-block;margin-bottom:12px;">
+                Abrir en la Plataforma →
+              </a>
+              <p style="margin:10px 0 0;font-size:12px;color:#6b7280;text-align:center;">
+                El botón azul te permite ver e imprimir el reporte sin iniciar sesión.
+              </p>
             </td>
           </tr>
 
@@ -253,7 +260,8 @@ export async function notifyHallazgoCreated(hallazgo: Hallazgo): Promise<void> {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
   const hallazgoUrl = `${baseUrl}/hallazgos/${hallazgo.id}`;
-  const html = buildHallazgoEmailHtml(hallazgo, hallazgoUrl);
+  const publicUrl = `${baseUrl}/public/hallazgo/${hallazgo.id}`;
+  const html = buildHallazgoEmailHtml(hallazgo, publicUrl, hallazgoUrl);
   const claseLabel = CLASE_LABEL[hallazgo.clase] || hallazgo.clase;
 
   const subject = `🔔 Hallazgo #${hallazgo.numero} — ${claseLabel} | ${hallazgo.empresa || hallazgo.area || 'SST'}`;
