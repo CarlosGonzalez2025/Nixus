@@ -35,8 +35,9 @@ const ESTADOS: Record<string, { label: string, bg: string, text: string }> = {
   'Cerrado': { label: 'Cerrado', bg: 'bg-gray-100', text: 'text-gray-800' },
 };
 
-export default async function PublicHallazgoDocument({ params }: { params: { id: string } }) {
-  const docRef = adminDb.collection('hallazgos').doc(params.id);
+export default async function PublicHallazgoDocument({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const docRef = adminDb.collection('hallazgos').doc(id);
   const docSnap = await docRef.get();
 
   if (!docSnap.exists) {
@@ -73,7 +74,7 @@ export default async function PublicHallazgoDocument({ params }: { params: { id:
           </div>
           <div className="text-left sm:text-right flex flex-col items-start sm:items-end">
             <h1 className="text-2xl font-bold text-gray-900">Formato de Inspección</h1>
-            <p className="text-sm font-mono text-gray-500 mt-1">RC-HSEQ-{h.numero?.toString().padStart(4, '0')} • ID: {params.id.slice(0,8).toUpperCase()}</p>
+            <p className="text-sm font-mono text-gray-500 mt-1">RC-HSEQ-{h.numero?.toString().padStart(4, '0')} • ID: {id.slice(0,8).toUpperCase()}</p>
           </div>
         </div>
 
