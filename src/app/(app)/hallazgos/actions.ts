@@ -221,28 +221,27 @@ export async function notifyHallazgoCreated(hallazgo: Hallazgo): Promise<void> {
   const empresa = hallazgo.empresa || hallazgo.frenteTrabajo;
   const planta = hallazgo.planta || hallazgo.centroCosto;
 
-  // Buscar todos los líderes SST
+  // Buscar todos los líderes SST y administradores
   let sstQuery = adminDb.collection('users')
-    .where('role', '==', 'lider_sst')
-    .where('disabled', '!=', true);
+    .where('role', 'in', ['lider_sst', 'admin']);
 
   const sstSnap = await sstQuery.get();
 
-  // Filtrar por empresa y/o planta (hacemos el filtro en memoria porque Firestore
-  // no permite múltiples inequality filters en campos distintos)
+  // Filtrar por empresa y/o planta, y estado (hacemos el filtro en memoria porque
+  // Firestore tiene restricciones con queries compuestas 'in' y '!=')
   const recipients: Array<{ id: string; email: string; displayName?: string }> = [];
 
   sstSnap.forEach(doc => {
     const data = doc.data();
-    if (!data.email) return;
+    if (!data.email || data.disabled === true) return;
 
     const matchEmpresa = !empresa || !data.empresa ||
       data.empresa.toLowerCase() === empresa.toLowerCase();
     const matchPlanta = !planta || !data.planta ||
       data.planta.toLowerCase() === planta.toLowerCase();
 
-    // Incluir si coincide empresa O planta, o si no tiene empresa/planta asignada (admin global)
-    if (matchEmpresa && matchPlanta) {
+    // Administradores globales reciben todo; líderes SST se filtran por instalación
+    if (data.role === 'admin' || (matchEmpresa && matchPlanta)) {
       recipients.push({ id: doc.id, email: data.email, displayName: data.displayName });
     }
   });
