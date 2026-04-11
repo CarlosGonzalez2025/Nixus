@@ -57,7 +57,7 @@ function buildHallazgoEmailHtml(hallazgo: Hallazgo, hallazgoUrl: string): string
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <p style="margin:0;color:#ffffff;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Sistema de Gestión SST — ITALCOL</p>
+                    <p style="margin:0;color:#ffffff;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">Sistema de Gestión SST</p>
                     <h1 style="margin:6px 0 0;color:#ffffff;font-size:22px;font-weight:bold;">⚠️ Nuevo Hallazgo de Seguridad</h1>
                   </td>
                   <td align="right">
@@ -195,7 +195,7 @@ function buildHallazgoEmailHtml(hallazgo: Hallazgo, hallazgoUrl: string): string
           <tr>
             <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;">
               <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
-                Este correo fue generado automáticamente por el Sistema de Gestión SST de ITALCOL.<br/>
+                Este correo fue generado automáticamente por el Sistema de Gestión SST.<br/>
                 Por favor no responda a este correo.
               </p>
             </td>

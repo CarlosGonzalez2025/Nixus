@@ -299,5 +299,5 @@ export const generateCompleteWorkPermitPDF = async (permit: any) => {
     );
   }
 
-  doc.save(`Permiso_Italcol_${permit.number || permit.id.substring(0, 6)}.pdf`);
+  doc.save(`Permiso_${permit.number || permit.id.substring(0, 6)}.pdf`);
 };

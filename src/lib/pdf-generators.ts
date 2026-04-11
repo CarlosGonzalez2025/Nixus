@@ -158,7 +158,7 @@ const drawPageHeader = (doc: jsPDF, title: string, code: string, version: string
   } catch (e) {
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
-    doc.text('ITALCOL', MARGIN + 10, yPos + 12);
+    // doc.text('ITALCOL', MARGIN + 10, yPos + 12);
   }
 
   // Título central
@@ -1453,7 +1453,7 @@ export const generateUserManualPDF = () => {
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const introText = "Este manual describe el funcionamiento de la plataforma digital para la gestión de Permisos de Trabajo en Italcol. El objetivo es facilitar la solicitud, aprobación y cierre de permisos de alto riesgo, asegurando el cumplimiento de las normativas de seguridad.";
+  const introText = "Este manual describe el funcionamiento de la plataforma digital para la gestión de Permisos de Trabajo. El objetivo es facilitar la solicitud, aprobación y cierre de permisos de alto riesgo, asegurando el cumplimiento de las normativas de seguridad.";
   const splitIntro = doc.splitTextToSize(introText, PAGE_WIDTH - 2 * MARGIN);
   doc.text(splitIntro, MARGIN, yPos);
   yPos += splitIntro.length * 4 + 5;
