@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ import {
 import {
     PlusCircle, Search, Loader2, FileX, ChevronRight,
     AlertTriangle, Timer, Shield, Hash, Clock,
-    TrendingUp, CheckCircle2, XCircle, Filter,
+    TrendingUp, CheckCircle2, XCircle, Filter, Trash2,
 } from 'lucide-react';
 
 // ─── Config visual ─────────────────────────────────────────────────────────────
@@ -118,6 +118,19 @@ export default function HallazgosPage() {
         });
     }, [hallazgos, activeTab, filterClase, search]);
 
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm('¿Estás seguro de que deseas eliminar este registro de hallazgo? Esta acción no se puede deshacer.')) {
+            try {
+                await deleteDoc(doc(db, 'hallazgos', id));
+                toast({ title: 'Éxito', description: 'Registro eliminado correctamente.' });
+            } catch (err) {
+                console.error(err);
+                toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el registro.' });
+            }
+        }
+    };
+
     const countByTab = (tab: TabEstado) => {
         if (tab === 'todos') return hallazgos.length;
         return hallazgos.filter(h => (h.cumplimientoEstado || 'Pendiente') === tab).length;
@@ -179,9 +192,16 @@ export default function HallazgosPage() {
                                                 {claseCfg.label}
                                             </Badge>
                                         </div>
-                                        <Badge className={cn('text-xs flex-shrink-0', estadoCfg.color)}>
-                                            {estadoCfg.label}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge className={cn('text-xs flex-shrink-0', estadoCfg.color)}>
+                                                {estadoCfg.label}
+                                            </Badge>
+                                            {user?.role === 'admin' && (
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={(e) => handleDelete(h.id, e)}>
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <p className="text-sm font-medium line-clamp-2 mb-2">{h.hallazgo}</p>
@@ -282,10 +302,19 @@ export default function HallazgosPage() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="outline" size="sm"
-                                                onClick={() => router.push(`/hallazgos/${h.id}`)}>
-                                                Ver Detalles
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="outline" size="sm"
+                                                    onClick={() => router.push(`/hallazgos/${h.id}`)}>
+                                                    Detalles
+                                                </Button>
+                                                {user?.role === 'admin' && (
+                                                    <Button variant="outline" size="sm"
+                                                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700 w-9 p-0"
+                                                        onClick={(e) => handleDelete(h.id, e)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 );
