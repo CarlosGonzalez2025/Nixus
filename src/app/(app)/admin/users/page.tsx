@@ -30,7 +30,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles } from './actions';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles, deleteUser } from './actions';
 import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
@@ -559,6 +559,20 @@ export default function UsersPage() {
     }
   }
 
+  const handleDeleteUser = async (userId: string, displayName: string | undefined) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario ${displayName || ''}? Esta acción borrará su acceso y sus registros. NO se puede deshacer.`)) {
+      return;
+    }
+    
+    try {
+      const result = await deleteUser(userId);
+      if (result.error) throw new Error(result.error);
+      toast({ title: 'Usuario Eliminado', description: 'El usuario ha sido eliminado del sistema.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'No se pudo eliminar al usuario.' });
+    }
+  };
+
   const openEditModal = (user: User) => {
     setEditingUser(user);
     updateForm.reset({
@@ -932,10 +946,15 @@ export default function UsersPage() {
                             </Badge>
                             <span className="text-xs text-gray-500">{user.empresa}</span>
                           </div>
-                          <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={() => handleDeleteUser(user.uid, user.displayName)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )) : (
@@ -998,6 +1017,14 @@ export default function UsersPage() {
                                   checked={!user.disabled}
                                   onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
                                 />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.uid, user.displayName); }}
+                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
