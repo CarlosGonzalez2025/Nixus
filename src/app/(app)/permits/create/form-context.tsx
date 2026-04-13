@@ -37,6 +37,7 @@ const initialState: FormState = {
   generalInfo: {
     areaEspecifica: '',
     planta: '',
+    ciudad: '',
     proceso: '',
     contrato: '',
     empresa: '',
@@ -189,6 +190,10 @@ function formReducer(state: FormState, action: FormAction): FormState {
       newState.generalInfo = {
           ...state.generalInfo,
           nombreSolicitante: user.displayName || '',
+          empresa: user.empresa || state.generalInfo.empresa,
+          planta: user.planta || state.generalInfo.planta,
+          ciudad: user.ciudad || state.generalInfo.ciudad || '',
+          requierePlanta: user.planta ? 'si' : state.generalInfo.requierePlanta,
           responsable: {
               ...state.generalInfo.responsable,
               nombre: user.displayName || '',

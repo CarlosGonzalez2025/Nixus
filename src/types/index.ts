@@ -382,6 +382,7 @@ export type EppEmergencias = {
 export type PermitGeneralInfo = {
     areaEspecifica: string;
     planta: string;
+    ciudad?: string;
     proceso: string;
     contrato: string;
     requiereArea?: 'si' | 'no';

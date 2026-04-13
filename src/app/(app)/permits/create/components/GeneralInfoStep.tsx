@@ -29,6 +29,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/use-user';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays, format } from 'date-fns';
@@ -313,10 +314,25 @@ const ConditionalField: React.FC<ConditionalFieldProps> = ({
   </div>
 );
 
+// Campo de solo lectura que muestra un valor tomado del perfil del usuario
+const ProfileReadonlyField = ({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) => (
+  <div className="space-y-2">
+    <RequiredLabel>{label}</RequiredLabel>
+    <div className="flex items-center gap-2 h-11 px-3 rounded-md border bg-muted/30 text-sm">
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="font-medium flex-1 truncate">{value}</span>
+      <Badge className="ml-auto shrink-0 text-xs bg-blue-100 text-blue-700 border-blue-200">
+        Del perfil
+      </Badge>
+    </div>
+  </div>
+);
+
 export function GeneralInfoStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, selectedWorkTypes } = state;
   const { toast } = useToast();
+  const { user } = useUser();
 
   const [herramientasDisponibles, setHerramientasDisponibles] = React.useState<string[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -574,26 +590,34 @@ export function GeneralInfoStep() {
             />
           </ConditionalField>
           
-          <ConditionalField
-            label="Planta"
-            icon={<Building2 className="h-4 w-4" />}
-            radioValue={generalInfo.requierePlanta}
-            onRadioChange={(value) => { 
-              handleInputChange('requierePlanta', value); 
-              if (value === 'no') handleInputChange('planta', ''); 
-            }}
-          >
-            <DynamicSelect
-              listKey="plantas"
+          {user?.planta ? (
+            <ProfileReadonlyField
               label="Planta"
-              required
-              creatable
-              value={generalInfo.planta || ''}
-              options={dynamicLists.plantas}
-              isLoading={loadingLists}
-              onValueChange={(value) => handleInputChange('planta', value)}
+              value={generalInfo.planta || user.planta}
+              icon={<Building2 className="h-4 w-4" />}
             />
-          </ConditionalField>
+          ) : (
+            <ConditionalField
+              label="Planta"
+              icon={<Building2 className="h-4 w-4" />}
+              radioValue={generalInfo.requierePlanta}
+              onRadioChange={(value) => {
+                handleInputChange('requierePlanta', value);
+                if (value === 'no') handleInputChange('planta', '');
+              }}
+            >
+              <DynamicSelect
+                listKey="plantas"
+                label="Planta"
+                required
+                creatable
+                value={generalInfo.planta || ''}
+                options={dynamicLists.plantas}
+                isLoading={loadingLists}
+                onValueChange={(value) => handleInputChange('planta', value)}
+              />
+            </ConditionalField>
+          )}
 
           <ConditionalField
             label="Proceso"
@@ -647,17 +671,43 @@ export function GeneralInfoStep() {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DynamicSelect
-            listKey="empresas"
-            label="Empresa"
-            required
-            value={generalInfo.empresa || ''}
-            options={dynamicLists.empresas}
-            isLoading={loadingLists}
-            onValueChange={(value) => handleInputChange('empresa', value)}
-          />
-          
-          <div className="space-y-2">
+          {user?.empresa ? (
+            <ProfileReadonlyField
+              label="Empresa"
+              value={generalInfo.empresa || user.empresa}
+              icon={<Building2 className="h-4 w-4" />}
+            />
+          ) : (
+            <DynamicSelect
+              listKey="empresas"
+              label="Empresa"
+              required
+              value={generalInfo.empresa || ''}
+              options={dynamicLists.empresas}
+              isLoading={loadingLists}
+              onValueChange={(value) => handleInputChange('empresa', value)}
+            />
+          )}
+
+          {user?.ciudad ? (
+            <ProfileReadonlyField
+              label="Ciudad"
+              value={generalInfo.ciudad || user.ciudad}
+              icon={<MapPin className="h-4 w-4" />}
+            />
+          ) : (
+            <div className="space-y-2">
+              <RequiredLabel required={false}>Ciudad</RequiredLabel>
+              <Input
+                value={generalInfo.ciudad || ''}
+                onChange={(e) => handleInputChange('ciudad', e.target.value)}
+                placeholder="Ciudad donde se ejecuta el trabajo"
+                className="h-11"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2 md:col-span-2">
             <RequiredLabel>Ejecutante del trabajo / Líder del equipo Ejecutante</RequiredLabel>
             <Input
               value={generalInfo.nombreSolicitante || ''}
