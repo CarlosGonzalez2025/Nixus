@@ -205,7 +205,8 @@ export async function updateUserStatus(userId: string, disabled: boolean) {
 
 /**
  * Migra usuarios con roles obsoletos a los roles actuales:
- * - lider_tarea → solicitante
+ * - lider_tarea  → solicitante
+ * - ejecutante   → solicitante  (el rol "Ejecutante del Trabajo" con T mayúscula fue unificado)
  */
 export async function migrateObsoleteRoles() {
   if (!isAdminReady()) {
@@ -216,21 +217,23 @@ export async function migrateObsoleteRoles() {
     const batch = adminDb.batch();
     let migratedCount = 0;
 
+    const OBSOLETE_TO_SOLICITANTE = ['lider_tarea', 'ejecutante'];
+
     for (const docSnap of usersSnap.docs) {
       const data = docSnap.data();
       let needsUpdate = false;
       const update: { role?: string; otherRoles?: string[] } = {};
 
       // Migrar rol principal
-      if (data.role === 'lider_tarea') {
+      if (OBSOLETE_TO_SOLICITANTE.includes(data.role)) {
         update.role = 'solicitante';
         needsUpdate = true;
       }
 
       // Migrar roles adicionales
-      if (Array.isArray(data.otherRoles) && data.otherRoles.includes('lider_tarea')) {
+      if (Array.isArray(data.otherRoles) && data.otherRoles.some((r: string) => OBSOLETE_TO_SOLICITANTE.includes(r))) {
         update.otherRoles = data.otherRoles
-          .map((r: string) => r === 'lider_tarea' ? 'solicitante' : r)
+          .map((r: string) => OBSOLETE_TO_SOLICITANTE.includes(r) ? 'solicitante' : r)
           .filter((r: string, i: number, arr: string[]) => arr.indexOf(r) === i); // deduplicar
         needsUpdate = true;
       }
@@ -290,7 +293,7 @@ export async function syncAuthAndFirestoreUsers() {
         email: userRecord.email || '',
         displayName: userRecord.displayName || 'Usuario sin nombre',
         photoURL: userRecord.photoURL || '',
-        role: 'ejecutante', // Assign a default role
+        role: 'solicitante', // Assign a default role
         empresa: 'Empresa no especificada',
         ciudad: '',
         planta: '',

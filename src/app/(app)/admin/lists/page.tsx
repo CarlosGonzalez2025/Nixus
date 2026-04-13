@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Loader2, List, Plus, Trash2, Upload, Download,
   Search, Edit2, Check, X, Building2, Factory, Cog, FileText, Users,
-  ChevronRight, Settings2
+  ChevronRight, Settings2, MapPin
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ import {
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 
-type ListName = 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas';
+type ListName = 'areas' | 'plantas' | 'procesos' | 'contratos' | 'empresas' | 'ciudades';
 
 // Configuración de submódulos
 const listConfigs: Record<ListName, { title: string; description: string; icon: React.ElementType }> = {
@@ -80,6 +80,11 @@ const listConfigs: Record<ListName, { title: string; description: string; icon: 
     title: 'Empresas',
     description: 'Administre las empresas contratistas registradas',
     icon: Building2,
+  },
+  ciudades: {
+    title: 'Ciudades',
+    description: 'Administre las ciudades disponibles para asignación de usuarios',
+    icon: MapPin,
   },
 };
 
@@ -549,6 +554,7 @@ export default function ListsPage() {
     procesos: 0,
     contratos: 0,
     empresas: 0,
+    ciudades: 0,
   });
 
   // Cargar conteos de todas las listas
@@ -681,7 +687,7 @@ export default function ListsPage() {
             {/* Info Card - Solo desktop */}
             <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
               <p className="text-xs text-gray-500 leading-relaxed">
-                <span className="font-semibold text-gray-700">💡 Tip:</span> Los cambios se reflejan instantáneamente en los formularios de permisos.
+                <span className="font-semibold text-gray-700">💡 Tip:</span> Los cambios se reflejan instantáneamente en los formularios de permisos y en la gestión de usuarios.
               </p>
             </div>
           </div>

@@ -636,6 +636,26 @@ export default function PermitDetailPage() {
     return false;
   };
 
+  // Verifica si todas las firmas requeridas están completas (equivalente client-side a checkAllRequiredSignaturesComplete)
+  const allRequiredSignaturesComplete = (): boolean => {
+    if (!permit) return false;
+    const { approvals, selectedWorkTypes, isSSTSignatureRequired: sstRequired } = permit;
+    if (approvals?.solicitante?.status !== 'aprobado') return false;
+    if (approvals?.autorizante?.status !== 'aprobado') return false;
+    if ((permit.trabajoAlturas || selectedWorkTypes?.alturas) && approvals?.coordinador_alturas?.status !== 'aprobado') return false;
+    if ((permit.espaciosConfinados || selectedWorkTypes?.confinado) && approvals?.supervisor_confinado?.status !== 'aprobado') return false;
+    if (permit.controlEnergia && approvals?.mantenimiento?.status !== 'aprobado') return false;
+    if (sstRequired && approvals?.lider_sst?.status !== 'aprobado') return false;
+    return true;
+  };
+
+  // Un admin o autorizante puede activar manualmente permisos que ya tienen todas las firmas
+  // (útil para permisos históricos atascados en pendiente_revision)
+  const canManuallyActivate =
+    permit?.status === 'pendiente_revision' &&
+    (currentUser?.role === 'admin' || currentUser?.role === 'autorizante') &&
+    allRequiredSignaturesComplete();
+
 
   const handleOpenClosureDialog = () => {
     if (!permit) return;
@@ -1259,6 +1279,21 @@ export default function PermitDetailPage() {
 
           {/* Acciones principales */}
           <div className="flex items-center gap-2">
+            {canManuallyActivate && (
+              <Button
+                onClick={() => handleChangeStatus('en_ejecucion')}
+                size="sm"
+                disabled={isStatusChanging}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isStatusChanging
+                  ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" />
+                  : <CheckCircle className="h-4 w-4 md:mr-2" />
+                }
+                <span className="hidden md:inline">Activar Permiso</span>
+              </Button>
+            )}
+
             {canChangeStatus('en_ejecucion') && (
               <Button onClick={() => handleChangeStatus('en_ejecucion')} size="sm" className="bg-purple-600 hover:bg-purple-700">
                 <PlayCircle className="h-4 w-4 md:mr-2" />

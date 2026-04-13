@@ -36,7 +36,7 @@ import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
 import { USER_ROLES, ROLE_LABELS } from '@/lib/role-config';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
   Table,
@@ -107,7 +107,6 @@ const roleNames: { [key in UserRole]: string } = ROLE_LABELS;
 const roleColors: { [key in UserRole]: string } = {
   solicitante: 'bg-blue-100 text-blue-700 border-blue-200',
   autorizante: 'bg-purple-100 text-purple-700 border-purple-200',
-  ejecutante: 'bg-gray-100 text-gray-700 border-gray-200',
   lider_sst: 'bg-orange-100 text-orange-700 border-orange-200',
   admin: 'bg-red-100 text-red-700 border-red-200',
   mantenimiento: 'bg-cyan-100 text-cyan-700 border-cyan-200'
@@ -263,7 +262,7 @@ function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
             </Button>
             <div className="text-xs text-muted-foreground pt-4">
               <p><span className="font-bold">Columnas:</span> fullName*, email*, password*, role*, empresa*, ciudad, planta, area, telefono</p>
-              <p className="mt-2"><span className="font-bold">Roles válidos:</span> solicitante, autorizante, ejecutante, lider_sst, admin, mantenimiento</p>
+              <p className="mt-2"><span className="font-bold">Roles válidos:</span> solicitante, autorizante, lider_sst, admin, mantenimiento</p>
             </div>
           </div>
           {/* Columna de Carga */}
@@ -339,13 +338,22 @@ export default function UsersPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
 
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterEmpresa, setFilterEmpresa] = useState<string>('all');
+
+  // Listas dinámicas para los dropdowns del formulario
+  const [listEmpresas, setListEmpresas] = useState<string[]>([]);
+  const [listPlantas, setListPlantas] = useState<string[]>([]);
+  const [listCiudades, setListCiudades] = useState<string[]>([]);
+
   const createForm = useForm<z.infer<typeof createFormSchema>>({
     resolver: zodResolver(createFormSchema),
     defaultValues: {
       fullName: '',
       email: '',
       password: '',
-      role: 'ejecutante',
+      role: 'solicitante',
       area: '',
       telefono: '',
       empresa: 'NIXUS',
@@ -369,19 +377,40 @@ export default function UsersPage() {
     }
 
     try {
-      const usersToExport = users.map(user => ({
-        'Nombre Completo': user.displayName || '',
-        'Correo Electrónico': user.email || '',
-        'Rol': user.role ? roleNames[user.role] : 'N/A',
-        'Empresa': user.empresa || '',
-        'Ciudad': user.ciudad || '',
-        'Planta': user.planta || '',
-        'Área': user.area || '',
-        'Teléfono': user.telefono || '',
-        'Estado': user.disabled ? 'Inactivo' : 'Activo'
-      }));
+      const usersToExport = users.map(user => {
+        const otherRoles = (user.otherRoles ?? []).filter(
+          (r): r is UserRole => r in roleNames
+        );
+        const otherRoleLabels = otherRoles.map(r => roleNames[r]);
+
+        return {
+          'Nombre Completo': user.displayName || '',
+          'Correo Electrónico': user.email || '',
+          'Rol Principal': user.role ? roleNames[user.role] : 'N/A',
+          'Rol Adicional 1': otherRoleLabels[0] ?? '',
+          'Rol Adicional 2': otherRoleLabels[1] ?? '',
+          'Rol Adicional 3': otherRoleLabels[2] ?? '',
+          'Todos los Roles': [
+            user.role ? roleNames[user.role] : '',
+            ...otherRoleLabels,
+          ].filter(Boolean).join(' | '),
+          'Empresa': user.empresa || '',
+          'Ciudad': user.ciudad || '',
+          'Planta': user.planta || '',
+          'Área': user.area || '',
+          'Teléfono': user.telefono || '',
+          'Estado': user.disabled ? 'Inactivo' : 'Activo',
+        };
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(usersToExport);
+
+      // Ajustar ancho de columnas automáticamente
+      const colWidths = Object.keys(usersToExport[0] ?? {}).map(key => ({
+        wch: Math.max(key.length, ...usersToExport.map(row => String((row as any)[key]).length)) + 2,
+      }));
+      worksheet['!cols'] = colWidths;
+
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios SGTC');
 
@@ -435,6 +464,22 @@ export default function UsersPage() {
     }
   };
 
+  // Suscripción a listas dinámicas (empresas, plantas, ciudades)
+  useEffect(() => {
+    const unsubs = [
+      onSnapshot(doc(db, 'dynamic_lists', 'empresas'), snap => {
+        setListEmpresas((snap.data()?.items ?? []).sort());
+      }),
+      onSnapshot(doc(db, 'dynamic_lists', 'plantas'), snap => {
+        setListPlantas((snap.data()?.items ?? []).sort());
+      }),
+      onSnapshot(doc(db, 'dynamic_lists', 'ciudades'), snap => {
+        setListCiudades((snap.data()?.items ?? []).sort());
+      }),
+    ];
+    return () => unsubs.forEach(u => u());
+  }, []);
+
   useEffect(() => {
     if (!adminLoading && adminUser?.role !== 'admin') {
       toast({
@@ -476,18 +521,32 @@ export default function UsersPage() {
 
   // Filtrado de usuarios
   useEffect(() => {
+    let filtered = users;
+
     if (searchTerm.trim()) {
-      setFilteredUsers(
-        users.filter(user =>
-          user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.empresa?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+      filtered = filtered.filter(user =>
+        user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.empresa?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    } else {
-      setFilteredUsers(users);
     }
-  }, [searchTerm, users]);
+
+    if (filterRole !== 'all') {
+      filtered = filtered.filter(user => user.role === filterRole);
+    }
+
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(user =>
+        filterStatus === 'active' ? !user.disabled : user.disabled
+      );
+    }
+
+    if (filterEmpresa !== 'all') {
+      filtered = filtered.filter(user => user.empresa === filterEmpresa);
+    }
+
+    setFilteredUsers(filtered);
+  }, [searchTerm, users, filterRole, filterStatus, filterEmpresa]);
 
   async function onCreateSubmit(values: z.infer<typeof createFormSchema>) {
     setIsSubmitting(true);
@@ -579,7 +638,7 @@ export default function UsersPage() {
       uid: user.uid,
       displayName: user.displayName || '',
       email: user.email || '',
-      role: user.role || 'ejecutante',
+      role: user.role || 'solicitante',
       otherRoles: user.otherRoles || [],
       area: user.area || '',
       telefono: user.telefono || '',
@@ -595,6 +654,19 @@ export default function UsersPage() {
     total: users.length,
     active: users.filter(u => !u.disabled).length,
     admins: users.filter(u => u.role === 'admin').length,
+  };
+
+  const uniqueEmpresas = Array.from(
+    new Set(users.map(u => u.empresa).filter(Boolean))
+  ).sort() as string[];
+
+  const hasActiveFilters = filterRole !== 'all' || filterStatus !== 'all' || filterEmpresa !== 'all';
+
+  const clearFilters = () => {
+    setFilterRole('all');
+    setFilterStatus('all');
+    setFilterEmpresa('all');
+    setSearchTerm('');
   };
 
   if (adminLoading || adminUser?.role !== 'admin') {
@@ -767,9 +839,16 @@ export default function UsersPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Empresa</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Ej: NIXUS" className="h-11" {...field} />
-                            </FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11">
+                                  <SelectValue placeholder="Seleccione una empresa" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {listEmpresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -783,9 +862,16 @@ export default function UsersPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Ciudad</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Bogotá" className="h-11" {...field} />
-                            </FormControl>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                              <FormControl>
+                                <SelectTrigger className="h-11">
+                                  <SelectValue placeholder="Seleccione una ciudad" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {listCiudades.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -796,9 +882,16 @@ export default function UsersPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Planta</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Faca" className="h-11" {...field} />
-                            </FormControl>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                              <FormControl>
+                                <SelectTrigger className="h-11">
+                                  <SelectValue placeholder="Seleccione una planta" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {listPlantas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -881,32 +974,86 @@ export default function UsersPage() {
         <div className="flex-1 px-4 md:px-8 pb-6">
           <Card className="border border-gray-200 shadow-sm h-full">
             <CardHeader className="pb-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                    Lista de Usuarios
-                  </CardTitle>
-                  <CardDescription className="hidden md:block">
-                    {filteredUsers.length} usuarios encontrados
-                  </CardDescription>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      Lista de Usuarios
+                    </CardTitle>
+                    <CardDescription className="hidden md:block">
+                      {filteredUsers.length} de {users.length} usuarios
+                    </CardDescription>
+                  </div>
+
+                  {/* Búsqueda */}
+                  <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Buscar usuario..."
+                      className="pl-10 h-10 bg-gray-50 border-gray-200"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Búsqueda */}
-                <div className="relative w-full md:w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar usuario..."
-                    className="pl-10 h-10 bg-gray-50 border-gray-200"
-                  />
-                  {searchTerm && (
+                {/* Filtros */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Filtro por Rol */}
+                  <Select value={filterRole} onValueChange={setFilterRole}>
+                    <SelectTrigger className="h-9 w-full sm:w-52 bg-gray-50 border-gray-200 text-sm">
+                      <SelectValue placeholder="Filtrar por Rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los roles</SelectItem>
+                      {Object.entries(roleNames).map(([role, name]) => (
+                        <SelectItem key={role} value={role}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Filtro por Estado */}
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-9 w-full sm:w-40 bg-gray-50 border-gray-200 text-sm">
+                      <SelectValue placeholder="Filtrar por Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los estados</SelectItem>
+                      <SelectItem value="active">Activo</SelectItem>
+                      <SelectItem value="inactive">Inactivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Filtro por Empresa */}
+                  <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
+                    <SelectTrigger className="h-9 w-full sm:w-52 bg-gray-50 border-gray-200 text-sm">
+                      <SelectValue placeholder="Filtrar por Empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las empresas</SelectItem>
+                      {uniqueEmpresas.map(empresa => (
+                        <SelectItem key={empresa} value={empresa}>{empresa}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Limpiar filtros */}
+                  {hasActiveFilters && (
                     <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      onClick={clearFilters}
+                      className="flex items-center gap-1.5 h-9 px-3 rounded-md text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
+                      Limpiar filtros
                     </button>
                   )}
                 </div>
@@ -941,8 +1088,8 @@ export default function UsersPage() {
                         </div>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-2">
-                            <Badge className={`text-xs ${roleColors[user.role || 'ejecutante']}`}>
-                              {(roleNames[user.role || 'ejecutante'] ?? 'Ejecutante').split(' ')[0]}
+                            <Badge className={`text-xs ${roleColors[user.role || 'solicitante']}`}>
+                              {(roleNames[user.role || 'solicitante'] ?? 'Ejecutante').split(' ')[0]}
                             </Badge>
                             <span className="text-xs text-gray-500">{user.empresa}</span>
                           </div>
@@ -993,8 +1140,8 @@ export default function UsersPage() {
                             </TableCell>
                             <TableCell className="text-gray-600">{user.empresa}</TableCell>
                             <TableCell>
-                              <Badge className={`text-xs ${roleColors[user.role || 'ejecutante']}`}>
-                                {roleNames[user.role || 'ejecutante']}
+                              <Badge className={`text-xs ${roleColors[user.role || 'solicitante']}`}>
+                                {roleNames[user.role || 'solicitante']}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -1096,9 +1243,16 @@ export default function UsersPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Empresa</FormLabel>
-                    <FormControl>
-                      <Input className="h-11" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Seleccione una empresa" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {listEmpresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1110,9 +1264,16 @@ export default function UsersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Ciudad</FormLabel>
-                      <FormControl>
-                        <Input className="h-11" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Seleccione una ciudad" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {listCiudades.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1123,9 +1284,16 @@ export default function UsersPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Planta</FormLabel>
-                      <FormControl>
-                        <Input className="h-11" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Seleccione una planta" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {listPlantas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

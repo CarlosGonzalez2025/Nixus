@@ -68,7 +68,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     email: authUser.email,
                     displayName: authUser.displayName,
                     photoURL: authUser.photoURL,
-                    role: 'ejecutante', // Default role — consistente con syncAuthAndFirestoreUsers
+                    role: 'solicitante', // Default role — consistente con syncAuthAndFirestoreUsers
                     empresa: 'N/A',
                     ciudad: 'N/A',
                     planta: 'N/A',
@@ -78,7 +78,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 // Create the default user profile in Firestore
                 setDoc(docRef, defaultUser).then(() => {
                     setUser(defaultUser);
-                    setActiveRole('ejecutante');
+                    setActiveRole('solicitante');
                 }).catch(err => {
                     console.error("Failed to create default user profile in Firestore", err);
                 });

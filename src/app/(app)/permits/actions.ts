@@ -384,10 +384,20 @@ export async function addSignatureAndNotify(
                     });
                 }
             } else {
-                 await docRef.update(updateData);
+                await docRef.update(updateData);
+
+                // Auto-transición: si todas las firmas requeridas están completas,
+                // avanzar automáticamente de 'pendiente_revision' → 'en_ejecucion' (saltando 'aprobado')
+                const permitAfterSign = (await docRef.get()).data() as Permit;
+                if (permitAfterSign.status === 'pendiente_revision') {
+                    const allComplete = await checkAllRequiredSignaturesComplete(permitAfterSign);
+                    if (allComplete) {
+                        await docRef.update({ status: 'en_ejecucion' });
+                    }
+                }
             }
         }
-        
+
         const permitDoc = await docRef.get();
         const updatedPermitData = { id: permitDoc.id, ...permitDoc.data() } as Permit;
 
@@ -456,6 +466,20 @@ ${permitUrl}`;
                 if (uid !== user.uid) {
                     await createNotification(uid, updatedPermitData, message, 'signature', user);
                 }
+            }
+
+            // Si el permiso acaba de pasar a 'en_ejecucion' automáticamente, notificar
+            if (updatedPermitData.status === 'en_ejecucion' && permitBeforeData.status === 'pendiente_revision') {
+                const approvalMessage = `¡El permiso #${updatedPermitData.number} está EN EJECUCIÓN! Todas las firmas requeridas fueron completadas y el permiso fue activado automáticamente.`;
+                for (const uid of involvedUsers) {
+                    if (uid !== user.uid) {
+                        await createNotification(uid, updatedPermitData, approvalMessage, 'approval', user);
+                    }
+                }
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+                const permitUrl = `${baseUrl}/permits/${permitId}`;
+                const workTypesText = getWorkTypesString(updatedPermitData);
+                await sendWhatsAppNotification(`*🟢 Permiso EN EJECUCIÓN* 🎉\n\nTodas las firmas requeridas han sido registradas. El permiso fue activado automáticamente.\n\n📄 *Número:* ${updatedPermitData.number}\n👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}\n🛠️ *Tipo de Trabajo:* ${workTypesText}\n\nVer permiso:\n${permitUrl}`);
             }
         }
 
@@ -571,10 +595,21 @@ export async function updatePermitStatus(
             return { success: false, error: 'El permiso no existe.' };
         }
         const permitData = permitSnap.data() as Permit;
-        
+
         const transition = validateStateTransition(permitData.status, status, currentUser.role);
         if (!transition.allowed) {
             return { success: false, error: transition.reason };
+        }
+
+        // Validar que todas las firmas requeridas existan antes de pasar a en_ejecucion desde pendiente_revision
+        if (status === 'en_ejecucion' && permitData.status === 'pendiente_revision') {
+            const allComplete = await checkAllRequiredSignaturesComplete(permitData);
+            if (!allComplete) {
+                return {
+                    success: false,
+                    error: 'No se puede activar el permiso: faltan firmas de autorización requeridas (Ejecutante del trabajo, Autorizante, y/o firmas especiales según el tipo de trabajo).',
+                };
+            }
         }
 
         const updateData: UpdateData<Permit> = { status };
