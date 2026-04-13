@@ -45,10 +45,10 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
     }
   });
 
-  // 3. Lógica específica para Autorizantes y SST según la planta
+  // 3. Usuarios por rol filtrados por planta del permiso
   const permitPlant = permit.generalInfo?.planta;
 
-  // Buscar Autorizantes
+  // Buscar Autorizantes de la misma planta
   let autorizantesQuery = adminDb.collection('users').where('role', '==', 'autorizante');
   if (permitPlant) {
     autorizantesQuery = autorizantesQuery.where('planta', '==', permitPlant);
@@ -56,14 +56,24 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   const autorizantesSnap = await autorizantesQuery.get();
   autorizantesSnap.forEach(doc => userIds.add(doc.id));
 
-  // Buscar Líderes SST (Solo si es requerido o hay riesgo alto)
+  // Buscar Líderes SST de la misma planta (solo si el permiso los requiere)
   if (permit.isSSTSignatureRequired || permit.trabajoAlturas || permit.espaciosConfinados || permit.controlEnergia || permit.izajeCargas || permit.excavaciones) {
-     let sstQuery = adminDb.collection('users').where('role', '==', 'lider_sst');
-     if (permitPlant) {
-        sstQuery = sstQuery.where('planta', '==', permitPlant);
-     }
-     const sstSnap = await sstQuery.get();
-     sstSnap.forEach(doc => userIds.add(doc.id));
+    let sstQuery = adminDb.collection('users').where('role', '==', 'lider_sst');
+    if (permitPlant) {
+      sstQuery = sstQuery.where('planta', '==', permitPlant);
+    }
+    const sstSnap = await sstQuery.get();
+    sstSnap.forEach(doc => userIds.add(doc.id));
+  }
+
+  // Buscar Mantenimiento / Aislador Competente de la misma planta (solo permisos con control de energía)
+  if (permit.controlEnergia || permit.selectedWorkTypes?.energia) {
+    let mantenimientoQuery = adminDb.collection('users').where('role', '==', 'mantenimiento');
+    if (permitPlant) {
+      mantenimientoQuery = mantenimientoQuery.where('planta', '==', permitPlant);
+    }
+    const mantenimientoSnap = await mantenimientoQuery.get();
+    mantenimientoSnap.forEach(doc => userIds.add(doc.id));
   }
 
   return Array.from(userIds);

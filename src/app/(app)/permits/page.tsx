@@ -172,7 +172,9 @@ export default function PermitsPage() {
                     }
                 });
             });
-            const combinedPermits = Array.from(permitsMap.values()).sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            const combinedPermits = Array.from(permitsMap.values())
+                .filter(p => !user.planta || p.generalInfo?.planta === user.planta)
+                .sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
             setAllPermits(combinedPermits);
             setLoading(false);
         };
@@ -215,7 +217,9 @@ export default function PermitsPage() {
               // Su firma aún está pendiente
               permit.approvals?.mantenimiento?.status === 'pendiente' &&
               // El solicitante ya firmó (es su turno)
-              permit.approvals?.solicitante?.status === 'aprobado'
+              permit.approvals?.solicitante?.status === 'aprobado' &&
+              // Solo permisos de su planta
+              (!user.planta || permit.generalInfo?.planta === user.planta)
             )
             .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
 
@@ -259,6 +263,11 @@ export default function PermitsPage() {
           // Si es solicitante, ordenar en el cliente
           if (user.role === 'solicitante') {
             permitsData = permitsData.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          }
+
+          // Si es autorizante, filtrar solo por permisos de su planta
+          if (user.role === 'autorizante') {
+            permitsData = permitsData.filter(p => !user.planta || p.generalInfo?.planta === user.planta);
           }
 
           setAllPermits(permitsData);
