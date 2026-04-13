@@ -1119,6 +1119,7 @@ export default function UsersPage() {
                         <TableRow>
                           <TableHead className="font-semibold text-xs uppercase text-gray-600">Usuario</TableHead>
                           <TableHead className="font-semibold text-xs uppercase text-gray-600">Empresa</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Ciudad</TableHead>
                           <TableHead className="font-semibold text-xs uppercase text-gray-600">Planta</TableHead>
                           <TableHead className="font-semibold text-xs uppercase text-gray-600">Rol</TableHead>
                           <TableHead className="font-semibold text-xs uppercase text-gray-600">Estado</TableHead>
@@ -1140,6 +1141,7 @@ export default function UsersPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-gray-600">{user.empresa}</TableCell>
+                            <TableCell className="text-gray-600">{user.ciudad || <span className="text-gray-300">—</span>}</TableCell>
                             <TableCell className="text-gray-600">{user.planta || <span className="text-gray-300">—</span>}</TableCell>
                             <TableCell>
                               <Badge className={`text-xs ${roleColors[user.role || 'solicitante']}`}>
@@ -1179,7 +1181,7 @@ export default function UsersPage() {
                           </TableRow>
                         )) : (
                           <TableRow>
-                            <TableCell colSpan={6} className="h-32 text-center">
+                            <TableCell colSpan={7} className="h-32 text-center">
                               <div className="flex flex-col items-center text-gray-400">
                                 <Users className="h-10 w-10 mb-3 opacity-30" />
                                 <p className="font-medium">No se encontraron usuarios</p>
