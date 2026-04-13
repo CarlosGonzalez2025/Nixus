@@ -80,8 +80,14 @@ export default function HallazgosPage() {
         if (!db || !user) return;
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
-        if (user.empresa && user.role !== 'admin') {
-            constraints.unshift(where('empresaId', '==', user.empresa));
+        if (user.role !== 'admin') {
+            if (user.role === 'lider_sst' && user.empresa) {
+                // lider_sst filtra por 'empresa' (empresa inspeccionada),
+                // no por 'empresaId' (empresa creadora, que es Nixus Capital).
+                constraints.unshift(where('empresa', '==', user.empresa));
+            } else if (user.empresa) {
+                constraints.unshift(where('empresaId', '==', user.empresa));
+            }
         }
 
         const unsub = onSnapshot(
@@ -105,6 +111,8 @@ export default function HallazgosPage() {
             const estado = h.cumplimientoEstado || 'Pendiente';
             const matchTab = activeTab === 'todos' || estado === activeTab;
             const matchClase = filterClase === 'all' || h.clase === filterClase;
+            // lider_sst solo ve hallazgos de sus plantas asignadas
+            const matchPlanta = user?.role !== 'lider_sst' || !user?.planta || h.planta === user.planta;
             const s = search.toLowerCase();
             const matchSearch = !s ||
                 h.hallazgo?.toLowerCase().includes(s) ||
@@ -114,9 +122,9 @@ export default function HallazgosPage() {
                 h.area?.toLowerCase().includes(s) ||
                 h.reportadoPorNombre?.toLowerCase().includes(s) ||
                 String(h.numero).includes(s);
-            return matchTab && matchClase && matchSearch;
+            return matchTab && matchClase && matchPlanta && matchSearch;
         });
-    }, [hallazgos, activeTab, filterClase, search]);
+    }, [hallazgos, activeTab, filterClase, search, user]);
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();

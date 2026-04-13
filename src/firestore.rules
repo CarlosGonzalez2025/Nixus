@@ -40,9 +40,9 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.empresa;
     }
 
-    // Un usuario pertenece a Nixus Capital o es admin global.
+    // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital');
+      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst'));
     }
 
     // --- Colección de Usuarios (users) ---
@@ -142,26 +142,26 @@ service cloud.firestore {
     }
 
     // --- Colección de Hallazgos (hallazgos) ---
-    // Visible ÚNICAMENTE para admins y usuarios cuya empresa sea 'Nixus Capital'.
     match /hallazgos/{hallazgoId} {
 
-      // LECTURA (get + list): 'read' cubre ambas operaciones y evita conflictos.
-      // Para queries (list), Firestore verifica automáticamente que el where()
-      // del cliente garantiza que todos los resultados cumplen la condición
-      // resource.data.empresaId == getEmpresa(). La query del cliente SIEMPRE
-      // debe incluir where('empresaId', '==', user.empresa).
+      // LECTURA: Nixus Capital filtra por empresaId; lider_sst por el campo 'empresa'
+      // (empresa inspeccionada, no la empresa creadora del hallazgo).
       allow read: if canAccessHallazgos() &&
-                  (isAdmin() || resource.data.empresaId == getEmpresa());
+                  (isAdmin() ||
+                   resource.data.empresaId == getEmpresa() ||
+                   (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
 
-      // CREAR: solo si el empresaId del documento nuevo coincide con la empresa
-      // del usuario. Los admins pueden crear sin esta restricción.
+      // CREAR: Nixus Capital usa empresaId; lider_sst puede crear con su empresa.
       allow create: if canAccessHallazgos() &&
-                    (isAdmin() || request.resource.data.empresaId == getEmpresa());
+                    (isAdmin() ||
+                     request.resource.data.empresaId == getEmpresa() ||
+                     hasRole('lider_sst'));
 
-      // ACTUALIZAR: el hallazgo debe pertenecer a la empresa del usuario.
-      // Los admins pueden actualizar cualquiera.
+      // ACTUALIZAR: mismo criterio que lectura para planes de acción.
       allow update: if canAccessHallazgos() &&
-                    (isAdmin() || resource.data.empresaId == getEmpresa());
+                    (isAdmin() ||
+                     resource.data.empresaId == getEmpresa() ||
+                     (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
 
       // ELIMINAR: solo administradores.
       allow delete: if isAdmin();

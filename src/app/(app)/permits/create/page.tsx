@@ -1113,8 +1113,9 @@ function CreatePermitWizard() {
 }
 
 export default function CreatePermitPage() {
+  const { user } = useUser();
   return (
-    <PermitFormProvider>
+    <PermitFormProvider userId={user?.uid}>
       <CreatePermitWizard />
     </PermitFormProvider>
   );

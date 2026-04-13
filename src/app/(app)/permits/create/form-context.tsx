@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useReducer, useContext, Dispatch, useEffect } from 'react';
+import React, { createContext, useReducer, useContext, Dispatch, useEffect, useCallback } from 'react';
 import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes, User } from '@/types';
 
 // Define the shape of the form data
@@ -173,7 +173,7 @@ const initialState: FormState = {
   workers: [],
 };
 
-const LOCAL_STORAGE_KEY = 'permitFormDraft';
+const STORAGE_KEY_PREFIX = 'permitFormDraft';
 
 // Reducer function
 function formReducer(state: FormState, action: FormAction): FormState {
@@ -319,11 +319,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
             solicitanteFirmaApertura: payload.solicitanteFirmaApertura || undefined,
         };
     case 'RESET_FORM':
-      try {
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-      } catch (error) {
-        console.error("Failed to remove draft from localStorage", error);
-      }
+      // localStorage cleanup is handled by the wrapped dispatch in PermitFormProvider
       return initialState;
     default:
       return state;
@@ -331,26 +327,27 @@ function formReducer(state: FormState, action: FormAction): FormState {
 }
 
 // Create the context
-const PermitFormContext = createContext<{ 
-    state: FormState; 
+const PermitFormContext = createContext<{
+    state: FormState;
     dispatch: Dispatch<FormAction>;
 } | undefined>(undefined);
 
-// Función para inicializar el estado, intentando cargar desde localStorage
-const initializer = (initialValue = initialState) => {
-  if (typeof window === "undefined") {
-    return initialValue;
+// Función para inicializar el estado, intentando cargar desde localStorage.
+// Recibe storageKey (string | null) como initialArg de useReducer.
+const initializer = (storageKey: string | null): FormState => {
+  if (typeof window === "undefined" || !storageKey) {
+    return initialState;
   }
   try {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
-      return JSON.parse(stored);
+      return JSON.parse(stored) as FormState;
     }
   } catch (error) {
     console.error("Failed to parse draft from localStorage", error);
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    try { localStorage.removeItem(storageKey); } catch {}
   }
-  return initialValue;
+  return initialState;
 };
 
 // 🔥 FUNCIÓN DE VALIDACIÓN DE EMERGENCIAS (EXPORTADA)
@@ -391,19 +388,47 @@ export const validateEmergenciasStep = (eppEmergencias: EppEmergencias): {
 };
 
 // Create the provider component
-export function PermitFormProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(formReducer, initialState, initializer);
+export function PermitFormProvider({ children, userId }: { children: React.ReactNode; userId?: string }) {
+  const storageKey = userId ? `${STORAGE_KEY_PREFIX}_${userId}` : null;
+
+  const [state, rawDispatch] = useReducer(formReducer, null, initializer);
+  const [draftLoaded, setDraftLoaded] = React.useState(false);
+
+  // Wrap dispatch to clear the user-specific key when RESET_FORM is dispatched
+  const dispatch: Dispatch<FormAction> = useCallback((action) => {
+    if (action.type === 'RESET_FORM' && storageKey) {
+      try { localStorage.removeItem(storageKey); } catch {}
+    }
+    rawDispatch(action);
+  }, [storageKey]);
+
+  // Cargar borrador desde localStorage cuando el storageKey esté disponible (userId cargado)
+  useEffect(() => {
+    if (!storageKey || draftLoaded) return;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as FormState;
+        rawDispatch({ type: 'SET_ENTIRE_STATE', payload: parsed as any });
+      }
+    } catch (error) {
+      console.error("Failed to load draft from localStorage", error);
+      try { localStorage.removeItem(storageKey); } catch {}
+    }
+    setDraftLoaded(true);
+  }, [storageKey, draftLoaded]);
 
   // Efecto para guardar en localStorage cada vez que el estado cambia
   useEffect(() => {
+    if (!storageKey || !draftLoaded) return;
     try {
       if (state !== initialState) {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(storageKey, JSON.stringify(state));
       }
     } catch (error) {
       console.error("Failed to save draft to localStorage", error);
     }
-  }, [state]);
+  }, [state, storageKey, draftLoaded]);
 
   return (
     <PermitFormContext.Provider value={{ state, dispatch }}>

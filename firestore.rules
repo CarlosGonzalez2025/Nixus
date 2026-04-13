@@ -41,9 +41,9 @@ service cloud.firestore {
       return getUserData().empresa;
     }
 
-    // Módulo Hallazgos: acceso exclusivo para admins y usuarios de Nixus Capital.
+    // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital');
+      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst'));
     }
 
     // --- Colección de Usuarios (users) ---
@@ -139,20 +139,25 @@ service cloud.firestore {
     }
 
     // --- Colección de Hallazgos (hallazgos) ---
-    // Acceso exclusivo: admins globales + usuarios cuya empresa sea 'Nixus Capital'.
     match /hallazgos/{hallazgoId} {
-      // 'read' cubre get y list. Para queries, Firestore verifica que el where()
-      // del cliente (empresaId == user.empresa) satisface resource.data.empresaId == getEmpresa().
+      // Nixus Capital (empresaId) y admins ven todo lo suyo.
+      // lider_sst filtra por el campo 'empresa' (empresa inspeccionada, no creadora).
       allow read: if canAccessHallazgos() &&
-                  (isAdmin() || resource.data.empresaId == getEmpresa());
+                  (isAdmin() ||
+                   resource.data.empresaId == getEmpresa() ||
+                   (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
 
-      // Solo se puede crear un hallazgo bajo la propia empresa del usuario.
+      // Creación: Nixus Capital usa empresaId; lider_sst puede crear con su empresa.
       allow create: if canAccessHallazgos() &&
-                    (isAdmin() || request.resource.data.empresaId == getEmpresa());
+                    (isAdmin() ||
+                     request.resource.data.empresaId == getEmpresa() ||
+                     hasRole('lider_sst'));
 
-      // Solo se puede actualizar un hallazgo de la propia empresa.
+      // Actualización: mismo criterio que lectura para planes de acción.
       allow update: if canAccessHallazgos() &&
-                    (isAdmin() || resource.data.empresaId == getEmpresa());
+                    (isAdmin() ||
+                     resource.data.empresaId == getEmpresa() ||
+                     (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
 
       // Solo admins pueden eliminar hallazgos.
       allow delete: if isAdmin();
