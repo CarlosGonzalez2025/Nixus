@@ -53,7 +53,7 @@ const safeFormatDate = (value: any): string => {
   }
 };
 
-function buildPermitEmailHtml(permit: Permit, message: string, permitUrl: string): string {
+export function buildPermitEmailHtml(permit: Permit, message: string, permitUrl: string): string {
   const statusLabel = STATUS_LABEL[permit.status] || permit.status;
   const statusColor = STATUS_COLOR[permit.status] || '#6b7280';
   const permitNumber = permit.number || `ID: ${permit.id?.substring(0, 8)}`;
@@ -270,13 +270,15 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   // 3. Usuarios por rol filtrados por planta del permiso
   const permitPlant = permit.generalInfo?.planta;
 
-  // Buscar Autorizantes de la misma planta
+  // Buscar Autorizantes de la misma planta (excluir deshabilitados)
   let autorizantesQuery = adminDb.collection('users').where('role', '==', 'autorizante');
   if (permitPlant) {
     autorizantesQuery = autorizantesQuery.where('planta', '==', permitPlant);
   }
   const autorizantesSnap = await autorizantesQuery.get();
-  autorizantesSnap.forEach(doc => userIds.add(doc.id));
+  autorizantesSnap.forEach(doc => {
+    if (!doc.data().disabled) userIds.add(doc.id);
+  });
 
   // Buscar Líderes SST de la misma planta (solo si el permiso los requiere)
   if (permit.isSSTSignatureRequired || permit.trabajoAlturas || permit.espaciosConfinados || permit.controlEnergia || permit.izajeCargas || permit.excavaciones) {
@@ -285,7 +287,9 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
       sstQuery = sstQuery.where('planta', '==', permitPlant);
     }
     const sstSnap = await sstQuery.get();
-    sstSnap.forEach(doc => userIds.add(doc.id));
+    sstSnap.forEach(doc => {
+      if (!doc.data().disabled) userIds.add(doc.id);
+    });
   }
 
   // Buscar Mantenimiento / Aislador Competente de la misma planta (solo permisos con control de energía)
@@ -295,10 +299,21 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
       mantenimientoQuery = mantenimientoQuery.where('planta', '==', permitPlant);
     }
     const mantenimientoSnap = await mantenimientoQuery.get();
-    mantenimientoSnap.forEach(doc => userIds.add(doc.id));
+    mantenimientoSnap.forEach(doc => {
+      if (!doc.data().disabled) userIds.add(doc.id);
+    });
   }
 
   return Array.from(userIds);
+};
+
+/**
+ * Devuelve los IDs de todos los administradores activos.
+ * Solo se usa para notificaciones de alta prioridad (permiso EN EJECUCIÓN).
+ */
+const getAdminUserIds = async (): Promise<string[]> => {
+  const snap = await adminDb.collection('users').where('role', '==', 'admin').get();
+  return snap.docs.filter(doc => !doc.data().disabled).map(doc => doc.id);
 };
 
 const createNotification = async (
@@ -431,12 +446,13 @@ export async function createPermit(data: PermitCreateData) {
     const createdPermit = { ...permitPayload, id: docRef.id, number: permitNumber } as Permit;
     const involvedUsers = await getInvolvedUsers(createdPermit);
     const message = `Se creó un nuevo permiso de trabajo: #${permitNumber}`;
-    
-    for (const uid of involvedUsers) {
-      if (uid !== userId) {
-        await createNotification(uid, createdPermit, message, 'creation', { uid: userId, displayName: userDisplayName });
-      }
-    }
+    const triggeredBy = { uid: userId, displayName: userDisplayName };
+
+    await Promise.allSettled(
+      involvedUsers
+        .filter(uid => uid !== userId)
+        .map(uid => createNotification(uid, createdPermit, message, 'creation', triggeredBy))
+    );
 
     const workTypesText = getWorkTypesString(permitPayload);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
@@ -638,21 +654,21 @@ export async function addSignatureAndNotify(
         if (permitBeforeData.status === 'borrador' && updatedPermitData.status === 'pendiente_revision') {
             const message = `El permiso #${updatedPermitData.number} ha sido enviado y está pendiente de revisión.`;
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
-            for (const uid of involvedUsers) {
-                if (uid !== user.uid) {
-                    await createNotification(uid, updatedPermitData, message, 'creation', user);
-                }
-            }
-             const workTypesText = getWorkTypesString(updatedPermitData);
-             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
-             const permitUrl = `${baseUrl}/permits/${permitId}`;
-             const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
+            await Promise.allSettled(
+                involvedUsers
+                    .filter(uid => uid !== user.uid)
+                    .map(uid => createNotification(uid, updatedPermitData, message, 'creation', user))
+            );
+            const workTypesText = getWorkTypesString(updatedPermitData);
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+            const permitUrl = `${baseUrl}/permits/${permitId}`;
+            const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
 Se ha enviado una nueva solicitud de permiso de trabajo.
- 
+
 📄 *Número:* ${updatedPermitData.number}
 👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}
 🛠️ *Tipo de Trabajo:* ${workTypesText}
- 
+
 Por favor, revise la solicitud:
 ${permitUrl}`;
             await sendWhatsAppNotification(messageBody);
@@ -671,11 +687,11 @@ ${permitUrl}`;
 
                 const reviewMessage = `El permiso #${permitNumber} ha sido enviado y está pendiente de revisión.`;
                 const involvedUsers = await getInvolvedUsers(updatedPermitData);
-                for (const uid of involvedUsers) {
-                    if (uid !== user.uid) {
-                        await createNotification(uid, updatedPermitData, reviewMessage, 'creation', user);
-                    }
-                }
+                await Promise.allSettled(
+                    involvedUsers
+                        .filter(uid => uid !== user.uid)
+                        .map(uid => createNotification(uid, updatedPermitData, reviewMessage, 'creation', user))
+                );
 
                 const workTypesText = getWorkTypesString(updatedPermitData);
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
@@ -693,27 +709,33 @@ ${permitUrl}`;
             }
 
         } else if (!role.startsWith('cierre_') && role !== 'cancelacion') {
-            const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${updatedPermitData.number} como ${signatureRoleName}.`;
+            const autoActivated = updatedPermitData.status === 'en_ejecucion' && permitBeforeData.status === 'pendiente_revision';
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
-            for (const uid of involvedUsers) {
-                if (uid !== user.uid) {
-                    await createNotification(uid, updatedPermitData, message, 'signature', user);
-                }
-            }
 
-            // Si el permiso acaba de pasar a 'en_ejecucion' automáticamente, notificar
-            if (updatedPermitData.status === 'en_ejecucion' && permitBeforeData.status === 'pendiente_revision') {
-                const approvalMessage = `¡El permiso #${updatedPermitData.number} está EN EJECUCIÓN! Todas las firmas requeridas fueron completadas y el permiso fue activado automáticamente.`;
-                for (const uid of involvedUsers) {
-                    if (uid !== user.uid) {
-                        await createNotification(uid, updatedPermitData, approvalMessage, 'approval', user);
-                    }
-                }
+            if (autoActivated) {
+                // Cuando la última firma activa el permiso automáticamente, solo se envía
+                // la notificación de "EN EJECUCIÓN" (evita el doble correo por firma + activación).
+                // Los admins reciben notificación solo en este evento.
+                const adminIds = await getAdminUserIds();
+                const recipientsEnEjecucion = [...new Set([...involvedUsers, ...adminIds])];
+                const approvalMessage = `¡El permiso #${updatedPermitData.number} está EN EJECUCIÓN! ${user.displayName || 'Un usuario'} completó la última firma requerida y el permiso fue activado automáticamente.`;
+                await Promise.allSettled(
+                    recipientsEnEjecucion
+                        .filter(uid => uid !== user.uid)
+                        .map(uid => createNotification(uid, updatedPermitData, approvalMessage, 'approval', user))
+                );
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
                 const permitUrl = `${baseUrl}/permits/${permitId}`;
                 const workTypesText = getWorkTypesString(updatedPermitData);
                 await sendWhatsAppNotification(`*🟢 Permiso EN EJECUCIÓN* 🎉\n\nTodas las firmas requeridas han sido registradas. El permiso fue activado automáticamente.\n\n📄 *Número:* ${updatedPermitData.number}\n👤 *Solicitante:* ${updatedPermitData.user?.displayName || 'N/A'}\n🛠️ *Tipo de Trabajo:* ${workTypesText}\n\nVer permiso:\n${permitUrl}`);
+            } else {
+                const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${updatedPermitData.number} como ${signatureRoleName}.`;
+                await Promise.allSettled(
+                    involvedUsers
+                        .filter(uid => uid !== user.uid)
+                        .map(uid => createNotification(uid, updatedPermitData, message, 'signature', user))
+                );
             }
         }
 
@@ -890,12 +912,16 @@ export async function updatePermitStatus(
         }
         
         const involvedUsers = await getInvolvedUsers(updatedPermitData);
-        for (const uid of involvedUsers) {
-             if (uid !== currentUser.uid) {
-                await createNotification(uid, updatedPermitData, message, notificationType, triggeredBy);
-            }
-        }
-        
+        // Los admins solo reciben notificación cuando el permiso pasa a EN EJECUCIÓN.
+        const recipients = status === 'en_ejecucion'
+            ? [...new Set([...involvedUsers, ...(await getAdminUserIds())])]
+            : involvedUsers;
+        await Promise.allSettled(
+            recipients
+                .filter(uid => uid !== currentUser.uid)
+                .map(uid => createNotification(uid, updatedPermitData, message, notificationType, triggeredBy))
+        );
+
         revalidatePath(`/permits/${permitId}`);
         revalidatePath('/permits');
         revalidatePath('/dashboard');
@@ -1054,11 +1080,11 @@ export async function addDailyValidationSignature(
 
     const message = `${user.displayName || 'Un usuario'} ha realizado la validación diaria (${validationRoleName}) para el DÍA ${day} del ${anexoDisplayName} en el permiso #${fullPermitData.number}.`;
     const involvedUsers = await getInvolvedUsers(fullPermitData);
-    for (const uid of involvedUsers) {
-      if (uid !== user.uid) {
-        await createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
-      }
-    }
+    await Promise.allSettled(
+      involvedUsers
+        .filter(uid => uid !== user.uid)
+        .map(uid => createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null }))
+    );
 
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
@@ -1135,13 +1161,13 @@ export async function addDailyValidationClosureSignature(
     const day = index + 1;
 
     const message = `${user.displayName || 'Un usuario'} ha registrado el cierre diario del DÍA ${day} en ${anexoDisplayName} del permiso #${fullPermitData.number}.${data.observaciones ? ` Observaciones: ${data.observaciones}` : ''}`;
-    
+
     const involvedUsers = await getInvolvedUsers(fullPermitData);
-    for (const uid of involvedUsers) {
-      if (uid !== user.uid) {
-        await createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
-      }
-    }
+    await Promise.allSettled(
+      involvedUsers
+        .filter(uid => uid !== user.uid)
+        .map(uid => createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null }))
+    );
     
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
@@ -1198,11 +1224,11 @@ export async function closePermitByAnyUser(
     const message = `${user.displayName || 'Un usuario'} ha forzado el cierre del permiso #${permitData.number}. Observaciones: ${observaciones}`;
     const involvedUsers = await getInvolvedUsers(updatedPermitData);
 
-    for (const uid of involvedUsers) {
-      if (uid !== user.uid) {
-        await createNotification(uid, updatedPermitData, message, 'cancellation', { uid: user.uid, displayName: user.displayName || null });
-      }
-    }
+    await Promise.allSettled(
+      involvedUsers
+        .filter(uid => uid !== user.uid)
+        .map(uid => createNotification(uid, updatedPermitData, message, 'cancellation', { uid: user.uid, displayName: user.displayName || null }))
+    );
     
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permitId}`;
