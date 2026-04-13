@@ -81,10 +81,9 @@ export default function HallazgosPage() {
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
         if (user.role !== 'admin') {
-            if (user.role === 'lider_sst' && user.empresa) {
-                // lider_sst filtra por 'empresa' (empresa inspeccionada),
-                // no por 'empresaId' (empresa creadora, que es Nixus Capital).
-                constraints.unshift(where('empresa', '==', user.empresa));
+            if (user.role === 'lider_sst' && user.planta) {
+                // lider_sst ve solo los hallazgos de su planta asignada.
+                constraints.unshift(where('planta', '==', user.planta));
             } else if (user.empresa) {
                 constraints.unshift(where('empresaId', '==', user.empresa));
             }
@@ -111,7 +110,7 @@ export default function HallazgosPage() {
             const estado = h.cumplimientoEstado || 'Pendiente';
             const matchTab = activeTab === 'todos' || estado === activeTab;
             const matchClase = filterClase === 'all' || h.clase === filterClase;
-            // lider_sst solo ve hallazgos de sus plantas asignadas
+            // lider_sst: la query ya filtra por planta, esto es defensa extra
             const matchPlanta = user?.role !== 'lider_sst' || !user?.planta || h.planta === user.planta;
             const s = search.toLowerCase();
             const matchSearch = !s ||

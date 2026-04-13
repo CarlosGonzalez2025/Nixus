@@ -35,10 +35,14 @@ service cloud.firestore {
       return (data.role in roles) || (data.otherRoles != null && data.otherRoles.hasAny(roles));
     }
 
-    // Devuelve el campo 'empresa' del usuario. El get() es cacheado por Firestore
-    // dentro de la misma evaluación; no genera lectura extra si getUserData() ya se llamó.
+    // Devuelve el campo 'empresa' del usuario.
     function getEmpresa() {
       return getUserData().empresa;
+    }
+
+    // Devuelve el campo 'planta' del usuario.
+    function getPlanta() {
+      return getUserData().planta;
     }
 
     // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
@@ -140,24 +144,30 @@ service cloud.firestore {
 
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
-      // Nixus Capital (empresaId) y admins ven todo lo suyo.
-      // lider_sst filtra por el campo 'empresa' (empresa inspeccionada, no creadora).
-      allow read: if canAccessHallazgos() &&
+      // GET (documento individual): resource.data siempre disponible.
+      // lider_sst puede ver hallazgos de su planta.
+      allow get: if canAccessHallazgos() &&
+                 (isAdmin() ||
+                  resource.data.empresaId == getEmpresa() ||
+                  (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+
+      // LIST (queries): el filtro por planta lo garantiza el where() del cliente.
+      allow list: if canAccessHallazgos() &&
                   (isAdmin() ||
                    resource.data.empresaId == getEmpresa() ||
-                   (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
+                   hasRole('lider_sst'));
 
-      // Creación: Nixus Capital usa empresaId; lider_sst puede crear con su empresa.
+      // Creación: Nixus Capital usa empresaId; lider_sst puede crear en su planta.
       allow create: if canAccessHallazgos() &&
                     (isAdmin() ||
                      request.resource.data.empresaId == getEmpresa() ||
                      hasRole('lider_sst'));
 
-      // Actualización: mismo criterio que lectura para planes de acción.
+      // Actualización: lider_sst puede gestionar planes de acción de su planta.
       allow update: if canAccessHallazgos() &&
                     (isAdmin() ||
                      resource.data.empresaId == getEmpresa() ||
-                     (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
+                     (hasRole('lider_sst') && resource.data.planta == getPlanta()));
 
       // Solo admins pueden eliminar hallazgos.
       allow delete: if isAdmin();

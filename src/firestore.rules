@@ -40,6 +40,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.empresa;
     }
 
+    function getPlanta() {
+      return getUserData().planta;
+    }
+
     // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
     function canAccessHallazgos() {
       return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst'));
@@ -144,24 +148,29 @@ service cloud.firestore {
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
 
-      // LECTURA: Nixus Capital filtra por empresaId; lider_sst por el campo 'empresa'
-      // (empresa inspeccionada, no la empresa creadora del hallazgo).
-      allow read: if canAccessHallazgos() &&
+      // GET (documento individual): lider_sst puede ver hallazgos de su planta.
+      allow get: if canAccessHallazgos() &&
+                 (isAdmin() ||
+                  resource.data.empresaId == getEmpresa() ||
+                  (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+
+      // LIST (queries): el filtro por planta lo garantiza el where() del cliente.
+      allow list: if canAccessHallazgos() &&
                   (isAdmin() ||
                    resource.data.empresaId == getEmpresa() ||
-                   (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
+                   hasRole('lider_sst'));
 
-      // CREAR: Nixus Capital usa empresaId; lider_sst puede crear con su empresa.
+      // CREAR: Nixus Capital usa empresaId; lider_sst puede crear en su planta.
       allow create: if canAccessHallazgos() &&
                     (isAdmin() ||
                      request.resource.data.empresaId == getEmpresa() ||
                      hasRole('lider_sst'));
 
-      // ACTUALIZAR: mismo criterio que lectura para planes de acción.
+      // ACTUALIZAR: lider_sst puede gestionar planes de acción de su planta.
       allow update: if canAccessHallazgos() &&
                     (isAdmin() ||
                      resource.data.empresaId == getEmpresa() ||
-                     (hasRole('lider_sst') && resource.data.empresa == getEmpresa()));
+                     (hasRole('lider_sst') && resource.data.planta == getPlanta()));
 
       // ELIMINAR: solo administradores.
       allow delete: if isAdmin();
