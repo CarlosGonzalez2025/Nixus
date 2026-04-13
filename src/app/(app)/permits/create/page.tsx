@@ -580,25 +580,39 @@ function CreatePermitWizard() {
 
     if (currentLabel === 'Trabajadores') {
       const additionalWorkers = parseInt(formData.generalInfo.numTrabajadores || '0', 10);
-      const totalRequired = additionalWorkers + 1; // Solicitante + adicionales
       const workers = formData.workers || [];
+      const solicitante = workers[0];
+      const otherWorkers = workers.slice(1);
 
-      if (workers.length !== totalRequired) {
+      // 1. El solicitante debe haber firmado
+      if (!solicitante?.firmaApertura) {
         toast({
-          variant: "destructive",
-          title: "Número de Trabajadores no Coincide",
-          description: `Ha especificado ${additionalWorkers} trabajador(es) adicional(es) (total: ${totalRequired}), pero ha registrado ${workers.length}. Por favor, ajuste la lista.`,
+          variant: 'destructive',
+          title: 'Firma del Ejecutante Requerida',
+          description: 'El ejecutante del trabajo (solicitante) debe completar sus datos y registrar su firma antes de continuar.',
+          duration: 7000,
+        });
+        return false;
+      }
+
+      // 2. Deben coincidir los trabajadores adicionales registrados
+      if (otherWorkers.length !== additionalWorkers) {
+        toast({
+          variant: 'destructive',
+          title: 'Número de Trabajadores no Coincide',
+          description: `Ha especificado ${additionalWorkers} trabajador(es) adicional(es) pero ha registrado ${otherWorkers.length}. Ajuste la lista o el campo en Información General.`,
           duration: 8000,
         });
         return false;
       }
-      
-      const missingSignatures = workers.filter(w => !w.firmaApertura);
-      if(missingSignatures.length > 0) {
+
+      // 3. Todos los trabajadores adicionales deben tener firma
+      const missingSignatures = otherWorkers.filter(w => !w.firmaApertura);
+      if (missingSignatures.length > 0) {
         toast({
-          variant: "destructive",
-          title: "Faltan Firmas de Trabajadores",
-          description: `Todos los trabajadores deben registrar su firma de apertura para poder continuar. Faltan ${missingSignatures.length} firmas.`,
+          variant: 'destructive',
+          title: 'Faltan Firmas de Trabajadores',
+          description: `Todos los trabajadores deben registrar su firma de apertura. Faltan ${missingSignatures.length} firma(s).`,
           duration: 6000,
         });
         return false;
@@ -775,6 +789,7 @@ function CreatePermitWizard() {
                     <AlertDialogTrigger asChild>
                          <Button
                             disabled={isSubmitting || (!formData.workers?.[0]?.firmaApertura && !formData.solicitanteFirmaApertura)}
+                            /* firmaApertura del solicitante viene de workers[0] (WorkersStep) o como fallback de solicitanteFirmaApertura (ReviewStep) */
                             className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
                         >
                             {isSubmitting ? (

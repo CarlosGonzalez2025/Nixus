@@ -181,9 +181,9 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'INITIALIZE_WITH_USER': {
       const user = action.payload;
 
-      if (state.generalInfo.nombreSolicitante === (user.displayName || '')) {
-          return state;
-      }
+      // Guard: solo saltamos si el solicitante ya está en la lista de trabajadores (por email)
+      const alreadyInWorkers = state.workers.some(w => w.email && user.email && w.email === user.email);
+      if (alreadyInWorkers) return state;
       
       const newState = { ...state };
       
