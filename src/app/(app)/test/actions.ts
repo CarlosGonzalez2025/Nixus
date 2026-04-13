@@ -2,7 +2,7 @@
 
 import { sendPermitUpdateEmail } from '@/lib/email';
 import { isAdminReady } from '@/lib/firebase-admin';
-import { buildPermitEmailHtml } from '@/app/(app)/permits/actions';
+import { buildPermitEmailHtml } from '@/lib/permit-email-template';
 
 // Datos de permiso de muestra para previsualizar el correo
 const SAMPLE_PERMIT: any = {
