@@ -171,7 +171,9 @@ export default function Dashboard() {
             }
           });
 
-          const combinedPermits = Array.from(permitsMap.values()).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          const combinedPermits = Array.from(permitsMap.values())
+            .filter(p => !user.planta || p.generalInfo?.planta === user.planta)
+            .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
           const recentPermits = combinedPermits.slice(0, 10);
           setPermits(recentPermits);
 
@@ -217,7 +219,8 @@ export default function Dashboard() {
           .filter(permit =>
             permit.status === 'pendiente_revision' &&
             permit.approvals?.mantenimiento?.status === 'pendiente' &&
-            permit.approvals?.solicitante?.status === 'aprobado'
+            permit.approvals?.solicitante?.status === 'aprobado' &&
+            (!user.planta || permit.generalInfo?.planta === user.planta)
           )
           .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
 
@@ -255,6 +258,11 @@ export default function Dashboard() {
         } as Permit));
 
         permitsData = permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+
+        // Si es autorizante, filtrar solo por permisos de su planta
+        if (user.role === 'autorizante') {
+          permitsData = permitsData.filter(p => !user.planta || p.generalInfo?.planta === user.planta);
+        }
 
         const recentPermits = permitsData.slice(0, 10);
         setPermits(recentPermits);
