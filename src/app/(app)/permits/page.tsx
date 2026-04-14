@@ -153,46 +153,34 @@ export default function PermitsPage() {
     const permitsCollection = collection(db, 'permits');
     let unsubscribers: Unsubscribe[] = [];
 
-    // Para el rol de SST, se hacen dos consultas separadas y se unen
+    // Líder SST: ve todos los permisos de su planta (no solo los que requieren su firma)
     if (user.role === 'lider_sst') {
-        const q1 = query(permitsCollection, where("selectedWorkTypes.alturas", "==", true));
-        const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
+        // Si tiene planta asignada, filtra por ella; si no, trae todos ordenados por fecha
+        const sstConstraints: QueryConstraint[] = user.planta
+            ? [where('generalInfo.planta', '==', user.planta), orderBy('createdAt', 'desc')]
+            : [orderBy('createdAt', 'desc')];
 
-        const processSnapshots = (snapshots: (ReturnType<typeof getDocs>)[]) => {
-            const permitsMap = new Map<string, Permit>();
-            snapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => {
-                    if (!permitsMap.has(doc.id)) {
-                        const data = doc.data();
-                        permitsMap.set(doc.id, {
-                            id: doc.id,
-                            ...data,
-                            createdAt: parseFirestoreDate(data.createdAt),
-                        } as Permit);
-                    }
-                });
+        const q = query(permitsCollection, ...sstConstraints);
+
+        const unsub = onSnapshot(q, (snapshot) => {
+            const permitsData = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: parseFirestoreDate(data.createdAt),
+                } as Permit;
             });
-            const combinedPermits = Array.from(permitsMap.values())
-                .filter(p => !user.planta || p.generalInfo?.planta === user.planta)
-                .sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-            setAllPermits(combinedPermits);
+            setAllPermits(permitsData);
             setLoading(false);
-        };
-        
-        // Carga inicial y luego escucha por cambios
-        Promise.all([getDocs(q1), getDocs(q2)])
-            .then(processSnapshots)
-            .catch(error => {
-                console.error("Error fetching initial SST permits:", error);
-                const permissionError = new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' });
-                errorEmitter.emit('permission-error', permissionError);
-                setLoading(false);
-            });
+        }, (error) => {
+            console.error("SST Query failed", error);
+            const permissionError = new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' });
+            errorEmitter.emit('permission-error', permissionError);
+            setLoading(false);
+        });
 
-        const unsub1 = onSnapshot(q1, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 1 failed", e)});
-        const unsub2 = onSnapshot(q2, () => { getDocs(q1).then(s1 => getDocs(q2).then(s2 => processSnapshots([s1, s2]))) }, (e) => { console.error("SST Query 2 failed", e)});
-        
-        unsubscribers.push(unsub1, unsub2);
+        unsubscribers.push(unsub);
 
     } else if (user.role === 'mantenimiento') {
         // Mantenimiento: solo permisos con Control de Energías que requieren su firma

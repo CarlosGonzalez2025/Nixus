@@ -78,7 +78,8 @@ service cloud.firestore {
                     (isAdmin() ||
                      hasRole('autorizante') ||
                      isCreator(resource.data) ||
-                     (hasRole('lider_sst') && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true)) ||
+                     // Líder SST puede leer cualquier permiso de su planta (no solo los que requieren su firma)
+                     (hasRole('lider_sst') && (!getPlanta() || resource.data.generalInfo.planta == getPlanta())) ||
                      (hasRole('mantenimiento') && resource.data.controlEnergia == true)
                     );
 

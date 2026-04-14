@@ -28,6 +28,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         if (!authUser) {
             setUser(null);
+            setActiveRole(null); // Reset al hacer logout para que el próximo login use el rol primario
             setLoading(false);
             return;
         }
@@ -40,16 +41,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     ...docSnap.data(),
                 } as User;
 
-                // Initialize activeRole if not set, or if the current activeRole is invalid for the new data
-                if (!activeRole) {
-                    setActiveRole(userData.role);
-                }
-
-                const currentRole = activeRole || userData.role;
-
                 // Calculate the full set of roles available to the user
                 // distinct roles from [originalRole, ...originalOtherRoles]
                 const allRoles = Array.from(new Set([userData.role, ...(userData.otherRoles || [])])).filter(Boolean) as UserRole[];
+
+                // Initialize activeRole if not set, OR si el rol activo no pertenece a este usuario
+                // (puede ocurrir al cerrar sesión y entrar con otro usuario en la misma sesión)
+                if (!activeRole || !allRoles.includes(activeRole)) {
+                    setActiveRole(userData.role);
+                }
+
+                const currentRole = (activeRole && allRoles.includes(activeRole)) ? activeRole : userData.role;
 
                 // The new otherRoles should be allRoles EXCEPT the currentRole
                 const newOtherRoles = allRoles.filter(r => r !== currentRole);

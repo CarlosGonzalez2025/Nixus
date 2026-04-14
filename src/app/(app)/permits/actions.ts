@@ -123,12 +123,25 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
 };
 
 /**
- * Devuelve los IDs de todos los administradores activos.
+ * Devuelve los IDs de los administradores activos de la misma planta del permiso.
+ * Admins sin planta asignada se consideran globales y siempre se incluyen.
  * Solo se usa para notificaciones de alta prioridad (permiso EN EJECUCIÓN).
  */
-const getAdminUserIds = async (): Promise<string[]> => {
+const getAdminUserIds = async (permitPlant?: string): Promise<string[]> => {
   const snap = await adminDb.collection('users').where('role', '==', 'admin').get();
-  return snap.docs.filter(doc => !doc.data().disabled).map(doc => doc.id);
+  const permitPlantLower = (permitPlant || '').trim().toLowerCase();
+  return snap.docs
+    .filter(doc => {
+      const data = doc.data();
+      if (data.disabled) return false;
+      if (permitPlantLower) {
+        const adminPlant = (data.planta || '').trim().toLowerCase();
+        // Admin con planta diferente → no incluir
+        if (adminPlant && adminPlant !== permitPlantLower) return false;
+      }
+      return true;
+    })
+    .map(doc => doc.id);
 };
 
 const createNotification = async (
@@ -528,7 +541,7 @@ ${permitUrl}`;
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
 
             if (autoActivated) {
-                const adminIds = await getAdminUserIds();
+                const adminIds = await getAdminUserIds(updatedPermitData.generalInfo?.planta);
                 const recipientsEnEjecucion = [...new Set([...involvedUsers, ...adminIds])];
                 const approvalMessage = `¡El permiso #${updatedPermitData.number} está EN EJECUCIÓN! ${user.displayName || 'Un usuario'} completó la última firma requerida y el permiso fue activado automáticamente.`;
                 await runNotificationBatch(
@@ -724,9 +737,10 @@ export async function updatePermitStatus(
         }
         
         const involvedUsers = await getInvolvedUsers(updatedPermitData);
-        // Los admins solo reciben notificación cuando el permiso pasa a EN EJECUCIÓN.
+        // Los admins solo reciben notificación cuando el permiso pasa a EN EJECUCIÓN,
+        // filtrados por la planta del permiso.
         const recipients = status === 'en_ejecucion'
-            ? [...new Set([...involvedUsers, ...(await getAdminUserIds())])]
+            ? [...new Set([...involvedUsers, ...(await getAdminUserIds(updatedPermitData.generalInfo?.planta))])]
             : involvedUsers;
         await runNotificationBatch(
             recipients
