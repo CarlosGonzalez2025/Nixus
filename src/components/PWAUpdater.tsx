@@ -12,6 +12,12 @@ export function PWAUpdater() {
       return;
     }
 
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const handleControllerChange = () => {
+      window.location.reload();
+    };
+
     const registerServiceWorker = async () => {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -19,11 +25,11 @@ export function PWAUpdater() {
         });
 
         // Verificar actualizaciones cada hora
-        const interval = setInterval(() => {
+        intervalId = setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
 
-        // Detectar nuevo service worker
+        // Detectar nuevo service worker en estado 'waiting' (skipWaiting: false en config)
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (!newWorker) return;
@@ -33,14 +39,12 @@ export function PWAUpdater() {
               newWorker.state === 'installed' &&
               navigator.serviceWorker.controller
             ) {
-              // Nueva versión disponible
+              // Nueva versión instalada y esperando — mostrar banner al usuario
               setWaitingWorker(newWorker);
               setShowUpdate(true);
             }
           });
         });
-
-        return () => clearInterval(interval);
       } catch (error) {
         console.error('Service worker registration failed:', error);
       }
@@ -48,10 +52,14 @@ export function PWAUpdater() {
 
     registerServiceWorker();
 
-    // Recargar cuando se active nueva versión
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+    // Recargar cuando se active la nueva versión (ocurre DESPUÉS de que
+    // el usuario hace clic en "Actualizar" y el SW llama skipWaiting)
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    return () => {
+      if (intervalId !== null) clearInterval(intervalId);
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+    };
   }, []);
 
   const handleUpdate = () => {

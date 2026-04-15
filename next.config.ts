@@ -5,11 +5,17 @@ const withPWA = withPWAInit({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: true,
+  // skipWaiting: false (default) — el SW espera en estado 'waiting' hasta que
+  // el usuario confirme la actualización desde el banner PWAUpdater.
+  // NO usar skipWaiting: true porque fuerza recarga automática sin consentimiento.
+  skipWaiting: false,
   buildExcludes: [/middleware-manifest\.json$/],
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
   swcMinify: true,
+  // El worker personalizado agrega el listener para el mensaje SKIP_WAITING
+  // que envía el botón "Actualizar" del componente PWAUpdater.
+  customWorkerSrc: 'src/sw-message-handler',
   workboxOptions: {
     disableDevLogs: true,
   },
