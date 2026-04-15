@@ -7,11 +7,8 @@ import { getPendingCount } from '@/lib/offline-queue';
 import { cn } from '@/lib/utils';
 
 interface OfflineBannerProps {
-  /** Número de operaciones que se están sincronizando (para mostrar spinner). */
   syncingCount?: number;
-  /** true cuando el hook useOfflineSync está procesando la cola. */
   isSyncing?: boolean;
-  /** true cuando la sincronización acaba de terminar (para mostrar check breve). */
   justSynced?: boolean;
 }
 
@@ -20,14 +17,12 @@ export function OfflineBanner({ syncingCount = 0, isSyncing = false, justSynced 
   const [pendingCount, setPendingCount] = useState(0);
   const [showSyncedMsg, setShowSyncedMsg] = useState(false);
 
-  // Refrescar contador de pendientes cuando cambia el estado de conexión
   useEffect(() => {
     let mounted = true;
     getPendingCount().then((n) => { if (mounted) setPendingCount(n); });
     return () => { mounted = false; };
   }, [isOnline, isSyncing]);
 
-  // Mostrar mensaje "Sincronizado" por 3 segundos al terminar
   useEffect(() => {
     if (justSynced) {
       setShowSyncedMsg(true);
@@ -36,25 +31,23 @@ export function OfflineBanner({ syncingCount = 0, isSyncing = false, justSynced 
     }
   }, [justSynced]);
 
-  // Sin conexión → banner rojo prominente
+  const baseClasses = cn(
+    'fixed bottom-0 left-0 right-0 z-[9998]',
+    'flex items-center justify-center gap-2 px-4 py-1.5',
+    'text-white text-xs font-medium shadow-[0_-2px_8px_rgba(0,0,0,0.15)]',
+    'animate-in slide-in-from-bottom duration-300'
+  );
+
+  // Sin conexión → franja roja en la parte inferior
   if (!isOnline) {
     return (
-      <div
-        role="alert"
-        aria-live="assertive"
-        className={cn(
-          'fixed top-0 left-0 right-0 z-[9998]',
-          'flex items-center justify-center gap-2.5 px-4 py-2.5',
-          'bg-red-600 text-white text-sm font-medium shadow-lg',
-          'animate-in slide-in-from-top duration-300'
-        )}
-      >
-        <WifiOff className="h-4 w-4 flex-shrink-0" />
+      <div role="alert" aria-live="assertive" className={cn(baseClasses, 'bg-red-600')}>
+        <WifiOff className="h-3.5 w-3.5 flex-shrink-0" />
         <span>
-          Sin conexión — modo offline activo.
+          Sin conexión — modo offline activo
           {pendingCount > 0 && (
-            <span className="ml-1 opacity-90">
-              {pendingCount} {pendingCount === 1 ? 'operación pendiente' : 'operaciones pendientes'} de sincronizar.
+            <span className="ml-1 opacity-90 hidden sm:inline">
+              · {pendingCount} {pendingCount === 1 ? 'operación pendiente' : 'operaciones pendientes'}
             </span>
           )}
         </span>
@@ -62,62 +55,35 @@ export function OfflineBanner({ syncingCount = 0, isSyncing = false, justSynced 
     );
   }
 
-  // Sincronizando → banner azul con spinner
+  // Sincronizando → franja azul con spinner
   if (isSyncing && syncingCount > 0) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className={cn(
-          'fixed top-0 left-0 right-0 z-[9998]',
-          'flex items-center justify-center gap-2.5 px-4 py-2.5',
-          'bg-nixus text-white text-sm font-medium shadow-lg',
-          'animate-in slide-in-from-top duration-300'
-        )}
-      >
-        <RefreshCw className="h-4 w-4 flex-shrink-0 animate-spin" />
+      <div role="status" aria-live="polite" className={cn(baseClasses, 'bg-nixus')}>
+        <RefreshCw className="h-3.5 w-3.5 flex-shrink-0 animate-spin" />
         <span>
-          Sincronizando {syncingCount} {syncingCount === 1 ? 'operación pendiente' : 'operaciones pendientes'}…
+          Sincronizando {syncingCount} {syncingCount === 1 ? 'operación' : 'operaciones'}…
         </span>
       </div>
     );
   }
 
-  // Recién sincronizado → banner verde momentáneo
+  // Recién sincronizado → franja verde momentánea
   if (showSyncedMsg) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className={cn(
-          'fixed top-0 left-0 right-0 z-[9998]',
-          'flex items-center justify-center gap-2.5 px-4 py-2.5',
-          'bg-emerald-600 text-white text-sm font-medium shadow-lg',
-          'animate-in slide-in-from-top duration-300'
-        )}
-      >
-        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-        <span>Conexión restaurada — operaciones sincronizadas correctamente.</span>
+      <div role="status" aria-live="polite" className={cn(baseClasses, 'bg-emerald-600')}>
+        <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+        <span>Conexión restaurada — todo sincronizado</span>
       </div>
     );
   }
 
-  // Hay pendientes pero ya hay conexión (esperando procesamiento)
+  // Hay pendientes y ya hay conexión
   if (pendingCount > 0 && isOnline) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className={cn(
-          'fixed top-0 left-0 right-0 z-[9998]',
-          'flex items-center justify-center gap-2.5 px-4 py-2.5',
-          'bg-amber-500 text-white text-sm font-medium shadow-lg',
-          'animate-in slide-in-from-top duration-300'
-        )}
-      >
-        <CloudUpload className="h-4 w-4 flex-shrink-0" />
+      <div role="status" aria-live="polite" className={cn(baseClasses, 'bg-amber-500')}>
+        <CloudUpload className="h-3.5 w-3.5 flex-shrink-0" />
         <span>
-          Conexión restaurada — enviando {pendingCount} {pendingCount === 1 ? 'notificación pendiente' : 'notificaciones pendientes'}…
+          Enviando {pendingCount} {pendingCount === 1 ? 'notificación pendiente' : 'notificaciones pendientes'}…
         </span>
       </div>
     );
