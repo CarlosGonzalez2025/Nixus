@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { savePermitDraft, addSignatureAndNotify } from '../actions';
 import { createPermitOffline, addSignatureOffline } from '@/lib/offline-permits';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { handleStaleServerActionError } from '@/lib/server-action-error';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle,
@@ -451,6 +452,16 @@ function CreatePermitWizard() {
         }
       }
     } catch (error: any) {
+      // Si la app está desincronizada (Service Worker viejo), actualizar y recargar
+      if (handleStaleServerActionError(error)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Falló el Envío',

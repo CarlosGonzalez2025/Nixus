@@ -13,38 +13,67 @@ export function PWAUpdater() {
     }
 
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    let registrationRef: ServiceWorkerRegistration | null = null;
 
     const handleControllerChange = () => {
       window.location.reload();
     };
 
+    const attachWaitingWorkerListeners = (registration: ServiceWorkerRegistration) => {
+      // Si ya hay un SW esperando al montar, mostrarlo de inmediato
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        setWaitingWorker(registration.waiting);
+        setShowUpdate(true);
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            setWaitingWorker(newWorker);
+            setShowUpdate(true);
+          }
+        });
+      });
+    };
+
     const registerServiceWorker = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-        });
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        registrationRef = registration;
 
-        // Verificar actualizaciones cada hora
+        attachWaitingWorkerListeners(registration);
+
+        // Chequear actualizaciones cada 30 minutos
         intervalId = setInterval(() => {
           registration.update();
-        }, 60 * 60 * 1000);
+        }, 30 * 60 * 1000);
 
-        // Detectar nuevo service worker en estado 'waiting' (skipWaiting: false en config)
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
+        // Chequear al recuperar visibilidad (el usuario vuelve a la pestaña)
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            registration.update();
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-          newWorker.addEventListener('statechange', () => {
-            if (
-              newWorker.state === 'installed' &&
-              navigator.serviceWorker.controller
-            ) {
-              // Nueva versión instalada y esperando — mostrar banner al usuario
-              setWaitingWorker(newWorker);
-              setShowUpdate(true);
-            }
-          });
-        });
+        // Exponer función global para forzar activación inmediata desde otros módulos
+        // (usada cuando un Server Action falla por desincronización de versiones)
+        (window as any).__swForceUpdate = () => {
+          const waiting = registration.waiting ?? registrationRef?.waiting;
+          if (waiting) {
+            waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            // No hay SW esperando — verificar si hay uno nuevo disponible
+            registration.update();
+          }
+        };
+
+        return () => {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
       } catch (error) {
         console.error('Service worker registration failed:', error);
       }
@@ -52,13 +81,13 @@ export function PWAUpdater() {
 
     registerServiceWorker();
 
-    // Recargar cuando se active la nueva versión (ocurre DESPUÉS de que
-    // el usuario hace clic en "Actualizar" y el SW llama skipWaiting)
+    // Recargar cuando se active la nueva versión
     navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
     return () => {
       if (intervalId !== null) clearInterval(intervalId);
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      delete (window as any).__swForceUpdate;
     };
   }, []);
 

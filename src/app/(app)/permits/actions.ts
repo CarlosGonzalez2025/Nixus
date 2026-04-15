@@ -404,6 +404,13 @@ export async function addSignatureAndNotify(
         const updateData: UpdateData<Permit> = {};
 
         if (role.startsWith('cierre_') || role === 'cancelacion') {
+            // Validar que el permiso esté en un estado que permita firmas de cierre
+            if (role.startsWith('cierre_')) {
+                if (permitBeforeData.status !== 'en_ejecucion' && permitBeforeData.status !== 'suspendido') {
+                    return { success: false, error: 'Solo se pueden agregar firmas de cierre a permisos que estén En Ejecución o Suspendidos.' };
+                }
+            }
+
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
             
@@ -713,6 +720,18 @@ export async function updatePermitStatus(
         }
         
         if (status === 'cerrado') {
+            // Validar que las firmas de cierre requeridas existan
+            if (!permitData.closure?.responsable?.firma) {
+                return { success: false, error: 'No se puede cerrar el permiso: falta la firma de cierre del Responsable del Trabajo.' };
+            }
+            if (!permitData.closure?.autoridad?.firma) {
+                return { success: false, error: 'No se puede cerrar el permiso: falta la firma de cierre de la Autoridad del Área.' };
+            }
+            const workersWithoutCierre = (permitData.workers || []).filter((w: any) => !w.firmaCierre);
+            if (workersWithoutCierre.length > 0) {
+                return { success: false, error: `No se puede cerrar el permiso: faltan firmas de cierre de ${workersWithoutCierre.length} trabajador(es).` };
+            }
+
             updateData['closure.fechaCierre'] = FieldValue.serverTimestamp();
             updateData['closure.terminado'] = 'si';
         }

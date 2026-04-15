@@ -69,6 +69,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature, addDailyValidationClosureSignature, closePermitByAnyUser } from '../actions';
 import { addSignatureOffline } from '@/lib/offline-permits';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { handleStaleServerActionError } from '@/lib/server-action-error';
 import { SIGNATURE_ROLE_LABELS, ROLE_LABELS_FULL } from '@/lib/role-config';
 import {
   AlertDialog,
@@ -468,6 +469,15 @@ export default function PermitDetailPage() {
         throw new Error(result.error || 'No se pudo guardar la firma.');
       }
     } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Error al firmar',
@@ -497,6 +507,15 @@ export default function PermitDetailPage() {
         throw new Error(result.error || 'No se pudo actualizar el estado.');
       }
     } catch (error: any) {
+      if (handleStaleServerActionError(error)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({
         variant: 'destructive',
         title: 'Error al actualizar',
