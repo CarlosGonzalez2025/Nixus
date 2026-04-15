@@ -8,6 +8,7 @@ import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { getEmailForUser, sendPermitUpdateEmail } from '@/lib/email';
 import { buildPermitEmailHtml } from '@/lib/permit-email-template';
+import { sendPushToUser } from '@/lib/push-notifications';
 import { config } from 'dotenv';
 config();
 
@@ -79,16 +80,17 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
     }
   });
 
-  // 3. Usuarios por rol filtrados por planta del permiso
-  const permitPlant = permit.generalInfo?.planta?.trim() || '';
-  const permitPlantLower = permitPlant.toLowerCase();
+  // 3. Usuarios por rol filtrados por empresa Y planta del permiso
+  const permitPlant   = permit.generalInfo?.planta?.trim() || '';
+  const permitEmpresa = permit.generalInfo?.empresa?.trim() || '';
+  const permitPlantLower   = permitPlant.toLowerCase();
+  const permitEmpresaLower = permitEmpresa.toLowerCase();
 
   /**
-   * Filtra un snapshot de Firestore incluyendo solo usuarios cuya planta coincide
-   * con la del permiso (case-insensitive).
-   * - Si el usuario NO tiene planta asignada → se incluye siempre (autorizante global).
-   * - Si el usuario tiene planta asignada → se incluye solo si coincide con la del permiso.
-   * - Si el permiso NO tiene planta → se incluyen todos los usuarios del rol.
+   * Filtra un snapshot incluyendo solo usuarios cuya empresa Y planta coinciden
+   * con las del permiso (case-insensitive).
+   * - Si el usuario NO tiene empresa/planta → se incluye siempre (rol global).
+   * - Si el permiso NO tiene empresa/planta → se incluyen todos los usuarios del rol.
    */
   const addUsersMatchingPlant = (snap: FirebaseFirestore.QuerySnapshot) => {
     snap.forEach(doc => {
@@ -96,8 +98,11 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
       if (data.disabled) return;
       if (permitPlant) {
         const userPlant = (data.planta || '').trim().toLowerCase();
-        // Usuario con planta distinta → no incluir
         if (userPlant && userPlant !== permitPlantLower) return;
+      }
+      if (permitEmpresa) {
+        const userEmpresa = (data.empresa || '').trim().toLowerCase();
+        if (userEmpresa && userEmpresa !== permitEmpresaLower) return;
       }
       userIds.add(doc.id);
     });
@@ -162,20 +167,28 @@ const createNotification = async (
     triggeredBy,
   };
   await adminDb.collection('notifications').add(notification as any);
-  
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+  const permitUrl = `${baseUrl}/permits/${permit.id}`;
+  const permitNumber = permit.number || permit.id;
+  const statusLabel = STATUS_LABEL[permit.status] || permit.status;
+
   // Enviar correo electrónico con plantilla profesional
   const userEmail = await getEmailForUser(userId);
   if (userEmail) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
-    const permitUrl = `${baseUrl}/permits/${permit.id}`;
-    const permitNumber = permit.number || permit.id;
-    const statusLabel = STATUS_LABEL[permit.status] || permit.status;
     await sendPermitUpdateEmail({
       to: userEmail,
       subject: `[SGTC] Permiso ${permitNumber} — ${statusLabel}`,
       html: buildPermitEmailHtml(permit, message, permitUrl),
     });
   }
+
+  // Enviar notificación push al dispositivo móvil (no bloquea si falla)
+  sendPushToUser(userId, {
+    title: `SGTC Móvil — ${statusLabel}`,
+    body: message,
+    url: permitUrl,
+  }).catch(err => console.error('[Push] Error enviando notificación push:', err));
 };
 
 // --- Fin de Funciones de Notificaciones ---

@@ -45,9 +45,9 @@ service cloud.firestore {
       return getUserData().planta;
     }
 
-    // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
+    // Módulo Hallazgos: admins, usuarios de Nixus Capital, líderes SST y autorizantes.
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst'));
+      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst') || hasRole('autorizante'));
     }
 
     // --- Colección de Usuarios (users) ---
@@ -76,10 +76,15 @@ service cloud.firestore {
       // LECTURA: Permite leer a los involucrados directamente.
       allow read: if isSignedIn() &&
                     (isAdmin() ||
-                     hasRole('autorizante') ||
                      isCreator(resource.data) ||
-                     // Líder SST puede leer cualquier permiso de su planta (no solo los que requieren su firma)
-                     (hasRole('lider_sst') && (!getPlanta() || resource.data.generalInfo.planta == getPlanta())) ||
+                     // Autorizante: puede leer permisos de su empresa y planta
+                     (hasRole('autorizante') &&
+                       (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
+                       (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
+                     // Líder SST: puede leer permisos de su empresa y planta
+                     (hasRole('lider_sst') &&
+                       (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
+                       (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
                      (hasRole('mantenimiento') && resource.data.controlEnergia == true)
                     );
 
@@ -146,29 +151,33 @@ service cloud.firestore {
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
       // GET (documento individual): resource.data siempre disponible.
-      // lider_sst puede ver hallazgos de su planta.
       allow get: if canAccessHallazgos() &&
                  (isAdmin() ||
-                  resource.data.empresaId == getEmpresa() ||
-                  (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+                  // Autorizante y otros: empresa debe coincidir; si tiene planta, también debe coincidir
+                  (resource.data.empresaId == getEmpresa() &&
+                   (!getPlanta() || resource.data.planta == getPlanta())) ||
+                  // Líder SST: empresa Y planta deben coincidir
+                  (hasRole('lider_sst') &&
+                   resource.data.empresaId == getEmpresa() &&
+                   (!getPlanta() || resource.data.planta == getPlanta())));
 
-      // LIST (queries): el filtro por planta lo garantiza el where() del cliente.
+      // LIST (queries): el filtro por planta/empresa lo garantiza el where() del cliente.
       allow list: if canAccessHallazgos() &&
                   (isAdmin() ||
                    resource.data.empresaId == getEmpresa() ||
                    hasRole('lider_sst'));
 
-      // Creación: Nixus Capital usa empresaId; lider_sst puede crear en su planta.
+      // Creación: empresa debe coincidir con la del usuario.
       allow create: if canAccessHallazgos() &&
                     (isAdmin() ||
                      request.resource.data.empresaId == getEmpresa() ||
                      hasRole('lider_sst'));
 
-      // Actualización: lider_sst puede gestionar planes de acción de su planta.
+      // Actualización: empresa Y planta deben coincidir.
       allow update: if canAccessHallazgos() &&
                     (isAdmin() ||
-                     resource.data.empresaId == getEmpresa() ||
-                     (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+                     (resource.data.empresaId == getEmpresa() &&
+                      (!getPlanta() || resource.data.planta == getPlanta())));
 
       // Solo admins pueden eliminar hallazgos.
       allow delete: if isAdmin();

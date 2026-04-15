@@ -80,23 +80,32 @@ export function AlertsBell() {
   // The number of unread notifications is simply the length of the state array
   const unreadCount = notifications.length;
 
-  // When a notification is clicked, mark it as read. It will then disappear from the list.
+  // Marca como leída y elimina de la lista de forma optimista (sin esperar a Firestore).
   const handleMarkAsRead = async (notificationId: string) => {
-    const notifRef = doc(db, 'notifications', notificationId);
-    await updateDoc(notifRef, { isRead: true });
+    // Actualización optimista: quitar inmediatamente de la lista visible
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    try {
+      const notifRef = doc(db, 'notifications', notificationId);
+      await updateDoc(notifRef, { isRead: true });
+    } catch (error) {
+      console.error('[AlertsBell] Error al marcar como leída:', error);
+      // Si falla, onSnapshot restaurará el estado correcto
+    }
   };
-  
-  // Mark all currently visible (i.e., unread) notifications as read.
+
+  // Marca todas como leídas y limpia la lista de forma optimista.
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
-    
-    // 'notifications' state only contains unread items.
-    const updatePromises = notifications.map(n => {
-      const notifRef = doc(db, 'notifications', n.id);
-      return updateDoc(notifRef, { isRead: true });
-    });
-
-    await Promise.all(updatePromises);
+    const toUpdate = [...notifications];
+    // Actualización optimista: vaciar lista inmediatamente
+    setNotifications([]);
+    try {
+      await Promise.all(
+        toUpdate.map(n => updateDoc(doc(db, 'notifications', n.id), { isRead: true }))
+      );
+    } catch (error) {
+      console.error('[AlertsBell] Error al marcar todas como leídas:', error);
+    }
   };
 
   return (

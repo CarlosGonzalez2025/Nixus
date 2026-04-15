@@ -153,9 +153,9 @@ export default function PermitsPage() {
     const permitsCollection = collection(db, 'permits');
     let unsubscribers: Unsubscribe[] = [];
 
-    // Líder SST: ve todos los permisos de su planta (no solo los que requieren su firma)
+    // Líder SST: ve todos los permisos de su misma empresa y planta
     if (user.role === 'lider_sst') {
-        // Si tiene planta asignada, filtra por ella; si no, trae todos ordenados por fecha
+        // Filtra en BD por planta (índice existente); empresa se filtra en cliente
         const sstConstraints: QueryConstraint[] = user.planta
             ? [where('generalInfo.planta', '==', user.planta), orderBy('createdAt', 'desc')]
             : [orderBy('createdAt', 'desc')];
@@ -163,7 +163,7 @@ export default function PermitsPage() {
         const q = query(permitsCollection, ...sstConstraints);
 
         const unsub = onSnapshot(q, (snapshot) => {
-            const permitsData = snapshot.docs.map(doc => {
+            let permitsData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -171,6 +171,12 @@ export default function PermitsPage() {
                     createdAt: parseFirestoreDate(data.createdAt),
                 } as Permit;
             });
+            // Filtro adicional por empresa (mismo índice no requerido)
+            if (user.empresa) {
+                permitsData = permitsData.filter(p =>
+                    !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa
+                );
+            }
             setAllPermits(permitsData);
             setLoading(false);
         }, (error) => {
@@ -253,9 +259,13 @@ export default function PermitsPage() {
             permitsData = permitsData.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
           }
 
-          // Si es autorizante, filtrar solo por permisos de su planta
+          // Autorizante: filtrar por empresa Y planta
           if (user.role === 'autorizante') {
-            permitsData = permitsData.filter(p => !user.planta || p.generalInfo?.planta === user.planta);
+            permitsData = permitsData.filter(p => {
+              const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa;
+              const matchPlanta  = !user.planta  || !p.generalInfo?.planta  || p.generalInfo.planta  === user.planta;
+              return matchEmpresa && matchPlanta;
+            });
           }
 
           setAllPermits(permitsData);

@@ -53,6 +53,7 @@ import { NotificationBadge } from '@/components/ui/notification-badge';
 import { PWAUpdater } from '@/components/PWAUpdater';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { useOfflineSync } from '@/hooks/use-offline-sync';
+import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -126,6 +127,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
     <OfflineBanner isSyncing={isSyncing} syncingCount={syncingCount} justSynced={justSynced} />
+    <PushNotificationPrompt />
     <IdleTimerProvider timeout={30} warningTime={5}>
       <SidebarProvider>
         <FirebaseErrorListener />

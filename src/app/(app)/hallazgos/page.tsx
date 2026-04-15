@@ -82,9 +82,10 @@ export default function HallazgosPage() {
         const constraints: any[] = [orderBy('createdAt', 'desc')];
         if (user.role !== 'admin') {
             if (user.role === 'lider_sst' && user.planta) {
-                // lider_sst ve solo los hallazgos de su planta asignada.
+                // lider_sst: filtra en BD por planta; empresa se aplica en cliente
                 constraints.unshift(where('planta', '==', user.planta));
             } else if (user.empresa) {
+                // autorizante y otros: filtra en BD por empresa; planta se aplica en cliente
                 constraints.unshift(where('empresaId', '==', user.empresa));
             }
         }
@@ -110,8 +111,21 @@ export default function HallazgosPage() {
             const estado = h.cumplimientoEstado || 'Pendiente';
             const matchTab = activeTab === 'todos' || estado === activeTab;
             const matchClase = filterClase === 'all' || h.clase === filterClase;
-            // lider_sst: la query ya filtra por planta, esto es defensa extra
-            const matchPlanta = user?.role !== 'lider_sst' || !user?.planta || h.planta === user.planta;
+
+            // Filtro empresa+planta en cliente (la BD ya filtró por uno de los dos)
+            let matchEmpresaPlanta = true;
+            if (user?.role === 'lider_sst') {
+                // La BD filtra por planta; acá validamos empresa también
+                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
+                const matchPlanta  = !user.planta  || h.planta === user.planta;
+                matchEmpresaPlanta = matchEmpresa && matchPlanta;
+            } else if (user?.role === 'autorizante') {
+                // La BD filtra por empresa; acá validamos planta también
+                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
+                const matchPlanta  = !user.planta  || !h.planta   || h.planta === user.planta;
+                matchEmpresaPlanta = matchEmpresa && matchPlanta;
+            }
+
             const s = search.toLowerCase();
             const matchSearch = !s ||
                 h.hallazgo?.toLowerCase().includes(s) ||
@@ -121,7 +135,7 @@ export default function HallazgosPage() {
                 h.area?.toLowerCase().includes(s) ||
                 h.reportadoPorNombre?.toLowerCase().includes(s) ||
                 String(h.numero).includes(s);
-            return matchTab && matchClase && matchPlanta && matchSearch;
+            return matchTab && matchClase && matchEmpresaPlanta && matchSearch;
         });
     }, [hallazgos, activeTab, filterClase, search, user]);
 

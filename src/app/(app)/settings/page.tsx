@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, KeyRound, User, ShieldCheck } from 'lucide-react';
+import { Loader2, KeyRound, User, ShieldCheck, Bell, BellOff } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { updateUserProfile } from './actions';
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
 
@@ -214,6 +215,8 @@ export default function SettingsPage() {
             </CardContent>
         </Card>
       </div>
+      <PushNotificationCard />
+
        <Card className="mt-8 border-yellow-200 bg-yellow-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-yellow-800"><ShieldCheck /> Seguridad de la Cuenta</CardTitle>
@@ -225,5 +228,57 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function PushNotificationCard() {
+  const { state, subscribe, unsubscribe } = usePushNotifications();
+
+  if (state === 'unsupported') return null;
+
+  return (
+    <Card className="mt-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5" /> Notificaciones del Dispositivo
+        </CardTitle>
+        <CardDescription>
+          Recibe alertas de permisos directamente en la barra de notificaciones de tu dispositivo, como un mensaje de texto o correo.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {state === 'loading' && (
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Verificando estado…
+          </p>
+        )}
+        {state === 'granted' && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-green-700 flex items-center gap-2">
+              <Bell className="h-4 w-4" /> Notificaciones activadas en este dispositivo.
+            </p>
+            <Button variant="outline" size="sm" onClick={unsubscribe} className="gap-2">
+              <BellOff className="h-4 w-4" /> Desactivar
+            </Button>
+          </div>
+        )}
+        {state === 'denied' && (
+          <p className="text-sm text-red-600 flex items-center gap-2">
+            <BellOff className="h-4 w-4" />
+            Notificaciones bloqueadas. Actívalas desde la configuración del navegador/sistema.
+          </p>
+        )}
+        {state === 'default' && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Las notificaciones no están activadas en este dispositivo.
+            </p>
+            <Button size="sm" onClick={subscribe} className="gap-2">
+              <Bell className="h-4 w-4" /> Activar notificaciones
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
