@@ -124,11 +124,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <>
+    <OfflineBanner isSyncing={isSyncing} syncingCount={syncingCount} justSynced={justSynced} />
     <IdleTimerProvider timeout={30} warningTime={5}>
       <SidebarProvider>
         <FirebaseErrorListener />
         <PWAUpdater />
-        <OfflineBanner isSyncing={isSyncing} syncingCount={syncingCount} justSynced={justSynced} />
 
         <Sidebar className="border-r">
           <SidebarHeader className="border-b">
@@ -414,5 +415,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </SidebarProvider>
     </IdleTimerProvider>
+    </>
   );
 }
