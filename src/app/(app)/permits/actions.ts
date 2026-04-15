@@ -175,7 +175,7 @@ const createNotification = async (
     message,
     type,
     isRead: false,
-    createdAt: FieldValue.serverTimestamp() as Timestamp,
+    createdAt: FieldValue.serverTimestamp() as any,
     triggeredBy,
   };
   await adminDb.collection('notifications').add(notification as any);
@@ -227,8 +227,8 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   
   if (selectedTypes.length === 0) {
     if (permit.trabajoGeneral) return 'Trabajo General';
-    if (permit.workType && Array.isArray(permit.workType)) {
-      return permit.workType.map(key => workTypesMap[key] || key).join(', ');
+    if ((permit as any).workType && Array.isArray((permit as any).workType)) {
+      return (permit as any).workType.map((key: string) => workTypesMap[key] || key).join(', ');
     }
     return 'Trabajo General';
   }
@@ -280,7 +280,7 @@ export async function createPermit(data: PermitCreateData) {
     ...permitData,
     status: 'pendiente_revision' as const,
     createdBy: userId,
-    createdAt: FieldValue.serverTimestamp() as Timestamp,
+    createdAt: FieldValue.serverTimestamp() as any,
     user: {
       displayName: userDisplayName,
       email: userEmail,
@@ -431,7 +431,7 @@ export async function addSignatureAndNotify(
             
             const existingClosureData = (permitBeforeData.closure as any)?.[closureRole] || {};
 
-            updateData[closurePath as keyof UpdateData<Permit>] = {
+            (updateData as any)[closurePath] = {
                 ...existingClosureData,
                 firma: signatureDataUrl,
                 nombre: user.displayName,
@@ -448,7 +448,7 @@ export async function addSignatureAndNotify(
                 return { success: false, error: canSign.reason };
             }
 
-            const approvalData: Partial<Approval> = {
+            const newApprovalEntry = {
                 status: 'aprobado',
                 firmaApertura: signatureDataUrl,
                 userName: user.displayName,
@@ -457,9 +457,9 @@ export async function addSignatureAndNotify(
                 userRole: user.role,
                 userEmpresa: user.empresa || 'N/A',
                 comments: comments || '',
-            }
+            } as unknown as Partial<Approval>;
             
-            updateData[`approvals.${role}`] = approvalData;
+            (updateData as any)[`approvals.${role}`] = newApprovalEntry;
 
             if (role === 'solicitante') {
                 const validationPayload: ValidacionDiaria = { 
@@ -473,7 +473,7 @@ export async function addSignatureAndNotify(
                         const currentValidations = ((permitBeforeData as any)[anexo].validacion?.responsable as ValidacionDiaria[]) || [];
                         if (!currentValidations[0]?.firma) {
                             currentValidations[0] = validationPayload;
-                            updateData[`${anexo}.validacion.responsable`] = currentValidations;
+                            (updateData as any)[`${anexo}.validacion.responsable`] = currentValidations;
                         }
                     }
                 });
@@ -946,7 +946,8 @@ export async function addDailyValidationSignature(
       [updatePath]: validationArray,
     });
 
-    const fullPermitData = { id: docRef.id, ...permitData } as Permit;
+    const { id: _id1, ...permitDataWithoutId1 } = permitData as any;
+    const fullPermitData = { id: docRef.id, ...permitDataWithoutId1 } as Permit;
     const anexoDisplayName = anexoName.replace('anexo', 'Anexo ');
     const validationRoleName = validationType === 'autoridad' ? 'Autoridad del Área' : 'Responsable del Trabajo';
     const day = index + 1;
@@ -1029,7 +1030,8 @@ export async function addDailyValidationClosureSignature(
       [updatePath]: validationArray,
     });
 
-    const fullPermitData = { id: docRef.id, ...permitData } as Permit;
+    const { id: _id2, ...permitDataWithoutId2 } = permitData as any;
+    const fullPermitData = { id: docRef.id, ...permitDataWithoutId2 } as Permit;
     const anexoDisplayName = anexoName.replace('anexo', 'Anexo ');
     const day = index + 1;
 

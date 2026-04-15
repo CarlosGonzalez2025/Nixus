@@ -3,7 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
 
-export type UserRole = 'solicitante' | 'autorizante' | 'lider_sst' | 'admin' | 'mantenimiento';
+export type UserRole = 'solicitante' | 'autorizante' | 'lider_sst' | 'admin' | 'mantenimiento' | 'asesor_arl';
 
 export interface User {
   uid: string;
@@ -96,8 +96,7 @@ export type JustificacionATS = {
 export type AnexoATS = {
   peligros?: { [key: string]: 'si' | 'no' };
   controles?: { [key: string]: 'si' | 'no' | 'na' };
-  epp?: { 
-    [key: string]: boolean | string;
+  epp?: Record<string, boolean | string> & {
     casco_seguridad_tipo?: string;
     casco_seguridad_clase?: string;
     casco_seguridad_barbuquejo?: 'con_barbuquejo' | 'sin_barbuquejo' | '';

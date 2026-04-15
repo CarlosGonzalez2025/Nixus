@@ -8,7 +8,6 @@ const withPWA = withPWAInit({
   // skipWaiting: false (default) — el SW espera en estado 'waiting' hasta que
   // el usuario confirme la actualización desde el banner PWAUpdater.
   // NO usar skipWaiting: true porque fuerza recarga automática sin consentimiento.
-  skipWaiting: false,
   buildExcludes: [/middleware-manifest\.json$/],
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
@@ -22,7 +21,7 @@ const withPWA = withPWAInit({
   // ✅ CORRECCIÓN: Se asegura de que el service worker se registre en la raíz.
   scope: '/',
   sw: 'sw.js',
-});
+} as any);
 
 const nextConfig: NextConfig = {
   /* config options here */

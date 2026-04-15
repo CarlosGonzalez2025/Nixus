@@ -118,7 +118,7 @@ export default function Dashboard() {
       
       const monthlyPermits = permitsList.filter(p => {
         if (!p.createdAt) return false;
-        return p.createdAt.getMonth() === d.getMonth() && p.createdAt.getFullYear() === year;
+        return (p.createdAt as any)?.getMonth?.() === d.getMonth() && (p.createdAt as any)?.getFullYear?.() === year;
       });
 
       data.push({
@@ -140,7 +140,7 @@ export default function Dashboard() {
 
     if (!user) {
       setPermits([]);
-      setStats({ total: 0, pendiente: 0, aprobado: 0, enEjecucion: 0 });
+      setStats({ total: 0, pendiente: 0, aprobado: 0, enEjecucion: 0, cerrado: 0 });
       setLoading(false);
       router.push('/login');
       return;
@@ -149,7 +149,13 @@ export default function Dashboard() {
     const permitsCollection = collection(db, 'permits');
     let unsubscribers: Unsubscribe[] = [];
 
-    if (user.role === 'lider_sst') {
+    // NUEVO: Asesor ARL — no consulta permisos, solo hallazgos
+    if (user.role === 'asesor_arl') {
+      setStats({ total: 0, pendiente: 0, aprobado: 0, enEjecucion: 0, cerrado: 0 });
+      setChartData([]);
+      setPermits([]);
+      // No llamamos setLoading(false) aquí; lo hará el onSnapshot de hallazgos
+    } else if (user.role === 'lider_sst') {
       const q1 = query(permitsCollection, where("selectedWorkTypes.alturas", "==", true));
       const q2 = query(permitsCollection, where("isSSTSignatureRequired", "==", true));
 
@@ -161,13 +167,13 @@ export default function Dashboard() {
 
           snapshot1.docs.forEach(doc => {
             if (!permitsMap.has(doc.id)) {
-              permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as Permit);
+                            permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as unknown as Permit);
             }
           });
 
           snapshot2.docs.forEach(doc => {
             if (!permitsMap.has(doc.id)) {
-              permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as Permit);
+                            permitsMap.set(doc.id, { id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt) } as unknown as Permit);
             }
           });
 
@@ -178,7 +184,7 @@ export default function Dashboard() {
               const matchEmpresa = !user.empresa || p.generalInfo?.empresa === user.empresa;
               return matchPlanta && matchEmpresa;
             })
-            .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            .sort((a, b) => ((a.createdAt as any)?.getTime?.() || 0) > ((b.createdAt as any)?.getTime?.() || 0) ? -1 : 1);
           const recentPermits = combinedPermits.slice(0, 10);
           setPermits(recentPermits);
 
@@ -220,14 +226,14 @@ export default function Dashboard() {
         const permitsData = snapshot.docs
           .map(doc => ({
             id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
-          } as Permit))
+          } as unknown as Permit))
           .filter(permit =>
             permit.status === 'pendiente_revision' &&
             permit.approvals?.mantenimiento?.status === 'pendiente' &&
             permit.approvals?.solicitante?.status === 'aprobado' &&
             (!user.planta || permit.generalInfo?.planta === user.planta)
           )
-          .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+          .sort((a, b) => ((a.createdAt as any)?.getTime?.() || 0) > ((b.createdAt as any)?.getTime?.() || 0) ? -1 : 1);
 
         setPermits(permitsData.slice(0, 10));
         setStats({
@@ -260,9 +266,9 @@ export default function Dashboard() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         let permitsData = snapshot.docs.map(doc => ({
           id: doc.id, ...doc.data(), createdAt: parseFirestoreDate(doc.data().createdAt),
-        } as Permit));
+        } as unknown as Permit));
 
-        permitsData = permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        permitsData = permitsData.sort((a, b) => ((a.createdAt as any)?.getTime?.() || 0) > ((b.createdAt as any)?.getTime?.() || 0) ? -1 : 1);
 
         // FIX 2A: Filtrar por empresa Y planta para autorizante (consistente con permits/page.tsx)
         if (user.role === 'autorizante') {
@@ -311,6 +317,9 @@ export default function Dashboard() {
       const lsstConstraints: QueryConstraint[] = [];
       if (user.empresa) lsstConstraints.push(where('empresaId', '==', user.empresa));
       qH = query(collection(db, 'hallazgos'), ...lsstConstraints);
+    } else if (user.role === 'asesor_arl') {
+      // NUEVO: Asesor ARL — solo sus propios hallazgos (reportes creados por él)
+      qH = query(collection(db, 'hallazgos'), where('createdBy', '==', user.uid));
     } else {
       // Otros roles: filtrar siempre por empresa; planta se filtra en el callback
       qH = query(collection(db, 'hallazgos'), where('empresaId', '==', user.empresa || 'NO_COMPANY'));
@@ -320,7 +329,7 @@ export default function Dashboard() {
         id: doc.id,
         ...doc.data(),
         createdAt: parseFirestoreDate(doc.data().createdAt)
-      } as Hallazgo));
+      } as unknown as Hallazgo));
       // FIX 2D: Filtro cliente por planta (evita índices compuestos adicionales en Firestore)
       if (user.planta && user.role !== 'admin') {
         hData = hData.filter(h => !h.planta || h.planta === user.planta);
@@ -507,7 +516,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid — solo para roles que gestionan permisos */}
+      {user?.role !== 'asesor_arl' && (
       <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
         {statsCards.map((stat, index) => (
           <Link key={index} href={stat.href} className="group block h-full">
@@ -536,10 +546,12 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+      )}
 
       {/* Analytics Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Gráfico Tendencia de Permisos */}
+        {/* Gráfico Tendencia de Permisos — oculto para asesor_arl */}
+        {user?.role !== 'asesor_arl' && (
         <Card className="border-0 shadow-md flex flex-col overflow-hidden">
           <CardHeader className="bg-white border-b px-6 py-5">
             <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
@@ -568,9 +580,10 @@ export default function Dashboard() {
              )}
           </CardContent>
         </Card>
+        )}
 
         {/* Módulo de Hallazgos */}
-        <Card className="border-0 shadow-md flex flex-col overflow-hidden">
+        <Card className={`border-0 shadow-md flex flex-col overflow-hidden ${user?.role === 'asesor_arl' ? 'lg:col-span-2' : ''}`}>
           <CardHeader className="bg-white border-b px-6 py-5">
             <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" /> Analítica de Hallazgos
@@ -626,7 +639,8 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Geographic & Installation Analysis */}
+      {/* Geographic & Installation Analysis — solo para roles con acceso a permisos */}
+      {user?.role !== 'asesor_arl' && (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Gráfico Planta */}
         <Card className="border-0 shadow-md flex flex-col overflow-hidden">
@@ -711,7 +725,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
+      {/* Permisos Recientes y panel lateral — solo para roles con acceso a permisos */}
+      {user?.role !== 'asesor_arl' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Permits List */}
         <Card className="lg:col-span-2 border-0 shadow-md flex flex-col overflow-hidden">
@@ -756,10 +773,10 @@ export default function Dashboard() {
                               {permit.number || permit.id.substring(0, 8)}
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[180px]">
-                              {getWorkTypesString(permit.workType)}
+                              {Object.entries((permit as any).selectedWorkTypes || {}).filter(([,v]) => v).map(([k]) => k).join(', ') || 'N/A'}
                             </p>
                             <p className="text-[10px] text-gray-400 mt-1">
-                              {permit.createdAt ? format(permit.createdAt, "dd MMM yyyy • HH:mm", { locale: es }) : 'N/A'}
+                              {permit.createdAt ? format(parseFirestoreDate(permit.createdAt as any) || new Date(), "dd MMM yyyy • HH:mm", { locale: es }) : 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -792,7 +809,7 @@ export default function Dashboard() {
                           </TableCell>
                           <TableCell>
                             <span className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-medium">
-                              {getWorkTypesString(permit.workType)}
+                              {Object.entries((permit as any).selectedWorkTypes || {}).filter(([,v]) => v).map(([k]) => k).join(', ') || 'N/A'}
                             </span>
                           </TableCell>
                           <TableCell className="text-gray-600 text-sm">
@@ -804,7 +821,7 @@ export default function Dashboard() {
                             </div>
                           </TableCell>
                           <TableCell className="text-gray-500 text-sm whitespace-nowrap">
-                            {permit.createdAt ? format(permit.createdAt, "dd MMM yyyy", { locale: es }) : 'N/A'}
+                            {permit.createdAt ? format(parseFirestoreDate(permit.createdAt) || new Date(), "dd 'de' MMMM, yyyy", { locale: es }) : 'N/A'}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className={`${getStatusColor(permit.status)} border-0 shadow-sm px-3 py-1 text-[10px] font-bold uppercase tracking-wide hover:shadow transition-all`}>
@@ -879,6 +896,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      )} {/* fin condición asesor_arl: oculta permisos recientes */}
     </div>
   );
 }

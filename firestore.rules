@@ -160,6 +160,15 @@ service cloud.firestore {
 
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
+
+      // NUEVO: Asesor ARL — acceso exclusivo a sus propios hallazgos (filtro por createdBy).
+      // Estos bloques se evalúan con OR lógico junto a los de abajo.
+      // El filtro de lista lo aplica el cliente con where('createdBy', '==', uid).
+      allow get:    if isSignedIn() && hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid;
+      allow list:   if isSignedIn() && hasRole('asesor_arl');
+      allow create: if isSignedIn() && hasRole('asesor_arl') && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isSignedIn() && hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid;
+
       // GET (documento individual): resource.data siempre disponible.
       allow get: if canAccessHallazgos() &&
                  (isAdmin() ||
@@ -192,5 +201,6 @@ service cloud.firestore {
       // Solo admins pueden eliminar hallazgos.
       allow delete: if isAdmin();
     }
+
   }
 }

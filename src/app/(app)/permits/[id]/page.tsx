@@ -179,7 +179,7 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 };
 
 
-type SignatureRole = 'Ejecutante del trabajo / Líder del equipo Ejecutante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
+type SignatureRole = 'solicitante' | 'Ejecutante del trabajo / Líder del equipo Ejecutante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
 const signatureRoles: { [key: string]: string } = SIGNATURE_ROLE_LABELS;
 
 const signatureConsents: Partial<Record<string, string>> = {
@@ -492,7 +492,7 @@ export default function PermitDetailPage() {
     if (!permit || !currentUser || !currentUser.role) return;
     setIsStatusChanging(true);
     try {
-      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role }, reason);
+      const result = await updatePermitStatus(permit.id, newStatus, { uid: currentUser.uid, displayName: currentUser.displayName ?? null, role: currentUser.role }, reason);
       if (result.success) {
         toast({
           title: 'Estado Actualizado',
@@ -759,7 +759,7 @@ export default function PermitDetailPage() {
     if (!permit || !currentUser) return;
     setIsSigning(true);
     try {
-      const result = await addSignatureAndNotify(permit.id, 'cancelacion', 'firmaCierre', '', { uid: currentUser.uid, displayName: currentUser.displayName, role: currentUser.role }, cancellationReason);
+      const result = await addSignatureAndNotify(permit.id, 'cancelacion', 'firmaCierre', '', { uid: currentUser.uid, displayName: currentUser.displayName ?? null, role: currentUser.role }, cancellationReason);
       if (result.success) {
         await handleChangeStatus('rechazado', `Cancelado: ${cancellationReason}`);
         setIsCancellationDialogOpen(false);
@@ -1551,7 +1551,7 @@ export default function PermitDetailPage() {
                         key={e.id}
                         label={e.label}
                         value={(permit.anexoAltura?.tipoEstructura as any)?.[e.id]}
-                        spec={e.id === 'otros' ? (permit.anexoAltura.tipoEstructura as any).otrosCual : undefined}
+                        spec={e.id === 'otros' ? (permit.anexoAltura?.tipoEstructura as any)?.otrosCual : undefined}
                       />
                     ))}
                   </div>
@@ -1564,7 +1564,7 @@ export default function PermitDetailPage() {
 
                 <Section title="Precauciones y Controles Específicos">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    {Object.entries(permit.anexoAltura.precauciones || {}).map(([key, value]) => (
+                    {Object.entries(permit.anexoAltura?.precauciones || {}).map(([key, value]) => (
                       <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} />
                     ))}
                   </div>
@@ -1572,14 +1572,14 @@ export default function PermitDetailPage() {
 
                 <Section title="Afectaciones">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    <RadioCheck label="¿Produce riesgos para otras áreas?" value={permit.anexoAltura.afectaciones?.riesgoOtrasAreas} />
-                    <RadioCheck label="¿Otras áreas producen riesgo a este trabajo?" value={permit.anexoAltura.afectaciones?.otrasAreasRiesgo} />
-                    <RadioCheck label="¿Personal notificado?" value={permit.anexoAltura.afectaciones?.personalNotificado} />
+                    <RadioCheck label="¿Produce riesgos para otras áreas?" value={permit.anexoAltura?.afectaciones?.riesgoOtrasAreas} />
+                    <RadioCheck label="¿Otras áreas producen riesgo a este trabajo?" value={permit.anexoAltura?.afectaciones?.otrasAreasRiesgo} />
+                    <RadioCheck label="¿Personal notificado?" value={permit.anexoAltura?.afectaciones?.personalNotificado} />
                   </div>
-                  <Field label="Observaciones" value={<p className="text-sm whitespace-pre-wrap">{permit.anexoAltura.afectaciones?.observaciones}</p>} />
+                  <Field label="Observaciones" value={<p className="text-sm whitespace-pre-wrap">{permit.anexoAltura?.afectaciones?.observaciones}</p>} />
                 </Section>
 
-                <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura.validacion} />
+                <DailyValidationTable anexoName="anexoAltura" validationData={permit.anexoAltura?.validacion} />
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -1601,7 +1601,7 @@ export default function PermitDetailPage() {
                 <Section title="Identificación de Peligros y Aspectos">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                     {Object.entries(permit.anexoConfinado.identificacionPeligros || {}).map(([key, value]) => (
-                      <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'procedimientoComunicacion' ? permit.anexoConfinado.procedimientoComunicacionCual : undefined} />
+                      <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'procedimientoComunicacion' ? permit.anexoConfinado?.procedimientoComunicacionCual : undefined} />
                     ))}
                   </div>
                 </Section>
@@ -1675,7 +1675,7 @@ export default function PermitDetailPage() {
                 <Section title="Trabajos en Caliente">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                     {Object.entries(permit.anexoEnergias.trabajosEnCaliente || {}).map(([key, value]) => (
-                      <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'otro' ? permit.anexoEnergias.trabajosEnCaliente?.otro as string : undefined} />
+                      <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'otro' ? permit.anexoEnergias?.trabajosEnCaliente?.otro as string : undefined} />
                     ))}
                   </div>
                 </Section>
@@ -1705,10 +1705,10 @@ export default function PermitDetailPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-green-100 space-y-6">
                 <Section title="Información de la Carga y Equipo">
-                  <Field label="Acción a realizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.accion || {}).filter(([, v]) => v).map(([k]) => k.charAt(0).toUpperCase() + k.slice(1)).join(', ')} />
-                  <Field label="Peso de la Carga" value={Object.entries(permit.anexoIzaje.informacionGeneral.pesoCarga || {}).filter(([, v]) => v).map(([k]) => k.replace('menor', '< ').replace('mas', '> ').replace('entre', '')).join(', ') + ' kg'} />
-                  <Field label="Equipo a Utilizar" value={Object.entries(permit.anexoIzaje.informacionGeneral.equipoUtilizar || {}).filter(([, v]) => v).map(([k]) => k.replace(/([A-Z])/g, ' $1').toUpperCase()).join(', ')} />
-                  <Field label="Capacidad del Equipo" value={permit.anexoIzaje.informacionGeneral.capacidadEquipo} />
+                  <Field label="Acción a realizar" value={Object.entries(permit.anexoIzaje?.informacionGeneral?.accion || {}).filter(([, v]) => v).map(([k]) => k.charAt(0).toUpperCase() + k.slice(1)).join(', ')} />
+                  <Field label="Peso de la Carga" value={Object.entries(permit.anexoIzaje?.informacionGeneral?.pesoCarga || {}).filter(([, v]) => v).map(([k]) => k.replace('menor', '< ').replace('mas', '> ').replace('entre', '')).join(', ') + ' kg'} />
+                  <Field label="Equipo a Utilizar" value={Object.entries(permit.anexoIzaje?.informacionGeneral?.equipoUtilizar || {}).filter(([, v]) => v).map(([k]) => k.replace(/([A-Z])/g, ' $1').toUpperCase()).join(', ')} />
+                  <Field label="Capacidad del Equipo" value={permit.anexoIzaje?.informacionGeneral?.capacidadEquipo} />
                 </Section>
                 <Section title="Aspectos Requeridos para Izaje">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
@@ -1737,10 +1737,10 @@ export default function PermitDetailPage() {
               </CollapsibleTrigger>
               <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-orange-100 space-y-6">
                 <Section title="Dimensiones de la Excavación">
-                  <Field label="Dimensiones Generales" value={permit.anexoExcavaciones.informacionGeneral.dimensiones} />
-                  <Field label="Profundidad" value={permit.anexoExcavaciones.informacionGeneral.profundidad} />
-                  <Field label="Ancho" value={permit.anexoExcavaciones.informacionGeneral.ancho} />
-                  <Field label="Largo" value={permit.anexoExcavaciones.informacionGeneral.largo} />
+                  <Field label="Dimensiones Generales" value={permit.anexoExcavaciones?.informacionGeneral?.dimensiones} />
+                  <Field label="Profundidad" value={permit.anexoExcavaciones?.informacionGeneral?.profundidad} />
+                  <Field label="Ancho" value={permit.anexoExcavaciones?.informacionGeneral?.ancho} />
+                  <Field label="Largo" value={permit.anexoExcavaciones?.informacionGeneral?.largo} />
                 </Section>
                 <Section title="Aspectos Requeridos">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">

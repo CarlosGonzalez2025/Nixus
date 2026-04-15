@@ -419,7 +419,7 @@ export function GeneralInfoStep() {
     dispatch({ type: 'UPDATE_WORK_TYPES', payload: { type, value } });
   }, [dispatch]);
   
-  const handleResponsableChange = useCallback((field: keyof typeof generalInfo.responsable, value: string) => {
+  const handleResponsableChange = useCallback((field: string, value: string) => {
     const newResponsable = { ...generalInfo.responsable, [field]: value };
     handleInputChange('responsable', newResponsable);
   }, [generalInfo.responsable, handleInputChange]);

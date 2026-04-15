@@ -182,7 +182,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
       const user = action.payload;
 
       // Guard: solo saltamos si el solicitante ya está en la lista de trabajadores (por email)
-      const alreadyInWorkers = state.workers.some(w => w.email && user.email && w.email === user.email);
+      const alreadyInWorkers = state.workers?.some(w => w.email && user.email && w.email === user.email) ?? false;
       if (alreadyInWorkers) return state;
       
       const newState = { ...state };
@@ -197,7 +197,9 @@ function formReducer(state: FormState, action: FormAction): FormState {
           responsable: {
               ...state.generalInfo.responsable,
               nombre: user.displayName || '',
+              cargo: state.generalInfo.responsable?.cargo || '',
               compania: user.empresa || '',
+              alcance: state.generalInfo.responsable?.alcance || '',
           }
       };
 
@@ -375,7 +377,7 @@ export const validateEmergenciasStep = (eppEmergencias: EppEmergencias): {
         if (value === 'no') {
             errors.push(`El campo "${field}" debe estar en "SI"`);
             hasNoResponses = true;
-        } else if (!value || value === '') {
+        } else if (!value) {
             errors.push(`El campo "${field}" no ha sido seleccionado`);
         }
     });

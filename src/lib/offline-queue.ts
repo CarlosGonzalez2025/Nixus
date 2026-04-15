@@ -95,7 +95,7 @@ export async function getPendingEntries(): Promise<OfflineQueueEntry[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).index('processed').getAll(false);
+    const req = tx.objectStore(STORE_NAME).index('processed').getAll(IDBKeyRange.only(false));
     req.onsuccess = () => resolve(req.result as OfflineQueueEntry[]);
     req.onerror = () => reject(req.error);
   });
@@ -149,7 +149,7 @@ export async function getPendingCount(): Promise<number> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).index('processed').count(false);
+    const req = tx.objectStore(STORE_NAME).index('processed').count(IDBKeyRange.only(false));
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });

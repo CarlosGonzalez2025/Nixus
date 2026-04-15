@@ -43,7 +43,8 @@ const RadioGroupField = ({ id, label, value, onChange }: { id: string; label: st
 
 export function AnexoEnergiaStep() {
     const { state, dispatch } = usePermitForm();
-    const { generalInfo, anexoEnergias } = state;
+    const { generalInfo } = state;
+    const anexoEnergias = state.anexoEnergias ?? {} as NonNullable<typeof state.anexoEnergias>;
 
     const handleUpdate = (payload: any) => {
         dispatch({ type: 'UPDATE_ANEXO_ENERGIA', payload });
@@ -96,8 +97,8 @@ export function AnexoEnergiaStep() {
                     <div><Label>Compañía:</Label><Input value={generalInfo.responsable?.compania || ''} readOnly disabled /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoEnergias?.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoEnergias.emergencia || {}), contacto: e.target.value } })} /></div>
-                    <div><Label>Teléfono:</Label><Input value={anexoEnergias?.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoEnergias.emergencia || {}), telefono: e.target.value } })} /></div>
+                    <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoEnergias?.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { contacto: e.target.value, telefono: anexoEnergias?.emergencia?.telefono || '' } })} /></div>
+                    <div><Label>Teléfono:</Label><Input value={anexoEnergias?.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { contacto: anexoEnergias?.emergencia?.contacto || '', telefono: e.target.value } })} /></div>
                 </div>
             </SectionWrapper>
             

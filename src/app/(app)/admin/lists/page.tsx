@@ -181,7 +181,7 @@ const ListManager = ({ listName }: { listName: ListName }) => {
     if (result.success) {
       toast({
         title: '✅ Importación Exitosa',
-        description: `${result.added} elementos agregados${result.skipped > 0 ? `, ${result.skipped} duplicados omitidos` : ''}.`
+        description: `${result.added} elementos agregados${(result.skipped ?? 0) > 0 ? `, ${result.skipped} duplicados omitidos` : ''}.`
       });
       setBulkText('');
       setBulkDialogOpen(false);

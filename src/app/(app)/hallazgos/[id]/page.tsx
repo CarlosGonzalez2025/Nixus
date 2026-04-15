@@ -35,6 +35,8 @@ export default function HallazgoDetailPage() {
     }, [id]);
 
     const canEdit = user?.role === 'lider_sst' || user?.role === 'admin' ||
+        // NUEVO: Asesor ARL puede editar solo sus propios hallazgos
+        (user?.role === 'asesor_arl' && hallazgo?.createdBy === user?.uid) ||
         (user?.role === 'solicitante' && hallazgo?.createdBy === user?.uid);
 
     const handleDownloadPdf = async () => {

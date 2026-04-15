@@ -109,7 +109,8 @@ const roleColors: { [key in UserRole]: string } = {
   autorizante: 'bg-purple-100 text-purple-700 border-purple-200',
   lider_sst: 'bg-orange-100 text-orange-700 border-orange-200',
   admin: 'bg-red-100 text-red-700 border-red-200',
-  mantenimiento: 'bg-cyan-100 text-cyan-700 border-cyan-200'
+  mantenimiento: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  asesor_arl: 'bg-green-100 text-green-700 border-green-200',
 };
 
 function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
@@ -1098,7 +1099,7 @@ export default function UsersPage() {
                               <Edit className="h-4 w-4 mr-1" />
                               Editar
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={() => handleDeleteUser(user.uid, user.displayName)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={() => handleDeleteUser(user.uid, user.displayName ?? undefined)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1171,7 +1172,7 @@ export default function UsersPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.uid, user.displayName); }}
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.uid, user.displayName ?? undefined); }}
                                   className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                   <Trash2 className="h-4 w-4" />

@@ -339,10 +339,10 @@ export function ReviewStep() {
                     if (details) spec = `(Clase: ${details})`;
                 } else if (item.type === 'select') {
                     const specValue = eppData[`${item.id}_spec`];
-                    if (specValue) spec = `(${specValue.replace(/_/g, ' ')})`;
+                    if (specValue && typeof specValue === 'string') spec = `(${specValue.replace(/_/g, ' ')})`;
                 } else if (item.type === 'text') {
                     const specValue = eppData[`${item.id}_spec`];
-                    if (specValue) spec = `(${specValue})`;
+                    if (specValue && typeof specValue === 'string') spec = `(${specValue})`;
                 }
                 
                 selectedEpps.push(`${label} ${spec}`.trim());

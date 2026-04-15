@@ -680,7 +680,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                                         {!isViewMode && (
                                                             <Button type="button" variant="outline" size="sm"
                                                                 className="h-9 w-full border-border/60"
-                                                                onClick={captureGeo} disabled={geoStatus === 'loading'}>
+                                                                onClick={captureGeo} disabled={false}>
                                                                 <MapPin className="mr-2 h-3.5 w-3.5" />
                                                                 Capturar ubicación
                                                             </Button>

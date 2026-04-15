@@ -240,7 +240,7 @@ const EppItem = ({
                 <Checkbox 
                   id="guantin"
                   checked={eppData?.guante_dielectrico_guantin || false}
-                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_guantin', checked)}
+                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_guantin', checked as string)}
                 />
                 <Label htmlFor="guantin" className="font-normal">Guantín (protector interno)</Label>
               </div>
@@ -248,7 +248,7 @@ const EppItem = ({
                 <Checkbox 
                   id="proteccion_mecanica"
                   checked={eppData?.guante_dielectrico_proteccion || false}
-                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_proteccion', checked)}
+                  onCheckedChange={(checked) => handleSpecChange('guante_dielectrico_proteccion', checked as string)}
                 />
                 <Label htmlFor="proteccion_mecanica" className="font-normal">Protección mecánica (sobre-guante)</Label>
               </div>
@@ -591,8 +591,8 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
                         {hazard.label}
                       </Label>
                       <RadioGroup
-                        value={anexoATS.peligros?.[hazard.id]}
-                        onValueChange={(value: 'si' | 'no') => handlePeligroChange(hazard.id, value)}
+                        value={anexoATS.peligros?.[hazard.id] ?? ''}
+                        onValueChange={(value: string) => handlePeligroChange(hazard.id, value as 'si' | 'no')}
                         className="flex gap-4"
                       >
                         <div className="flex items-center space-x-2">

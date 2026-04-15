@@ -113,7 +113,8 @@ const precaucionesControles = [
 
 export function AnexoIzajeStep() {
     const { state, dispatch } = usePermitForm();
-    const { generalInfo, anexoIzaje } = state;
+    const { generalInfo } = state;
+    const anexoIzaje = state.anexoIzaje ?? {} as NonNullable<typeof state.anexoIzaje>;
     const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
     const [signingTarget, setSigningTarget] = React.useState<{ section: string; field?: string; index?: number } | null>(null);
 

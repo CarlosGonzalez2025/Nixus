@@ -217,7 +217,8 @@ const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defau
 
 export function AnexoAlturaStep() {
   const { state, dispatch } = usePermitForm();
-  const { generalInfo, anexoAltura } = state;
+  const { generalInfo } = state;
+  const anexoAltura = state.anexoAltura ?? {} as NonNullable<typeof state.anexoAltura>;
   const isSSTRequired = anexoAltura.tareaRealizar?.id === 'otro';
 
   const handleUpdate = (payload: Partial<AnexoAltura>) => {
@@ -389,8 +390,8 @@ export function AnexoAlturaStep() {
             <div><Label>Compañía:</Label><Input value={generalInfo.responsable?.compania || ''} readOnly disabled /></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoAltura.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoAltura.emergencia || {}), contacto: e.target.value } })} /></div>
-            <div><Label>Teléfono:</Label><Input value={anexoAltura.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { ...(anexoAltura.emergencia || {}), telefono: e.target.value } })} /></div>
+            <div><Label>En caso de emergencia contactar a:</Label><Input value={anexoAltura.emergencia?.contacto || ''} onChange={(e) => handleUpdate({ emergencia: { contacto: e.target.value, telefono: anexoAltura.emergencia?.telefono || '' } })} /></div>
+            <div><Label>Teléfono:</Label><Input value={anexoAltura.emergencia?.telefono || ''} onChange={(e) => handleUpdate({ emergencia: { contacto: anexoAltura.emergencia?.contacto || '', telefono: e.target.value } })} /></div>
         </div>
         <div className="mt-4">
             <Label>Altura aproximada a la cual se va a desarrollar la actividad (Indicar en metros)</Label>
@@ -414,7 +415,7 @@ export function AnexoAlturaStep() {
         {anexoAltura.tipoEstructura?.otros && (
             <Input 
               placeholder="Especifique otros" 
-              value={anexoAltura.tipoEstructura.otrosCual || ''} 
+              value={(anexoAltura.tipoEstructura?.otrosCual as string) || ''} 
               onChange={(e) => handleUpdate({ tipoEstructura: { ...anexoAltura.tipoEstructura, otrosCual: e.target.value } })} 
               className="mt-4" 
             />
@@ -442,7 +443,7 @@ export function AnexoAlturaStep() {
                   key={item.id} 
                   id={`precaucion-${item.id}`} 
                   label={item.label} 
-                  value={anexoAltura.precauciones?.[item.id] || 'na'} 
+                  value={(anexoAltura.precauciones?.[item.id] as 'si' | 'no' | 'na') || 'na'} 
                   onChange={(value) => handleNestedChange('precauciones', item.id, value)} 
                 />
             ))}
@@ -450,7 +451,7 @@ export function AnexoAlturaStep() {
          {anexoAltura.precauciones?.otro === 'si' && (
             <Input 
               placeholder="Especifique otra precaución" 
-              value={anexoAltura.precauciones.otroCual || ''} 
+              value={(anexoAltura.precauciones?.otroCual as string) || ''} 
               onChange={(e) => handleUpdate({ precauciones: { ...anexoAltura.precauciones, otroCual: e.target.value } })} 
               className="mt-4" 
             />
@@ -481,7 +482,7 @@ export function AnexoAlturaStep() {
               <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">Observaciones:</Label>
               <Textarea 
                 value={anexoAltura.afectaciones?.observaciones || ''} 
-                onChange={(e) => handleUpdate({ afectaciones: { ...(anexoAltura.afectaciones || {}), observaciones: e.target.value } })} 
+                onChange={(e) => handleUpdate({ afectaciones: { ...(anexoAltura.afectaciones as any || {}), observaciones: e.target.value } })} 
               />
             </div>
         </div>

@@ -185,6 +185,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
+                {/* NUEVO: Asesor ARL no tiene acceso a Permisos de Trabajo */}
+                {user.role !== 'asesor_arl' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/permits')}
@@ -199,6 +201,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                )}
 
                 {(user.role === 'solicitante' || user.role === 'admin') && (
                   <SidebarMenuItem>
@@ -288,7 +291,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarSeparator className="mb-2" />
 
             <div className="px-2 pb-2 md:hidden">
-              <AlertsBell className="w-full" />
+              <div className="w-full"><AlertsBell /></div>
             </div>
 
             <div className="px-2 pb-2 flex items-center justify-between gap-2">

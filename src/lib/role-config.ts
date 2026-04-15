@@ -10,6 +10,7 @@ export const USER_ROLES = [
   'lider_sst',
   'admin',
   'mantenimiento',
+  'asesor_arl', // NUEVO: Asesor ARL externo
 ] as const satisfies readonly UserRole[];
 
 /**
@@ -22,6 +23,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   lider_sst: 'Líder SST',
   admin: 'Administrador',
   mantenimiento: 'Mantenimiento / Aislador Competente',
+  asesor_arl: 'Asesor ARL', // NUEVO: Asesor externo de ARL
 };
 
 /**

@@ -169,7 +169,7 @@ export default function PermitsPage() {
                     id: doc.id,
                     ...data,
                     createdAt: parseFirestoreDate(data.createdAt),
-                } as Permit;
+                } as unknown as Permit;
             });
             // Filtro adicional por empresa (mismo índice no requerido)
             if (user.empresa) {
@@ -203,7 +203,7 @@ export default function PermitsPage() {
                 id: doc.id,
                 ...data,
                 createdAt: parseFirestoreDate(data.createdAt),
-              } as Permit;
+              } as unknown as Permit;
             })
             .filter(permit =>
               // Solo permisos en estado pendiente de revisión
@@ -215,7 +215,7 @@ export default function PermitsPage() {
               // Solo permisos de su planta
               (!user.planta || permit.generalInfo?.planta === user.planta)
             )
-            .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            .sort((a, b) => (parseFirestoreDate(b.createdAt)?.getTime() || 0) - (parseFirestoreDate(a.createdAt)?.getTime() || 0));
 
           setAllPermits(permitsData);
           setLoading(false);
@@ -251,12 +251,12 @@ export default function PermitsPage() {
               id: doc.id,
               ...data,
               createdAt: parseFirestoreDate(data.createdAt),
-            } as Permit;
+            } as unknown as Permit;
           });
 
           // Si es solicitante, ordenar en el cliente
           if (user.role === 'solicitante') {
-            permitsData = permitsData.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            permitsData = permitsData.sort((a, b) => (parseFirestoreDate(b.createdAt)?.getTime() || 0) - (parseFirestoreDate(a.createdAt)?.getTime() || 0));
           }
 
           // Autorizante: filtrar por empresa Y planta
@@ -400,7 +400,7 @@ export default function PermitsPage() {
 
                   <div className="flex justify-between items-center text-xs text-muted-foreground pt-3 border-t">
                     <span>{permit.user?.displayName || 'N/A'}</span>
-                    <span>{permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy", { locale: es }) : 'N/A'}</span>
+                    <span>{permit.createdAt ? format(parseFirestoreDate(permit.createdAt) || new Date(0), "dd/MM/yyyy", { locale: es }) : 'N/A'}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -447,7 +447,7 @@ export default function PermitsPage() {
                   </TableCell>
                   <TableCell className="text-sm">{permit.user?.displayName || 'N/A'}</TableCell>
                   <TableCell className="text-sm">
-                    {permit.createdAt ? format(permit.createdAt, "dd/MM/yyyy HH:mm", { locale: es }) : 'N/A'}
+                    {permit.createdAt ? format(parseFirestoreDate(permit.createdAt) || new Date(0), "dd/MM/yyyy HH:mm", { locale: es }) : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right flex items-center justify-end gap-2">
                     {permit.status === 'borrador' ? (

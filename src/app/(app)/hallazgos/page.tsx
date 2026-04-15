@@ -81,7 +81,10 @@ export default function HallazgosPage() {
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
         if (user.role !== 'admin') {
-            if (user.role === 'lider_sst' && user.planta) {
+            if (user.role === 'asesor_arl') {
+                // NUEVO: Asesor ARL — solo ve los hallazgos que él mismo creó
+                constraints.unshift(where('createdBy', '==', user.uid));
+            } else if (user.role === 'lider_sst' && user.planta) {
                 // lider_sst: filtra en BD por planta; empresa se aplica en cliente
                 constraints.unshift(where('planta', '==', user.planta));
             } else if (user.empresa) {
@@ -114,7 +117,10 @@ export default function HallazgosPage() {
 
             // Filtro empresa+planta en cliente (la BD ya filtró por uno de los dos)
             let matchEmpresaPlanta = true;
-            if (user?.role === 'lider_sst') {
+            if (user?.role === 'asesor_arl') {
+                // NUEVO: Asesor ARL — la BD ya filtra por createdBy; reforzamos en cliente
+                matchEmpresaPlanta = h.createdBy === user.uid;
+            } else if (user?.role === 'lider_sst') {
                 // La BD filtra por planta; acá validamos empresa también
                 const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
                 const matchPlanta  = !user.planta  || h.planta === user.planta;
@@ -157,7 +163,7 @@ export default function HallazgosPage() {
         return hallazgos.filter(h => (h.cumplimientoEstado || 'Pendiente') === tab).length;
     };
 
-    const canCreate = user?.role === 'solicitante' || user?.role === 'lider_sst' || user?.role === 'admin';
+    const canCreate = user?.role === 'solicitante' || user?.role === 'lider_sst' || user?.role === 'admin' || user?.role === 'asesor_arl'; // NUEVO: Asesor ARL puede crear hallazgos
 
     const renderList = (items: Hallazgo[]) => {
         if (loading) {

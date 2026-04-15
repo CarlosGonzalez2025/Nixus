@@ -163,14 +163,14 @@ export const generateCompleteWorkPermitPDF = async (permit: any) => {
       bodyStyles: { fontSize: 6, cellPadding: 1.5 },
       columnStyles: {
         0: { cellWidth: 120 },
-        1: { halign: 'center', cellWidth: 25, textColor: getStatusColor(data[fields[0].id]) },
+        1: { halign: 'center', cellWidth: 25, textColor: getStatusColor(data[fields[0].id]) as [number, number, number] },
         2: { cellWidth: 10 }
       },
       didDrawCell: (data) => {
         if (data.section === 'body' && data.column.index === 1) {
-          const fieldValue = fields[data.row.index]?.id;
-          const value = values[fieldValue];
-          const color = getStatusColor(value);
+          const fieldId = fields[data.row.index]?.id;
+          const value = data[fieldId as keyof typeof data];
+          const color = getStatusColor(value as string | boolean | undefined) as [number, number, number];
           doc.setTextColor(color[0], color[1], color[2]);
         }
       }
@@ -227,7 +227,7 @@ export const generateCompleteWorkPermitPDF = async (permit: any) => {
     
     const eppRows = Object.entries(permit.eppEmergencias.epp).map(([key, value]) => [
       key.replace(/([A-Z])/g, ' $1').trim(),
-      getStatusSymbol(value)
+      getStatusSymbol(value as string | boolean | undefined)
     ]);
 
     autoTable(doc, {
