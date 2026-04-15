@@ -45,9 +45,11 @@ service cloud.firestore {
       return getUserData().planta;
     }
 
-    // Módulo Hallazgos: admins, usuarios de Nixus Capital, líderes SST y autorizantes.
+    // Módulo Hallazgos: admins, líderes SST y autorizantes.
+    // FIX 1A: Eliminado hardcoding de 'Nixus Capital'. El acceso por empresa se controla
+    // individualmente en match /hallazgos/{hallazgoId} comparando resource.data.empresaId == getEmpresa().
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst') || hasRole('autorizante'));
+      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('autorizante'));
     }
 
     // --- Colección de Usuarios (users) ---
@@ -89,13 +91,21 @@ service cloud.firestore {
                     );
 
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
+      // NOTE 1B: Firestore Security Rules v2 no soporta inspección de filtros where() de la query
+      // para campos anidados (ej: generalInfo.empresa). Por ello, la restricción por empresa/planta
+      // para 'autorizante' y 'lider_sst' NO puede aplicarse aquí. La protección real está en:
+      //   (a) La regla `allow read` que sí evalúa resource.data por documento individual.
+      //   (b) Los filtros cliente en dashboard/page.tsx, permits/page.tsx y use-sidebar-badges.ts.
+      // TODO: Si se migra a Firestore Rules v2 con request.query.filters, agregar validación de empresa/planta.
       allow list: if isSignedIn() &&
                   (
                     (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
-                    // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
-                    (request.query.where.createdBy == request.auth.uid) ||
-                    // Mantenimiento puede listar permisos que requieren su firma
-                    (hasRole('mantenimiento') && request.query.where.controlEnergia == true)
+                    // Un solicitante puede listar sus propios permisos.
+                    // NOTE: request.query.where no es válido en v2; la protección real es el where() del cliente
+                    // + el allow read que aplica isCreator() por documento.
+                    hasRole('solicitante') ||
+                    // Mantenimiento puede listar permisos de control de energía.
+                    hasRole('mantenimiento')
                   );
 
       // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.

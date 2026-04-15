@@ -171,8 +171,13 @@ export default function Dashboard() {
             }
           });
 
+          // FIX 2B: Filtrar por empresa Y planta para consistencia con el resto del sistema
           const combinedPermits = Array.from(permitsMap.values())
-            .filter(p => !user.planta || p.generalInfo?.planta === user.planta)
+            .filter(p => {
+              const matchPlanta  = !user.planta  || p.generalInfo?.planta  === user.planta;
+              const matchEmpresa = !user.empresa || p.generalInfo?.empresa === user.empresa;
+              return matchPlanta && matchEmpresa;
+            })
             .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
           const recentPermits = combinedPermits.slice(0, 10);
           setPermits(recentPermits);
@@ -259,9 +264,13 @@ export default function Dashboard() {
 
         permitsData = permitsData.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
 
-        // Si es autorizante, filtrar solo por permisos de su planta
+        // FIX 2A: Filtrar por empresa Y planta para autorizante (consistente con permits/page.tsx)
         if (user.role === 'autorizante') {
-          permitsData = permitsData.filter(p => !user.planta || p.generalInfo?.planta === user.planta);
+          permitsData = permitsData.filter(p => {
+            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa;
+            const matchPlanta  = !user.planta  || !p.generalInfo?.planta  || p.generalInfo.planta  === user.planta;
+            return matchEmpresa && matchPlanta;
+          });
         }
 
         const recentPermits = permitsData.slice(0, 10);
@@ -290,18 +299,32 @@ export default function Dashboard() {
     }
 
     // ─── QUERY HALLAZGOS ───────────────────
+    // FIX 2D: Separar admin de lider_sst y agregar filtro por empresa/planta según rol.
+    // NOTE: Firestore requiere índices compuestos para múltiples where(). Si se agrega
+    // where('planta') junto a where('empresaId'), puede ser necesario crear el índice en la consola.
+    // Como precaución, el filtro de planta se aplica en el callback del snapshot.
     let qH;
-    if (user.role === 'admin' || user.role === 'lider_sst') {
+    if (user.role === 'admin') {
       qH = query(collection(db, 'hallazgos'));
+    } else if (user.role === 'lider_sst') {
+      // lider_sst: filtrar por empresa si está definida; planta se filtra en el callback
+      const lsstConstraints: QueryConstraint[] = [];
+      if (user.empresa) lsstConstraints.push(where('empresaId', '==', user.empresa));
+      qH = query(collection(db, 'hallazgos'), ...lsstConstraints);
     } else {
+      // Otros roles: filtrar siempre por empresa; planta se filtra en el callback
       qH = query(collection(db, 'hallazgos'), where('empresaId', '==', user.empresa || 'NO_COMPANY'));
     }
     const unsubH = onSnapshot(qH, (snapshot) => {
-      const hData = snapshot.docs.map(doc => ({
+      let hData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: parseFirestoreDate(doc.data().createdAt)
       } as Hallazgo));
+      // FIX 2D: Filtro cliente por planta (evita índices compuestos adicionales en Firestore)
+      if (user.planta && user.role !== 'admin') {
+        hData = hData.filter(h => !h.planta || h.planta === user.planta);
+      }
       setHallazgos(hData);
     });
     unsubscribers.push(unsubH);

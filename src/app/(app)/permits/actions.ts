@@ -124,6 +124,18 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
     addUsersMatchingPlant(mantenimientoSnap);
   }
 
+  // FIX 3B: Coordinador de Alturas (solo si el permiso requiere trabajo en alturas)
+  if (permit.trabajoAlturas || permit.selectedWorkTypes?.alturas) {
+    const coordSnap = await adminDb.collection('users').where('role', '==', 'coordinador_alturas').get();
+    addUsersMatchingPlant(coordSnap);
+  }
+
+  // FIX 3B: Supervisor de Espacios Confinados (solo si el permiso lo requiere)
+  if (permit.espaciosConfinados || permit.selectedWorkTypes?.confinado) {
+    const supSnap = await adminDb.collection('users').where('role', '==', 'supervisor_confinado').get();
+    addUsersMatchingPlant(supSnap);
+  }
+
   return Array.from(userIds);
 };
 
@@ -181,6 +193,9 @@ const createNotification = async (
       subject: `[SGTC] Permiso ${permitNumber} — ${statusLabel}`,
       html: buildPermitEmailHtml(permit, message, permitUrl),
     });
+  } else {
+    // FIX 3A: Log explícito cuando el usuario no tiene email configurado
+    console.warn(`⚠️ [Notificación] Usuario ${userId} no tiene email configurado. Notificación de email omitida para permiso ${permitNumber}.`);
   }
 
   // Enviar notificación push al dispositivo móvil (no bloquea si falla)
