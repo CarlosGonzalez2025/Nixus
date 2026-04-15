@@ -51,6 +51,8 @@ import { AlertsBell } from '@/components/AlertsBell';
 import { useSidebarBadges } from '@/hooks/use-sidebar-badges';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { PWAUpdater } from '@/components/PWAUpdater';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { useOfflineSync } from '@/hooks/use-offline-sync';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
   const { pendingPermits } = useSidebarBadges();
+  const { isSyncing, syncingCount, justSynced } = useOfflineSync();
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -125,6 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <FirebaseErrorListener />
         <PWAUpdater />
+        <OfflineBanner isSyncing={isSyncing} syncingCount={syncingCount} justSynced={justSynced} />
 
         <Sidebar className="border-r">
           <SidebarHeader className="border-b">

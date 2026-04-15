@@ -1129,3 +1129,66 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
 }
+
+// ─── Sincronización offline ────────────────────────────────────────────────────
+
+type OfflineQueueItem = {
+  permitId: string;
+  message: string;
+  type: 'permit_created' | 'permit_signed' | 'status_changed';
+  triggeredBy: { uid: string; displayName: string | null };
+};
+
+/**
+ * Procesa la cola de notificaciones generadas mientras el dispositivo estaba offline.
+ * Se llama desde el hook useOfflineSync cuando el dispositivo recupera la conexión.
+ *
+ * Para cada entrada:
+ * 1. Lee el permiso actualizado de Firestore (ya sincronizado por el SDK del cliente).
+ * 2. Obtiene los usuarios involucrados según la planta y los tipos de trabajo.
+ * 3. Envía las notificaciones in-app y por email.
+ * 4. Elimina la marca offlinePendingSync del documento.
+ */
+export async function processOfflineQueue(
+  items: OfflineQueueItem[]
+): Promise<{ success: boolean; error?: string }> {
+  if (!isAdminReady()) {
+    return { success: false, error: 'Servidor no disponible para procesar sincronización.' };
+  }
+
+  try {
+    for (const item of items) {
+      const docRef = adminDb.collection('permits').doc(item.permitId);
+      const snap = await docRef.get();
+      if (!snap.exists) continue;
+
+      const permit = { id: snap.id, ...snap.data() } as Permit;
+      const involvedUsers = await getInvolvedUsers(permit);
+      const triggeredBy = item.triggeredBy;
+
+      const notifType: Notification['type'] =
+        item.type === 'permit_created' ? 'creation'
+        : item.type === 'permit_signed' ? 'signature'
+        : 'status_change';
+
+      await runNotificationBatch(
+        involvedUsers
+          .filter((uid) => uid !== triggeredBy.uid)
+          .map((uid) => () =>
+            createNotification(uid, permit, item.message, notifType, triggeredBy)
+          )
+      );
+
+      // Quitar la marca de sincronización pendiente
+      await docRef.update({ offlinePendingSync: false });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ [processOfflineQueue] Error:', error);
+    return {
+      success: false,
+      error: getActionErrorMessage(error, 'Error al procesar la cola offline.'),
+    };
+  }
+}

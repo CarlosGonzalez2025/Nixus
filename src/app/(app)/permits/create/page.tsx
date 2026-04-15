@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { savePermitDraft, addSignatureAndNotify } from '../actions';
+import { createPermitOffline, addSignatureOffline } from '@/lib/offline-permits';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle,
@@ -127,6 +129,7 @@ const pensionEntidades = [
 function CreatePermitWizard() {
   const { user } = useUser();
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -318,28 +321,71 @@ function CreatePermitWizard() {
       toast({ variant: 'destructive', title: 'Error', description: 'Falta la firma del solicitante o la información del usuario.' });
       return;
     }
-  
+
     setIsSubmitting(true);
     let currentPermitId = draftId;
-  
+
+    // ── RUTA OFFLINE ─────────────────────────────────────────────────────────
+    if (!isOnline) {
+      try {
+        const offlineUser = { uid: user.uid, displayName: user.displayName || null, role: user.role, empresa: user.empresa };
+        const nombreSolicitante = solicitanteWorker?.nombre || user.displayName || null;
+
+        const createResult = await createPermitOffline(
+          { ...formData, status: 'pendiente_revision', createdBy: user.uid, approvals: { solicitante: { status: 'pendiente' }, autorizante: { status: 'pendiente' }, mantenimiento: { status: 'pendiente' }, lider_sst: { status: 'pendiente' }, coordinador_alturas: { status: 'pendiente' }, supervisor_confinado: { status: 'pendiente' } }, closure: {} } as any,
+          offlineUser
+        );
+
+        if (!createResult.success) throw new Error(createResult.error);
+        currentPermitId = createResult.permitId;
+        setDraftId(currentPermitId);
+
+        // Firmas especiales offline (coordinador alturas / supervisor confinado)
+        if (formData.selectedWorkTypes?.alturas) {
+          const cw = formData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+          if (cw?.firmaApertura) await addSignatureOffline(currentPermitId, 'coordinador_alturas', cw.firmaApertura, { ...offlineUser, displayName: cw.nombre || offlineUser.displayName });
+        }
+        if (formData.selectedWorkTypes?.confinado) {
+          const sw = formData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+          if (sw?.firmaApertura) await addSignatureOffline(currentPermitId, 'supervisor_confinado', sw.firmaApertura, { ...offlineUser, displayName: sw.nombre || offlineUser.displayName });
+        }
+
+        await addSignatureOffline(currentPermitId, 'solicitante', firmaParaEnvio, { ...offlineUser, displayName: nombreSolicitante });
+
+        toast({
+          title: '¡Permiso guardado sin conexión!',
+          description: `El permiso ${createResult.permitNumber} fue guardado localmente. Las notificaciones se enviarán al recuperar la señal.`,
+          duration: 7000,
+        });
+        dispatch({ type: 'RESET_FORM' });
+        router.push(`/permits/${currentPermitId}`);
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error offline', description: error.message });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // ── RUTA ONLINE (flujo original) ─────────────────────────────────────────
     try {
       // Siempre guardar el borrador primero para asegurar que el ID existe
       if (!currentPermitId) {
         const draftResult = await savePermitDraft({
-          userId: user.uid, 
-          userDisplayName: user.displayName || null, 
+          userId: user.uid,
+          userDisplayName: user.displayName || null,
           userEmail: user.email || null,
           userPhotoURL: user.photoURL || null,
           ...formData
         });
-  
+
         if (!draftResult.success || !draftResult.permitId) {
           throw new Error(draftResult.error || "No se pudo crear el borrador inicial.");
         }
         currentPermitId = draftResult.permitId;
         setDraftId(currentPermitId);
       }
-  
+
       // Registrar firma del Coordinador de TA si aplica
       if (formData.selectedWorkTypes?.alturas) {
         const coordWorker = formData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
@@ -380,7 +426,7 @@ function CreatePermitWizard() {
         { uid: user.uid, displayName: nombreSolicitante, role: user.role, empresa: user.empresa },
         "Firma inicial de creación de permiso."
       );
-  
+
       if (signatureResult.success) {
         toast({
           title: '¡Permiso Enviado!',
@@ -516,7 +562,7 @@ function CreatePermitWizard() {
     
     if (currentLabel === 'Anexo Altura') {
       const anexo = formData.anexoAltura;
-      if (anexo?.tipoEstructura?.otros && !anexo.tipoEstructura.otrosCual?.trim()) {
+      if (anexo?.tipoEstructura?.otros && !String(anexo.tipoEstructura.otrosCual ?? '').trim()) {
         toast({ variant: "destructive", title: "Campo Requerido", description: "Debe especificar el otro tipo de estructura en el Anexo de Alturas." });
         return false;
       }

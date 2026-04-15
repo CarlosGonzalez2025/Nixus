@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, type QueryConstraint } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  getFirestore,
+  type QueryConstraint,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -12,10 +18,20 @@ const firebaseConfig = {
   appId: "1:322397935917:web:61f9840427f4dfa86c5ba4"
 };
 
-
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Persistencia offline: los datos leídos quedan en IndexedDB y las escrituras
+// realizadas sin conexión se encolan y sincronizan automáticamente al reconectar.
+// persistentMultipleTabManager permite compartir el caché entre pestañas del mismo origen.
+const db = !getApps().length || getApps().length === 1
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    })
+  : getFirestore(app);
+
 const storage = getStorage(app);
 
 export { app, auth, db, storage, firebaseConfig };

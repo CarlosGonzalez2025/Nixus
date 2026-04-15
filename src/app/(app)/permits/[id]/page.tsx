@@ -67,6 +67,8 @@ import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
 import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature, addDailyValidationClosureSignature, closePermitByAnyUser } from '../actions';
+import { addSignatureOffline } from '@/lib/offline-permits';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { SIGNATURE_ROLE_LABELS, ROLE_LABELS_FULL } from '@/lib/role-config';
 import {
   AlertDialog,
@@ -235,6 +237,8 @@ export default function PermitDetailPage() {
   const [isEmergencyClosing, setIsEmergencyClosing] = useState(false);
   const [showEmergencySignatureDialog, setShowEmergencySignatureDialog] = useState(false);
 
+  const isOnline = useOnlineStatus();
+
 
   const atsPeligros = [
     { seccion: 'LOCATIVOS', id: 'superficies_irregulares', label: 'Superficies irregulares' },
@@ -398,14 +402,50 @@ export default function PermitDetailPage() {
 
     setIsSigning(true);
 
-    try {
-      const simpleUser = {
-        uid: currentUser.uid,
-        displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
-        role: currentUser.role,
-        empresa: currentUser.empresa || 'N/A'
-      };
+    const simpleUser = {
+      uid: currentUser.uid,
+      displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
+      role: currentUser.role,
+      empresa: currentUser.empresa || 'N/A'
+    };
 
+    // OFFLINE PATH
+    if (!isOnline) {
+      try {
+        const result = await addSignatureOffline(
+          permit.id,
+          signingRole.role as any,
+          signatureDataUrl,
+          simpleUser,
+          signatureObservation
+        );
+        if (result.success) {
+          toast({
+            title: 'Firma guardada sin conexión',
+            description: 'La firma se sincronizará cuando recuperes la conexión.',
+            className: 'bg-yellow-50 border-yellow-300',
+          });
+          setIsSignatureDialogOpen(false);
+          setSigningRole(null);
+          setSignerName('');
+          setSignatureObservation('');
+        } else {
+          throw new Error(result.error || 'No se pudo guardar la firma offline.');
+        }
+      } catch (e: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al firmar offline',
+          description: e.message || 'Ocurrió un error inesperado.',
+        });
+      } finally {
+        setIsSigning(false);
+      }
+      return;
+    }
+
+    // ONLINE PATH
+    try {
       const result = await addSignatureAndNotify(
         permit.id,
         signingRole.role as any,
