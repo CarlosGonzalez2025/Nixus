@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
@@ -22,10 +23,11 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-    PlusCircle, Search, Loader2, FileX, ChevronRight,
-    AlertTriangle, Timer, Shield, Hash, Clock,
-    TrendingUp, CheckCircle2, XCircle, Filter, Trash2,
+    PlusCircle, Search, Loader2, FileX,
+    AlertTriangle, Timer, Shield, Hash,
+    Filter, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Download,
 } from 'lucide-react';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 // ─── Config visual ─────────────────────────────────────────────────────────────
 const CLASE_CONFIG = {
@@ -55,6 +57,7 @@ const parseDate = (v: any): Date | null => {
 };
 
 type TabEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado' | 'todos';
+type SortDir = 'asc' | 'desc';
 
 const tabEstados: { key: TabEstado; label: string }[] = [
     { key: 'Pendiente',    label: 'Pendientes'   },
@@ -76,19 +79,28 @@ export default function HallazgosPage() {
     const [filterClase, setFilterClase] = useState<string>('all');
     const [activeTab, setActiveTab] = useState<TabEstado>('Pendiente');
 
+    // DataTable state
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortDir, setSortDir] = useState<SortDir>('asc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25);
+
+    // Reset page on filter/tab change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab, filterClase, search]);
+
+    // ── Firestore ─────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!db || !user) return;
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
         if (user.role !== 'admin') {
             if (user.role === 'asesor_arl') {
-                // NUEVO: Asesor ARL — solo ve los hallazgos que él mismo creó
                 constraints.unshift(where('createdBy', '==', user.uid));
             } else if (user.role === 'lider_sst' && user.planta) {
-                // lider_sst: filtra en BD por planta; empresa se aplica en cliente
                 constraints.unshift(where('planta', '==', user.planta));
             } else if (user.empresa) {
-                // autorizante y otros: filtra en BD por empresa; planta se aplica en cliente
                 constraints.unshift(where('empresaId', '==', user.empresa));
             }
         }
@@ -109,24 +121,21 @@ export default function HallazgosPage() {
         return () => unsub();
     }, [user, toast]);
 
+    // ── Filter ────────────────────────────────────────────────────────────────
     const filtered = useMemo(() => {
         return hallazgos.filter(h => {
             const estado = h.cumplimientoEstado || 'Pendiente';
             const matchTab = activeTab === 'todos' || estado === activeTab;
             const matchClase = filterClase === 'all' || h.clase === filterClase;
 
-            // Filtro empresa+planta en cliente (la BD ya filtró por uno de los dos)
             let matchEmpresaPlanta = true;
             if (user?.role === 'asesor_arl') {
-                // NUEVO: Asesor ARL — la BD ya filtra por createdBy; reforzamos en cliente
                 matchEmpresaPlanta = h.createdBy === user.uid;
             } else if (user?.role === 'lider_sst') {
-                // La BD filtra por planta; acá validamos empresa también
                 const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
                 const matchPlanta  = !user.planta  || h.planta === user.planta;
                 matchEmpresaPlanta = matchEmpresa && matchPlanta;
             } else if (user?.role === 'autorizante') {
-                // La BD filtra por empresa; acá validamos planta también
                 const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
                 const matchPlanta  = !user.planta  || !h.planta   || h.planta === user.planta;
                 matchEmpresaPlanta = matchEmpresa && matchPlanta;
@@ -141,10 +150,67 @@ export default function HallazgosPage() {
                 h.area?.toLowerCase().includes(s) ||
                 h.reportadoPorNombre?.toLowerCase().includes(s) ||
                 String(h.numero).includes(s);
+
             return matchTab && matchClase && matchEmpresaPlanta && matchSearch;
         });
     }, [hallazgos, activeTab, filterClase, search, user]);
 
+    // ── Sort ──────────────────────────────────────────────────────────────────
+    const sorted = useMemo(() => {
+        if (!sortColumn) return filtered;
+        return [...filtered].sort((a, b) => {
+            let result = 0;
+            switch (sortColumn) {
+                case 'numero':
+                    result = (a.numero ?? 0) - (b.numero ?? 0);
+                    break;
+                case 'hallazgo':
+                    result = (a.hallazgo || '').localeCompare(b.hallazgo || '');
+                    break;
+                case 'clase':
+                    result = (a.clase || '').localeCompare(b.clase || '');
+                    break;
+                case 'empresa':
+                    result = (a.empresa || a.frenteTrabajo || '').localeCompare(b.empresa || b.frenteTrabajo || '');
+                    break;
+                case 'reportador':
+                    result = (a.reportadoPorNombre || '').localeCompare(b.reportadoPorNombre || '');
+                    break;
+                case 'fecha': {
+                    const fa = parseDate(a.fechaVisita || a.fechaIdentificacion)?.getTime() || 0;
+                    const fb = parseDate(b.fechaVisita || b.fechaIdentificacion)?.getTime() || 0;
+                    result = fa - fb;
+                    break;
+                }
+                case 'cumplimiento':
+                    result = (a.porcentajeCumplimientoTotal ?? a.porcentajeCumplimiento ?? 0) -
+                             (b.porcentajeCumplimientoTotal ?? b.porcentajeCumplimiento ?? 0);
+                    break;
+            }
+            return sortDir === 'asc' ? result : -result;
+        });
+    }, [filtered, sortColumn, sortDir]);
+
+    const totalPages = Math.ceil(sorted.length / pageSize);
+    const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+    const handleSort = (column: string) => {
+        if (sortColumn === column) {
+            if (sortDir === 'asc') setSortDir('desc');
+            else { setSortColumn(null); setSortDir('asc'); }
+        } else {
+            setSortColumn(column);
+            setSortDir('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const SortIcon = ({ col }: { col: string }) => {
+        if (sortColumn !== col) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+        return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+    };
+
+    // ── Delete ────────────────────────────────────────────────────────────────
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (window.confirm('¿Estás seguro de que deseas eliminar este registro de hallazgo? Esta acción no se puede deshacer.')) {
@@ -158,13 +224,87 @@ export default function HallazgosPage() {
         }
     };
 
+    // ── Excel export ──────────────────────────────────────────────────────────
+    const handleExportExcel = () => {
+        if (sorted.length === 0) {
+            toast({ variant: 'destructive', title: 'Sin datos', description: 'No hay hallazgos para exportar.' });
+            return;
+        }
+
+        const rows = sorted.map(h => {
+            const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
+            const fechaCierre = parseDate(h.fechaCierre);
+            const fechaMedida = parseDate(h.fechaMedidaImplementada);
+            const fechaSeguimiento = parseDate(h.fechaSeguimiento1);
+
+            return {
+                'ID Sistema': h.id,
+                'Número': h.numero,
+                'Hallazgo': h.hallazgo || 'N/A',
+                'Descripción': h.descripcion || 'N/A',
+                'Acción Inmediata': h.accionInmediata || 'N/A',
+                'Clase': `Clase ${h.clase}`,
+                'Intervención': h.intervencion || 'N/A',
+                'Estado': h.cumplimientoEstado || 'Pendiente',
+                '% Cumplimiento': h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento ?? 0,
+                
+                // Ubicación
+                'Empresa': h.empresa || h.frenteTrabajo || 'N/A',
+                'Planta': h.planta || 'N/A',
+                'Área': h.area || 'N/A',
+                'Frente de Trabajo': h.frenteTrabajo || 'N/A',
+                'Tipo de Actividad': h.tipoActividad || 'N/A',
+                'Peligro Inspeccionado': h.peligroInspeccionado || 'N/A',
+                'Geolocalización (Lat)': h.geolocalizacion?.lat || 'N/A',
+                'Geolocalización (Lng)': h.geolocalizacion?.lng || 'N/A',
+
+                // Personas
+                'Reportado Por': h.reportadoPorNombre || 'N/A',
+                'Cargo Reportador': h.reportadoPorCargo || 'N/A',
+                'Responsable Plan de Acción': h.responsable || 'N/A',
+                
+                // Fechas
+                'Fecha Visita/Identificación': fecha ? format(fecha, 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
+                'Fecha Medida Implementada': fechaMedida ? format(fechaMedida, 'dd/MM/yyyy', { locale: es }) : 'N/A',
+                'Fecha Seguimiento': fechaSeguimiento ? format(fechaSeguimiento, 'dd/MM/yyyy', { locale: es }) : 'N/A',
+                'Fecha Cierre': fechaCierre ? format(fechaCierre, 'dd/MM/yyyy', { locale: es }) : 'N/A',
+                'Última Actualización': h.updatedAt ? format(parseDate(h.updatedAt) || new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
+
+                'Observación': h.observacion || 'N/A',
+                
+                // Evidencias
+                'Evidencias Antes (URLs)': (h.evidenciasFotograficas || []).join('\n') || 'N/A',
+                'Evidencias Después/Cierre (URLs)': (h.evidenciasPlanAccion || []).join('\n') || 'N/A',
+                
+                // Firmas URLs (si existen)
+                'Firma Reportador URL': h.firmaReportador || 'N/A',
+                'Firma Responsable URL': h.firmaResponsable || 'N/A',
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const colWidths = Object.keys(rows[0] ?? {}).map(key => ({
+            wch: Math.max(key.length, ...rows.map(r => String((r as any)[key] ?? '').length)) + 2,
+        }));
+        ws['!cols'] = colWidths;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Hallazgos');
+        XLSX.writeFile(wb, `hallazgos_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        toast({ title: '✅ Exportación exitosa', description: `${sorted.length} hallazgos exportados.` });
+    };
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const countByTab = (tab: TabEstado) => {
         if (tab === 'todos') return hallazgos.length;
         return hallazgos.filter(h => (h.cumplimientoEstado || 'Pendiente') === tab).length;
     };
 
-    const canCreate = user?.role === 'solicitante' || user?.role === 'lider_sst' || user?.role === 'admin' || user?.role === 'asesor_arl'; // NUEVO: Asesor ARL puede crear hallazgos
+    const canCreate = user?.role === 'solicitante' || user?.role === 'lider_sst' ||
+                      user?.role === 'admin' || user?.role === 'asesor_arl';
 
+    // ── Render list ───────────────────────────────────────────────────────────
     const renderList = (items: Hallazgo[]) => {
         if (loading) {
             return (
@@ -174,7 +314,7 @@ export default function HallazgosPage() {
             );
         }
 
-        if (items.length === 0) {
+        if (items.length === 0 && filtered.length === 0) {
             return (
                 <div className="h-60 text-center flex flex-col justify-center items-center">
                     <FileX className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -224,7 +364,9 @@ export default function HallazgosPage() {
                                                 {estadoCfg.label}
                                             </Badge>
                                             {user?.role === 'admin' && (
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={(e) => handleDelete(h.id, e)}>
+                                                <Button variant="ghost" size="icon"
+                                                    className="h-6 w-6 text-red-500 hover:bg-red-50 hover:text-red-700"
+                                                    onClick={(e) => handleDelete(h.id, e)}>
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                             )}
@@ -253,7 +395,9 @@ export default function HallazgosPage() {
                                     )}
 
                                     <div className="flex justify-between items-center text-xs text-muted-foreground pt-2 border-t">
-                                        <span className="truncate max-w-[55%]">{h.empresa || h.frenteTrabajo} · {h.area}</span>
+                                        <span className="truncate max-w-[55%]">
+                                            {h.empresa || h.frenteTrabajo} · {h.area}
+                                        </span>
                                         <span>{fecha ? format(fecha, 'dd/MM/yyyy', { locale: es }) : '—'}</span>
                                     </div>
                                 </CardContent>
@@ -267,13 +411,48 @@ export default function HallazgosPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-14">#</TableHead>
-                                <TableHead>Hallazgo</TableHead>
-                                <TableHead>Clase / Intervención</TableHead>
-                                <TableHead>Empresa / Área</TableHead>
-                                <TableHead>Reportado por</TableHead>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead>Cumplimiento</TableHead>
+                                <TableHead
+                                    className="w-14 cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('numero')}
+                                >
+                                    <div className="flex items-center gap-1"># <SortIcon col="numero" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('hallazgo')}
+                                >
+                                    <div className="flex items-center gap-1">Hallazgo <SortIcon col="hallazgo" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('clase')}
+                                >
+                                    <div className="flex items-center gap-1">Clase / Intervención <SortIcon col="clase" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('empresa')}
+                                >
+                                    <div className="flex items-center gap-1">Empresa / Área <SortIcon col="empresa" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('reportador')}
+                                >
+                                    <div className="flex items-center gap-1">Reportado por <SortIcon col="reportador" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('fecha')}
+                                >
+                                    <div className="flex items-center gap-1">Fecha <SortIcon col="fecha" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('cumplimiento')}
+                                >
+                                    <div className="flex items-center gap-1">Cumplimiento <SortIcon col="cumplimiento" /></div>
+                                </TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -306,7 +485,9 @@ export default function HallazgosPage() {
                                         </TableCell>
                                         <TableCell>
                                             <p className="text-sm font-medium">{h.empresa || h.frenteTrabajo}</p>
-                                            <p className="text-xs text-muted-foreground">{h.planta ? `${h.planta} · ` : ''}{h.area}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {h.planta ? `${h.planta} · ` : ''}{h.area}
+                                            </p>
                                         </TableCell>
                                         <TableCell className="text-sm">{h.reportadoPorNombre}</TableCell>
                                         <TableCell className="text-sm">
@@ -353,6 +534,7 @@ export default function HallazgosPage() {
         );
     };
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-1 flex-col gap-4 p-3 sm:p-4 md:p-6 min-w-0">
 
@@ -362,25 +544,31 @@ export default function HallazgosPage() {
                     <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Gestión de Hallazgos</h1>
                     <p className="text-muted-foreground text-sm">Registro y seguimiento de hallazgos de seguridad.</p>
                 </div>
-                {canCreate && (
-                    <Button onClick={() => router.push('/hallazgos/crear')} size="sm" className="sm:h-9">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="hidden xs:inline">Nuevo</span> Hallazgo
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Exportar Excel
                     </Button>
-                )}
+                    {canCreate && (
+                        <Button onClick={() => router.push('/hallazgos/crear')} size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Nuevo Hallazgo
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Card principal con tabs y filtros */}
-            <Card className="min-w-0 overflow-hidden">
-                <CardContent className="p-3 sm:p-4">
+            <Card className="min-w-0 overflow-hidden shadow-sm border-gray-200">
+                <CardContent className="p-0 sm:p-0">
                     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as TabEstado)}>
-                        <div className="flex flex-col gap-3">
-
-                            {/* Tabs de estado — scroll horizontal en móvil */}
-                            <div className="overflow-x-auto -mx-1 px-1">
-                                <TabsList className="inline-flex w-max min-w-full sm:w-auto">
+                        <div className="flex flex-col border-b">
+                            {/* Tabs de estado */}
+                            <div className="px-4 pt-4 overflow-x-auto">
+                                <TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-6 border-b rounded-none">
                                     {tabEstados.map(t => (
-                                        <TabsTrigger key={t.key} value={t.key} className="whitespace-nowrap text-xs sm:text-sm">
+                                        <TabsTrigger key={t.key} value={t.key}
+                                            className="whitespace-nowrap rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent shadow-none px-1 pb-2 text-xs sm:text-sm">
                                             {t.label}
                                             {countByTab(t.key) > 0 && (
                                                 <span className="ml-1.5 text-[10px] font-bold bg-muted rounded-full px-1.5 py-0.5 tabular-nums">
@@ -393,40 +581,53 @@ export default function HallazgosPage() {
                             </div>
 
                             {/* Filtros */}
-                            <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="p-4 flex flex-col md:flex-row gap-4 bg-muted/20">
                                 <div className="relative flex-1 min-w-0">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="search"
                                         placeholder="Buscar por número, hallazgo, empresa, área..."
-                                        className="w-full rounded-lg bg-background pl-8 text-sm"
+                                        className="w-full pl-9 h-10 bg-background text-sm"
                                         value={search}
                                         onChange={e => setSearch(e.target.value)}
                                     />
                                 </div>
-                                <Select value={filterClase} onValueChange={setFilterClase}>
-                                    <SelectTrigger className="w-full sm:w-[160px] text-sm">
-                                        <Filter className="mr-2 h-3.5 w-3.5" />
-                                        <SelectValue placeholder="Clase" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todas las clases</SelectItem>
-                                        <SelectItem value="A">Clase A — Inmediata</SelectItem>
-                                        <SelectItem value="B">Clase B — Pronta</SelectItem>
-                                        <SelectItem value="C">Clase C — Posterior</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex gap-2">
+                                    <Select value={filterClase} onValueChange={setFilterClase}>
+                                        <SelectTrigger className="w-full md:w-[180px] h-10 bg-background text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <Filter className="h-4 w-4 text-muted-foreground" />
+                                                <SelectValue placeholder="Clase" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todas las clases</SelectItem>
+                                            <SelectItem value="A">Clase A — Inmediata</SelectItem>
+                                            <SelectItem value="B">Clase B — Pronta</SelectItem>
+                                            <SelectItem value="C">Clase C — Posterior</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-
-                            {/* Contador */}
-                            <p className="text-xs text-muted-foreground">
-                                Mostrando {filtered.length} de {countByTab(activeTab)} hallazgos
-                            </p>
                         </div>
 
                         {tabEstados.map(t => (
-                            <TabsContent key={t.key} value={t.key} className="mt-3">
-                                {renderList(filtered)}
+                            <TabsContent key={t.key} value={t.key} className="mt-0 outline-none">
+                                <div className="min-h-[400px]">
+                                    {renderList(paginated)}
+                                </div>
+                                {!loading && filtered.length > 0 && (
+                                    <div className="p-4 border-t">
+                                        <DataTablePagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            pageSize={pageSize}
+                                            totalRows={filtered.length}
+                                            onPageChange={setCurrentPage}
+                                            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+                                        />
+                                    </div>
+                                )}
                             </TabsContent>
                         ))}
                     </Tabs>

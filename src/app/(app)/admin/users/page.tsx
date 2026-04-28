@@ -1,6 +1,7 @@
 
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles, deleteUser } from './actions';
-import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw } from 'lucide-react';
+import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole } from '@/types';
@@ -70,6 +71,7 @@ import {
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError } from '@/lib/errors';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -343,6 +345,12 @@ export default function UsersPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('all');
 
+  // DataTable state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   // Listas dinámicas para los dropdowns del formulario
   const [listEmpresas, setListEmpresas] = useState<string[]>([]);
   const [listPlantas, setListPlantas] = useState<string[]>([]);
@@ -385,21 +393,20 @@ export default function UsersPage() {
         const otherRoleLabels = otherRoles.map(r => roleNames[r]);
 
         return {
+          'UID': user.uid,
           'Nombre Completo': user.displayName || '',
           'Correo Electrónico': user.email || '',
           'Rol Principal': user.role ? roleNames[user.role] : 'N/A',
-          'Rol Adicional 1': otherRoleLabels[0] ?? '',
-          'Rol Adicional 2': otherRoleLabels[1] ?? '',
-          'Rol Adicional 3': otherRoleLabels[2] ?? '',
-          'Todos los Roles': [
+          'Roles Adicionales': otherRoleLabels.join(' | ') || 'Ninguno',
+          'Todos los Roles (CSV)': [
             user.role ? roleNames[user.role] : '',
             ...otherRoleLabels,
-          ].filter(Boolean).join(' | '),
-          'Empresa': user.empresa || '',
-          'Ciudad': user.ciudad || '',
-          'Planta': user.planta || '',
-          'Área': user.area || '',
-          'Teléfono': user.telefono || '',
+          ].filter(Boolean).join(', '),
+          'Empresa': user.empresa || 'N/A',
+          'Ciudad': user.ciudad || 'N/A',
+          'Planta': user.planta || 'N/A',
+          'Área': user.area || 'N/A',
+          'Teléfono': user.telefono || 'N/A',
           'Estado': user.disabled ? 'Inactivo' : 'Activo',
         };
       });
@@ -547,7 +554,71 @@ export default function UsersPage() {
     }
 
     setFilteredUsers(filtered);
+    setCurrentPage(1);
   }, [searchTerm, users, filterRole, filterStatus, filterEmpresa]);
+
+  // ── Sort + paginate filteredUsers ────────────────────────────────────────
+  const sortedUsers = useMemo(() => {
+    if (!sortColumn) return filteredUsers;
+    return [...filteredUsers].sort((a, b) => {
+      let result = 0;
+      switch (sortColumn) {
+        case 'nombre':
+          result = (a.displayName || '').localeCompare(b.displayName || '');
+          break;
+        case 'empresa':
+          result = (a.empresa || '').localeCompare(b.empresa || '');
+          break;
+        case 'ciudad':
+          result = (a.ciudad || '').localeCompare(b.ciudad || '');
+          break;
+        case 'planta':
+          result = (a.planta || '').localeCompare(b.planta || '');
+          break;
+        case 'rol':
+          result = (a.role || '').localeCompare(b.role || '');
+          break;
+        case 'estado':
+          result = (a.disabled ? 1 : 0) - (b.disabled ? 1 : 0);
+          break;
+      }
+      return sortDir === 'asc' ? result : -result;
+    });
+  }, [filteredUsers, sortColumn, sortDir]);
+
+  const totalUserPages = Math.ceil(sortedUsers.length / pageSize);
+  const paginatedUsers = sortedUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else { setSortColumn(null); setSortDir('asc'); }
+    } else {
+      setSortColumn(column);
+      setSortDir('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const uniqueEmpresas = useMemo(() => 
+    Array.from(new Set(users.map(u => u.empresa).filter(Boolean))).sort() as string[], 
+    [users]
+  );
+
+  const hasActiveFilters = searchTerm !== '' || filterRole !== 'all' || filterStatus !== 'all' || filterEmpresa !== 'all';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterRole('all');
+    setFilterStatus('all');
+    setFilterEmpresa('all');
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ col }: { col: string }) => {
+    if (sortColumn !== col) return <ArrowUpDown className="h-3 w-3 opacity-30" />;
+    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
 
   async function onCreateSubmit(values: z.infer<typeof createFormSchema>) {
     setIsSubmitting(true);
@@ -657,19 +728,6 @@ export default function UsersPage() {
     admins: users.filter(u => u.role === 'admin').length,
   };
 
-  const uniqueEmpresas = Array.from(
-    new Set(users.map(u => u.empresa).filter(Boolean))
-  ).sort() as string[];
-
-  const hasActiveFilters = filterRole !== 'all' || filterStatus !== 'all' || filterEmpresa !== 'all';
-
-  const clearFilters = () => {
-    setFilterRole('all');
-    setFilterStatus('all');
-    setFilterEmpresa('all');
-    setSearchTerm('');
-  };
-
   if (adminLoading || adminUser?.role !== 'admin') {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -682,124 +740,116 @@ export default function UsersPage() {
   }
 
   return (
-    <>
-      <div className="flex flex-1 flex-col min-h-screen bg-gray-50">
-        {/* Header Principal */}
-        <div className="bg-white border-b border-gray-200 px-4 py-4 md:px-8 md:py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 md:p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20">
-                <UserCog className="h-5 w-5 md:h-6 md:w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg md:text-2xl font-bold tracking-tight text-gray-900">
-                  Gestión de Usuarios
-                </h1>
-                <p className="text-xs md:text-sm text-gray-500 mt-0.5 hidden sm:block">
-                  Administre los usuarios del sistema
-                </p>
-              </div>
+    <div className="flex flex-1 flex-col min-h-screen bg-gray-50/50">
+      {/* Header Moderno */}
+      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+        <div className="px-4 md:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 p-2.5 rounded-xl shadow-blue-200 shadow-lg">
+              <UserCog className="h-6 w-6 text-white" />
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleMigrateRoles}
-                disabled={isMigrating}
-                variant="outline"
-                className="h-11"
-                title="Migrar usuarios con rol obsoleto 'Líder de Tarea' a 'Ejecutante del trabajo'"
-              >
-                {isMigrating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-                Migrar Roles
-              </Button>
-              <Button
-                onClick={() => setIsBulkUploadOpen(true)}
-                variant="outline"
-                className="h-11"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Carga Masiva
-              </Button>
-              <Button
-                onClick={handleExportExcel}
-                variant="outline"
-                className="h-11"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
-              <Button
-                onClick={() => setShowCreateForm(!showCreateForm)}
-                className="bg-blue-600 hover:bg-blue-700 shadow-md h-11"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Nuevo Usuario
-              </Button>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+                Gestión de Usuarios
+              </h1>
+              <p className="text-xs text-gray-500 font-medium">
+                Panel administrativo de control y accesos
+              </p>
             </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={handleMigrateRoles}
+              disabled={isMigrating}
+              variant="outline"
+              className="h-10 text-xs font-semibold"
+            >
+              {isMigrating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Migrar Roles
+            </Button>
+            <Button
+              onClick={handleSync}
+              disabled={isSyncing}
+              variant="outline"
+              className="h-10 text-xs font-semibold"
+            >
+              {isSyncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Sincronizar
+            </Button>
+            <Button
+              onClick={() => setIsBulkUploadOpen(true)}
+              variant="outline"
+              className="h-10 text-xs font-semibold border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <FileUp className="h-4 w-4 mr-2" />
+              Carga Masiva
+            </Button>
+            <Button
+              onClick={handleExportExcel}
+              variant="outline"
+              className="h-10 text-xs font-semibold border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Excel
+            </Button>
+            <Button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="bg-blue-600 hover:bg-blue-700 shadow-blue-100 shadow-lg h-10 text-xs font-bold"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nuevo Usuario
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="px-4 md:px-8 py-4 md:py-6 grid grid-cols-3 gap-3 md:gap-6">
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-500">Total</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-xs text-gray-500">Activos</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Shield className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.admins}</p>
-                <p className="text-xs text-gray-500">Admins</p>
-              </div>
-            </div>
-          </div>
+      <div className="flex-1 space-y-6 py-6">
+        {/* Stats Summary */}
+        <div className="px-4 md:px-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Usuarios', value: stats.total, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Usuarios Activos', value: stats.active, icon: CircleCheck, color: 'text-green-600', bg: 'bg-green-50' },
+            { label: 'Administradores', value: stats.admins, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
+            { label: 'Otras Empresas', value: uniqueEmpresas.length, icon: UserPlus, color: 'text-purple-600', bg: 'bg-purple-50' },
+          ].map((stat, i) => (
+            <Card key={i} className="border-none shadow-sm bg-white">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className={cn("p-2.5 rounded-lg", stat.bg)}>
+                  <stat.icon className={cn("h-5 w-5", stat.color)} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">{stat.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Formulario de creación colapsable en móvil */}
+        {/* Formulario de creación */}
         {showCreateForm && (
-          <div className="px-4 md:px-8 pb-4">
-            <Card className="border border-gray-200 shadow-sm">
+          <div className="px-4 md:px-8 animate-in fade-in slide-in-from-top-4 duration-300">
+            <Card className="border-blue-100 bg-blue-50/30">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <UserPlus className="h-5 w-5 text-blue-600" />
-                  Crear Nuevo Usuario
+                <CardTitle className="flex items-center gap-2 text-lg text-blue-900">
+                  <UserPlus className="h-5 w-5" />
+                  Nuevo Usuario
                 </CardTitle>
-                <CardDescription>
-                  Complete el formulario para añadir un nuevo usuario
-                </CardDescription>
+                <CardDescription>Registre los datos del nuevo integrante del sistema</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...createForm}>
-                  <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <FormField
                         control={createForm.control}
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombre Completo</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Nombre Completo</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: Juan Pérez" className="h-11" {...field} />
+                              <Input placeholder="Ej: Juan Pérez" className="h-10 bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -810,9 +860,22 @@ export default function UsersPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Correo Electrónico</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="usuario@nixus.com" className="h-11" {...field} />
+                              <Input type="email" placeholder="usuario@empresa.com" className="h-10 bg-white" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Contraseña</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" className="h-10 bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -820,30 +883,17 @@ export default function UsersPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={createForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Contraseña</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="••••••••" className="h-11" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       <FormField
                         control={createForm.control}
                         name="empresa"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Empresa</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Empresa</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
-                                  <SelectValue placeholder="Seleccione una empresa" />
+                                <SelectTrigger className="h-10 bg-white">
+                                  <SelectValue placeholder="Empresa" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -854,19 +904,16 @@ export default function UsersPage() {
                           </FormItem>
                         )}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <FormField
                         control={createForm.control}
                         name="ciudad"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Ciudad</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Ciudad</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? ''}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
-                                  <SelectValue placeholder="Seleccione una ciudad" />
+                                <SelectTrigger className="h-10 bg-white">
+                                  <SelectValue placeholder="Ciudad" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -882,11 +929,11 @@ export default function UsersPage() {
                         name="planta"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Planta</FormLabel>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Planta</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? ''}>
                               <FormControl>
-                                <SelectTrigger className="h-11">
-                                  <SelectValue placeholder="Seleccione una planta" />
+                                <SelectTrigger className="h-10 bg-white">
+                                  <SelectValue placeholder="Planta" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -899,69 +946,35 @@ export default function UsersPage() {
                       />
                       <FormField
                         control={createForm.control}
-                        name="area"
+                        name="role"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Área</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Mantenimiento" className="h-11" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={createForm.control}
-                        name="telefono"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Teléfono</FormLabel>
-                            <FormControl>
-                              <Input type="tel" placeholder="3001234567" className="h-11" {...field} />
-                            </FormControl>
+                            <FormLabel className="text-xs font-bold uppercase text-gray-500">Rol</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-10 bg-white">
+                                  <SelectValue placeholder="Rol" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(roleNames).map(([role, name]) => (
+                                  <SelectItem key={role} value={role}>{name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    <FormField
-                      control={createForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rol del Usuario</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Seleccione un rol" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(roleNames).map(([role, name]) => (
-                                <SelectItem key={role} value={role}>
-                                  {name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowCreateForm(false)}
-                        className="flex-1 h-11"
-                      >
+                    <div className="flex justify-end gap-3 border-t pt-6">
+                      <Button type="button" variant="ghost" onClick={() => setShowCreateForm(false)}>
                         Cancelar
                       </Button>
-                      <Button type="submit" disabled={isSubmitting} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+                      <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 min-w-[150px]">
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        Registrar Usuario
                       </Button>
                     </div>
                   </form>
@@ -971,231 +984,217 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* Lista de usuarios */}
-        <div className="flex-1 px-4 md:px-8 pb-6">
-          <Card className="border border-gray-200 shadow-sm h-full">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Users className="h-5 w-5 text-blue-600" />
-                      Lista de Usuarios
-                    </CardTitle>
-                    <CardDescription className="hidden md:block">
-                      {filteredUsers.length} de {users.length} usuarios
-                    </CardDescription>
-                  </div>
-
-                  {/* Búsqueda */}
-                  <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Buscar usuario..."
-                      className="pl-10 h-10 bg-gray-50 border-gray-200"
-                    />
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Filtros */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Filtro por Rol */}
-                  <Select value={filterRole} onValueChange={setFilterRole}>
-                    <SelectTrigger className="h-9 w-full sm:w-52 bg-gray-50 border-gray-200 text-sm">
-                      <SelectValue placeholder="Filtrar por Rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los roles</SelectItem>
-                      {Object.entries(roleNames).map(([role, name]) => (
-                        <SelectItem key={role} value={role}>{name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Filtro por Estado */}
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="h-9 w-full sm:w-40 bg-gray-50 border-gray-200 text-sm">
-                      <SelectValue placeholder="Filtrar por Estado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los estados</SelectItem>
-                      <SelectItem value="active">Activo</SelectItem>
-                      <SelectItem value="inactive">Inactivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Filtro por Empresa */}
-                  <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
-                    <SelectTrigger className="h-9 w-full sm:w-52 bg-gray-50 border-gray-200 text-sm">
-                      <SelectValue placeholder="Filtrar por Empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas las empresas</SelectItem>
-                      {uniqueEmpresas.map(empresa => (
-                        <SelectItem key={empresa} value={empresa}>{empresa}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Limpiar filtros */}
-                  {hasActiveFilters && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-1.5 h-9 px-3 rounded-md text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 border border-gray-200 transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Limpiar filtros
-                    </button>
-                  )}
-                </div>
+        {/* Tabla de Usuarios */}
+        <div className="px-4 md:px-8 pb-10">
+          <Card className="shadow-sm border-gray-200 overflow-hidden">
+            <div className="p-4 bg-white border-b flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por nombre, email, empresa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-11 bg-gray-50/50 border-gray-200"
+                />
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loadingUsers ? (
-                <div className="flex flex-col items-center justify-center p-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                  <p className="text-sm text-gray-500">Cargando usuarios...</p>
-                </div>
-              ) : (
-                <>
-                  {/* Vista móvil - Cards */}
-                  <div className="md:hidden divide-y divide-gray-100">
-                    {filteredUsers.length > 0 ? filteredUsers.map(user => (
-                      <div key={user.uid} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
-                              {user.displayName?.charAt(0) || 'U'}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{user.displayName}</p>
-                              <p className="text-xs text-gray-500">{user.email}</p>
-                            </div>
-                          </div>
-                          <Switch
-                            checked={!user.disabled}
-                            onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-2">
-                            <Badge className={`text-xs ${roleColors[user.role || 'solicitante']}`}>
-                              {(roleNames[user.role || 'solicitante'] ?? 'Ejecutante').split(' ')[0]}
-                            </Badge>
-                            <span className="text-xs text-gray-500">{user.empresa}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => openEditModal(user)}>
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700" onClick={() => handleDeleteUser(user.uid, user.displayName ?? undefined)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="p-12 text-center">
-                        <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-500">No se encontraron usuarios</p>
-                      </div>
-                    )}
-                  </div>
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <Select value={filterRole} onValueChange={setFilterRole}>
+                  <SelectTrigger className="w-full md:w-[160px] h-11 bg-white">
+                    <SelectValue placeholder="Rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los Roles</SelectItem>
+                    {USER_ROLES.map(role => (
+                      <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
+                  <SelectTrigger className="w-full md:w-[180px] h-11 bg-white">
+                    <SelectValue placeholder="Empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las Empresas</SelectItem>
+                    {uniqueEmpresas.map(emp => (
+                      <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-full md:w-[130px] h-11 bg-white">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="active">Activos</SelectItem>
+                    <SelectItem value="inactive">Inactivos</SelectItem>
+                  </SelectContent>
+                </Select>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="icon" onClick={clearFilters} className="h-11 w-11 text-gray-400 hover:text-red-500">
+                    <X className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+            </div>
 
-                  {/* Vista desktop - Tabla */}
-                  <div className="hidden md:block overflow-auto">
-                    <Table>
-                      <TableHeader className="bg-gray-50">
-                        <TableRow>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Usuario</TableHead>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Empresa</TableHead>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Ciudad</TableHead>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Planta</TableHead>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Rol</TableHead>
-                          <TableHead className="font-semibold text-xs uppercase text-gray-600">Estado</TableHead>
-                          <TableHead className="text-right font-semibold text-xs uppercase text-gray-600">Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredUsers.length > 0 ? filteredUsers.map((user, index) => (
-                          <TableRow key={user.uid} className={`group hover:bg-blue-50/50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
-                                  {user.displayName?.charAt(0) || 'U'}
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{user.displayName}</p>
-                                  <p className="text-xs text-gray-500">{user.email}</p>
-                                </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-gray-50/50">
+                  <TableRow>
+                    <TableHead className="py-4 pl-6 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('nombre')}>
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Usuario <SortIcon col="nombre" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('rol')}>
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Rol Principal <SortIcon col="rol" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('empresa')}>
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Empresa <SortIcon col="empresa" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('planta')}>
+                      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Ubicación <SortIcon col="planta" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('estado')}>
+                      <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        Estado <SortIcon col="estado" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right pr-6 text-xs font-bold uppercase tracking-wider text-gray-500">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingUsers ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-80 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                          <p className="text-gray-500 font-medium">Cargando base de datos...</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : paginatedUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-80 text-center">
+                        <div className="flex flex-col items-center justify-center gap-4">
+                          <div className="bg-gray-100 p-6 rounded-full text-gray-300">
+                            <Search className="h-12 w-12" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-gray-900 font-bold text-lg">Sin resultados</p>
+                            <p className="text-gray-500 text-sm max-w-[250px] mx-auto">No encontramos usuarios que coincidan con tus criterios de búsqueda.</p>
+                          </div>
+                          {hasActiveFilters && (
+                            <Button variant="outline" size="sm" onClick={clearFilters} className="mt-2">
+                              Limpiar todos los filtros
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedUsers.map((user) => (
+                        <TableRow key={user.uid} className="group hover:bg-blue-50/30 transition-colors">
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                                {user.displayName?.charAt(0).toUpperCase()}
                               </div>
-                            </TableCell>
-                            <TableCell className="text-gray-600">{user.empresa}</TableCell>
-                            <TableCell className="text-gray-600">{user.ciudad || <span className="text-gray-300">—</span>}</TableCell>
-                            <TableCell className="text-gray-600">{user.planta || <span className="text-gray-300">—</span>}</TableCell>
-                            <TableCell>
-                              <Badge className={`text-xs ${roleColors[user.role || 'solicitante']}`}>
-                                {roleNames[user.role || 'solicitante']}
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
+                                  {user.displayName}
+                                </span>
+                                <span className="text-xs text-gray-500 line-clamp-1">
+                                  {user.email}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Badge className={cn("font-medium px-2.5 py-0.5", user.role ? roleColors[user.role] : 'bg-gray-100 text-gray-700')}>
+                                {user.role ? roleNames[user.role] : 'Sin Rol'}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={user.disabled ? 'destructive' : 'default'} className={user.disabled ? '' : 'bg-green-100 text-green-700 border-green-200'}>
+                              {(user.otherRoles ?? []).length > 0 && (
+                                <Badge variant="outline" className="bg-white text-gray-600 border-gray-200">
+                                  +{(user.otherRoles ?? []).length}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium text-gray-700">{user.empresa || '—'}</span>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-700 font-medium">{user.planta || '—'}</span>
+                              <span className="text-xs text-gray-500">{user.ciudad || '—'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <Switch
+                                checked={!user.disabled}
+                                onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
+                                className="data-[state=checked]:bg-green-600"
+                              />
+                              <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider",
+                                user.disabled ? "text-red-500" : "text-green-600"
+                              )}>
                                 {user.disabled ? 'Inactivo' : 'Activo'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditModal(user)}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Editar
-                                </Button>
-                                <Switch
-                                  checked={!user.disabled}
-                                  onCheckedChange={(checked) => handleStatusChange(user.uid, checked)}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteUser(user.uid, user.displayName ?? undefined); }}
-                                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )) : (
-                          <TableRow>
-                            <TableCell colSpan={7} className="h-32 text-center">
-                              <div className="flex flex-col items-center text-gray-400">
-                                <Users className="h-10 w-10 mb-3 opacity-30" />
-                                <p className="font-medium">No se encontraron usuarios</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </>
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditModal(user)}
+                                className="h-9 w-9 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
+                                title="Editar Usuario"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteUser(user.uid, user.displayName ?? undefined)}
+                                className="h-9 w-9 text-red-600 hover:bg-red-100 hover:text-red-700"
+                                title="Eliminar Usuario"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Paginación */}
+              {!loadingUsers && filteredUsers.length > 0 && (
+                <div className="p-4 border-t bg-gray-50/30">
+                  <DataTablePagination
+                    currentPage={currentPage}
+                    totalPages={totalUserPages}
+                    pageSize={pageSize}
+                    totalRows={filteredUsers.length}
+                    onPageChange={setCurrentPage}
+                    onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+                  />
+                </div>
               )}
-            </CardContent>
           </Card>
         </div>
       </div>
@@ -1419,7 +1418,7 @@ export default function UsersPage() {
           </Form>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
 
