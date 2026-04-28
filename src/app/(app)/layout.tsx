@@ -45,7 +45,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { IdleTimerProvider } from '@/components/IdleTimerProvider';
-import type { UserRole } from '@/types';
 import { getRoleName } from '@/lib/role-config';
 import { AlertsBell } from '@/components/AlertsBell';
 import { useSidebarBadges } from '@/hooks/use-sidebar-badges';
@@ -144,15 +143,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* Logo centrado */}
                 <div className="bg-white rounded-lg p-2.5 shadow-sm transition-all group-data-[collapsible=icon]:p-1.5">
                   <Image
-                    src="https://i.postimg.cc/CLg66nhr/Piloso.png"
+                    src="/logo-italcol-full.png"
                     alt="Logo Italcol"
                     width={120}
                     height={60}
-                    quality={100}
+                    quality={90}
                     className="h-auto w-full max-w-[100px] transition-all group-data-[collapsible=icon]:max-w-[32px]"
-                    style={{
-                      imageRendering: '-webkit-optimize-contrast',
-                    }}
                     priority
                     sizes="(max-width: 768px) 100px, 120px"
                   />
@@ -395,15 +391,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <div className="relative h-8 w-8 flex-shrink-0 bg-white rounded p-0.5">
                   <Image
-                    src="https://i.postimg.cc/CLg66nhr/Piloso.png"
+                    src="/logo-italcol-full.png"
                     alt="Logo"
                     width={64}
                     height={64}
-                    quality={100}
+                    quality={90}
                     className="h-full w-full object-contain"
-                    style={{
-                      imageRendering: '-webkit-optimize-contrast',
-                    }}
                     priority
                     sizes="32px"
                   />

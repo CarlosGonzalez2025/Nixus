@@ -1366,7 +1366,11 @@ export default function PermitDetailPage() {
             </Button>
 
             {canQuickClose && (
-              <Button variant="destructive" size="sm" onClick={handleEmergencyClosure}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={canChangeStatus('cerrado') ? handleOpenClosureDialog : handleEmergencyClosure}
+              >
                 <Lock className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Cerrar Permiso</span>
               </Button>
@@ -2065,7 +2069,7 @@ export default function PermitDetailPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
             <TooltipProvider>
               <Tooltip open={closureStatus.can ? false : undefined}>
                 <TooltipTrigger asChild>
@@ -2090,6 +2094,17 @@ export default function PermitDetailPage() {
                 )}
               </Tooltip>
             </TooltipProvider>
+            {!closureStatus.can && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border border-destructive/30"
+                onClick={() => { setIsClosureDialogOpen(false); handleEmergencyClosure(); }}
+              >
+                <Siren className="mr-2 h-4 w-4" />
+                Forzar Cierre de Emergencia
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-import { MdElectricBolt } from 'react-icons/md';
+import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -74,9 +74,14 @@ export function AnexoEnergiaStep() {
     return (
         <div className="space-y-8">
             <div className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary shadow-lg mb-4">
-                  <MdElectricBolt className="w-10 h-10 text-yellow-400" />
-                </div>
+                <Image
+                  src="/icons/anexo-energias.png"
+                  alt="Trabajos con Energías"
+                  width={96}
+                  height={96}
+                  priority
+                  className="mx-auto mb-4 drop-shadow-lg"
+                />
                 <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
                     Anexo de Trabajos con Energías
                 </h2>

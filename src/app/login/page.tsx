@@ -13,13 +13,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Dirección de correo inválida.' }),
@@ -30,6 +31,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { user, loading: userLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +44,13 @@ export default function LoginPage() {
     },
   });
 
+  // Redirige cuando el auth state se propaga completamente
+  useEffect(() => {
+    if (!userLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, userLoading, router]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
@@ -51,16 +60,16 @@ export default function LoginPage() {
         description: '¡Bienvenido!',
         className: 'bg-accent text-accent-foreground',
       });
-      router.push('/dashboard');
+      // No se llama router.push aquí; el useEffect de arriba maneja
+      // la redirección una vez que el estado de auth se propaga.
     } catch (error) {
+      setIsLoading(false);
       toast({
         variant: 'destructive',
         title: 'Error de inicio de sesión',
         description:
           error instanceof Error ? error.message : 'Ocurrió un error desconocido.',
       });
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -73,20 +82,18 @@ export default function LoginPage() {
     >
       <Card className="w-full max-w-sm sm:max-w-md rounded-2xl shadow-2xl border-0">
         <CardHeader className="items-center p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-          {/* Logo Principal Italcol */}
+          {/* Logo Principal Italcol — servido localmente */}
           <div className="flex justify-center">
-            <img 
-              src="https://i.postimg.cc/CLg66nhr/Piloso.png" 
-              alt="Italcol Logo" 
+            <Image
+              src="/logo-italcol-full.png"
+              alt="Italcol Logo"
+              width={180}
+              height={90}
+              priority
               className="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain"
-              // Opciones de tamaño:
-              // Pequeño: h-16 sm:h-20
-              // Mediano: h-20 sm:h-24 md:h-28
-              // Grande: h-24 sm:h-28 md:h-32 lg:h-36
-              // Extra Grande: h-28 sm:h-32 md:h-36 lg:h-40
             />
           </div>
-          
+
           {/* Título del Sistema */}
           <div className="text-center space-y-2">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">SGTC</h1>
@@ -149,7 +156,7 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 sm:py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 sm:py-3 rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl text-sm sm:text-base"
                 disabled={isLoading}
               >
                 {isLoading && (
@@ -157,26 +164,24 @@ export default function LoginPage() {
                 )}
                 Iniciar Sesión
               </Button>
-              
-              {/* Logo secundario debajo del botón */}
+
+              {/* Logo secundario — servido localmente */}
               <div className="flex justify-center pt-2">
-                <img 
-                  src="https://i.postimg.cc/2SnCvqX4/Marca-compartida-color.png" 
-                  alt="Logo Secundario" 
+                <Image
+                  src="/logo-marca-compartida.png"
+                  alt="Logo Secundario"
+                  width={120}
+                  height={40}
                   className="h-8 sm:h-10 w-auto object-contain opacity-80"
-                  // Opciones de tamaño para logo secundario:
-                  // Muy pequeño: h-6 sm:h-8
-                  // Pequeño: h-8 sm:h-10 (recomendado)
-                  // Mediano: h-10 sm:h-12
                 />
               </div>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="bg-gray-50 py-3 sm:py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500 rounded-b-lg">
-            <p className="w-full">
-                © 2025 Axa Colpatria & Nixus Capital - Todos los derechos reservados
-            </p>
+          <p className="w-full">
+            © 2025 Axa Colpatria & Nixus Capital - Todos los derechos reservados
+          </p>
         </CardFooter>
       </Card>
     </div>

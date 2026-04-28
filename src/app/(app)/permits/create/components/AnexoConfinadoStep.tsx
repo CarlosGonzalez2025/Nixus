@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Signature, Trash2, Plus, ChevronDown } from 'lucide-react';
-import { FaPersonShelter } from 'react-icons/fa6';
+import Image from 'next/image';
 import {
   Table,
   TableBody,
@@ -308,9 +308,14 @@ export function AnexoConfinadoStep() {
     <>
     <div className="space-y-8">
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary shadow-lg mb-4">
-          <FaPersonShelter className="w-10 h-10 text-yellow-400" />
-        </div>
+        <Image
+          src="/icons/anexo-confinado.png"
+          alt="Espacios Confinados"
+          width={96}
+          height={96}
+          priority
+          className="mx-auto mb-4 drop-shadow-lg"
+        />
         <h2 className="text-2xl md:text-3xl font-bold mb-2 text-primary">
           Anexo de Espacios Confinados
         </h2>
