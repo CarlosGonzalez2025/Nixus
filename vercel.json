@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/hallazgos-daily-summary",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

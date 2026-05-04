@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   PlusCircle, Search, Loader2, FileX, Filter, Edit,
-  ArrowUp, ArrowDown, ArrowUpDown, Download,
+  ArrowUp, ArrowDown, ArrowUpDown, Download, Building2, MapPin,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -109,6 +109,37 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
     ));
 };
 
+// ─── Approval helpers ────────────────────────────────────────────────────────
+
+type ApprovalRole = keyof NonNullable<Permit['approvals']>;
+
+function isApprovalRequired(permit: Permit, role: ApprovalRole): boolean {
+  switch (role) {
+    case 'solicitante': return true;
+    case 'autorizante': return true;
+    case 'lider_sst': return permit.isSSTSignatureRequired === true;
+    case 'mantenimiento':
+      return permit.controlEnergia === true || permit.selectedWorkTypes?.energia === true;
+    case 'coordinador_alturas':
+      return permit.trabajoAlturas === true || permit.selectedWorkTypes?.alturas === true;
+    case 'supervisor_confinado':
+      return permit.espaciosConfinados === true || permit.selectedWorkTypes?.confinado === true;
+    default: return false;
+  }
+}
+
+const APPROVAL_STATUS_LABELS: Record<string, string> = {
+  aprobado: 'Aprobado',
+  rechazado: 'Rechazado',
+  pendiente: 'Pendiente',
+};
+
+function getApprovalStatusText(permit: Permit, role: ApprovalRole): string {
+  if (!isApprovalRequired(permit, role)) return 'No Aplica';
+  const status = permit.approvals?.[role]?.status;
+  return APPROVAL_STATUS_LABELS[status ?? ''] ?? 'Pendiente';
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type UnifiedPermitStatus =
@@ -139,6 +170,9 @@ export default function PermitsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<UnifiedPermitStatus>('pendiente_revision');
   const [workTypeFilter, setWorkTypeFilter] = useState<string>('all');
+  const [empresaFilter, setEmpresaFilter] = useState('all');
+  const [plantaFilter, setPlantaFilter] = useState('all');
+  const [ciudadFilter, setCiudadFilter] = useState('all');
   const { toast } = useToast();
 
   // DataTable state
@@ -150,7 +184,7 @@ export default function PermitsPage() {
   // ── Reset page on filter change ──────────────────────────────────────────
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, workTypeFilter, searchTerm]);
+  }, [activeTab, workTypeFilter, searchTerm, empresaFilter, plantaFilter, ciudadFilter]);
 
   // ── Firestore subscription ───────────────────────────────────────────────
   useEffect(() => {
@@ -253,6 +287,25 @@ export default function PermitsPage() {
     return () => unsubscribers.forEach(u => u());
   }, [user, userLoading, toast]);
 
+  // ── Unique filter values ─────────────────────────────────────────────────
+  const uniqueEmpresas = useMemo(() => {
+    const set = new Set<string>();
+    allPermits.forEach(p => { if (p.generalInfo?.empresa) set.add(p.generalInfo.empresa); });
+    return Array.from(set).sort();
+  }, [allPermits]);
+
+  const uniquePlantas = useMemo(() => {
+    const set = new Set<string>();
+    allPermits.forEach(p => { if (p.generalInfo?.planta) set.add(p.generalInfo.planta); });
+    return Array.from(set).sort();
+  }, [allPermits]);
+
+  const uniqueCiudades = useMemo(() => {
+    const set = new Set<string>();
+    allPermits.forEach(p => { if (p.generalInfo?.ciudad) set.add(p.generalInfo.ciudad); });
+    return Array.from(set).sort();
+  }, [allPermits]);
+
   // ── Filtered data ────────────────────────────────────────────────────────
   const filteredPermits = useMemo(() => {
     return allPermits.filter(permit => {
@@ -271,6 +324,10 @@ export default function PermitsPage() {
         if (!types[map[workTypeFilter] ?? workTypeFilter]) return false;
       }
 
+      if (empresaFilter !== 'all' && permit.generalInfo?.empresa !== empresaFilter) return false;
+      if (plantaFilter !== 'all' && permit.generalInfo?.planta !== plantaFilter) return false;
+      if (ciudadFilter !== 'all' && permit.generalInfo?.ciudad !== ciudadFilter) return false;
+
       const s = searchTerm.toLowerCase();
       if (!s) return true;
       return (
@@ -280,7 +337,7 @@ export default function PermitsPage() {
         (permit.generalInfo?.planta || '').toLowerCase().includes(s)
       );
     });
-  }, [allPermits, activeTab, searchTerm, workTypeFilter]);
+  }, [allPermits, activeTab, searchTerm, workTypeFilter, empresaFilter, plantaFilter, ciudadFilter]);
 
   // ── Sorted data ──────────────────────────────────────────────────────────
   const sortedPermits = useMemo(() => {
@@ -342,78 +399,215 @@ export default function PermitsPage() {
       return;
     }
 
-    const rows = sortedPermits.map(p => {
-      // Flatten worker photos and signatures
-      const workerPhotos = (p.workers || [])
-        .map(w => `${w.nombre} (${w.cedula}): ${w.foto || 'Sin foto'}`)
-        .filter(Boolean)
-        .join('\n');
+    // Cell types: string, number, or hyperlink object
+    type XLCell = string | number | { v: string; t: 's'; l: { Target: string } };
 
-      const workTypes = getWorkTypeLabels(p).join(', ');
+    const link = (url: string | null | undefined, label = 'Ver Firma'): XLCell => {
+      if (!url || !url.startsWith('http')) return '—';
+      return { v: label, t: 's', l: { Target: url } };
+    };
 
-      return {
-        'ID Sistema': p.id,
-        'Número': p.number || `Borrador: ${p.id.substring(0, 8)}`,
-        'Estado': getStatusText(p.status),
-        'Creado Por (UID)': p.createdBy,
-        'Fecha Creación': p.createdAt
-          ? format(parseFirestoreDate(p.createdAt) || new Date(0), 'dd/MM/yyyy HH:mm:ss', { locale: es })
-          : 'N/A',
-        'Tipos de Trabajo': workTypes || 'N/A',
-        
-        // General Info
-        'Empresa': p.generalInfo?.empresa || 'N/A',
-        'Planta': p.generalInfo?.planta || 'N/A',
-        'Ciudad': p.generalInfo?.ciudad || 'N/A',
-        'Área Específica': p.generalInfo?.areaEspecifica || 'N/A',
-        'Proceso': p.generalInfo?.proceso || 'N/A',
-        'Contrato': p.generalInfo?.contrato || 'N/A',
-        'Descripción del Trabajo': p.generalInfo?.workDescription || 'N/A',
-        'N° Trabajadores': p.generalInfo?.numTrabajadores || 'N/A',
-        'Validez Desde': p.generalInfo?.validFrom || 'N/A',
-        'Validez Hasta': p.generalInfo?.validUntil || 'N/A',
-        
-        // User Info
-        'Solicitante (Nombre)': p.user?.displayName || 'N/A',
-        'Solicitante (Email)': p.user?.email || 'N/A',
+    const apprCols = (p: Permit, role: ApprovalRole): XLCell[] => {
+      if (!isApprovalRequired(p, role)) return ['No Aplica', '—', '—', '—', '—'];
+      const a = p.approvals?.[role] ?? {};
+      return [
+        APPROVAL_STATUS_LABELS[a.status ?? ''] ?? 'Pendiente',
+        a.userName || '—',
+        a.signedAt || '—',
+        link(a.firmaApertura, 'Ver Apertura'),
+        link(a.firmaCierre, 'Ver Cierre'),
+      ];
+    };
 
-        // Approvals
-        'Aprobación Solicitante': p.approvals?.solicitante?.status || 'pendiente',
-        'Aprobación Autorizante': p.approvals?.autorizante?.status || 'pendiente',
-        'Aprobación Lider SST': p.approvals?.lider_sst?.status || 'pendiente',
-        'Aprobación Mantenimiento': p.approvals?.mantenimiento?.status || 'pendiente',
-        'Aprobación Coordinador Alturas': p.approvals?.coordinador_alturas?.status || 'pendiente',
-        'Aprobación Supervisor Confinado': p.approvals?.supervisor_confinado?.status || 'pendiente',
+    // ── Sheet 1: Permisos ───────────────────────────────────────────────
+    const HEADERS: string[] = [
+      // Identificación (A-F)
+      'N° Permiso', 'Estado', 'Fecha Creación', 'Vigencia Desde', 'Vigencia Hasta', 'Tipos de Trabajo',
+      // Ubicación (G-L)
+      'Empresa', 'Planta', 'Ciudad', 'Área Específica', 'Proceso', 'Contrato',
+      // Trabajo (M-P)
+      'Descripción del Trabajo', 'N° Trabajadores', 'Solicitante', 'Email Solicitante',
+      // Solicitante aprobación (Q-U)
+      'Est. Solicitante', 'Firmante Solicitante', 'Fecha Firma Sol.', 'Firma Apertura Sol.', 'Firma Cierre Sol.',
+      // Autorizante (V-Z)
+      'Est. Autorizante', 'Firmante Autorizante', 'Fecha Firma Aut.', 'Firma Apertura Aut.', 'Firma Cierre Aut.',
+      // Líder SST (AA-AE)
+      'Est. Líder SST', 'Firmante Líder SST', 'Fecha Firma SST', 'Firma Apertura SST', 'Firma Cierre SST',
+      // Mantenimiento (AF-AJ)
+      'Est. Mantenimiento', 'Firmante Mantenimiento', 'Fecha Firma Mant.', 'Firma Apertura Mant.', 'Firma Cierre Mant.',
+      // Coord. Alturas (AK-AO)
+      'Est. Coord. Alturas', 'Firmante Coord. Alturas', 'Fecha Firma C.Alt.', 'Firma Apertura C.Alt.', 'Firma Cierre C.Alt.',
+      // Sup. Confinado (AP-AT)
+      'Est. Sup. Confinado', 'Firmante Sup. Confinado', 'Fecha Firma S.Con.', 'Firma Apertura S.Con.', 'Firma Cierre S.Con.',
+      // Cierre (AU-AY)
+      'Fecha Cierre', 'Hora Cierre', 'Observaciones Cierre', 'Área Despejada', 'Continua Labor',
+    ];
 
-        'Nombre Autorizante': p.approvals?.autorizante?.userName || 'N/A',
-        'Fecha Autorizante': p.approvals?.autorizante?.signedAt || 'N/A',
-        'Nombre Lider SST': p.approvals?.lider_sst?.userName || 'N/A',
-        'Fecha Lider SST': p.approvals?.lider_sst?.signedAt || 'N/A',
+    const COL_WIDTHS = [
+      18, 22, 18, 14, 14, 38,   // Identificación
+      30, 25, 20, 32, 25, 20,   // Ubicación
+      50, 14, 30, 35,           // Trabajo
+      18, 28, 18, 20, 20,       // Solicitante
+      18, 28, 18, 20, 20,       // Autorizante
+      18, 28, 18, 20, 20,       // Líder SST
+      18, 28, 18, 20, 20,       // Mantenimiento
+      18, 28, 18, 20, 20,       // Coord. Alturas
+      18, 28, 18, 20, 20,       // Sup. Confinado
+      14, 12, 50, 15, 15,       // Cierre
+    ];
 
-        // Closure
-        'Fecha Cierre': p.closure?.fechaCierre || 'N/A',
-        'Hora Cierre': p.closure?.horaCierre || 'N/A',
-        'Observaciones Cierre': p.closure?.observacionesCierre || 'N/A',
-        'Área Despejada': p.closure?.areaDespejada || 'N/A',
-        'Continua Labor': p.closure?.continuaLabor || 'N/A',
+    const dataRows: XLCell[][] = sortedPermits.map(p => [
+      p.number || `Borrador:${p.id.substring(0, 8)}`,
+      getStatusText(p.status),
+      p.createdAt ? format(parseFirestoreDate(p.createdAt) || new Date(0), 'dd/MM/yyyy HH:mm', { locale: es }) : '—',
+      p.generalInfo?.validFrom || '—',
+      p.generalInfo?.validUntil || '—',
+      getWorkTypeLabels(p).join(' | ') || '—',
+      p.generalInfo?.empresa || '—',
+      p.generalInfo?.planta || '—',
+      p.generalInfo?.ciudad || '—',
+      p.generalInfo?.areaEspecifica || '—',
+      p.generalInfo?.proceso || '—',
+      p.generalInfo?.contrato || '—',
+      p.generalInfo?.workDescription || '—',
+      p.generalInfo?.numTrabajadores || '—',
+      p.user?.displayName || '—',
+      p.user?.email || '—',
+      ...apprCols(p, 'solicitante'),
+      ...apprCols(p, 'autorizante'),
+      ...apprCols(p, 'lider_sst'),
+      ...apprCols(p, 'mantenimiento'),
+      ...apprCols(p, 'coordinador_alturas'),
+      ...apprCols(p, 'supervisor_confinado'),
+      p.closure?.fechaCierre || '—',
+      p.closure?.horaCierre || '—',
+      p.closure?.observacionesCierre || '—',
+      p.closure?.areaDespejada || '—',
+      p.closure?.continuaLabor || '—',
+    ]);
 
-        // Photos & Files
-        'URLs Fotos Trabajadores': workerPhotos || 'N/A',
-        'Firma Apertura Solicitante URL': p.solicitanteFirmaApertura || 'N/A',
-      };
+    // Build worksheet cell by cell (needed for hyperlink support)
+    const permisosWs: XLSX.WorkSheet = {};
+    HEADERS.forEach((h, c) => {
+      permisosWs[XLSX.utils.encode_cell({ r: 0, c })] = { v: h, t: 's' };
     });
+    dataRows.forEach((row, r) => {
+      row.forEach((val, c) => {
+        const addr = XLSX.utils.encode_cell({ r: r + 1, c });
+        if (typeof val === 'object' && val !== null && 'l' in val) {
+          permisosWs[addr] = val;
+        } else if (typeof val === 'number') {
+          permisosWs[addr] = { v: val, t: 'n' };
+        } else {
+          permisosWs[addr] = { v: String(val ?? '—'), t: 's' };
+        }
+      });
+    });
+    permisosWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: dataRows.length, c: HEADERS.length - 1 } });
+    permisosWs['!cols'] = COL_WIDTHS.map(wch => ({ wch }));
+    permisosWs['!views'] = [{ state: 'frozen', ySplit: 1 }] as any;
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const colWidths = Object.keys(rows[0] ?? {}).map(key => ({
-      wch: Math.max(key.length, ...rows.map(r => String((r as any)[key]).length)) + 2,
-    }));
-    ws['!cols'] = colWidths;
+    // ── Sheet 2: Análisis ───────────────────────────────────────────────
+    type AnalysisRow = (string | number)[];
+    const aRows: AnalysisRow[] = [];
 
+    const aTitle = (t: string) => aRows.push([t]);
+    const aHead = (...cols: string[]) => aRows.push(cols);
+    const aData = (...cols: (string | number)[]) => aRows.push(cols);
+    const aSep = () => aRows.push(['']);
+    const pct = (n: number) => `${((n / sortedPermits.length) * 100).toFixed(1)}%`;
+
+    aTitle('REPORTE DE PERMISOS DE TRABAJO — ANÁLISIS ESTADÍSTICO');
+    aData(`Generado: ${format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`);
+    aData(`Total de permisos en el reporte: ${sortedPermits.length}`);
+    if (empresaFilter !== 'all') aData(`Filtro empresa: ${empresaFilter}`);
+    if (plantaFilter !== 'all') aData(`Filtro planta: ${plantaFilter}`);
+    if (ciudadFilter !== 'all') aData(`Filtro ciudad: ${ciudadFilter}`);
+    aSep();
+
+    // Status
+    aTitle('RESUMEN POR ESTADO');
+    aHead('Estado', 'Cantidad', '% del Total');
+    const statusMap = new Map<string, number>();
+    sortedPermits.forEach(p => { const s = getStatusText(p.status); statusMap.set(s, (statusMap.get(s) || 0) + 1); });
+    Array.from(statusMap.entries()).sort((a, b) => b[1] - a[1])
+      .forEach(([s, n]) => aData(s, n, pct(n)));
+    aSep();
+
+    // Work types
+    aTitle('RESUMEN POR TIPO DE TRABAJO');
+    aHead('Tipo de Trabajo', 'Cantidad', '% del Total');
+    const wt: [string, number][] = [
+      ['Trabajo en Alturas', sortedPermits.filter(p => p.selectedWorkTypes?.alturas).length],
+      ['Espacios Confinados', sortedPermits.filter(p => p.selectedWorkTypes?.confinado).length],
+      ['Control de Energías', sortedPermits.filter(p => p.selectedWorkTypes?.energia).length],
+      ['Izaje de Cargas', sortedPermits.filter(p => p.selectedWorkTypes?.izaje).length],
+      ['Excavaciones', sortedPermits.filter(p => p.selectedWorkTypes?.excavacion).length],
+      ['Trabajo General', sortedPermits.filter(p => p.selectedWorkTypes?.general).length],
+    ];
+    wt.filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
+      .forEach(([t, n]) => aData(t, n, pct(n)));
+    aSep();
+
+    // Empresa
+    aTitle('RESUMEN POR EMPRESA');
+    aHead('Empresa', 'Cantidad', '% del Total');
+    const empMap = new Map<string, number>();
+    sortedPermits.forEach(p => { const e = p.generalInfo?.empresa || 'Sin empresa'; empMap.set(e, (empMap.get(e) || 0) + 1); });
+    Array.from(empMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([e, n]) => aData(e, n, pct(n)));
+    aSep();
+
+    // Planta
+    aTitle('RESUMEN POR PLANTA');
+    aHead('Planta', 'Cantidad', '% del Total');
+    const pltMap = new Map<string, number>();
+    sortedPermits.forEach(p => { const pl = p.generalInfo?.planta || 'Sin planta'; pltMap.set(pl, (pltMap.get(pl) || 0) + 1); });
+    Array.from(pltMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([pl, n]) => aData(pl, n, pct(n)));
+    aSep();
+
+    // Ciudad (only if any)
+    const cidMap = new Map<string, number>();
+    sortedPermits.forEach(p => { if (p.generalInfo?.ciudad) cidMap.set(p.generalInfo.ciudad, (cidMap.get(p.generalInfo.ciudad) || 0) + 1); });
+    if (cidMap.size > 0) {
+      aTitle('RESUMEN POR CIUDAD');
+      aHead('Ciudad', 'Cantidad', '% del Total');
+      Array.from(cidMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([c, n]) => aData(c, n, pct(n)));
+      aSep();
+    }
+
+    // Approval completeness
+    aTitle('ESTADO DE APROBACIÓN');
+    aHead('Categoría', 'Cantidad', '% del Total');
+    const approved = sortedPermits.filter(p => ['aprobado', 'en_ejecucion', 'cerrado'].includes(p.status)).length;
+    const rejected = sortedPermits.filter(p => p.status === 'rechazado').length;
+    const pending = sortedPermits.length - approved - rejected;
+    aData('Completamente aprobados / activos / cerrados', approved, pct(approved));
+    aData('En proceso de aprobación', pending, pct(pending));
+    aData('Rechazados', rejected, pct(rejected));
+
+    // Build analysis worksheet
+    const analysisWs: XLSX.WorkSheet = {};
+    aRows.forEach((row, r) => {
+      row.forEach((val, c) => {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        analysisWs[addr] = typeof val === 'number' ? { v: val, t: 'n' } : { v: String(val), t: 's' };
+      });
+    });
+    if (aRows.length > 0) {
+      analysisWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: aRows.length - 1, c: 2 } });
+    }
+    analysisWs['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }];
+
+    // ── Workbook ────────────────────────────────────────────────────────
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Permisos');
-    XLSX.writeFile(wb, `permisos_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, permisosWs, 'Permisos');
+    XLSX.utils.book_append_sheet(wb, analysisWs, 'Análisis');
+    XLSX.writeFile(wb, `permisos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.xlsx`);
 
-    toast({ title: '✅ Exportación exitosa', description: `${sortedPermits.length} permisos exportados.` });
+    toast({
+      title: '✅ Exportación exitosa',
+      description: `${sortedPermits.length} permiso${sortedPermits.length !== 1 ? 's' : ''} exportado${sortedPermits.length !== 1 ? 's' : ''} con hoja de análisis.`,
+    });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -618,18 +812,19 @@ export default function PermitsPage() {
               </div>
 
               {/* Filtros de búsqueda */}
-              <div className="p-4 flex flex-col md:flex-row gap-4 bg-muted/20">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Buscar por número, área, planta, solicitante..."
-                    className="w-full pl-9 h-10 bg-background"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
+              <div className="p-4 flex flex-col gap-3 bg-muted/20">
+                {/* Fila 1: búsqueda + tipo de riesgo */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Buscar por número, área, planta, solicitante..."
+                      className="w-full pl-9 h-10 bg-background"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                   <Select value={workTypeFilter} onValueChange={setWorkTypeFilter}>
                     <SelectTrigger className="w-full md:w-[200px] h-10 bg-background">
                       <div className="flex items-center gap-2">
@@ -647,6 +842,57 @@ export default function PermitsPage() {
                       <SelectItem value="general">Trabajo General</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                {/* Fila 2: empresa, planta, ciudad */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {uniqueEmpresas.length > 0 && (
+                    <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
+                      <SelectTrigger className="flex-1 h-10 bg-background">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <SelectValue placeholder="Todas las empresas" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las empresas</SelectItem>
+                        {uniqueEmpresas.map(e => (
+                          <SelectItem key={e} value={e}>{e}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {uniquePlantas.length > 0 && (
+                    <Select value={plantaFilter} onValueChange={setPlantaFilter}>
+                      <SelectTrigger className="flex-1 h-10 bg-background">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <SelectValue placeholder="Todas las plantas" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las plantas</SelectItem>
+                        {uniquePlantas.map(p => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {uniqueCiudades.length > 0 && (
+                    <Select value={ciudadFilter} onValueChange={setCiudadFilter}>
+                      <SelectTrigger className="flex-1 h-10 bg-background">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <SelectValue placeholder="Todas las ciudades" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las ciudades</SelectItem>
+                        {uniqueCiudades.map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>

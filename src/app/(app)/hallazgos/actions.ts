@@ -228,14 +228,13 @@ export async function notifyHallazgoCreated(hallazgo: Hallazgo): Promise<void> {
   const empresa = hallazgo.empresa || hallazgo.frenteTrabajo;
   const planta = hallazgo.planta || hallazgo.centroCosto;
 
-  // Buscar todos los líderes SST y administradores
-  let sstQuery = adminDb.collection('users')
-    .where('role', 'in', ['lider_sst', 'admin']);
+  // Solo líderes SST reciben notificaciones individuales.
+  // Los admins reciben un resumen diario a las 5 PM hora Pacífico vía cron.
+  const sstSnap = await adminDb.collection('users')
+    .where('role', '==', 'lider_sst')
+    .get();
 
-  const sstSnap = await sstQuery.get();
-
-  // Filtrar por empresa y/o planta, y estado (hacemos el filtro en memoria porque
-  // Firestore tiene restricciones con queries compuestas 'in' y '!=')
+  // Filtrar por empresa y/o planta (en memoria por limitaciones de Firestore con 'in' compuesto)
   const recipients: Array<{ id: string; email: string; displayName?: string }> = [];
 
   sstSnap.forEach(doc => {
@@ -247,8 +246,7 @@ export async function notifyHallazgoCreated(hallazgo: Hallazgo): Promise<void> {
     const matchPlanta = !planta || !data.planta ||
       data.planta.toLowerCase() === planta.toLowerCase();
 
-    // Administradores globales reciben todo; líderes SST se filtran por instalación
-    if (data.role === 'admin' || (matchEmpresa && matchPlanta)) {
+    if (matchEmpresa && matchPlanta) {
       recipients.push({ id: doc.id, email: data.email, displayName: data.displayName });
     }
   });
