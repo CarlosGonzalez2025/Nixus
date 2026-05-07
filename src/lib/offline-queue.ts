@@ -90,13 +90,16 @@ export async function enqueueNotification(
 
 /**
  * Devuelve todas las entradas que aún no han sido procesadas.
+ * Nota: IDBKeyRange.only() no acepta boolean como clave válida, por lo que
+ * se usa getAll() y se filtra en JS.
  */
 export async function getPendingEntries(): Promise<OfflineQueueEntry[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).index('processed').getAll(IDBKeyRange.only(false));
-    req.onsuccess = () => resolve(req.result as OfflineQueueEntry[]);
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () =>
+      resolve((req.result as OfflineQueueEntry[]).filter(e => !e.processed));
     req.onerror = () => reject(req.error);
   });
 }
@@ -129,13 +132,11 @@ export async function clearProcessedEntries(): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    const req = store.index('processed').openCursor(IDBKeyRange.only(true));
-    req.onsuccess = (e) => {
-      const cursor = (e.target as IDBRequest).result as IDBCursorWithValue | null;
-      if (cursor) {
-        cursor.delete();
-        cursor.continue();
-      }
+    const req = store.getAll();
+    req.onsuccess = () => {
+      (req.result as OfflineQueueEntry[])
+        .filter(e => e.processed)
+        .forEach(e => store.delete(e.id));
     };
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -144,13 +145,15 @@ export async function clearProcessedEntries(): Promise<void> {
 
 /**
  * Devuelve el número de notificaciones pendientes (para mostrar en el banner).
+ * Nota: IDBKeyRange.only() no acepta boolean como clave válida.
  */
 export async function getPendingCount(): Promise<number> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).index('processed').count(IDBKeyRange.only(false));
-    req.onsuccess = () => resolve(req.result);
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () =>
+      resolve((req.result as OfflineQueueEntry[]).filter(e => !e.processed).length);
     req.onerror = () => reject(req.error);
   });
 }

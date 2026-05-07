@@ -481,6 +481,163 @@ export type Notification = {
   };
 };
 
+// ─── Módulo Verificación Contratistas ─────────────────────────────────────────
+
+export type VerificationResult = 'C' | 'NC' | 'OM' | 'NA';
+export type VerificationStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED' | 'CANCELLED';
+export type TemplateStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type ActionPlanStatus = 'OPEN' | 'IN_PROGRESS' | 'CLOSED' | 'OVERDUE' | 'CANCELLED';
+
+export interface RiskType {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  createdBy: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  groupId: string;
+  templateId: string;
+  requisitoBaseLegal: string;
+  aspectoVerificar: string;
+  preguntaClave: string;
+  metodoVerificacion: string;
+  requiresEvidence: boolean;
+  allowsAttachment: boolean;
+  isRequired: boolean;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Los ítems se almacenan como array dentro del documento del grupo
+// para evitar subcolecciones de 3 niveles de profundidad.
+export interface ChecklistGroup {
+  id: string;
+  templateId: string;
+  title: string;
+  description?: string;
+  orderIndex: number;
+  isActive: boolean;
+  items: ChecklistItem[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  riskTypeId: string;
+  riskTypeCode: string;
+  name: string;
+  description?: string;
+  version: number;
+  status: TemplateStatus;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface ContractorVerification {
+  id: string;
+  templateId: string;
+  templateName: string;
+  templateVersion: number;
+  riskTypeId: string;
+  riskTypeCode: string;
+  riskTypeName: string;
+  city: string;
+  companyName: string;
+  contractorName?: string;
+  // plantId almacena el mismo string que user.planta (ej: "Principal", "Yumbo")
+  plantId: string;
+  plantName: string;
+  verificationDate: Timestamp;
+  projectName?: string;
+  workLocation?: string;
+  activityDescription?: string;
+  createdBy: string;
+  createdByName: string;
+  createdByRole: string;
+  status: VerificationStatus;
+  totalItems: number;
+  compliantItems: number;
+  nonCompliantItems: number;
+  improvementItems: number;
+  notApplicableItems: number;
+  compliancePercentage: number;
+  hasFindings: boolean;
+  generalObservations?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  closedAt?: Timestamp;
+  closedBy?: string;
+}
+
+// Respuestas: subcolección /contractorVerifications/{id}/answers/{itemId}
+// El ID del documento = itemId del ítem original para lookup O(1).
+export interface ContractorVerificationAnswer {
+  id: string;
+  verificationId: string;
+  itemId: string;
+  groupId: string;
+  groupTitle: string;
+  requisitoBaseLegal: string;
+  aspectoVerificar: string;
+  preguntaClave: string;
+  metodoVerificacion: string;
+  evidenciaObjetiva: string;
+  result: VerificationResult | null;
+  observation?: string;
+  requiresActionPlan: boolean;
+  evidenceUrls?: string[];
+  answeredBy?: string;
+  answeredByName?: string;
+  answeredAt?: Timestamp;
+  orderIndex: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface VerificationEvidence {
+  id: string;
+  verificationId: string;
+  answerId?: string;
+  fileName: string;
+  fileUrl: string;
+  storagePath: string;
+  fileType: string;
+  fileSize: number;
+  uploadedBy: string;
+  uploadedByName: string;
+  uploadedAt: Timestamp;
+}
+
+export interface ActionPlan {
+  id: string;
+  verificationId: string;
+  answerId: string;
+  findingType: 'NC' | 'OM';
+  findingDescription: string;
+  correctiveAction: string;
+  responsibleName: string;
+  responsibleEmail?: string;
+  dueDate: Timestamp;
+  status: ActionPlanStatus;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Timestamp;
+  closedBy?: string;
+  closedAt?: Timestamp;
+  closingEvidenceUrl?: string;
+  closingObservation?: string;
+}
+
 // ─── Gestión de Hallazgos ──────────────────────────────────────────────────────
 
 export type HallazgoClase = 'A' | 'B' | 'C';

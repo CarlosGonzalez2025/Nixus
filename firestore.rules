@@ -158,6 +158,84 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // --- Módulo Verificación Contratistas ---
+
+    // Módulo visible para: admin, lider_sst, asesor_arl.
+    function canAccessContractorModule() {
+      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('asesor_arl'));
+    }
+
+    // Valida acceso de lectura a una verificación según el rol:
+    // - Admin: ve todo.
+    // - Asesor ARL: solo las que él creó.
+    // - Líder SST: solo las de su planta (plantId == user.planta).
+    function canReadVerification(verif) {
+      return isAdmin()
+        || (hasRole('asesor_arl') && verif.createdBy == request.auth.uid)
+        || (hasRole('lider_sst') && verif.plantId == getPlanta());
+    }
+
+    // Tipos de riesgo: solo lectura para el módulo, escritura solo admin.
+    match /riskTypes/{riskTypeId} {
+      allow read: if canAccessContractorModule();
+      allow write: if isAdmin();
+    }
+
+    // Plantillas de verificación y sus grupos (ítems inline en el grupo).
+    match /checklistTemplates/{templateId} {
+      allow read: if canAccessContractorModule();
+      allow write: if isAdmin();
+
+      match /groups/{groupId} {
+        allow read: if canAccessContractorModule();
+        allow write: if isAdmin();
+      }
+    }
+
+    // Verificaciones de contratistas.
+    match /contractorVerifications/{verificationId} {
+      // Lectura individual: validación por documento.
+      allow get: if canAccessContractorModule() && canReadVerification(resource.data);
+
+      // Listado: el filtro where() del cliente restringe los registros visibles.
+      // La protección real es la regla `allow get` aplicada por documento.
+      allow list: if canAccessContractorModule();
+
+      // Crear: solo si el campo createdBy coincide con el usuario autenticado.
+      allow create: if canAccessContractorModule()
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      // Actualizar: mismo criterio de acceso que lectura.
+      allow update: if canAccessContractorModule() && canReadVerification(resource.data);
+
+      // Eliminar: solo admin.
+      allow delete: if isAdmin();
+
+      // Subcolección: respuestas (answers).
+      match /answers/{answerId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+
+      // Subcolección: evidencias (evidences).
+      match /evidences/{evidenceId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+
+      // Subcolección: planes de acción (actionPlans).
+      match /actionPlans/{actionPlanId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+    }
+
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
 

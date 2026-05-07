@@ -47,6 +47,21 @@ service firebase.storage {
       allow delete: if isSignedIn();
     }
 
+    // ── Evidencias de Verificación Contratistas ────────────────────────────────
+    //
+    // Rutas gestionadas por el módulo Verificación Contratistas:
+    //   contractor-verifications/{verificationId}/{answerId}/{fileId}  → evidencia por ítem
+    //   contractor-verifications/{verificationId}/general/{fileId}     → evidencia general
+    //
+    // El control de acceso real se aplica en Firestore (quién puede leer/escribir
+    // cada verificación). Storage solo garantiza usuario autenticado + archivo válido.
+
+    match /contractor-verifications/{verificationId}/{allPaths=**} {
+      allow read:   if isSignedIn();
+      allow write:  if isSignedIn() && isValidFile();
+      allow delete: if isSignedIn();
+    }
+
     // ── Bloqueo global ─────────────────────────────────────────────────────────
     // Cualquier ruta no declarada explícitamente queda denegada.
     match /{allPaths=**} {

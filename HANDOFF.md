@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-04-28
+> **Última actualización de este documento:** 2026-05-07
 
 ---
 
@@ -56,11 +56,81 @@ Next.js 15 (App Router)
 | `autorizante` | Aprueba / rechaza permisos de su empresa y planta |
 | `lider_sst` | Firma SST, suspende/reactiva permisos |
 | `mantenimiento` | Firma permisos de control de energía |
-| `asesor_arl` | Acceso exclusivo a hallazgos propios |
+| `asesor_arl` | Acceso a hallazgos propios y verificaciones de contratistas propias |
 
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-07 — Módulo Verificación de Contratistas (nuevo)
+
+**Commits:** serie de commits desde `a4fa5f6` — *feat: módulo verificación contratistas completo*
+
+#### Nuevo módulo: Verificación de Contratistas
+
+Módulo completo para evaluar el cumplimiento de requisitos de seguridad de empresas contratistas según el tipo de actividad de riesgo (Trabajo en Alturas, Espacios Confinados, Energías Peligrosas LOTO, etc.).
+
+##### Flujo del proceso
+1. Admin crea tipos de riesgo y plantillas de checklist desde "Plantillas Contratistas"
+2. Asesor ARL / Líder SST / Admin crea una nueva verificación (wizard 3 pasos)
+3. Se diligencia el checklist ítem por ítem con calificaciones C / NC / OM / NA
+4. Las No Conformidades requieren un plan de acción asociado
+5. Al cerrar la verificación se calcula automáticamente el porcentaje de cumplimiento
+6. Se puede exportar a PDF completo
+
+##### Colecciones Firestore nuevas
+
+| Colección | Descripción |
+|---|---|
+| `riskTypes` | Tipos de riesgo configurables (ej: Alturas, Espacios Confinados) |
+| `checklistTemplates` | Plantillas con estado DRAFT / ACTIVE / INACTIVE / ARCHIVED |
+| `checklistTemplates/{id}/groups` | Grupos de ítems dentro de cada plantilla |
+| `contractorVerifications` | Registros de verificación por empresa/contratista |
+| `contractorVerifications/{id}/answers` | Respuestas del checklist (C/NC/OM/NA por ítem) |
+| `contractorVerifications/{id}/actionPlans` | Planes de acción para NC/OM |
+
+##### Archivos creados
+
+| Archivo | Descripción |
+|---|---|
+| `src/types/index.ts` | +13 tipos: RiskType, ChecklistTemplate, ChecklistGroup, ChecklistItem, ContractorVerification, ContractorVerificationAnswer, VerificationEvidence, ActionPlan, etc. |
+| `src/lib/risk-type-service.ts` | CRUD tipos de riesgo |
+| `src/lib/checklist-template-service.ts` | CRUD plantillas, grupos e ítems (ítems como array inline) |
+| `src/lib/contractor-verification-service.ts` | createVerification + batch answers, updateAnswer, recalculateCompliance, closeVerification, canCloseVerification |
+| `src/lib/action-plan-service.ts` | CRUD planes de acción |
+| `src/lib/pdf-verificacion.ts` | Generador PDF jsPDF con secciones: info general, resumen cumplimiento, checklist por grupos, planes de acción, observaciones |
+| `src/hooks/use-risk-types.ts` | onSnapshot con activeRiskTypes |
+| `src/hooks/use-checklist-templates.ts` | useTemplatesByRiskType, useAllTemplates, useTemplateGroups |
+| `src/hooks/use-contractor-verifications.ts` | useContractorVerifications (filtro por rol), useVerificationDetail, useAllActionPlans |
+| `src/hooks/use-verification-permissions.ts` | canAccessModule, canCreate, canEdit, canClose, canManageTemplates |
+| `src/app/(app)/contractor-verifications/page.tsx` | Listado con tabs, búsqueda, filtro riesgo, sort, paginación, modal de ayuda |
+| `src/app/(app)/contractor-verifications/create/page.tsx` | Wizard 3 pasos: riesgo → plantilla → datos generales |
+| `src/app/(app)/contractor-verifications/[id]/checklist/page.tsx` | Formulario dinámico de checklist con planes de acción editables |
+| `src/app/(app)/contractor-verifications/[id]/page.tsx` | Detalle: info general, cumplimiento, acordeón de respuestas, planes de acción, descarga PDF |
+| `src/app/(app)/contractor-verifications/templates/page.tsx` | Admin: gestión de plantillas y tipos de riesgo |
+| `src/app/(app)/contractor-verifications/templates/[templateId]/page.tsx` | Editor de plantilla: grupos e ítems |
+| `src/app/(app)/contractor-verifications/action-plans/page.tsx` | Vista global de planes de acción con tabs por estado |
+| `scripts/seed-checklist-templates.ts` | Seed de plantillas iniciales (Alturas, Espacios Confinados, LOTO) |
+
+##### Archivos modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/layout.tsx` | +`ClipboardCheck` icon, +ítem sidebar "Verif. Contratistas" y "Plantillas Contratistas" (admin) |
+| `firestore.rules` | +reglas para riskTypes, checklistTemplates, contractorVerifications y subcollecciones |
+| `storage.rules` | +regla para `/contractor-verifications/{id}/` |
+| `src/lib/offline-queue.ts` | **Bug fix:** `IDBKeyRange.only(false/true)` → boolean no es clave IDB válida → reemplazado por `getAll()` + filtro JS |
+
+##### Decisiones de diseño importantes
+
+- **Ítems como array inline en el grupo**: evita subcollección de 3 niveles, más eficiente para lectura
+- **`plantId` = string de `user.planta`**: no hay colección de plantas con IDs separados; el filtro por planta usa el mismo string
+- **`requiresActionPlan`**: flag que se pone `true` al marcar NC y `false` al crear el plan (para desbloquear cierre)
+- **`canCloseVerification`** recibe el array de `actionPlans` para validar cruzado — evita dependencia exclusiva del flag `requiresActionPlan` (compatibilidad retroactiva)
+- **`crypto.randomUUID()`** en lugar del paquete `uuid` (no instalado)
+- **`satisfies` en batch.set** removido — `serverTimestamp()` retorna `FieldValue` pero el tipo de lectura es `Timestamp`; se mantiene consistencia con el resto del codebase
 
 ---
 

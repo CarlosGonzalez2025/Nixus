@@ -32,6 +32,8 @@ import {
   BookOpen,
   List,
   ShieldAlert,
+  ClipboardCheck,
+  LayoutTemplate,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -224,6 +226,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span className="font-medium">Hallazgos</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+
+                {/* Módulo Verificación Contratistas: admin, lider_sst, asesor_arl */}
+                {(user.role === 'admin' || user.role === 'lider_sst' || user.role === 'asesor_arl') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation('/contractor-verifications')}
+                      isActive={pathname.startsWith('/contractor-verifications')}
+                      tooltip="Verificación Contratistas"
+                      className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <ClipboardCheck className="h-5 w-5 md:h-4 md:w-4" />
+                      <span className="font-medium">Verif. Contratistas</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarGroup>
 
               <SidebarSeparator className="my-2" />
@@ -275,6 +292,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       >
                         <List className="h-5 w-5 md:h-4 md:w-4" />
                         <span className="font-medium">Gestión de Listas</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => handleNavigation('/contractor-verifications/templates')}
+                        isActive={pathname.startsWith('/contractor-verifications/templates')}
+                        tooltip="Plantillas Contratistas"
+                        className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <LayoutTemplate className="h-5 w-5 md:h-4 md:w-4" />
+                        <span className="font-medium">Plantillas Contratistas</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarGroup>
