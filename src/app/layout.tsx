@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'; // 🔥 Agregar Viewport
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { SwDevCleanup } from '@/components/sw-dev-cleanup';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={cn('min-h-screen font-sans antialiased', inter.className)}>
+        <SwDevCleanup />
         <Providers>{children}</Providers>
       </body>
     </html>

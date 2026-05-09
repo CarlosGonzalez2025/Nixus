@@ -175,20 +175,31 @@ service cloud.firestore {
         || (hasRole('lider_sst') && verif.plantId == getPlanta());
     }
 
-    // Tipos de riesgo: solo lectura para el módulo, escritura solo admin.
+    // Tipos de riesgo: solo lectura para el módulo, escritura para admin y asesor_arl.
     match /riskTypes/{riskTypeId} {
       allow read: if canAccessContractorModule();
-      allow write: if isAdmin();
+      allow write: if isAdmin() || hasRole('asesor_arl');
     }
 
     // Plantillas de verificación y sus grupos (ítems inline en el grupo).
+    // - Admin: acceso completo de lectura y escritura.
+    // - Asesor ARL: puede crear plantillas propias; solo edita/elimina las que él creó.
+    // - Lider SST y resto del módulo: solo lectura.
     match /checklistTemplates/{templateId} {
       allow read: if canAccessContractorModule();
-      allow write: if isAdmin();
+      allow create: if isAdmin()
+                    || (hasRole('asesor_arl') && request.resource.data.createdBy == request.auth.uid);
+      allow update: if isAdmin()
+                    || (hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin()
+                    || (hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid);
 
       match /groups/{groupId} {
         allow read: if canAccessContractorModule();
-        allow write: if isAdmin();
+        // Escritura en grupos solo si el usuario puede editar la plantilla padre.
+        allow write: if isAdmin()
+                     || (hasRole('asesor_arl') &&
+                         get(/databases/$(database)/documents/checklistTemplates/$(templateId)).data.createdBy == request.auth.uid);
       }
     }
 

@@ -232,12 +232,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/contractor-verifications')}
-                      isActive={pathname.startsWith('/contractor-verifications')}
+                      isActive={pathname.startsWith('/contractor-verifications') && !pathname.startsWith('/contractor-verifications/templates')}
                       tooltip="Verificación Contratistas"
                       className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <ClipboardCheck className="h-5 w-5 md:h-4 md:w-4" />
                       <span className="font-medium">Verif. Contratistas</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+
+                {/* Plantillas Contratistas: admin y asesor_arl */}
+                {(user.role === 'admin' || user.role === 'asesor_arl') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation('/contractor-verifications/templates')}
+                      isActive={pathname.startsWith('/contractor-verifications/templates')}
+                      tooltip="Plantillas Contratistas"
+                      className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <LayoutTemplate className="h-5 w-5 md:h-4 md:w-4" />
+                      <span className="font-medium">Plantillas Contratistas</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
@@ -295,17 +310,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
 
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => handleNavigation('/contractor-verifications/templates')}
-                        isActive={pathname.startsWith('/contractor-verifications/templates')}
-                        tooltip="Plantillas Contratistas"
-                        className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      >
-                        <LayoutTemplate className="h-5 w-5 md:h-4 md:w-4" />
-                        <span className="font-medium">Plantillas Contratistas</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
                   </SidebarGroup>
                 </>
               )}

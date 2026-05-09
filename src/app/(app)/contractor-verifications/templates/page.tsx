@@ -55,7 +55,7 @@ export default function TemplatesAdminPage() {
   const { toast } = useToast();
   const { riskTypes, loading: loadingRisks } = useRiskTypes();
   const { templates, loading: loadingTemplates } = useAllTemplates();
-  const { canManageTemplates } = useVerificationPermissions(user);
+  const { canManageTemplates, canEditTemplate, isAdmin } = useVerificationPermissions(user);
 
   // Modales de tipos de riesgo
   const [riskModal, setRiskModal] = useState(false);
@@ -70,7 +70,7 @@ export default function TemplatesAdminPage() {
   if (!canManageTemplates) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
-        <p className="text-muted-foreground">Solo los administradores pueden gestionar plantillas.</p>
+        <p className="text-muted-foreground">No tienes permisos para gestionar plantillas.</p>
       </div>
     );
   }
@@ -186,6 +186,13 @@ export default function TemplatesAdminPage() {
                 Nueva plantilla
               </Button>
             </CardHeader>
+            {!isAdmin && (
+              <div className="px-6 pb-2">
+                <p className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                  Puedes crear tus propias plantillas y editar solo las que hayas creado tú. Las plantillas de otros usuarios son de solo lectura.
+                </p>
+              </div>
+            )}
             <CardContent className="p-0">
               {loadingTemplates ? (
                 <div className="flex justify-center py-10">
@@ -234,18 +241,22 @@ export default function TemplatesAdminPage() {
                                   onClick={() => router.push(`/contractor-verifications/templates/${t.id}`)}>
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
-                                <Button variant="outline" size="sm"
-                                  title={t.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
-                                  onClick={() => handleToggleTemplateStatus(t.id, t.status)}>
-                                  {t.status === 'ACTIVE'
-                                    ? <ToggleRight className="h-4 w-4 text-green-600" />
-                                    : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
-                                </Button>
-                                <Button variant="outline" size="sm"
-                                  className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700"
-                                  onClick={() => handleDeleteTemplate(t.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {canEditTemplate(t) && (
+                                  <>
+                                    <Button variant="outline" size="sm"
+                                      title={t.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
+                                      onClick={() => handleToggleTemplateStatus(t.id, t.status)}>
+                                      {t.status === 'ACTIVE'
+                                        ? <ToggleRight className="h-4 w-4 text-green-600" />
+                                        : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
+                                    </Button>
+                                    <Button variant="outline" size="sm"
+                                      className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                      onClick={() => handleDeleteTemplate(t.id)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

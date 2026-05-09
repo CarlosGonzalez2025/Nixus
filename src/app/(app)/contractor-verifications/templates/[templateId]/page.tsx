@@ -114,7 +114,7 @@ export default function TemplateEditorPage() {
   const router = useRouter();
   const { user } = useUser();
   const { toast } = useToast();
-  const { canManageTemplates } = useVerificationPermissions(user);
+  const { canManageTemplates, canEditTemplate } = useVerificationPermissions(user);
 
   const [template, setTemplate] = useState<ChecklistTemplate | null>(null);
   const [loadingTpl, setLoadingTpl] = useState(true);
@@ -143,10 +143,14 @@ export default function TemplateEditorPage() {
   if (!canManageTemplates) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
-        <p className="text-muted-foreground">Solo los administradores pueden editar plantillas.</p>
+        <p className="text-muted-foreground">No tienes permisos para acceder al editor de plantillas.</p>
       </div>
     );
   }
+
+  // Determinar si el usuario puede editar esta plantilla en particular.
+  // Se calcula después de cargar la plantilla; mientras carga, bloqueamos acciones.
+  const canEdit = template ? canEditTemplate(template) : false;
 
   const handleCreateGroup = async () => {
     if (!groupForm.title) return;
@@ -255,15 +259,26 @@ export default function TemplateEditorPage() {
           <Badge className={cn('text-xs', template.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700')}>
             {STATUS_LABELS[template.status]}
           </Badge>
-          <Button variant="outline" size="sm" onClick={handleToggleTemplateStatus}>
-            {template.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
-          </Button>
-          <Button size="sm" onClick={() => setGroupModal(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo grupo
-          </Button>
+          {canEdit && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleToggleTemplateStatus}>
+                {template.status === 'ACTIVE' ? 'Desactivar' : 'Activar'}
+              </Button>
+              <Button size="sm" onClick={() => setGroupModal(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nuevo grupo
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Aviso de solo lectura para plantillas de otros */}
+      {!canEdit && (
+        <div className="text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          Esta plantilla fue creada por otro usuario. Puedes consultarla y usarla en tus verificaciones, pero no puedes editarla.
+        </div>
+      )}
 
       {/* Grupos e ítems */}
       {loadingGroups ? (
@@ -292,25 +307,33 @@ export default function TemplateEditorPage() {
                     <p className="font-semibold text-sm">{group.title}</p>
                     <p className="text-xs text-muted-foreground">{group.items.filter(i => i.isActive).length} ítems</p>
                   </div>
-                  <div className="flex items-center gap-2 mr-2" onClick={e => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-7 w-7"
-                      onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
-                      <PlusCircle className="h-4 w-4 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"
-                      onClick={() => handleDeleteGroup(group.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex items-center gap-2 mr-2" onClick={e => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
+                        <PlusCircle className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"
+                        onClick={() => handleDeleteGroup(group.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 {group.items.length === 0 ? (
                   <div className="text-center text-sm text-muted-foreground py-4">
-                    Sin ítems. <button type="button" className="text-primary underline"
-                      onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
-                      Agrega el primero
-                    </button>
+                    {canEdit ? (
+                      <>
+                        Sin ítems. <button type="button" className="text-primary underline"
+                          onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
+                          Agrega el primero
+                        </button>
+                      </>
+                    ) : (
+                      'Este grupo no tiene ítems.'
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -333,22 +356,26 @@ export default function TemplateEditorPage() {
                             {item.requiresEvidence && <Badge className="text-xs bg-amber-50 text-amber-700">Requiere evidencia</Badge>}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items, editItem: item })}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"
-                            onClick={() => handleDeleteItem(group, item.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        {canEdit && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items, editItem: item })}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"
+                              onClick={() => handleDeleteItem(group, item.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" className="w-full mt-2"
-                      onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Agregar ítem
-                    </Button>
+                    {canEdit && (
+                      <Button variant="outline" size="sm" className="w-full mt-2"
+                        onClick={() => setItemModal({ open: true, groupId: group.id, groupItems: group.items })}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Agregar ítem
+                      </Button>
+                    )}
                   </div>
                 )}
               </AccordionContent>
@@ -357,8 +384,8 @@ export default function TemplateEditorPage() {
         </Accordion>
       )}
 
-      {/* Modal: crear grupo */}
-      <Dialog open={groupModal} onOpenChange={setGroupModal}>
+      {/* Modal: crear grupo — solo si se puede editar */}
+      <Dialog open={canEdit && groupModal} onOpenChange={canEdit ? setGroupModal : undefined}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nuevo grupo de verificación</DialogTitle>
@@ -385,8 +412,8 @@ export default function TemplateEditorPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal: crear / editar ítem */}
-      {itemModal && (
+      {/* Modal: crear / editar ítem — solo si se puede editar */}
+      {canEdit && itemModal && (
         <Dialog open={itemModal.open} onOpenChange={() => setItemModal(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>

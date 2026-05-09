@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-07
+> **Última actualización de este documento:** 2026-05-09
 
 ---
 
@@ -56,11 +56,50 @@ Next.js 15 (App Router)
 | `autorizante` | Aprueba / rechaza permisos de su empresa y planta |
 | `lider_sst` | Firma SST, suspende/reactiva permisos |
 | `mantenimiento` | Firma permisos de control de energía |
-| `asesor_arl` | Acceso a hallazgos propios y verificaciones de contratistas propias |
+| `asesor_arl` | Acceso a hallazgos propios; verificaciones de contratistas propias; gestión completa de plantillas (crea todas, edita/elimina solo las propias) y tipos de riesgo |
 
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-09 — Permisos Asesor ARL en Plantillas y fix SW dev
+
+#### Permisos completos de Asesor ARL en el módulo de Plantillas
+
+Se amplió el rol `asesor_arl` para que pueda gestionar plantillas de verificación de principio a fin, con la restricción de que solo puede editar o eliminar las plantillas que él mismo creó.
+
+**Regla general:**
+| Acción | Admin | Asesor ARL | Líder SST |
+|---|---|---|---|
+| Ver todas las plantillas | ✅ | ✅ (lectura) | ✅ (lectura) |
+| Crear plantilla | ✅ | ✅ | ❌ |
+| Editar / eliminar plantilla propia | ✅ | ✅ | ❌ |
+| Editar / eliminar plantilla ajena | ✅ | ❌ | ❌ |
+| Crear / activar tipos de riesgo | ✅ | ✅ | ❌ |
+| Ver ítem "Plantillas Contratistas" en menú | ✅ | ✅ | ❌ |
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/hooks/use-verification-permissions.ts` | `canManageTemplates` = `isAdmin \|\| isAsesorARL`; nueva función `canEditTemplate(template)` que devuelve `true` para admin siempre y para asesor_arl solo si `template.createdBy === user.uid` |
+| `firestore.rules` | `riskTypes` write: `isAdmin() \|\| hasRole('asesor_arl')`; `checklistTemplates` create: asesor_arl si `createdBy == uid`; update/delete: asesor_arl si `resource.data.createdBy == uid`; `groups` write: asesor_arl si plantilla padre tiene `createdBy == uid` (con `get()`) |
+| `src/app/(app)/contractor-verifications/templates/page.tsx` | Acceso habilitado a `canManageTemplates` (ya no solo admin); aviso informativo para no-admins; botones toggle/eliminar de plantillas condicionados a `canEditTemplate(t)`; botones de tipos de riesgo visibles para todos los que pasan el guard |
+| `src/app/(app)/contractor-verifications/templates/[templateId]/page.tsx` | Cálculo de `canEdit = canEditTemplate(template)` tras cargar; banner de solo lectura si no es propietario; botones "Activar/Desactivar", "Nuevo grupo", editar ítem, eliminar ítem y eliminar grupo ocultos cuando `!canEdit`; modales de edición bloqueados cuando `!canEdit` |
+| `src/app/(app)/layout.tsx` | Ítem "Plantillas Contratistas" movido fuera del bloque admin-only; ahora visible para `admin` y `asesor_arl`; eliminado del grupo "Administración"; `isActive` de "Verif. Contratistas" refinado para no activarse en la ruta de plantillas |
+
+#### Fix: RuntimeError InvalidStateError en Service Worker con Turbopack
+
+**Causa:** El navegador tenía registrado un SW de una build de producción anterior (`public/sw.js` con hashes de chunks fijos). Al arrancar en modo dev con Turbopack (puerto 9003), el browser intentaba actualizar ese SW pero Turbopack sirve los módulos de manera diferente e incompatible con el SW cacheado, generando `The object is in an invalid state`.
+
+**Solución:** Se creó el componente `SwDevCleanup` que se monta en el root layout y llama a `navigator.serviceWorker.getRegistrations()` + `unregister()` únicamente cuando `NODE_ENV === 'development'`. En producción el `useEffect` sale inmediatamente sin efecto.
+
+| Archivo | Cambio |
+|---|---|
+| `src/components/sw-dev-cleanup.tsx` | Componente nuevo — desregistra todos los SW activos en modo desarrollo |
+| `src/app/layout.tsx` | Importa y monta `<SwDevCleanup />` antes de `<Providers>` |
 
 ---
 

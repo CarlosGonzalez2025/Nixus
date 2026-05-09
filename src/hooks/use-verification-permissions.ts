@@ -1,6 +1,6 @@
 'use client';
 
-import type { User, ContractorVerification } from '@/types';
+import type { User, ContractorVerification, ChecklistTemplate } from '@/types';
 
 const ALLOWED_ROLES = ['admin', 'lider_sst', 'asesor_arl'] as const;
 
@@ -27,7 +27,19 @@ export function useVerificationPermissions(user: User | null) {
     return canViewVerification(verification) && verification.status !== 'CLOSED';
   }
 
-  const canManageTemplates = isAdmin;
+  // Admin y asesor_arl pueden acceder al módulo de plantillas.
+  // La edición de una plantilla específica se valida con canEditTemplate().
+  const canManageTemplates = isAdmin || isAsesorARL;
+
+  // Admin puede editar cualquier plantilla.
+  // Asesor ARL solo puede editar las que él creó.
+  function canEditTemplate(template: ChecklistTemplate): boolean {
+    if (!user) return false;
+    if (isAdmin) return true;
+    if (isAsesorARL) return template.createdBy === user.uid;
+    return false;
+  }
+
   const canCreateVerification = canAccessModule;
 
   return {
@@ -39,6 +51,7 @@ export function useVerificationPermissions(user: User | null) {
     canEditVerification,
     canCloseVerification,
     canManageTemplates,
+    canEditTemplate,
     canCreateVerification,
   };
 }
