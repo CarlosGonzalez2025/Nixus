@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-12
+> **Última actualización de este documento:** 2026-05-13
 
 ---
 
@@ -61,6 +61,69 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-13 — Dashboard: filtro de fecha, gráficos mejorados, ajustes permisos y selector de peligros corregido
+
+#### Dashboard — Filtro de período
+
+Se añadió un selector de período que filtra simultáneamente permisos y hallazgos en todas las secciones del dashboard.
+
+**Cambios en `src/app/(app)/dashboard/page.tsx`:**
+
+| Elemento | Detalle |
+|---|---|
+| `DATE_PRESETS` | Constante externa con 6 opciones: Todo el tiempo / Últimos 7 días / 30 días / 3 meses / 6 meses / Este año |
+| `getDateFilterStart(filter)` | Helper puro que devuelve la fecha de inicio según el preset seleccionado |
+| Estado `dateFilter` | Nuevo `useState('all')` junto a empresa/planta/ciudad |
+| `filteredPermits` useMemo | Acepta `dateFilter` como dependencia; excluye permisos cuyo `createdAt < dateStart` |
+| `filteredHallazgos` useMemo | Mismo criterio para hallazgos |
+| `activeFilterCount` | Ahora incluye `dateFilter` |
+| `showFilterBar` | Simplificado: visible siempre que haya datos (permisos o hallazgos) |
+| UI filtros | Selector "Período" con ícono `CalendarDays` añadido después de ciudad |
+| Botón Limpiar | Resetea también `setDateFilter('all')` |
+| Chips activos | Nuevo chip índigo con el nombre del preset activo y × para limpiar |
+
+---
+
+#### Dashboard — Gráficos geográficos mejorados
+
+**Cambios en `src/app/(app)/dashboard/page.tsx`:**
+
+- **Tarjeta "Aprobados"** eliminada de `statsCards` (estado ya no existe en el flujo actual); campo `aprobado` eliminado del `stats` useMemo
+- **Gráfico "Analítica por Planta"** eliminado; la grilla geográfica pasó de 3 a 2 columnas (`md:grid-cols-2`)
+- **Ambos gráficos** (Empresa y Ciudad) refactorizados con patrón IIFE para cálculos inline:
+  - **Ancho dinámico del eje Y**: `Math.min(max, Math.max(min, maxNombreLen * 7))` — sin truncación, nombres completos
+  - **Altura dinámica interior**: `Math.max(280, items * 46 + 56)` — cada barra tiene espacio garantizado
+  - **Contenedor scrollable** `max-h-[420px] overflow-y-auto` — la tarjeta no crece sin límite; scroll interno cuando hay muchas empresas/ciudades
+  - **`LabelList`** (nuevo import de recharts): valores en blanco dentro de cada segmento (ocultos si 0) + total gris al final de la barra
+  - **Footer fijo** fuera del área de scroll: leyenda Permisos/Hallazgos + contador de ítems
+  - **`slice` aumentado a 12** para empresa y ciudad
+- `workTypeLabels` eliminado (constante sin uso)
+- `LabelList` añadido al import de recharts; `CalendarDays` añadido al import de lucide-react
+
+---
+
+#### Hallazgos — Selector de peligros corregido
+
+El componente `PeligroSelector` fue simplificado: en lugar de 8 categorías con 29 ítems, ahora muestra exactamente las 5 opciones del flujo de permisos de trabajo.
+
+**Archivo modificado:** `src/app/(app)/hallazgos/components/hallazgo-form.tsx`
+
+- `PELIGROS` (categorizado) reemplazado por `PELIGRO_OPTIONS` (array plano):
+  - Alturas · Espacios Confinados · Energías Peligrosas · Izaje de Cargas · Excavaciones
+- Chip **"Otros"** (borde punteado) reemplaza el enlace "+ Agregar otro peligro"
+- En modo vista (`disabled`) con texto personalizado guardado: el chip "Otros" se muestra activo en verde
+
+---
+
+#### Permisos — Ajustes manuales en vista de detalle
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+- Corrección de indentación en bloque `supervisor_confinado`
+- Sección del Anexo Alturas renombrada de **"Estructura y Aspectos de Seguridad"** a **"Sistemas de Acceso"**
 
 ---
 
@@ -666,4 +729,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-13. Mantener actualizado con cada sesión de desarrollo.*
