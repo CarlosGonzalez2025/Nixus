@@ -1072,7 +1072,7 @@ export default function PermitDetailPage() {
       if (role === 'coordinador_alturas') {
         return 'Coordinador Alturas';
       }
-       if (role === 'supervisor_confinado') {
+      if (role === 'supervisor_confinado') {
         return 'Supervisor Esp. Confinado';
       }
       if (approval?.userRole) {
@@ -1548,7 +1548,7 @@ export default function PermitDetailPage() {
                   </div>
                 </Section>
 
-                <Section title="Estructura y Aspectos de Seguridad">
+                <Section title="Sistemas de Acceso">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                     {anexoAlturaEstructuras.map(e => (
                       <RadioCheck

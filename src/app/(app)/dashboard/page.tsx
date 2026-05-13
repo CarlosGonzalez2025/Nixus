@@ -27,7 +27,7 @@ import {
 import {
   FileText, CheckCircle, Clock, PlusCircle, Activity,
   TrendingUp, Download, Loader2, Sparkles, ChevronRight,
-  AlertTriangle, CheckSquare, MapPin, Building2, Factory, Filter, X,
+  AlertTriangle, CheckSquare, MapPin, Building2, Factory, Filter, X, CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
@@ -40,7 +40,7 @@ import type { Permit, Hallazgo } from '@/types';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, LabelList,
 } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -87,19 +87,25 @@ const parseFirestoreDate = (dateValue: any): Date | null => {
   return null;
 };
 
-const workTypeLabels: Record<string, string> = {
-  altura: 'Trabajo en Alturas',
-  alturas: 'Trabajo en Alturas',
-  confinado: 'Espacios Confinados',
-  espaciosConfinados: 'Espacios Confinados',
-  energia: 'Control de Energías',
-  izaje: 'Izaje de Cargas',
-  izajeCarga: 'Izaje de Cargas',
-  excavacion: 'Excavaciones',
-  excavaciones: 'Excavaciones',
-  general: 'Trabajo General',
-  caliente: 'Trabajo en Caliente',
-  trabajoCaliente: 'Trabajo en Caliente',
+const DATE_PRESETS = [
+  { value: 'all',  label: 'Todo el tiempo' },
+  { value: '7d',   label: 'Últimos 7 días' },
+  { value: '30d',  label: 'Últimos 30 días' },
+  { value: '3m',   label: 'Últimos 3 meses' },
+  { value: '6m',   label: 'Últimos 6 meses' },
+  { value: 'year', label: 'Este año' },
+];
+
+const getDateFilterStart = (filter: string): Date | null => {
+  const now = new Date();
+  switch (filter) {
+    case '7d':   return new Date(now.getTime() - 7 * 86400000);
+    case '30d':  return new Date(now.getTime() - 30 * 86400000);
+    case '3m':   return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    case '6m':   return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+    case 'year': return new Date(now.getFullYear(), 0, 1);
+    default:     return null;
+  }
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -117,6 +123,7 @@ export default function Dashboard() {
   const [empresaFilter, setEmpresaFilter] = useState('all');
   const [plantaFilter, setPlantaFilter] = useState('all');
   const [ciudadFilter, setCiudadFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
 
@@ -297,18 +304,26 @@ export default function Dashboard() {
     return Array.from(s).sort();
   }, [allPermits]);
 
-  const filteredPermits = useMemo(() => allPermits.filter(p => {
-    if (empresaFilter !== 'all' && p.generalInfo?.empresa !== empresaFilter) return false;
-    if (plantaFilter !== 'all' && p.generalInfo?.planta !== plantaFilter) return false;
-    if (ciudadFilter !== 'all' && p.generalInfo?.ciudad !== ciudadFilter) return false;
-    return true;
-  }), [allPermits, empresaFilter, plantaFilter, ciudadFilter]);
+  const filteredPermits = useMemo(() => {
+    const dateStart = getDateFilterStart(dateFilter);
+    return allPermits.filter(p => {
+      if (empresaFilter !== 'all' && p.generalInfo?.empresa !== empresaFilter) return false;
+      if (plantaFilter !== 'all' && p.generalInfo?.planta !== plantaFilter) return false;
+      if (ciudadFilter !== 'all' && p.generalInfo?.ciudad !== ciudadFilter) return false;
+      if (dateStart && p.createdAt && (p.createdAt as Date) < dateStart) return false;
+      return true;
+    });
+  }, [allPermits, empresaFilter, plantaFilter, ciudadFilter, dateFilter]);
 
-  const filteredHallazgos = useMemo(() => allHallazgos.filter(h => {
-    if (empresaFilter !== 'all' && h.empresa !== empresaFilter) return false;
-    if (plantaFilter !== 'all' && h.planta !== plantaFilter) return false;
-    return true;
-  }), [allHallazgos, empresaFilter, plantaFilter]);
+  const filteredHallazgos = useMemo(() => {
+    const dateStart = getDateFilterStart(dateFilter);
+    return allHallazgos.filter(h => {
+      if (empresaFilter !== 'all' && h.empresa !== empresaFilter) return false;
+      if (plantaFilter !== 'all' && h.planta !== plantaFilter) return false;
+      if (dateStart && h.createdAt && (h.createdAt as Date) < dateStart) return false;
+      return true;
+    });
+  }, [allHallazgos, empresaFilter, plantaFilter, dateFilter]);
 
   // Últimos 10 permisos para la tabla
   const permits = useMemo(() => filteredPermits.slice(0, 10), [filteredPermits]);
@@ -316,7 +331,6 @@ export default function Dashboard() {
   const stats = useMemo(() => ({
     total: filteredPermits.length,
     pendiente: filteredPermits.filter(p => p.status === 'pendiente_revision').length,
-    aprobado: filteredPermits.filter(p => p.status === 'aprobado').length,
     enEjecucion: filteredPermits.filter(p => p.status === 'en_ejecucion').length,
     cerrado: filteredPermits.filter(p => p.status === 'cerrado').length,
   }), [filteredPermits]);
@@ -378,22 +392,20 @@ export default function Dashboard() {
 
     return {
       byPlanta: Object.values(plantasMap).sort(byTotal).slice(0, 6),
-      byEmpresa: Object.values(empresasMap).sort(byTotal).slice(0, 6),
-      byCiudad: Object.values(ciudadesMap).filter(c => c.name !== 'No Especificado').sort(byTotal).slice(0, 6),
+      byEmpresa: Object.values(empresasMap).sort(byTotal).slice(0, 12),
+      byCiudad: Object.values(ciudadesMap).filter(c => c.name !== 'No Especificado').sort(byTotal).slice(0, 12),
     };
   }, [filteredPermits, filteredHallazgos]);
 
   const statsCards = [
     { title: 'Permisos Totales', value: stats.total, icon: FileText, gradient: 'from-blue-600 to-cyan-500', href: '/permits?status=activos', description: 'Todos los registros activos' },
     { title: 'Pendientes', value: stats.pendiente, icon: Clock, gradient: 'from-amber-500 to-orange-400', href: '/permits?status=pendiente_revision', description: 'Requieren aprobación' },
-    { title: 'Aprobados', value: stats.aprobado, icon: CheckCircle, gradient: 'from-emerald-500 to-green-400', href: '/permits?status=aprobado', description: 'Listos para iniciar' },
     { title: 'En Ejecución', value: stats.enEjecucion, icon: Activity, gradient: 'from-violet-600 to-purple-500', href: '/permits?status=en_ejecucion', description: 'Trabajos en curso' },
     { title: 'Cerrados', value: stats.cerrado, icon: CheckSquare, gradient: 'from-slate-600 to-gray-500', href: '/permits?status=cerrado', description: 'Completados / Cerrados' },
   ];
 
-  const activeFilterCount = [empresaFilter, plantaFilter, ciudadFilter].filter(f => f !== 'all').length;
-  const showFilterBar = user?.role !== 'asesor_arl' &&
-    (uniqueEmpresas.length > 1 || uniquePlantas.length > 1 || uniqueCiudades.length > 0);
+  const activeFilterCount = [empresaFilter, plantaFilter, ciudadFilter, dateFilter].filter(f => f !== 'all').length;
+  const showFilterBar = allPermits.length > 0 || allHallazgos.length > 0;
 
   // ── Early returns ────────────────────────────────────────────────────────
   if (userLoading) {
@@ -525,6 +537,21 @@ export default function Dashboard() {
                   </SelectContent>
                 </Select>
               )}
+
+              {/* Período */}
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="h-9 text-sm bg-gray-50 border-gray-200 w-auto min-w-[160px]">
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <SelectValue placeholder="Período" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {DATE_PRESETS.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Limpiar */}
@@ -532,7 +559,7 @@ export default function Dashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setEmpresaFilter('all'); setPlantaFilter('all'); setCiudadFilter('all'); }}
+                onClick={() => { setEmpresaFilter('all'); setPlantaFilter('all'); setCiudadFilter('all'); setDateFilter('all'); }}
                 className="text-gray-400 hover:text-gray-700 gap-1.5 shrink-0 h-9"
               >
                 <X className="h-3.5 w-3.5" /> Limpiar
@@ -559,6 +586,12 @@ export default function Dashboard() {
                 <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs font-medium px-2.5 py-1 rounded-full border border-purple-100">
                   <MapPin className="h-3 w-3" /> {ciudadFilter}
                   <button onClick={() => setCiudadFilter('all')} className="ml-1 hover:text-purple-900">×</button>
+                </span>
+              )}
+              {dateFilter !== 'all' && (
+                <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-1 rounded-full border border-indigo-100">
+                  <CalendarDays className="h-3 w-3" /> {DATE_PRESETS.find(p => p.value === dateFilter)?.label}
+                  <button onClick={() => setDateFilter('all')} className="ml-1 hover:text-indigo-900">×</button>
                 </span>
               )}
               <span className="text-xs text-gray-400 flex items-center">
@@ -725,89 +758,171 @@ export default function Dashboard() {
 
       {/* ── Gráficos Geográficos ─────────────────────────────────────────── */}
       {user?.role !== 'asesor_arl' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Por Planta */}
-          <Card className="border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-white border-b px-6 py-4">
-              <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
-                <Factory className="h-4 w-4 text-emerald-500" /> Analítica por Planta
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 h-[250px]">
-              {locationStats.byPlanta.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={locationStats.byPlanta} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                    <Bar dataKey="Permisos" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="Hallazgos" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-full text-gray-400"><p className="text-sm">Sin datos</p></div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
           {/* Por Empresa */}
-          <Card className="border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-white border-b px-6 py-4">
-              <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-blue-500" /> Operaciones por Empresa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 h-[250px]">
-              {locationStats.byEmpresa.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={locationStats.byEmpresa} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                    <Bar dataKey="Permisos" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="Hallazgos" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-full text-gray-400"><p className="text-sm">Sin datos</p></div>
-              )}
-            </CardContent>
-          </Card>
+          {(() => {
+            const data = locationStats.byEmpresa;
+            const yWidth = data.length > 0
+              ? Math.min(230, Math.max(130, Math.max(...data.map(d => d.name.length)) * 7))
+              : 130;
+            const chartH = Math.max(280, data.length * 46 + 56);
+            return (
+              <Card className="border-0 shadow-md flex flex-col overflow-hidden">
+                <CardHeader className="bg-white border-b px-6 py-4">
+                  <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-500" /> Operaciones por Empresa
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {data.length > 0 ? (
+                    <>
+                      <div className="overflow-y-auto max-h-[420px]">
+                        <div style={{ height: chartH }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data} layout="vertical" margin={{ top: 8, right: 44, left: 4, bottom: 4 }}>
+                              <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical />
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                              <YAxis
+                                dataKey="name"
+                                type="category"
+                                width={yWidth}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={({ x, y, payload }) => (
+                                  <text x={x} y={y} dy={4} textAnchor="end" fill="#374151" fontSize={11} fontFamily="inherit">
+                                    {payload.value}
+                                  </text>
+                                )}
+                              />
+                              <RechartsTooltip
+                                cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                labelFormatter={(label) => <span style={{ fontWeight: 600 }}>{label}</span>}
+                              />
+                              <Bar dataKey="Permisos" stackId="a" fill="#3b82f6">
+                                <LabelList dataKey="Permisos" position="inside" style={{ fill: '#fff', fontSize: 9, fontWeight: 700 }} formatter={(v: number) => v > 0 ? v : ''} />
+                              </Bar>
+                              <Bar dataKey="Hallazgos" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]}>
+                                <LabelList dataKey="Hallazgos" position="inside" style={{ fill: '#fff', fontSize: 9, fontWeight: 700 }} formatter={(v: number) => v > 0 ? v : ''} />
+                                <LabelList
+                                  content={({ x, y, width, height, index }: any) => {
+                                    const item = data[index as number];
+                                    if (!item) return null;
+                                    const total = item.Permisos + item.Hallazgos;
+                                    return (
+                                      <text x={(x as number) + (width as number) + 5} y={(y as number) + (height as number) / 2}
+                                        fill="#6B7280" fontSize={10} fontWeight={600} textAnchor="start" dominantBaseline="middle">
+                                        {total}
+                                      </text>
+                                    );
+                                  }}
+                                />
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />Permisos</span>
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />Hallazgos</span>
+                        </div>
+                        <span className="text-[11px] text-gray-400">{data.length} empresa{data.length !== 1 ? 's' : ''}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[200px] text-gray-400"><p className="text-sm">Sin datos</p></div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Por Ciudad */}
-          <Card className="border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-white border-b px-6 py-4">
-              <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-purple-500" /> Actividad por Ciudad
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 h-[250px]">
-              {locationStats.byCiudad.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={locationStats.byCiudad} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
-                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6B7280' }} />
-                    <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                    <Bar dataKey="Permisos" stackId="a" fill="#3b82f6" />
-                    <Bar dataKey="Hallazgos" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-full text-gray-400">
-                  <div className="text-center">
-                    <MapPin className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                    <p className="text-sm">Datos insuficientes</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {(() => {
+            const data = locationStats.byCiudad;
+            const yWidth = data.length > 0
+              ? Math.min(160, Math.max(90, Math.max(...data.map(d => d.name.length)) * 7))
+              : 90;
+            const chartH = Math.max(280, data.length * 46 + 56);
+            return (
+              <Card className="border-0 shadow-md flex flex-col overflow-hidden">
+                <CardHeader className="bg-white border-b px-6 py-4">
+                  <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-purple-500" /> Actividad por Ciudad
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {data.length > 0 ? (
+                    <>
+                      <div className="overflow-y-auto max-h-[420px]">
+                        <div style={{ height: chartH }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data} layout="vertical" margin={{ top: 8, right: 44, left: 4, bottom: 4 }}>
+                              <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical />
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9CA3AF' }} />
+                              <YAxis
+                                dataKey="name"
+                                type="category"
+                                width={yWidth}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={({ x, y, payload }) => (
+                                  <text x={x} y={y} dy={4} textAnchor="end" fill="#374151" fontSize={11} fontFamily="inherit">
+                                    {payload.value}
+                                  </text>
+                                )}
+                              />
+                              <RechartsTooltip
+                                cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                labelFormatter={(label) => <span style={{ fontWeight: 600 }}>{label}</span>}
+                              />
+                              <Bar dataKey="Permisos" stackId="a" fill="#3b82f6">
+                                <LabelList dataKey="Permisos" position="inside" style={{ fill: '#fff', fontSize: 9, fontWeight: 700 }} formatter={(v: number) => v > 0 ? v : ''} />
+                              </Bar>
+                              <Bar dataKey="Hallazgos" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]}>
+                                <LabelList dataKey="Hallazgos" position="inside" style={{ fill: '#fff', fontSize: 9, fontWeight: 700 }} formatter={(v: number) => v > 0 ? v : ''} />
+                                <LabelList
+                                  content={({ x, y, width, height, index }: any) => {
+                                    const item = data[index as number];
+                                    if (!item) return null;
+                                    const total = item.Permisos + item.Hallazgos;
+                                    return (
+                                      <text x={(x as number) + (width as number) + 5} y={(y as number) + (height as number) / 2}
+                                        fill="#6B7280" fontSize={10} fontWeight={600} textAnchor="start" dominantBaseline="middle">
+                                        {total}
+                                      </text>
+                                    );
+                                  }}
+                                />
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />Permisos</span>
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />Hallazgos</span>
+                        </div>
+                        <span className="text-[11px] text-gray-400">{data.length} ciudad{data.length !== 1 ? 'es' : ''}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-center items-center h-[200px] text-gray-400">
+                      <div className="text-center">
+                        <MapPin className="h-8 w-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-sm">Datos insuficientes</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
         </div>
       )}
 
