@@ -57,6 +57,7 @@ const hallazgoSchema = z.object({
         message: 'La geolocalización es requerida',
     }),
     peligroInspeccionado: z.string().min(1, 'El peligro inspeccionado es requerido'),
+    personalExpuesto: z.string().min(1, 'El personal expuesto es requerido'),
     hallazgo: z.string().min(1, 'La descripción del hallazgo es requerida'),
     evidenciasFotograficas: z.array(z.string()).optional().default([]),
     clase: z.enum(['A', 'B', 'C'], { required_error: 'Selecciona la clase del hallazgo' }),
@@ -361,6 +362,63 @@ function PeligroSelector({
     );
 }
 
+// ─── Personal Expuesto Selector ───────────────────────────────────────────────
+const PERSONAL_OPTIONS = ['Propio', 'Contratistas'] as const;
+
+function PersonalExpuestoSelector({
+    value,
+    onChange,
+    disabled,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+}) {
+    const parse = (raw: string): Set<string> => {
+        const parts = raw.split('\n').map(p => p.trim()).filter(Boolean);
+        return new Set(parts.filter(p => PERSONAL_OPTIONS.includes(p as any)));
+    };
+
+    const [selected, setSelected] = useState<Set<string>>(parse(value || ''));
+
+    const toggle = (label: string) => {
+        if (disabled) return;
+        setSelected(prev => {
+            const next = new Set(prev);
+            if (next.has(label)) next.delete(label);
+            else next.add(label);
+            onChange([...next].join('\n'));
+            return next;
+        });
+    };
+
+    return (
+        <div className="flex flex-wrap gap-2">
+            {PERSONAL_OPTIONS.map(label => {
+                const active = selected.has(label);
+                return (
+                    <button
+                        key={label}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => toggle(label)}
+                        className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                            active
+                                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-muted/40 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                            disabled && 'cursor-default opacity-70'
+                        )}
+                    >
+                        {active && <Check className="h-3 w-3 shrink-0" />}
+                        {label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps) {
     const { toast } = useToast();
@@ -419,6 +477,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
             fechaVisita: new Date(),
             geolocalizacion: undefined as any,
             peligroInspeccionado: '',
+            personalExpuesto: '',
             hallazgo: '',
             evidenciasFotograficas: [],
             clase: 'C',
@@ -495,6 +554,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 fechaVisita: fechaVal,
                 geolocalizacion: hallazgo.geolocalizacion as any,
                 peligroInspeccionado: hallazgo.peligroInspeccionado,
+                personalExpuesto: hallazgo.personalExpuesto || '',
                 hallazgo: hallazgo.hallazgo,
                 evidenciasFotograficas: hallazgo.evidenciasFotograficas || [],
                 clase: hallazgo.clase,
@@ -828,6 +888,21 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                         <FormLabel className={labelClass}><Req>Peligro Inspeccionado</Req></FormLabel>
                                         <FormControl>
                                             <PeligroSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                disabled={loading || isViewMode}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Personal Expuesto */}
+                                <FormField control={form.control} name="personalExpuesto" render={({ field }) => (
+                                    <FormItem className="sm:col-span-2">
+                                        <FormLabel className={labelClass}><Req>Personal Expuesto</Req></FormLabel>
+                                        <FormControl>
+                                            <PersonalExpuestoSelector
                                                 value={field.value}
                                                 onChange={field.onChange}
                                                 disabled={loading || isViewMode}

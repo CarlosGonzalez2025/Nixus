@@ -661,6 +661,7 @@ export interface Hallazgo {
   fechaVisita: Timestamp;
   geolocalizacion?: HallazgoGeolocalizacion;
   peligroInspeccionado: string;
+  personalExpuesto?: string;
   // Evidencia del hallazgo
   hallazgo: string;
   evidenciasFotograficas: string[];       // URLs de fotos "antes"
