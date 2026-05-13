@@ -64,6 +64,57 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-05-13 — Notificaciones, cierre de permisos, campo personalExpuesto y correcciones de seguridad
+
+#### Fix crítico: firmas de cierre de permiso no se guardaban en Firestore
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Causa raíz:** En `addSignatureAndNotify`, el bloque para `cierre_responsable` y `cierre_autoridad` construía `updateData` correctamente con la firma, pero **nunca llamaba `docRef.update(updateData)`**. El action retornaba `{ success: true }` de todas formas, mostrando el toast "Firma Registrada" sin escribir nada en Firestore. El `onSnapshot` del cliente nunca disparaba → el modal no actualizaba → el botón de la Autoridad quedaba bloqueado.
+
+**Cambio aplicado:** Se añadió `await docRef.update(updateData)` al final del bloque `cierre_` (antes del `else`). Afectaba **todos los permisos** sin excepción, no solo los de energías.
+
+---
+
+#### Fix: regla Firestore de notificaciones bloqueaba "marcar como leídas"
+
+**Archivos modificados:** `firestore.rules`, `src/firestore.rules`
+
+**Causa raíz:** La regla `allow update` de la colección `notifications` usaba `request.resource.data.keys().hasOnly(['isRead'])`, que evalúa **todos los campos del documento resultante** (no solo los modificados). Como el documento tiene `userId`, `message`, `type`, `createdAt`, etc., la condición nunca era verdadera — el `updateDoc` del cliente siempre era bloqueado silenciosamente. El optimistic update limpiaba la UI pero `onSnapshot` la restauraba al instante.
+
+**Cambio aplicado:**
+```js
+// Antes (incorrecto)
+request.resource.data.keys().hasOnly(['isRead'])
+
+// Después (correcto)
+request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead'])
+```
+
+> **Pendiente de deploy:** ejecutar `firebase deploy --only firestore:rules` para activar la corrección en producción.
+
+---
+
+#### Fix: líderes SST ahora reciben notificaciones de todos los permisos de su planta
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Cambio:** En `getInvolvedUsers()`, se eliminó la condición `if (permit.isSSTSignatureRequired || permit.trabajoAlturas || ...)` que limitaba las notificaciones a `lider_sst` solo cuando el permiso requería su firma. Ahora los líderes SST reciben alertas de **todos los permisos** de su empresa/planta para poder hacer seguimiento a todas las actividades, independientemente de si el permiso requiere firma SST.
+
+---
+
+#### Nuevo campo "Personal Expuesto" en formulario de hallazgos
+
+**Archivos modificados:** `src/app/(app)/hallazgos/components/hallazgo-form.tsx`, `src/types/index.ts`
+
+- Nuevo campo obligatorio `personalExpuesto` debajo de "Peligro Inspeccionado"
+- Componente `PersonalExpuestoSelector`: dos chips toggle — **Propio** y **Contratistas** — misma estética y patrón que `PeligroSelector` (verde activo, múltiple selección, disabled en modo vista)
+- Valor almacenado como etiquetas unidas por `\n` (consistente con `peligroInspeccionado`)
+- `src/types/index.ts`: campo `personalExpuesto?: string` añadido al tipo `Hallazgo` (opcional para compatibilidad con registros existentes)
+- `src/firestore.rules` sincronizado con la versión completa del root (incluye reglas de contratistas, `asesor_arl`, `hasRole` con `otherRoles`)
+
+---
+
 ### 2026-05-13 — Dashboard: filtro de fecha, gráficos mejorados, ajustes permisos y selector de peligros corregido
 
 #### Dashboard — Filtro de período
@@ -729,4 +780,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-13. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-13 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*
