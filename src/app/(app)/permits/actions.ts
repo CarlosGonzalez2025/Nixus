@@ -112,11 +112,10 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   const autorizantesSnap = await adminDb.collection('users').where('role', '==', 'autorizante').get();
   addUsersMatchingPlant(autorizantesSnap);
 
-  // Líderes SST (solo si el permiso los requiere)
-  if (permit.isSSTSignatureRequired || permit.trabajoAlturas || permit.espaciosConfinados || permit.controlEnergia || permit.izajeCargas || permit.excavaciones) {
-    const sstSnap = await adminDb.collection('users').where('role', '==', 'lider_sst').get();
-    addUsersMatchingPlant(sstSnap);
-  }
+  // Líderes SST: siempre notificar para que hagan seguimiento a todas las actividades
+  // de su planta/empresa, independiente de si el permiso requiere su firma.
+  const sstSnap = await adminDb.collection('users').where('role', '==', 'lider_sst').get();
+  addUsersMatchingPlant(sstSnap);
 
   // Mantenimiento / Aislador Competente (solo permisos con control de energía)
   if (permit.controlEnergia || permit.selectedWorkTypes?.energia) {

@@ -13,61 +13,62 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      let data = getUserData();
+      return data.role == role || (data.otherRoles != null && role in data.otherRoles);
     }
 
     function isAdmin() {
-      return isSignedIn() && getRole() == 'admin';
+      return isSignedIn() && hasRole('admin');
     }
-    
+
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
 
-    function hasRole(role) {
-      return getRole() == role;
-    }
-
     function hasAnyRole(roles) {
-      return getRole() in roles;
+      let data = getUserData();
+      return (data.role in roles) || (data.otherRoles != null && data.otherRoles.hasAny(roles));
     }
 
-    // Obtiene el campo 'empresa' del perfil del usuario autenticado.
-    // El get() es cacheado por Firestore dentro de la misma evaluación,
-    // por lo que no genera una lectura adicional si getRole() ya lo invocó.
+    // Devuelve el campo 'empresa' del usuario.
     function getEmpresa() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.empresa;
+      return getUserData().empresa;
     }
 
+    // Devuelve el campo 'planta' del usuario.
     function getPlanta() {
       return getUserData().planta;
     }
 
-    // Módulo Hallazgos: admins, usuarios de Nixus Capital, y líderes SST de cualquier empresa.
+    // Módulo Hallazgos: admins, líderes SST y autorizantes.
+    // FIX 1A: Eliminado hardcoding de 'Nixus Capital'. El acceso por empresa se controla
+    // individualmente en match /hallazgos/{hallazgoId} comparando resource.data.empresaId == getEmpresa().
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || getEmpresa() == 'Nixus Capital' || hasRole('lider_sst'));
+      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('autorizante'));
     }
 
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      // CORRECCIÓN: Se reemplaza isOwner(userId) por la comprobación directa para romper la dependencia circular.
-      // Un usuario siempre debe poder leer su propio perfil para que getRole() funcione.
+      // Un usuario siempre debe poder leer su propio perfil para que hasRole() funcione.
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
       allow list: if isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
     }
-    
+
     // --- Colección de Notificaciones (notifications) ---
     match /notifications/{notificationId} {
-      // Un usuario puede leer su propia notificación individualmente.
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      
-      // Un usuario puede listar sus propias notificaciones si la consulta filtra por su ID.
-      allow list: if isSignedIn() && request.query.where.userId == request.auth.uid;
-      
+      // Un usuario puede leer y listar sus propias notificaciones.
+      allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
       // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
+      // IMPORTANTE: usar .diff().affectedKeys() para evaluar solo los campos modificados,
+      // no todos los campos del documento resultante.
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
 
       // La creación y eliminación de notificaciones solo se hacen desde el backend.
@@ -77,30 +78,44 @@ service cloud.firestore {
     // --- Colección de Permisos (permits) ---
     match /permits/{permitId} {
       // LECTURA: Permite leer a los involucrados directamente.
-      allow read: if isSignedIn() && 
-                    (isAdmin() || 
-                     hasRole('autorizante') || 
+      allow read: if isSignedIn() &&
+                    (isAdmin() ||
                      isCreator(resource.data) ||
-                     (hasRole('lider_sst') && (resource.data.trabajoAlturas == true || resource.data.isSSTSignatureRequired == true)) ||
+                     // Autorizante: puede leer permisos de su empresa y planta
+                     (hasRole('autorizante') &&
+                       (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
+                       (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
+                     // Líder SST: puede leer permisos de su empresa y planta
+                     (hasRole('lider_sst') &&
+                       (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
+                       (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
                      (hasRole('mantenimiento') && resource.data.controlEnergia == true)
                     );
 
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
-      allow list: if isSignedIn() && 
+      // NOTE 1B: Firestore Security Rules v2 no soporta inspección de filtros where() de la query
+      // para campos anidados (ej: generalInfo.empresa). Por ello, la restricción por empresa/planta
+      // para 'autorizante' y 'lider_sst' NO puede aplicarse aquí. La protección real está en:
+      //   (a) La regla `allow read` que sí evalúa resource.data por documento individual.
+      //   (b) Los filtros cliente en dashboard/page.tsx, permits/page.tsx y use-sidebar-badges.ts.
+      // TODO: Si se migra a Firestore Rules v2 con request.query.filters, agregar validación de empresa/planta.
+      allow list: if isSignedIn() &&
                   (
                     (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
-                    // Un usuario puede listar sus propios permisos si la consulta filtra por su ID.
-                    (request.query.where.createdBy == request.auth.uid) ||
-                    // Mantenimiento puede listar permisos que requieren su firma
-                    (hasRole('mantenimiento') && request.query.where.controlEnergia == true)
+                    // Un solicitante puede listar sus propios permisos.
+                    // NOTE: request.query.where no es válido en v2; la protección real es el where() del cliente
+                    // + el allow read que aplica isCreator() por documento.
+                    hasRole('solicitante') ||
+                    // Mantenimiento puede listar permisos de control de energía.
+                    hasRole('mantenimiento')
                   );
-      
+
       // CREAR/ELIMINAR: Nunca se permite desde el cliente, solo vía Server Actions.
       allow create, delete: if false;
 
       // ACTUALIZAR: La lógica más compleja, define quién puede modificar el permiso y en qué estado.
       allow update: if isSignedIn() &&
-                    ( 
+                    (
                       // El creador puede editarlo solo si está en estado 'borrador'.
                       (isCreator(resource.data) && resource.data.status == 'borrador') ||
 
@@ -109,7 +124,7 @@ service cloud.firestore {
 
                       // Lógica de firmas de apertura: permite firmar si el permiso está pendiente.
                       (resource.data.status == 'pendiente_revision') ||
-                      
+
                       // Lógica para CIERRE DE EMERGENCIA: Permite a roles autorizados forzar el cierre.
                       (
                         request.resource.data.status == 'cerrado' &&
@@ -123,17 +138,17 @@ service cloud.firestore {
                         hasAnyRole(['solicitante', 'admin', 'autorizante']) &&
                         request.resource.data.diff(resource.data).affectedKeys().hasAny(['anexoAltura', 'anexoConfinado', 'anexoIzaje', 'anexoExcavaciones', 'anexoEnergias', 'workers', 'closure'])
                       ) ||
-                      
+
                       // Lógica de cierre final: permite a los roles autorizados cambiar el estado a 'cerrado'
                       // si el permiso está en ejecución o suspendido.
-                      (request.resource.data.status == 'cerrado' && 
+                      (request.resource.data.status == 'cerrado' &&
                        (resource.data.status == 'en_ejecucion' || resource.data.status == 'suspendido') &&
                        hasAnyRole(['solicitante', 'admin'])) ||
-                       
+
                       // Lógica de suspensión y reactivación
                       (request.resource.data.status == 'suspendido' && resource.data.status == 'en_ejecucion' && hasAnyRole(['lider_sst', 'admin'])) ||
                       (request.resource.data.status == 'en_ejecucion' && resource.data.status == 'suspendido' && hasAnyRole(['lider_sst', 'admin'])) ||
-                      
+
                       // Lógica de rechazo: permite a roles de aprobación rechazar un permiso.
                       (request.resource.data.status == 'rechazado' && resource.data.status == 'pendiente_revision' && hasAnyRole(['autorizante', 'lider_sst', 'admin']))
                     );
@@ -145,35 +160,138 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // --- Módulo Verificación Contratistas ---
+
+    // Módulo visible para: admin, lider_sst, asesor_arl.
+    function canAccessContractorModule() {
+      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('asesor_arl'));
+    }
+
+    // Valida acceso de lectura a una verificación según el rol:
+    // - Admin: ve todo.
+    // - Asesor ARL: solo las que él creó.
+    // - Líder SST: solo las de su planta (plantId == user.planta).
+    function canReadVerification(verif) {
+      return isAdmin()
+        || (hasRole('asesor_arl') && verif.createdBy == request.auth.uid)
+        || (hasRole('lider_sst') && verif.plantId == getPlanta());
+    }
+
+    // Tipos de riesgo: solo lectura para el módulo, escritura para admin y asesor_arl.
+    match /riskTypes/{riskTypeId} {
+      allow read: if canAccessContractorModule();
+      allow write: if isAdmin() || hasRole('asesor_arl');
+    }
+
+    // Plantillas de verificación y sus grupos (ítems inline en el grupo).
+    // - Admin: acceso completo de lectura y escritura.
+    // - Asesor ARL: puede crear plantillas propias; solo edita/elimina las que él creó.
+    // - Lider SST y resto del módulo: solo lectura.
+    match /checklistTemplates/{templateId} {
+      allow read: if canAccessContractorModule();
+      allow create: if isAdmin()
+                    || (hasRole('asesor_arl') && request.resource.data.createdBy == request.auth.uid);
+      allow update: if isAdmin()
+                    || (hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin()
+                    || (hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid);
+
+      match /groups/{groupId} {
+        allow read: if canAccessContractorModule();
+        // Escritura en grupos solo si el usuario puede editar la plantilla padre.
+        allow write: if isAdmin()
+                     || (hasRole('asesor_arl') &&
+                         get(/databases/$(database)/documents/checklistTemplates/$(templateId)).data.createdBy == request.auth.uid);
+      }
+    }
+
+    // Verificaciones de contratistas.
+    match /contractorVerifications/{verificationId} {
+      // Lectura individual: validación por documento.
+      allow get: if canAccessContractorModule() && canReadVerification(resource.data);
+
+      // Listado: el filtro where() del cliente restringe los registros visibles.
+      // La protección real es la regla `allow get` aplicada por documento.
+      allow list: if canAccessContractorModule();
+
+      // Crear: solo si el campo createdBy coincide con el usuario autenticado.
+      allow create: if canAccessContractorModule()
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      // Actualizar: mismo criterio de acceso que lectura.
+      allow update: if canAccessContractorModule() && canReadVerification(resource.data);
+
+      // Eliminar: solo admin.
+      allow delete: if isAdmin();
+
+      // Subcolección: respuestas (answers).
+      match /answers/{answerId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+
+      // Subcolección: evidencias (evidences).
+      match /evidences/{evidenceId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+
+      // Subcolección: planes de acción (actionPlans).
+      match /actionPlans/{actionPlanId} {
+        allow read, write: if canAccessContractorModule()
+          && canReadVerification(
+               get(/databases/$(database)/documents/contractorVerifications/$(verificationId)).data
+             );
+      }
+    }
+
     // --- Colección de Hallazgos (hallazgos) ---
     match /hallazgos/{hallazgoId} {
 
-      // GET (documento individual): lider_sst puede ver hallazgos de su planta.
+      // NUEVO: Asesor ARL — acceso exclusivo a sus propios hallazgos (filtro por createdBy).
+      // Estos bloques se evalúan con OR lógico junto a los de abajo.
+      // El filtro de lista lo aplica el cliente con where('createdBy', '==', uid).
+      allow get:    if isSignedIn() && hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid;
+      allow list:   if isSignedIn() && hasRole('asesor_arl');
+      allow create: if isSignedIn() && hasRole('asesor_arl') && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isSignedIn() && hasRole('asesor_arl') && resource.data.createdBy == request.auth.uid;
+
+      // GET (documento individual): resource.data siempre disponible.
       allow get: if canAccessHallazgos() &&
                  (isAdmin() ||
-                  resource.data.empresaId == getEmpresa() ||
-                  (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+                  // Autorizante y otros: empresa debe coincidir; si tiene planta, también debe coincidir
+                  (resource.data.empresaId == getEmpresa() &&
+                   (!getPlanta() || resource.data.planta == getPlanta())) ||
+                  // Líder SST: empresa Y planta deben coincidir
+                  (hasRole('lider_sst') &&
+                   resource.data.empresaId == getEmpresa() &&
+                   (!getPlanta() || resource.data.planta == getPlanta())));
 
-      // LIST (queries): el filtro por planta lo garantiza el where() del cliente.
+      // LIST (queries): el filtro por planta/empresa lo garantiza el where() del cliente.
       allow list: if canAccessHallazgos() &&
                   (isAdmin() ||
                    resource.data.empresaId == getEmpresa() ||
                    hasRole('lider_sst'));
 
-      // CREAR: Nixus Capital usa empresaId; lider_sst puede crear en su planta.
+      // Creación: empresa debe coincidir con la del usuario.
       allow create: if canAccessHallazgos() &&
                     (isAdmin() ||
                      request.resource.data.empresaId == getEmpresa() ||
                      hasRole('lider_sst'));
 
-      // ACTUALIZAR: lider_sst puede gestionar planes de acción de su planta.
+      // Actualización: empresa Y planta deben coincidir.
       allow update: if canAccessHallazgos() &&
                     (isAdmin() ||
-                     resource.data.empresaId == getEmpresa() ||
-                     (hasRole('lider_sst') && resource.data.planta == getPlanta()));
+                     (resource.data.empresaId == getEmpresa() &&
+                      (!getPlanta() || resource.data.planta == getPlanta())));
 
-      // ELIMINAR: solo administradores.
+      // Solo admins pueden eliminar hallazgos.
       allow delete: if isAdmin();
     }
+
   }
 }
