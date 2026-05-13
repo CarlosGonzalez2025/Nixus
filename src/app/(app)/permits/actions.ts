@@ -452,6 +452,8 @@ export async function addSignatureAndNotify(
                 updateData['closure.razonCancelacion'] = comments || 'No especificado';
                 updateData['closure.cancelado'] = 'si';
             }
+
+            await docRef.update(updateData);
         } else {
             const canSign = await validateSignaturePermission(permitId, role, user);
             if (!canSign.allowed) {
