@@ -67,7 +67,7 @@ service cloud.firestore {
       allow read, list: if isSignedIn() && resource.data.userId == request.auth.uid;
 
       // Un usuario puede actualizar su propia notificación, pero solo para marcarla como leída.
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.keys().hasOnly(['isRead']);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
 
       // La creación y eliminación de notificaciones solo se hacen desde el backend.
       allow create, delete: if false;
