@@ -32,7 +32,7 @@ import {
     CheckCircle2, Clock, TrendingUp, XCircle,
     AlertTriangle, Timer, Shield, Hash, Camera, CheckSquare,
     Plus, X, MapPin, Building2, Factory, Layers,
-    Navigation, WifiOff, PenLine, CheckCircle,
+    Navigation, WifiOff, PenLine, CheckCircle, Check,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
@@ -226,6 +226,135 @@ function ComboListField({
                         onClick={() => { setShowAdd(false); setNewItem(''); }}>
                         <X className="h-3.5 w-3.5" />
                     </Button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Peligro Selector ──────────────────────────────────────────────────────────
+const PELIGRO_OPTIONS = [
+    'Alturas',
+    'Espacios Confinados',
+    'Energías Peligrosas',
+    'Izaje de Cargas',
+    'Excavaciones',
+];
+
+function PeligroSelector({
+    value,
+    onChange,
+    disabled,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    disabled?: boolean;
+}) {
+    const parseValue = (raw: string): { selected: Set<string>; custom: string } => {
+        const parts = raw.split('\n').map(p => p.trim()).filter(Boolean);
+        const sel = new Set<string>();
+        const customParts: string[] = [];
+        parts.forEach(p => {
+            if (PELIGRO_OPTIONS.includes(p)) sel.add(p);
+            else customParts.push(p);
+        });
+        return { selected: sel, custom: customParts.join('\n') };
+    };
+
+    const { selected: initSelected, custom: initCustom } = parseValue(value || '');
+    const [selected, setSelected] = useState<Set<string>>(initSelected);
+    const [customText, setCustomText] = useState(initCustom);
+    const [showCustom, setShowCustom] = useState(initCustom.length > 0);
+
+    const buildValue = (sel: Set<string>, custom: string) => {
+        const parts = [...sel];
+        const trimmed = custom.trim();
+        if (trimmed) parts.push(trimmed);
+        return parts.join('\n');
+    };
+
+    const toggle = (label: string) => {
+        if (disabled) return;
+        setSelected(prev => {
+            const next = new Set(prev);
+            if (next.has(label)) next.delete(label);
+            else next.add(label);
+            onChange(buildValue(next, customText));
+            return next;
+        });
+    };
+
+    const handleCustomChange = (text: string) => {
+        setCustomText(text);
+        onChange(buildValue(selected, text));
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+                {PELIGRO_OPTIONS.map(label => {
+                    const active = selected.has(label);
+                    return (
+                        <button
+                            key={label}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => toggle(label)}
+                            className={cn(
+                                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                                active
+                                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-muted/40 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                                disabled && 'cursor-default opacity-70'
+                            )}
+                        >
+                            {active && <Check className="h-3 w-3 shrink-0" />}
+                            {label}
+                        </button>
+                    );
+                })}
+
+                {/* Otros chip */}
+                {!showCustom && !disabled && (
+                    <button
+                        type="button"
+                        onClick={() => setShowCustom(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                        <Plus className="h-3 w-3 shrink-0" />
+                        Otros
+                    </button>
+                )}
+                {showCustom && disabled && customText && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400">
+                        <Check className="h-3 w-3 shrink-0" />
+                        Otros
+                    </span>
+                )}
+            </div>
+
+            {showCustom && (
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Otros peligros</span>
+                        {!disabled && (
+                            <button
+                                type="button"
+                                onClick={() => { setShowCustom(false); handleCustomChange(''); }}
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                    <Textarea
+                        value={customText}
+                        onChange={e => handleCustomChange(e.target.value)}
+                        disabled={disabled}
+                        placeholder="Describe el peligro específico..."
+                        rows={2}
+                        className="resize-none border-border/60 text-sm"
+                    />
                 </div>
             )}
         </div>
@@ -698,9 +827,11 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     <FormItem className="sm:col-span-2">
                                         <FormLabel className={labelClass}><Req>Peligro Inspeccionado</Req></FormLabel>
                                         <FormControl>
-                                            <Textarea {...field} disabled={loading || isViewMode}
-                                                placeholder="Describe el peligro identificado..."
-                                                rows={3} className="resize-none border-border/60 text-sm" />
+                                            <PeligroSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                disabled={loading || isViewMode}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

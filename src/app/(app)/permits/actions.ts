@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
-import { getEmailForUser, sendPermitUpdateEmail } from '@/lib/email';
+import { getEmailsForUsers, sendGroupEmail } from '@/lib/email';
 import { buildPermitEmailHtml } from '@/lib/permit-email-template';
 import { sendPushToUser } from '@/lib/push-notifications';
 import { config } from 'dotenv';
@@ -182,29 +182,44 @@ const createNotification = async (
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
   const permitUrl = `${baseUrl}/permits/${permit.id}`;
-  const permitNumber = permit.number || permit.id;
   const statusLabel = STATUS_LABEL[permit.status] || permit.status;
 
-  // Enviar correo electrónico con plantilla profesional
-  const userEmail = await getEmailForUser(userId);
-  if (userEmail) {
-    await sendPermitUpdateEmail({
-      to: userEmail,
-      subject: `[SGTC] Permiso ${permitNumber} — ${statusLabel}`,
-      html: buildPermitEmailHtml(permit, message, permitUrl),
-    });
-  } else {
-    // FIX 3A: Log explícito cuando el usuario no tiene email configurado
-    console.warn(`⚠️ [Notificación] Usuario ${userId} no tiene email configurado. Notificación de email omitida para permiso ${permitNumber}.`);
-  }
-
-  // Enviar notificación push al dispositivo móvil (no bloquea si falla)
   sendPushToUser(userId, {
     title: `SGTC Móvil — ${statusLabel}`,
     body: message,
     url: permitUrl,
   }).catch(err => console.error('[Push] Error enviando notificación push:', err));
 };
+
+async function notifyUsers(
+  userIds: string[],
+  excludeUid: string,
+  permit: Permit,
+  message: string,
+  type: Notification['type'],
+  triggeredBy: { uid: string, displayName: string | null }
+): Promise<void> {
+  const recipients = userIds.filter(uid => uid !== excludeUid);
+  if (recipients.length === 0) return;
+
+  await runNotificationBatch(
+    recipients.map(uid => () => createNotification(uid, permit, message, type, triggeredBy))
+  );
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+  const permitUrl = `${baseUrl}/permits/${permit.id}`;
+  const permitNumber = permit.number || permit.id;
+  const statusLabel = STATUS_LABEL[permit.status] || permit.status;
+  const emails = await getEmailsForUsers(recipients);
+
+  if (emails.length > 0) {
+    await sendGroupEmail({
+      emails,
+      subject: `[SGTC] Permiso ${permitNumber} — ${statusLabel}`,
+      html: buildPermitEmailHtml(permit, message, permitUrl),
+    });
+  }
+}
 
 // --- Fin de Funciones de Notificaciones ---
 
@@ -304,11 +319,7 @@ export async function createPermit(data: PermitCreateData) {
     const message = `Se creó un nuevo permiso de trabajo: #${permitNumber}`;
     const triggeredBy = { uid: userId, displayName: userDisplayName };
 
-    await runNotificationBatch(
-      involvedUsers
-        .filter(uid => uid !== userId)
-        .map(uid => () => createNotification(uid, createdPermit, message, 'creation', triggeredBy))
-    );
+    await notifyUsers(involvedUsers, userId, createdPermit, message, 'creation', triggeredBy);
 
     const workTypesText = getWorkTypesString(permitPayload);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
@@ -517,11 +528,7 @@ export async function addSignatureAndNotify(
         if (permitBeforeData.status === 'borrador' && updatedPermitData.status === 'pendiente_revision') {
             const message = `El permiso #${updatedPermitData.number} ha sido enviado y está pendiente de revisión.`;
             const involvedUsers = await getInvolvedUsers(updatedPermitData);
-            await runNotificationBatch(
-                involvedUsers
-                    .filter(uid => uid !== user.uid)
-                    .map(uid => () => createNotification(uid, updatedPermitData, message, 'creation', user))
-            );
+            await notifyUsers(involvedUsers, user.uid, updatedPermitData, message, 'creation', user);
             const workTypesText = getWorkTypesString(updatedPermitData);
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
             const permitUrl = `${baseUrl}/permits/${permitId}`;
@@ -550,11 +557,7 @@ ${permitUrl}`;
 
                 const reviewMessage = `El permiso #${permitNumber} ha sido enviado y está pendiente de revisión.`;
                 const involvedUsers = await getInvolvedUsers(updatedPermitData);
-                await runNotificationBatch(
-                    involvedUsers
-                        .filter(uid => uid !== user.uid)
-                        .map(uid => () => createNotification(uid, updatedPermitData, reviewMessage, 'creation', user))
-                );
+                await notifyUsers(involvedUsers, user.uid, updatedPermitData, reviewMessage, 'creation', user);
 
                 const workTypesText = getWorkTypesString(updatedPermitData);
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
@@ -579,11 +582,7 @@ ${permitUrl}`;
                 const adminIds = await getAdminUserIds(updatedPermitData.generalInfo?.planta);
                 const recipientsEnEjecucion = [...new Set([...involvedUsers, ...adminIds])];
                 const approvalMessage = `¡El permiso #${updatedPermitData.number} está EN EJECUCIÓN! ${user.displayName || 'Un usuario'} completó la última firma requerida y el permiso fue activado automáticamente.`;
-                await runNotificationBatch(
-                    recipientsEnEjecucion
-                        .filter(uid => uid !== user.uid)
-                        .map(uid => () => createNotification(uid, updatedPermitData, approvalMessage, 'approval', user))
-                );
+                await notifyUsers(recipientsEnEjecucion, user.uid, updatedPermitData, approvalMessage, 'approval', user);
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
                 const permitUrl = `${baseUrl}/permits/${permitId}`;
                 const workTypesText = getWorkTypesString(updatedPermitData);
@@ -591,11 +590,7 @@ ${permitUrl}`;
             } else {
                 const signatureRoleName = (signatureRoles as any)[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
                 const message = `${user.displayName || 'Un usuario'} ha firmado el permiso #${updatedPermitData.number} como ${signatureRoleName}.`;
-                await runNotificationBatch(
-                    involvedUsers
-                        .filter(uid => uid !== user.uid)
-                        .map(uid => () => createNotification(uid, updatedPermitData, message, 'signature', user))
-                );
+                await notifyUsers(involvedUsers, user.uid, updatedPermitData, message, 'signature', user);
             }
         }
 
@@ -789,11 +784,7 @@ export async function updatePermitStatus(
         const recipients = status === 'en_ejecucion'
             ? [...new Set([...involvedUsers, ...(await getAdminUserIds(updatedPermitData.generalInfo?.planta))])]
             : involvedUsers;
-        await runNotificationBatch(
-            recipients
-                .filter(uid => uid !== currentUser.uid)
-                .map(uid => () => createNotification(uid, updatedPermitData, message, notificationType, triggeredBy))
-        );
+        await notifyUsers(recipients, currentUser.uid, updatedPermitData, message, notificationType, triggeredBy);
 
         revalidatePath(`/permits/${permitId}`);
         revalidatePath('/permits');
@@ -954,11 +945,7 @@ export async function addDailyValidationSignature(
 
     const message = `${user.displayName || 'Un usuario'} ha realizado la validación diaria (${validationRoleName}) para el DÍA ${day} del ${anexoDisplayName} en el permiso #${fullPermitData.number}.`;
     const involvedUsers = await getInvolvedUsers(fullPermitData);
-    await runNotificationBatch(
-      involvedUsers
-        .filter(uid => uid !== user.uid)
-        .map(uid => () => createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null }))
-    );
+    await notifyUsers(involvedUsers, user.uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
 
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
@@ -1038,12 +1025,8 @@ export async function addDailyValidationClosureSignature(
     const message = `${user.displayName || 'Un usuario'} ha registrado el cierre diario del DÍA ${day} en ${anexoDisplayName} del permiso #${fullPermitData.number}.${data.observaciones ? ` Observaciones: ${data.observaciones}` : ''}`;
 
     const involvedUsers = await getInvolvedUsers(fullPermitData);
-    await runNotificationBatch(
-      involvedUsers
-        .filter(uid => uid !== user.uid)
-        .map(uid => () => createNotification(uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null }))
-    );
-    
+    await notifyUsers(involvedUsers, user.uid, fullPermitData, message, 'status_change', { uid: user.uid, displayName: user.displayName || null });
+
     revalidatePath(`/permits/${permitId}`);
     return { success: true };
 
@@ -1099,11 +1082,7 @@ export async function closePermitByAnyUser(
     const message = `${user.displayName || 'Un usuario'} ha forzado el cierre del permiso #${permitData.number}. Observaciones: ${observaciones}`;
     const involvedUsers = await getInvolvedUsers(updatedPermitData);
 
-    await runNotificationBatch(
-      involvedUsers
-        .filter(uid => uid !== user.uid)
-        .map(uid => () => createNotification(uid, updatedPermitData, message, 'cancellation', { uid: user.uid, displayName: user.displayName || null }))
-    );
+    await notifyUsers(involvedUsers, user.uid, updatedPermitData, message, 'cancellation', { uid: user.uid, displayName: user.displayName || null });
     
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${permitId}`;
@@ -1220,13 +1199,7 @@ export async function processOfflineQueue(
         : item.type === 'permit_signed' ? 'signature'
         : 'status_change';
 
-      await runNotificationBatch(
-        involvedUsers
-          .filter((uid) => uid !== triggeredBy.uid)
-          .map((uid) => () =>
-            createNotification(uid, permit, item.message, notifType, triggeredBy)
-          )
-      );
+      await notifyUsers(involvedUsers, triggeredBy.uid, permit, item.message, notifType, triggeredBy);
 
       // Quitar la marca de sincronización pendiente
       await docRef.update({ offlinePendingSync: false });

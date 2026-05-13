@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
-import { sendPermitUpdateEmail } from '@/lib/email';
+import { sendGroupEmail } from '@/lib/email';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -285,16 +285,9 @@ export async function GET(req: Request) {
     const html = buildSummaryEmailHtml(hallazgos, dateLabel, baseUrl);
     const subject = `📋 Resumen de hallazgos del ${dateLabel} — ${hallazgos.length} registrado${hallazgos.length !== 1 ? 's' : ''}`;
 
-    const results = await Promise.allSettled(
-      adminEmails.map(email =>
-        sendPermitUpdateEmail({ to: email, subject, html })
-          .then(() => console.log(`[CronSummary] Resumen enviado a ${email}`))
-          .catch(err => console.error(`[CronSummary] Error enviando a ${email}:`, err))
-      )
-    );
-
-    const sent = results.filter(r => r.status === 'fulfilled').length;
-    console.log(`[CronSummary] Resumen enviado a ${sent}/${adminEmails.length} admins. Hallazgos: ${hallazgos.length}`);
+    await sendGroupEmail({ emails: adminEmails, subject, html });
+    const sent = adminEmails.length;
+    console.log(`[CronSummary] Resumen enviado a ${sent} admin${sent !== 1 ? 's' : ''} (BCC). Hallazgos: ${hallazgos.length}`);
 
     return NextResponse.json({ sent, hallazgos: hallazgos.length });
   } catch (error: any) {

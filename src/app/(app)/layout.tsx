@@ -34,6 +34,10 @@ import {
   ShieldAlert,
   ClipboardCheck,
   LayoutTemplate,
+  ArrowUpToLine,
+  Box,
+  Flame,
+  Zap,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -256,6 +260,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
+              </SidebarGroup>
+
+              <SidebarSeparator className="my-2" />
+
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
+                  Módulos
+                </SidebarGroupLabel>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/alturas')}
+                    isActive={pathname.startsWith('/alturas')}
+                    tooltip="Alturas"
+                    className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <ArrowUpToLine className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="font-medium">Alturas</span>
+                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/confinados')}
+                    isActive={pathname.startsWith('/confinados')}
+                    tooltip="Confinados"
+                    className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Box className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="font-medium">Confinados</span>
+                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/calderas')}
+                    isActive={pathname.startsWith('/calderas')}
+                    tooltip="Calderas"
+                    className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Flame className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="font-medium">Calderas</span>
+                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/energias-peligrosas')}
+                    isActive={pathname.startsWith('/energias-peligrosas')}
+                    tooltip="Energías Peligrosas"
+                    className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <Zap className="h-5 w-5 md:h-4 md:w-4" />
+                    <span className="font-medium">Energías Peligrosas</span>
+                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarGroup>
 
               <SidebarSeparator className="my-2" />

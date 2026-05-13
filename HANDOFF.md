@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-09
+> **Última actualización de este documento:** 2026-05-12
 
 ---
 
@@ -61,6 +61,75 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-12 — Emails BCC, Dashboard por secciones, Módulos placeholder y selector de peligros
+
+#### Agrupación de emails con BCC (reducción cuota Resend)
+
+**Problema:** Cada evento de permiso/hallazgo enviaba un correo individual a cada destinatario, consumiendo rápidamente el límite diario gratuito de Resend.
+
+**Solución:** Se agrupan todos los destinatarios del mismo mensaje en un único `resend.emails.send` usando el campo `bcc`, enviando un solo correo API por evento sin importar cuántos usuarios deban recibirlo.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/lib/email.ts` | Nueva función `sendGroupEmail({ emails, subject, html })` — deduplica, envía al primero en `to:` y el resto en `bcc:`; nueva función `getEmailsForUsers(userIds[])` — paralelo de `getEmailForUser` para múltiples IDs |
+| `src/app/(app)/permits/actions.ts` | Imports actualizados; `createNotification()` eliminó el envío de email propio; nueva función `notifyUsers()` agrupa Firestore+push (por usuario) y email (un solo BCC); 10 call sites reemplazados con `notifyUsers()` |
+| `src/app/(app)/hallazgos/actions.ts` | `notifyHallazgoCreated()` reemplaza `Promise.allSettled(N correos)` por un único `sendGroupEmail()` |
+| `src/app/api/cron/hallazgos-daily-summary/route.ts` | Resumen diario a admins: `Promise.allSettled(N correos)` → un único `sendGroupEmail()` |
+
+---
+
+#### Dashboard — Separación en secciones "Permisos de Trabajo" y "Hallazgos SST"
+
+Se reestructuró visualmente el dashboard para separar con claridad los datos de permisos de los de hallazgos.
+
+**Cambios en `src/app/(app)/dashboard/page.tsx`:**
+- Encabezado de sección **"Permisos de Trabajo"** (barra azul) antes de las tarjetas de estadísticas
+- Encabezado de sección **"Hallazgos SST"** (barra ámbar `bg-amber-500`) antes de los gráficos de hallazgos
+- Las tarjetas de estado de hallazgos (Totales/Abiertos/Cerrados) fueron reemplazadas por un **donut chart de estado** (Abiertos/Cerrados) con Recharts, colocado junto al donut chart de Clase A/B/C ya existente — ambos en una grilla `max-w-3xl mx-auto`
+- Se añadió `hallazgosEstado` useMemo con colores ámbar (Abiertos) y verde (Cerrados)
+- El gráfico Histórico de Permisos pasó a ser tarjeta independiente de ancho completo dentro de su sección
+
+---
+
+#### Cuatro módulos placeholder "En Construcción"
+
+Se crearon 4 módulos nuevos con páginas de marcador de posición para desarrollo futuro, usando un componente reutilizable.
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/components/ComingSoonPage.tsx` | Componente reutilizable: ícono grande con degradado, badge animado "Módulo en Construcción", título, descripción y tarjeta "Próximamente disponible" |
+| `src/app/(app)/alturas/page.tsx` | Módulo Alturas — ícono `ArrowUpToLine`, degradado sky/blue |
+| `src/app/(app)/confinados/page.tsx` | Módulo Confinados — ícono `Box`, degradado violet/purple |
+| `src/app/(app)/calderas/page.tsx` | Módulo Calderas — ícono `Flame`, degradado orange/red |
+| `src/app/(app)/energias-peligrosas/page.tsx` | Módulo Energías Peligrosas — ícono `Zap`, degradado yellow/amber |
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/layout.tsx` | +`ArrowUpToLine`, `Box`, `Flame`, `Zap` de lucide-react; nuevo `SidebarGroup` "Módulos" con los 4 ítems y badge ámbar "Pronto" |
+
+---
+
+#### Hallazgos — Selector de peligros inspeccionados
+
+El campo "Peligro Inspeccionado" del formulario de hallazgos cambió de un textarea de edición libre a un selector visual por chips.
+
+**Archivo modificado:** `src/app/(app)/hallazgos/components/hallazgo-form.tsx`
+
+- Se agregó `Check` a los imports de lucide-react
+- Nueva constante `PELIGRO_OPTIONS` con las 5 opciones fijas:
+  - Alturas · Espacios Confinados · Energías Peligrosas · Izaje de Cargas · Excavaciones
+- Nuevo componente `PeligroSelector`: chips toggle con highlight verde al seleccionar; chip "Otros" (borde punteado) que despliega un textarea para texto libre; compatible con modo vista (disabled) y retrocompatible con valores ya guardados
+- El campo del formulario (`FormField`) fue reemplazado para usar `PeligroSelector` en lugar de `Textarea`
+- **Schema sin cambios:** `peligroInspeccionado` sigue siendo `z.string()` — el valor se almacena como etiquetas unidas por `\n`
 
 ---
 

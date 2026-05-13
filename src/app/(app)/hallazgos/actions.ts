@@ -1,7 +1,7 @@
 'use server';
 
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
-import { sendPermitUpdateEmail } from '@/lib/email';
+import { sendGroupEmail } from '@/lib/email';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Hallazgo } from '@/types';
@@ -264,11 +264,7 @@ export async function notifyHallazgoCreated(hallazgo: Hallazgo): Promise<void> {
 
   const subject = `🔔 Hallazgo #${hallazgo.numero} — ${claseLabel} | ${hallazgo.empresa || hallazgo.area || 'SST'}`;
 
-  await Promise.allSettled(
-    recipients.map(r =>
-      sendPermitUpdateEmail({ to: r.email, subject, html })
-        .then(() => console.log(`[Hallazgo] Email enviado a ${r.email}`))
-        .catch(err => console.error(`[Hallazgo] Error enviando a ${r.email}:`, err))
-    )
-  );
+  const emails = recipients.map(r => r.email);
+  await sendGroupEmail({ emails, subject, html });
+  console.log(`[Hallazgo] Email enviado a ${emails.length} destinatario${emails.length !== 1 ? 's' : ''} (BCC).`);
 }

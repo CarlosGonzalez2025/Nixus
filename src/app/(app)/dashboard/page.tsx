@@ -178,7 +178,7 @@ export default function Dashboard() {
           );
           const combined = Array.from(map.values())
             .filter(p => {
-              const matchPlanta  = !user.planta  || p.generalInfo?.planta  === user.planta;
+              const matchPlanta = !user.planta || p.generalInfo?.planta === user.planta;
               const matchEmpresa = !user.empresa || p.generalInfo?.empresa === user.empresa;
               return matchPlanta && matchEmpresa;
             })
@@ -233,7 +233,7 @@ export default function Dashboard() {
         if (user.role === 'autorizante') {
           data = data.filter(p => {
             const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa;
-            const matchPlanta  = !user.planta  || !p.generalInfo?.planta  || p.generalInfo.planta  === user.planta;
+            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta === user.planta;
             return matchEmpresa && matchPlanta;
           });
         }
@@ -314,20 +314,25 @@ export default function Dashboard() {
   const permits = useMemo(() => filteredPermits.slice(0, 10), [filteredPermits]);
 
   const stats = useMemo(() => ({
-    total:       filteredPermits.length,
-    pendiente:   filteredPermits.filter(p => p.status === 'pendiente_revision').length,
-    aprobado:    filteredPermits.filter(p => p.status === 'aprobado').length,
+    total: filteredPermits.length,
+    pendiente: filteredPermits.filter(p => p.status === 'pendiente_revision').length,
+    aprobado: filteredPermits.filter(p => p.status === 'aprobado').length,
     enEjecucion: filteredPermits.filter(p => p.status === 'en_ejecucion').length,
-    cerrado:     filteredPermits.filter(p => p.status === 'cerrado').length,
+    cerrado: filteredPermits.filter(p => p.status === 'cerrado').length,
   }), [filteredPermits]);
 
   const chartData = useMemo(() => generateChartData(filteredPermits), [filteredPermits]);
 
   const hallazgosStats = useMemo(() => ({
-    total:    filteredHallazgos.length,
+    total: filteredHallazgos.length,
     abiertos: filteredHallazgos.filter(h => h.cumplimientoEstado === 'Pendiente' || h.cumplimientoEstado === 'En Progreso' || !h.cumplimientoEstado).length,
     cerrados: filteredHallazgos.filter(h => h.cumplimientoEstado === 'Cerrado' || h.cumplimientoEstado === 'Completado').length,
   }), [filteredHallazgos]);
+
+  const hallazgosEstado = useMemo(() => [
+    { name: 'Abiertos', value: hallazgosStats.abiertos, color: '#d97706' },
+    { name: 'Cerrados', value: hallazgosStats.cerrados, color: '#16a34a' },
+  ].filter(e => e.value > 0), [hallazgosStats.abiertos, hallazgosStats.cerrados]);
 
   const hallazgosClase = useMemo(() => [
     { name: 'Clase A', value: filteredHallazgos.filter(h => h.clase === 'A').length, color: '#dc2626' },
@@ -343,13 +348,13 @@ export default function Dashboard() {
     const norm = (s: string | undefined | null) => (!s || s.trim() === '' ? 'No Especificado' : s.trim());
 
     filteredPermits.forEach(p => {
-      const planta  = norm(p.generalInfo?.planta);
+      const planta = norm(p.generalInfo?.planta);
       const empresa = norm(p.generalInfo?.empresa);
-      const ciudad  = norm(p.generalInfo?.ciudad); // corregido: usa el campo real
+      const ciudad = norm(p.generalInfo?.ciudad); // corregido: usa el campo real
 
-      if (!plantasMap[planta])  plantasMap[planta]  = { name: planta,  Permisos: 0, Hallazgos: 0 };
+      if (!plantasMap[planta]) plantasMap[planta] = { name: planta, Permisos: 0, Hallazgos: 0 };
       if (!empresasMap[empresa]) empresasMap[empresa] = { name: empresa, Permisos: 0, Hallazgos: 0 };
-      plantasMap[planta].Permisos  += 1;
+      plantasMap[planta].Permisos += 1;
       empresasMap[empresa].Permisos += 1;
 
       if (ciudad !== 'No Especificado') {
@@ -359,12 +364,12 @@ export default function Dashboard() {
     });
 
     filteredHallazgos.forEach(h => {
-      const planta  = norm(h.planta);
+      const planta = norm(h.planta);
       const empresa = norm(h.empresa);
 
-      if (!plantasMap[planta])   plantasMap[planta]   = { name: planta,  Permisos: 0, Hallazgos: 0 };
+      if (!plantasMap[planta]) plantasMap[planta] = { name: planta, Permisos: 0, Hallazgos: 0 };
       if (!empresasMap[empresa]) empresasMap[empresa] = { name: empresa, Permisos: 0, Hallazgos: 0 };
-      plantasMap[planta].Hallazgos   += 1;
+      plantasMap[planta].Hallazgos += 1;
       empresasMap[empresa].Hallazgos += 1;
     });
 
@@ -372,18 +377,18 @@ export default function Dashboard() {
       (b.Permisos + b.Hallazgos) - (a.Permisos + a.Hallazgos);
 
     return {
-      byPlanta:  Object.values(plantasMap).sort(byTotal).slice(0, 6),
+      byPlanta: Object.values(plantasMap).sort(byTotal).slice(0, 6),
       byEmpresa: Object.values(empresasMap).sort(byTotal).slice(0, 6),
-      byCiudad:  Object.values(ciudadesMap).filter(c => c.name !== 'No Especificado').sort(byTotal).slice(0, 6),
+      byCiudad: Object.values(ciudadesMap).filter(c => c.name !== 'No Especificado').sort(byTotal).slice(0, 6),
     };
   }, [filteredPermits, filteredHallazgos]);
 
   const statsCards = [
-    { title: 'Permisos Totales', value: stats.total,       icon: FileText,    gradient: 'from-blue-600 to-cyan-500',     href: '/permits?status=activos',            description: 'Todos los registros activos' },
-    { title: 'Pendientes',       value: stats.pendiente,   icon: Clock,       gradient: 'from-amber-500 to-orange-400',  href: '/permits?status=pendiente_revision', description: 'Requieren aprobación' },
-    { title: 'Aprobados',        value: stats.aprobado,    icon: CheckCircle, gradient: 'from-emerald-500 to-green-400', href: '/permits?status=aprobado',           description: 'Listos para iniciar' },
-    { title: 'En Ejecución',     value: stats.enEjecucion, icon: Activity,    gradient: 'from-violet-600 to-purple-500', href: '/permits?status=en_ejecucion',       description: 'Trabajos en curso' },
-    { title: 'Cerrados',         value: stats.cerrado,     icon: CheckSquare, gradient: 'from-slate-600 to-gray-500',    href: '/permits?status=cerrado',            description: 'Completados / Cerrados' },
+    { title: 'Permisos Totales', value: stats.total, icon: FileText, gradient: 'from-blue-600 to-cyan-500', href: '/permits?status=activos', description: 'Todos los registros activos' },
+    { title: 'Pendientes', value: stats.pendiente, icon: Clock, gradient: 'from-amber-500 to-orange-400', href: '/permits?status=pendiente_revision', description: 'Requieren aprobación' },
+    { title: 'Aprobados', value: stats.aprobado, icon: CheckCircle, gradient: 'from-emerald-500 to-green-400', href: '/permits?status=aprobado', description: 'Listos para iniciar' },
+    { title: 'En Ejecución', value: stats.enEjecucion, icon: Activity, gradient: 'from-violet-600 to-purple-500', href: '/permits?status=en_ejecucion', description: 'Trabajos en curso' },
+    { title: 'Cerrados', value: stats.cerrado, icon: CheckSquare, gradient: 'from-slate-600 to-gray-500', href: '/permits?status=cerrado', description: 'Completados / Cerrados' },
   ];
 
   const activeFilterCount = [empresaFilter, plantaFilter, ciudadFilter].filter(f => f !== 'all').length;
@@ -566,6 +571,14 @@ export default function Dashboard() {
 
       {/* ── Stats Grid ───────────────────────────────────────────────────── */}
       {user?.role !== 'asesor_arl' && (
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Permisos de Trabajo</h2>
+          <div className="flex-1 h-px bg-gray-100" />
+        </div>
+      )}
+
+      {user?.role !== 'asesor_arl' && (
         <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
           {statsCards.map((stat, index) => (
             <Link key={index} href={stat.href} className="group block h-full">
@@ -591,99 +604,124 @@ export default function Dashboard() {
       )}
 
       {/* ── Analytics Charts ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Histórico de Permisos */}
-        {user?.role !== 'asesor_arl' && (
-          <Card className="border-0 shadow-md flex flex-col overflow-hidden">
-            <CardHeader className="bg-white border-b px-6 py-5">
-              <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-500" /> Histórico de Permisos
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Flujo de permisos de los últimos 6 meses.</p>
-            </CardHeader>
-            <CardContent className="pt-6 h-[350px]">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                    <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                    <Bar dataKey="Solicitados" fill="#9ca3af" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Aprobados" stackId="a" fill="#10b981" />
-                    <Bar dataKey="Pendientes" stackId="a" fill="#f59e0b" />
-                    <Bar dataKey="En Ejecución" stackId="a" fill="#8b5cf6" />
-                    <Bar dataKey="Cerrados" stackId="a" fill="#475569" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex justify-center items-center h-full text-gray-400">
-                  <Loader2 className="animate-spin h-8 w-8" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Analítica de Hallazgos */}
-        <Card className={`border-0 shadow-md flex flex-col overflow-hidden ${user?.role === 'asesor_arl' ? 'lg:col-span-2' : ''}`}>
+      {/* Histórico de Permisos */}
+      {user?.role !== 'asesor_arl' && (
+        <Card className="border-0 shadow-md flex flex-col overflow-hidden">
           <CardHeader className="bg-white border-b px-6 py-5">
             <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" /> Analítica de Hallazgos
+              <TrendingUp className="h-5 w-5 text-blue-500" /> Histórico de Permisos
             </CardTitle>
-            <p className="text-sm text-gray-500 mt-1">Distribución global e intervención por prioridades.</p>
+            <p className="text-sm text-gray-500 mt-1">Flujo de permisos de los últimos 6 meses.</p>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
-                <p className="text-xs text-gray-500 font-medium mb-1">Totales</p>
-                <p className="text-2xl font-bold text-gray-800">{hallazgosStats.total}</p>
+          <CardContent className="pt-6 h-[350px]">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                  <RechartsTooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="Solicitados" fill="#9ca3af" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Aprobados" stackId="a" fill="#10b981" />
+                  <Bar dataKey="Pendientes" stackId="a" fill="#f59e0b" />
+                  <Bar dataKey="En Ejecución" stackId="a" fill="#8b5cf6" />
+                  <Bar dataKey="Cerrados" stackId="a" fill="#475569" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex justify-center items-center h-full text-gray-400">
+                <Loader2 className="animate-spin h-8 w-8" />
               </div>
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center">
-                <p className="text-xs text-amber-600 font-medium mb-1">Abiertos</p>
-                <p className="text-2xl font-bold text-amber-700">{hallazgosStats.abiertos}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ══ SECCIÓN: HALLAZGOS SST ═══════════════════════════════════════════ */}
+      <div className="flex items-center gap-3">
+        <div className="h-5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Hallazgos SST</h2>
+        <div className="flex-1 h-px bg-gray-100" />
+      </div>
+
+      {/* Analítica de Hallazgos */}
+      <Card className="border-0 shadow-md flex flex-col overflow-hidden">
+        <CardHeader className="bg-white border-b px-6 py-5">
+          <CardTitle className="text-xl text-gray-800 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" /> Analítica de Hallazgos
+          </CardTitle>
+          <p className="text-sm text-gray-500 mt-1">Distribución global e intervención por prioridades.</p>
+        </CardHeader>
+        <CardContent className="p-8">
+          {hallazgosStats.total === 0 ? (
+            <div className="h-[280px] flex flex-col items-center justify-center gap-3">
+              <div className="h-14 w-14 rounded-full bg-green-50 flex items-center justify-center">
+                <CheckCircle className="h-7 w-7 text-green-500" />
               </div>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100 text-center">
-                <p className="text-xs text-green-600 font-medium mb-1">Cerrados</p>
-                <p className="text-2xl font-bold text-green-700">{hallazgosStats.cerrados}</p>
-              </div>
+              <p className="text-sm text-gray-500 font-medium">Sin hallazgos registrados</p>
             </div>
-            <div className="h-[180px] flex items-center justify-center relative">
-              {hallazgosClase.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="50%" height="100%">
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
+              {/* Gráfico de Estado */}
+              <div className="flex flex-col items-center">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Estado general</p>
+                <div className="relative h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={hallazgosClase} innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value" stroke="none">
-                        {hallazgosClase.map((entry, i) => (
-                          <Cell key={`cell-${i}`} fill={entry.color} />
+                      <Pie data={hallazgosEstado} innerRadius={62} outerRadius={84} paddingAngle={3} dataKey="value" stroke="none">
+                        {hallazgosEstado.map((entry, i) => (
+                          <Cell key={`estado-${i}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex flex-col gap-3 justify-center w-[50%] px-4">
-                    {hallazgosClase.map((c, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }}></span>
-                        <span className="text-sm font-medium text-gray-600 truncate">{c.name}</span>
-                        <span className="text-sm font-bold ml-auto bg-gray-100 px-2 py-0.5 rounded">{c.value}</span>
-                      </div>
-                    ))}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-3xl font-bold text-gray-800 leading-none">{hallazgosStats.total}</span>
+                    <span className="text-[10px] text-gray-400 font-medium mt-1">Total</span>
                   </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center p-4">
-                  <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center mb-2">
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                  </div>
-                  <p className="text-sm text-gray-500">Todo en orden, sin hallazgos.</p>
                 </div>
-              )}
+                <div className="flex flex-col gap-2.5 mt-5 w-full max-w-[220px]">
+                  {hallazgosEstado.map((e, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: e.color }} />
+                      <span className="text-sm text-gray-600 flex-1">{e.name}</span>
+                      <span className="text-sm font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full">{e.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gráfico de Clase */}
+              <div className="flex flex-col items-center">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Por clase de riesgo</p>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={hallazgosClase} innerRadius={62} outerRadius={84} paddingAngle={3} dataKey="value" stroke="none">
+                        {hallazgosClase.map((entry, i) => (
+                          <Cell key={`clase-${i}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col gap-2.5 mt-5 w-full max-w-[220px]">
+                  {hallazgosClase.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className="text-sm text-gray-600 flex-1">{c.name}</span>
+                      <span className="text-sm font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-full">{c.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ── Gráficos Geográficos ─────────────────────────────────────────── */}
       {user?.role !== 'asesor_arl' && (
