@@ -552,11 +552,11 @@ export default function UsersPage() {
     }
 
     if (filterEmpresa !== 'all') {
-      filtered = filtered.filter(user => user.empresa === filterEmpresa);
+      filtered = filtered.filter(user => user.empresa?.toLowerCase() === filterEmpresa.toLowerCase());
     }
 
     if (filterCiudad !== 'all') {
-      filtered = filtered.filter(user => user.ciudad === filterCiudad);
+      filtered = filtered.filter(user => user.ciudad?.toLowerCase() === filterCiudad.toLowerCase());
     }
 
     setFilteredUsers(filtered);

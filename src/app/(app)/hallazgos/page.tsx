@@ -132,12 +132,12 @@ export default function HallazgosPage() {
             if (user?.role === 'asesor_arl') {
                 matchEmpresaPlanta = h.createdBy === user.uid;
             } else if (user?.role === 'lider_sst') {
-                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
-                const matchPlanta  = !user.planta  || h.planta === user.planta;
+                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
+                const matchPlanta  = !user.planta  || h.planta?.toLowerCase() === user.planta.toLowerCase();
                 matchEmpresaPlanta = matchEmpresa && matchPlanta;
             } else if (user?.role === 'autorizante') {
-                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId === user.empresa;
-                const matchPlanta  = !user.planta  || !h.planta   || h.planta === user.planta;
+                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
+                const matchPlanta  = !user.planta  || !h.planta   || h.planta.toLowerCase() === user.planta.toLowerCase();
                 matchEmpresaPlanta = matchEmpresa && matchPlanta;
             }
 

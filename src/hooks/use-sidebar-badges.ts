@@ -55,8 +55,8 @@ export function useSidebarBadges() {
 
           // FIX 2C: Filtro cliente por empresa y planta para autorizante y lider_sst
           if (role === 'autorizante' || role === 'lider_sst') {
-            const matchEmpresa = !user.empresa || !permit.generalInfo?.empresa || permit.generalInfo.empresa === user.empresa;
-            const matchPlanta  = !user.planta  || !permit.generalInfo?.planta  || permit.generalInfo.planta  === user.planta;
+            const matchEmpresa = !user.empresa || !permit.generalInfo?.empresa || permit.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta  = !user.planta  || !permit.generalInfo?.planta  || permit.generalInfo.planta.toLowerCase()  === user.planta.toLowerCase();
             if (!matchEmpresa || !matchPlanta) return false;
           }
 

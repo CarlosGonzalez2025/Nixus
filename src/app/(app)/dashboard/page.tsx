@@ -185,8 +185,8 @@ export default function Dashboard() {
           );
           const combined = Array.from(map.values())
             .filter(p => {
-              const matchPlanta = !user.planta || p.generalInfo?.planta === user.planta;
-              const matchEmpresa = !user.empresa || p.generalInfo?.empresa === user.empresa;
+              const matchPlanta = !user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase();
+              const matchEmpresa = !user.empresa || p.generalInfo?.empresa?.toLowerCase() === user.empresa.toLowerCase();
               return matchPlanta && matchEmpresa;
             })
             .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
@@ -215,7 +215,7 @@ export default function Dashboard() {
             p.status === 'pendiente_revision' &&
             p.approvals?.mantenimiento?.status === 'pendiente' &&
             p.approvals?.solicitante?.status === 'aprobado' &&
-            (!user.planta || p.generalInfo?.planta === user.planta)
+            (!user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase())
           )
           .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
         setAllPermits(data);
@@ -239,8 +239,8 @@ export default function Dashboard() {
 
         if (user.role === 'autorizante') {
           data = data.filter(p => {
-            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa;
-            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta === user.planta;
+            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
             return matchEmpresa && matchPlanta;
           });
         }
@@ -272,7 +272,7 @@ export default function Dashboard() {
         id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
       } as unknown as Hallazgo));
       if (user.planta && user.role !== 'admin') {
-        hData = hData.filter(h => !h.planta || h.planta === user.planta);
+        hData = hData.filter(h => !h.planta || h.planta.toLowerCase() === user.planta!.toLowerCase());
       }
       setAllHallazgos(hData);
       // Para asesor_arl el loading lo cerramos aquí
@@ -310,7 +310,7 @@ export default function Dashboard() {
       if (empresaFilter !== 'all' && p.generalInfo?.empresa !== empresaFilter) return false;
       if (plantaFilter !== 'all' && p.generalInfo?.planta !== plantaFilter) return false;
       if (ciudadFilter !== 'all' && p.generalInfo?.ciudad !== ciudadFilter) return false;
-      if (dateStart && p.createdAt && (p.createdAt as Date) < dateStart) return false;
+      if (dateStart && p.createdAt && (p.createdAt as unknown as Date) < dateStart) return false;
       return true;
     });
   }, [allPermits, empresaFilter, plantaFilter, ciudadFilter, dateFilter]);
@@ -320,7 +320,7 @@ export default function Dashboard() {
     return allHallazgos.filter(h => {
       if (empresaFilter !== 'all' && h.empresa !== empresaFilter) return false;
       if (plantaFilter !== 'all' && h.planta !== plantaFilter) return false;
-      if (dateStart && h.createdAt && (h.createdAt as Date) < dateStart) return false;
+      if (dateStart && h.createdAt && (h.createdAt as unknown as Date) < dateStart) return false;
       return true;
     });
   }, [allHallazgos, empresaFilter, plantaFilter, dateFilter]);

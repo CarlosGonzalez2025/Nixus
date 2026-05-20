@@ -205,7 +205,7 @@ export default function PermitsPage() {
           return { id: doc.id, ...d, createdAt: parseFirestoreDate(d.createdAt) } as unknown as Permit;
         });
         if (user.empresa) {
-          data = data.filter(p => !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa);
+          data = data.filter(p => !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa!.toLowerCase());
         }
         setAllPermits(data);
         setLoading(false);
@@ -228,7 +228,7 @@ export default function PermitsPage() {
               p.status === 'pendiente_revision' &&
               p.approvals?.mantenimiento?.status === 'pendiente' &&
               p.approvals?.solicitante?.status === 'aprobado' &&
-              (!user.planta || p.generalInfo?.planta === user.planta),
+              (!user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase()),
             )
             .sort((a, b) =>
               (parseFirestoreDate(b.createdAt)?.getTime() || 0) -
@@ -268,8 +268,8 @@ export default function PermitsPage() {
 
         if (user.role === 'autorizante') {
           data = data.filter(p => {
-            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa === user.empresa;
-            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta === user.planta;
+            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
             return matchEmpresa && matchPlanta;
           });
         }
