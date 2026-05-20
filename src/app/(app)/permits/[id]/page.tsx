@@ -947,7 +947,7 @@ export default function PermitDetailPage() {
   }
 
   const statusInfo = getStatusInfo(permit.status);
-  const canBeCancelled = ['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'autorizante' || currentUser?.role === 'lider_sst');
+  const canBeCancelled = ['pendiente_revision', 'aprobado', 'en_ejecucion'].includes(permit.status) && (currentUser?.role === 'admin' || currentUser?.role === 'autorizante' || currentUser?.role === 'lider_sst' || currentUser?.role === 'lider_regional');
   const closureStatus = getClosureStatus();
   const canQuickClose = permit && currentUser && ['pendiente_revision', 'aprobado', 'en_ejecucion', 'suspendido'].includes(permit.status);
 

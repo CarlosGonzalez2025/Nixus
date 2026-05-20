@@ -656,21 +656,22 @@ function validateStateTransition(currentStatus: PermitStatus, targetStatus: Perm
             'pendiente_revision': ['solicitante', 'admin']
         },
         'pendiente_revision': {
-            'en_ejecucion': ['autorizante', 'admin', 'solicitante'],
-            'aprobado': ['autorizante', 'admin'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin']
+            'en_ejecucion': ['autorizante', 'admin', 'solicitante', 'lider_regional'],
+            'aprobado': ['autorizante', 'admin', 'lider_regional'],
+            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'aprobado': {
-            'en_ejecucion': ['solicitante', 'admin'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin']
+            'en_ejecucion': ['solicitante', 'admin', 'lider_regional'],
+            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'en_ejecucion': {
-            'suspendido': ['lider_sst', 'admin', 'autorizante'],
-            'cerrado': ['solicitante', 'admin', 'autorizante']
+            'suspendido': ['lider_sst', 'admin', 'autorizante', 'lider_regional'],
+            'cerrado': ['solicitante', 'admin', 'autorizante', 'lider_regional'],
+            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'suspendido': {
-            'en_ejecucion': ['lider_sst', 'admin', 'autorizante'],
-            'cerrado': ['solicitante', 'admin', 'autorizante']
+            'en_ejecucion': ['lider_sst', 'admin', 'autorizante', 'lider_regional'],
+            'cerrado': ['solicitante', 'admin', 'autorizante', 'lider_regional']
         }
     };
     
