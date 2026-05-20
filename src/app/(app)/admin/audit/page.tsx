@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -442,6 +443,7 @@ function RenameDialog({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function AuditPage() {
+  const { user } = useUser();
   const [results,   setResults]   = useState<Partial<Record<AuditFieldType, AuditResult>>>({});
   const [scanning,  setScanning]  = useState<Partial<Record<AuditFieldType, boolean>>>({});
 
@@ -454,6 +456,11 @@ export default function AuditPage() {
   };
 
   const totalBadge = FIELD_TABS.reduce((acc, t) => acc + (results[t.field]?.totalOrphans ?? 0), 0);
+
+  const canAccess = user?.role === 'admin' ||
+    (user?.role === 'lider_regional' && user.allowedModules?.includes('audit'));
+
+  if (!canAccess) return null;
 
   return (
     <div className="flex flex-1 flex-col min-h-screen bg-gray-50/50">

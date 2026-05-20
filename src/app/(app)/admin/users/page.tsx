@@ -35,8 +35,8 @@ import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuth
 import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
-import type { User, UserRole } from '@/types';
-import { USER_ROLES, ROLE_LABELS } from '@/lib/role-config';
+import type { User, UserRole, AppModule } from '@/types';
+import { USER_ROLES, ROLE_LABELS, MODULE_LABELS, ALL_MODULES, isInLiderRegionalScope } from '@/lib/role-config';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import {
@@ -75,6 +75,8 @@ import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 import { Checkbox } from '@/components/ui/checkbox';
 
+const APP_MODULES_ENUM = ['permits', 'permits_create', 'hallazgos', 'contractor_verifications', 'users', 'lists', 'audit'] as const;
+
 const createFormSchema = z.object({
   fullName: z.string().min(3, { message: 'El nombre es requerido.' }),
   email: z.string().email({ message: 'Correo electrónico inválido.' }),
@@ -85,6 +87,10 @@ const createFormSchema = z.object({
   empresa: z.string().min(2, { message: 'La empresa es requerida.' }),
   ciudad: z.string().optional(),
   planta: z.string().optional(),
+  allowedEmpresas: z.array(z.string()).optional(),
+  allowedPlantas: z.array(z.string()).optional(),
+  allowedCiudades: z.array(z.string()).optional(),
+  allowedModules: z.array(z.enum(APP_MODULES_ENUM)).optional(),
 });
 
 const updateFormSchema = z.object({
@@ -98,6 +104,10 @@ const updateFormSchema = z.object({
   empresa: z.string().min(2, { message: "La empresa es requerida." }),
   ciudad: z.string().optional(),
   planta: z.string().optional(),
+  allowedEmpresas: z.array(z.string()).optional(),
+  allowedPlantas: z.array(z.string()).optional(),
+  allowedCiudades: z.array(z.string()).optional(),
+  allowedModules: z.array(z.enum(APP_MODULES_ENUM)).optional(),
 });
 
 const bulkCreateUserSchema = createFormSchema.extend({});
@@ -113,6 +123,7 @@ const roleColors: { [key in UserRole]: string } = {
   admin: 'bg-red-100 text-red-700 border-red-200',
   mantenimiento: 'bg-cyan-100 text-cyan-700 border-cyan-200',
   asesor_arl: 'bg-green-100 text-green-700 border-green-200',
+  lider_regional: 'bg-indigo-100 text-indigo-700 border-indigo-200',
 };
 
 function BulkUploadDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
@@ -368,7 +379,11 @@ export default function UsersPage() {
       telefono: '',
       empresa: 'NIXUS',
       ciudad: '',
-      planta: ''
+      planta: '',
+      allowedEmpresas: [],
+      allowedPlantas: [],
+      allowedCiudades: [],
+      allowedModules: [],
     },
   });
 
@@ -731,6 +746,10 @@ export default function UsersPage() {
       empresa: user.empresa || '',
       ciudad: user.ciudad || '',
       planta: user.planta || '',
+      allowedEmpresas: user.allowedEmpresas || [],
+      allowedPlantas: user.allowedPlantas || [],
+      allowedCiudades: user.allowedCiudades || [],
+      allowedModules: (user.allowedModules || []) as AppModule[],
     });
     setIsEditModalOpen(true);
   }
@@ -742,7 +761,10 @@ export default function UsersPage() {
     admins: users.filter(u => u.role === 'admin').length,
   };
 
-  if (adminLoading || adminUser?.role !== 'admin') {
+  const canAccessUsersPage = adminUser?.role === 'admin' ||
+    (adminUser?.role === 'lider_regional' && adminUser.allowedModules?.includes('users'));
+
+  if (adminLoading || !canAccessUsersPage) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -981,6 +1003,108 @@ export default function UsersPage() {
                         )}
                       />
                     </div>
+
+                    {/* ── Scope Líder Regional (create) ── */}
+                    {createForm.watch('role') === 'lider_regional' && (
+                      <div className="border rounded-lg p-4 space-y-4 bg-indigo-50/50">
+                        <p className="text-sm font-semibold text-indigo-700">Scope del Líder Regional</p>
+
+                        <div>
+                          <p className="text-xs font-bold uppercase text-gray-500 mb-2">Módulos con acceso</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {ALL_MODULES.map(mod => (
+                              <label key={mod} className="flex items-center gap-2 cursor-pointer">
+                                <Checkbox
+                                  checked={(createForm.watch('allowedModules') || []).includes(mod)}
+                                  onCheckedChange={(checked) => {
+                                    const current = createForm.getValues('allowedModules') || [];
+                                    createForm.setValue('allowedModules',
+                                      checked ? [...current, mod] : current.filter(m => m !== mod)
+                                    );
+                                  }}
+                                />
+                                <span className="text-sm">{MODULE_LABELS[mod]}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-bold uppercase text-gray-500 mb-2">Empresas (vacío = todas)</p>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(createForm.watch('allowedEmpresas') || []).map(e => (
+                              <Badge key={e} variant="secondary" className="gap-1">
+                                {e}
+                                <button type="button" onClick={() => createForm.setValue('allowedEmpresas',
+                                  (createForm.getValues('allowedEmpresas') || []).filter(x => x !== e)
+                                )}><X className="h-3 w-3" /></button>
+                              </Badge>
+                            ))}
+                          </div>
+                          <Select onValueChange={(v) => {
+                            const current = createForm.getValues('allowedEmpresas') || [];
+                            if (!current.includes(v)) createForm.setValue('allowedEmpresas', [...current, v]);
+                          }}>
+                            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar empresa..." /></SelectTrigger>
+                            <SelectContent>
+                              {listEmpresas.filter(e => !(createForm.watch('allowedEmpresas') || []).includes(e)).map(e => (
+                                <SelectItem key={e} value={e}>{e}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-bold uppercase text-gray-500 mb-2">Plantas (vacío = todas)</p>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(createForm.watch('allowedPlantas') || []).map(p => (
+                              <Badge key={p} variant="secondary" className="gap-1">
+                                {p}
+                                <button type="button" onClick={() => createForm.setValue('allowedPlantas',
+                                  (createForm.getValues('allowedPlantas') || []).filter(x => x !== p)
+                                )}><X className="h-3 w-3" /></button>
+                              </Badge>
+                            ))}
+                          </div>
+                          <Select onValueChange={(v) => {
+                            const current = createForm.getValues('allowedPlantas') || [];
+                            if (!current.includes(v)) createForm.setValue('allowedPlantas', [...current, v]);
+                          }}>
+                            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar planta..." /></SelectTrigger>
+                            <SelectContent>
+                              {listPlantas.filter(p => !(createForm.watch('allowedPlantas') || []).includes(p)).map(p => (
+                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-bold uppercase text-gray-500 mb-2">Ciudades (vacío = todas)</p>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(createForm.watch('allowedCiudades') || []).map(c => (
+                              <Badge key={c} variant="secondary" className="gap-1">
+                                {c}
+                                <button type="button" onClick={() => createForm.setValue('allowedCiudades',
+                                  (createForm.getValues('allowedCiudades') || []).filter(x => x !== c)
+                                )}><X className="h-3 w-3" /></button>
+                              </Badge>
+                            ))}
+                          </div>
+                          <Select onValueChange={(v) => {
+                            const current = createForm.getValues('allowedCiudades') || [];
+                            if (!current.includes(v)) createForm.setValue('allowedCiudades', [...current, v]);
+                          }}>
+                            <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar ciudad..." /></SelectTrigger>
+                            <SelectContent>
+                              {listCiudades.filter(c => !(createForm.watch('allowedCiudades') || []).includes(c)).map(c => (
+                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex justify-end gap-3 border-t pt-6">
                       <Button type="button" variant="ghost" onClick={() => setShowCreateForm(false)}>
@@ -1380,6 +1504,112 @@ export default function UsersPage() {
                   </FormItem>
                 )}
               />
+              {/* ── Scope Líder Regional ── */}
+              {updateForm.watch('role') === 'lider_regional' && (
+                <div className="border rounded-lg p-4 space-y-4 bg-indigo-50/50">
+                  <p className="text-sm font-semibold text-indigo-700">Scope del Líder Regional</p>
+
+                  {/* Módulos permitidos */}
+                  <div>
+                    <p className="text-xs font-bold uppercase text-gray-500 mb-2">Módulos con acceso</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ALL_MODULES.map(mod => (
+                        <label key={mod} className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            checked={(updateForm.watch('allowedModules') || []).includes(mod)}
+                            onCheckedChange={(checked) => {
+                              const current = updateForm.getValues('allowedModules') || [];
+                              updateForm.setValue('allowedModules',
+                                checked ? [...current, mod] : current.filter(m => m !== mod)
+                              );
+                            }}
+                          />
+                          <span className="text-sm">{MODULE_LABELS[mod]}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Empresas permitidas */}
+                  <div>
+                    <p className="text-xs font-bold uppercase text-gray-500 mb-2">Empresas (vacío = todas)</p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(updateForm.watch('allowedEmpresas') || []).map(e => (
+                        <Badge key={e} variant="secondary" className="gap-1">
+                          {e}
+                          <button type="button" onClick={() => updateForm.setValue('allowedEmpresas',
+                            (updateForm.getValues('allowedEmpresas') || []).filter(x => x !== e)
+                          )}><X className="h-3 w-3" /></button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Select onValueChange={(v) => {
+                      const current = updateForm.getValues('allowedEmpresas') || [];
+                      if (!current.includes(v)) updateForm.setValue('allowedEmpresas', [...current, v]);
+                    }}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar empresa..." /></SelectTrigger>
+                      <SelectContent>
+                        {listEmpresas.filter(e => !(updateForm.watch('allowedEmpresas') || []).includes(e)).map(e => (
+                          <SelectItem key={e} value={e}>{e}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Plantas permitidas */}
+                  <div>
+                    <p className="text-xs font-bold uppercase text-gray-500 mb-2">Plantas (vacío = todas)</p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(updateForm.watch('allowedPlantas') || []).map(p => (
+                        <Badge key={p} variant="secondary" className="gap-1">
+                          {p}
+                          <button type="button" onClick={() => updateForm.setValue('allowedPlantas',
+                            (updateForm.getValues('allowedPlantas') || []).filter(x => x !== p)
+                          )}><X className="h-3 w-3" /></button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Select onValueChange={(v) => {
+                      const current = updateForm.getValues('allowedPlantas') || [];
+                      if (!current.includes(v)) updateForm.setValue('allowedPlantas', [...current, v]);
+                    }}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar planta..." /></SelectTrigger>
+                      <SelectContent>
+                        {listPlantas.filter(p => !(updateForm.watch('allowedPlantas') || []).includes(p)).map(p => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Ciudades permitidas */}
+                  <div>
+                    <p className="text-xs font-bold uppercase text-gray-500 mb-2">Ciudades (vacío = todas)</p>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(updateForm.watch('allowedCiudades') || []).map(c => (
+                        <Badge key={c} variant="secondary" className="gap-1">
+                          {c}
+                          <button type="button" onClick={() => updateForm.setValue('allowedCiudades',
+                            (updateForm.getValues('allowedCiudades') || []).filter(x => x !== c)
+                          )}><X className="h-3 w-3" /></button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Select onValueChange={(v) => {
+                      const current = updateForm.getValues('allowedCiudades') || [];
+                      if (!current.includes(v)) updateForm.setValue('allowedCiudades', [...current, v]);
+                    }}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Agregar ciudad..." /></SelectTrigger>
+                      <SelectContent>
+                        {listCiudades.filter(c => !(updateForm.watch('allowedCiudades') || []).includes(c)).map(c => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               <FormField
                 control={updateForm.control}
                 name="otherRoles"

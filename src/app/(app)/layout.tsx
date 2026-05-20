@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/hooks/use-user';
+import { liderRegionalHasModule } from '@/lib/role-config';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -188,8 +189,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {/* NUEVO: Asesor ARL no tiene acceso a Permisos de Trabajo */}
-                {user.role !== 'asesor_arl' && (
+                {user.role !== 'asesor_arl' && liderRegionalHasModule(user, 'permits') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/permits')}
@@ -206,7 +206,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
                 )}
 
-                {(user.role === 'solicitante' || user.role === 'admin') && (
+                {(user.role === 'solicitante' || user.role === 'admin' || liderRegionalHasModule(user, 'permits_create')) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/permits/create')}
@@ -220,6 +220,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>
                 )}
 
+                {liderRegionalHasModule(user, 'hallazgos') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/hallazgos')}
@@ -231,9 +232,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span className="font-medium">Hallazgos</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                )}
 
-                {/* Módulo Verificación Contratistas: admin, lider_sst, asesor_arl */}
-                {(user.role === 'admin' || user.role === 'lider_sst' || user.role === 'asesor_arl') && (
+                {(user.role === 'admin' || user.role === 'lider_sst' || user.role === 'asesor_arl' || liderRegionalHasModule(user, 'contractor_verifications')) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/contractor-verifications')}
@@ -247,7 +248,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>
                 )}
 
-                {/* Plantillas Contratistas: admin y asesor_arl */}
                 {(user.role === 'admin' || user.role === 'asesor_arl') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
@@ -343,7 +343,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               </SidebarGroup>
 
-              {user.role === 'admin' && (
+              {(user.role === 'admin' || (user.role === 'lider_regional' && (
+                liderRegionalHasModule(user, 'users') ||
+                liderRegionalHasModule(user, 'lists') ||
+                liderRegionalHasModule(user, 'audit')
+              ))) && (
                 <>
                   <SidebarSeparator className="my-2" />
                   <SidebarGroup>
@@ -351,6 +355,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       Administración
                     </SidebarGroupLabel>
 
+                    {(user.role === 'admin' || liderRegionalHasModule(user, 'users')) && (
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() => handleNavigation('/admin/users')}
@@ -362,7 +367,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span className="font-medium">Gestión de Usuarios</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    )}
 
+                    {(user.role === 'admin' || liderRegionalHasModule(user, 'lists')) && (
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() => handleNavigation('/admin/lists')}
@@ -374,7 +381,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span className="font-medium">Gestión de Listas</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    )}
 
+                    {(user.role === 'admin' || liderRegionalHasModule(user, 'audit')) && (
                     <SidebarMenuItem>
                       <SidebarMenuButton
                         onClick={() => handleNavigation('/admin/audit')}
@@ -386,6 +395,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span className="font-medium">Auditoría de Datos</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    )}
 
                   </SidebarGroup>
                 </>

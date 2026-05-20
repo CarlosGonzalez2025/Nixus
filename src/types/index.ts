@@ -3,7 +3,16 @@ import type { Timestamp } from 'firebase/firestore';
 
 export type PermitStatus = 'borrador' | 'pendiente_revision' | 'aprobado' | 'en_ejecucion' | 'suspendido' | 'cerrado' | 'rechazado';
 
-export type UserRole = 'solicitante' | 'autorizante' | 'lider_sst' | 'admin' | 'mantenimiento' | 'asesor_arl';
+export type UserRole = 'solicitante' | 'autorizante' | 'lider_sst' | 'admin' | 'mantenimiento' | 'asesor_arl' | 'lider_regional';
+
+export type AppModule =
+  | 'permits'
+  | 'permits_create'
+  | 'hallazgos'
+  | 'contractor_verifications'
+  | 'users'
+  | 'lists'
+  | 'audit';
 
 export interface User {
   uid: string;
@@ -18,6 +27,11 @@ export interface User {
   ciudad?: string;
   planta?: string;
   disabled?: boolean;
+  // Campos exclusivos del rol lider_regional
+  allowedEmpresas?: string[];
+  allowedPlantas?: string[];
+  allowedCiudades?: string[];
+  allowedModules?: AppModule[];
 }
 
 export type Approval = {

@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot, QueryConstraint } from 'firebase/
 import { db } from '@/lib/firebase';
 import { useUser } from './use-user';
 import type { Permit, UserRole } from '@/types';
+import { isInLiderRegionalScope } from '@/lib/role-config';
 
 export function useSidebarBadges() {
   const { user } = useUser();
@@ -18,7 +19,7 @@ export function useSidebarBadges() {
     }
 
     const { role } = user;
-    const approverRoles: UserRole[] = ['admin', 'autorizante', 'lider_sst', 'mantenimiento'];
+    const approverRoles: UserRole[] = ['admin', 'autorizante', 'lider_sst', 'mantenimiento', 'lider_regional'];
 
     // Only run the query for roles that can approve.
     if (!approverRoles.includes(role)) {
@@ -31,7 +32,7 @@ export function useSidebarBadges() {
     // Add specific constraints based on role to satisfy security rules.
     if (role === 'mantenimiento') {
       queryConstraints.push(where('controlEnergia', '==', true));
-    } else if (role === 'admin') {
+    } else if (role === 'admin' || role === 'lider_regional') {
       queryConstraints.push(where('status', '==', 'pendiente_revision'));
     } else if (role === 'autorizante' || role === 'lider_sst') {
       // FIX 2C: Filtrar por status en la query; empresa/planta se aplican en el callback.
@@ -54,7 +55,13 @@ export function useSidebarBadges() {
           }
 
           // FIX 2C: Filtro cliente por empresa y planta para autorizante y lider_sst
-          if (role === 'autorizante' || role === 'lider_sst') {
+          if (role === 'lider_regional') {
+            if (!isInLiderRegionalScope(user, {
+              empresa: permit.generalInfo?.empresa,
+              planta: permit.generalInfo?.planta,
+              ciudad: permit.generalInfo?.ciudad,
+            })) return false;
+          } else if (role === 'autorizante' || role === 'lider_sst') {
             const matchEmpresa = !user.empresa || !permit.generalInfo?.empresa || permit.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
             const matchPlanta  = !user.planta  || !permit.generalInfo?.planta  || permit.generalInfo.planta.toLowerCase()  === user.planta.toLowerCase();
             if (!matchEmpresa || !matchPlanta) return false;

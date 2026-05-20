@@ -3,9 +3,11 @@
 import { getAuth } from 'firebase-admin/auth';
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import * as z from 'zod';
-import type { User } from '@/types';
+import type { User, AppModule } from '@/types';
 import { USER_ROLES } from '@/lib/role-config';
 import { revalidatePath } from 'next/cache';
+
+const APP_MODULES = ['permits', 'permits_create', 'hallazgos', 'contractor_verifications', 'users', 'lists', 'audit'] as const;
 
 const createFormSchema = z.object({
   fullName: z.string().min(3),
@@ -17,9 +19,12 @@ const createFormSchema = z.object({
   empresa: z.string().min(2),
   ciudad: z.string().optional(),
   planta: z.string().optional(),
+  allowedEmpresas: z.array(z.string()).optional(),
+  allowedPlantas: z.array(z.string()).optional(),
+  allowedCiudades: z.array(z.string()).optional(),
+  allowedModules: z.array(z.enum(APP_MODULES)).optional(),
 });
 
-// New schema for bulk creation
 const bulkCreateUserSchema = createFormSchema.extend({});
 
 const updateFormSchema = z.object({
@@ -33,6 +38,10 @@ const updateFormSchema = z.object({
   empresa: z.string().min(2, { message: "La empresa es requerida." }),
   ciudad: z.string().optional(),
   planta: z.string().optional(),
+  allowedEmpresas: z.array(z.string()).optional(),
+  allowedPlantas: z.array(z.string()).optional(),
+  allowedCiudades: z.array(z.string()).optional(),
+  allowedModules: z.array(z.enum(APP_MODULES)).optional(),
 });
 
 export async function createUser(data: z.infer<typeof createFormSchema>) {
@@ -60,6 +69,12 @@ export async function createUser(data: z.infer<typeof createFormSchema>) {
       planta: data.planta ?? '',
       photoURL: userRecord.photoURL || '',
       disabled: false,
+      ...(data.role === 'lider_regional' && {
+        allowedEmpresas: data.allowedEmpresas ?? [],
+        allowedPlantas: data.allowedPlantas ?? [],
+        allowedCiudades: data.allowedCiudades ?? [],
+        allowedModules: (data.allowedModules ?? []) as AppModule[],
+      }),
     };
 
     await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
@@ -160,7 +175,15 @@ export async function updateUser(data: z.infer<typeof updateFormSchema>) {
 
     // 2. Update Firestore document
     const { uid, ...profileData } = data;
-    await adminDb.collection('users').doc(uid).update(profileData);
+    const firestoreData: Record<string, unknown> = { ...profileData };
+    // Para lider_regional guardamos el scope; para otros roles lo limpiamos
+    if (profileData.role !== 'lider_regional') {
+      firestoreData.allowedEmpresas = [];
+      firestoreData.allowedPlantas = [];
+      firestoreData.allowedCiudades = [];
+      firestoreData.allowedModules = [];
+    }
+    await adminDb.collection('users').doc(uid).update(firestoreData);
 
     return { success: true };
   } catch (error: any) {

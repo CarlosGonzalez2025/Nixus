@@ -26,6 +26,16 @@ service cloud.firestore {
       return isSignedIn() && hasRole('admin');
     }
 
+    function isLiderRegional() {
+      return isSignedIn() && hasRole('lider_regional');
+    }
+
+    // Admin o Líder Regional (para operaciones de gestión).
+    // El scope del lider_regional se valida en el cliente; aquí solo se verifica el rol.
+    function isAdminOrLR() {
+      return isAdmin() || isLiderRegional();
+    }
+
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
@@ -49,16 +59,15 @@ service cloud.firestore {
     // FIX 1A: Eliminado hardcoding de 'Nixus Capital'. El acceso por empresa se controla
     // individualmente en match /hallazgos/{hallazgoId} comparando resource.data.empresaId == getEmpresa().
     function canAccessHallazgos() {
-      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('autorizante'));
+      return isSignedIn() && (isAdminOrLR() || hasRole('lider_sst') || hasRole('autorizante'));
     }
 
     // --- Colección de Usuarios (users) ---
     match /users/{userId} {
-      // Un usuario siempre debe poder leer su propio perfil para que hasRole() funcione.
-      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
-      allow list: if isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
-      allow create, delete: if false; // La creación se maneja desde el backend (Admin SDK)
+      allow read: if isAdminOrLR() || (isSignedIn() && request.auth.uid == userId);
+      allow list: if isAdminOrLR();
+      allow update: if isOwner(userId) || isAdminOrLR();
+      allow create, delete: if false;
     }
 
     // --- Colección de Notificaciones (notifications) ---
@@ -99,12 +108,9 @@ service cloud.firestore {
       // TODO: Si se migra a Firestore Rules v2 con request.query.filters, agregar validación de empresa/planta.
       allow list: if isSignedIn() &&
                   (
-                    (isAdmin() || hasRole('autorizante') || hasRole('lider_sst')) ||
-                    // Un solicitante puede listar sus propios permisos.
-                    // NOTE: request.query.where no es válido en v2; la protección real es el where() del cliente
-                    // + el allow read que aplica isCreator() por documento.
+                    isAdmin() || isLiderRegional() ||
+                    hasRole('autorizante') || hasRole('lider_sst') ||
                     hasRole('solicitante') ||
-                    // Mantenimiento puede listar permisos de control de energía.
                     hasRole('mantenimiento')
                   );
 
@@ -117,8 +123,8 @@ service cloud.firestore {
                       // El creador puede editarlo solo si está en estado 'borrador'.
                       (isCreator(resource.data) && resource.data.status == 'borrador') ||
 
-                      // Un admin puede cambiar el estado en cualquier momento (para emergencias).
-                      (isAdmin()) ||
+                      // Un admin o lider_regional puede cambiar el estado en cualquier momento.
+                      (isAdminOrLR()) ||
 
                       // Lógica de firmas de apertura: permite firmar si el permiso está pendiente.
                       (resource.data.status == 'pendiente_revision') ||
@@ -155,14 +161,14 @@ service cloud.firestore {
     // --- Colección de Listas Dinámicas (dynamic_lists) ---
     match /dynamic_lists/{listName} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write: if isAdminOrLR();
     }
 
     // --- Módulo Verificación Contratistas ---
 
     // Módulo visible para: admin, lider_sst, asesor_arl.
     function canAccessContractorModule() {
-      return isSignedIn() && (isAdmin() || hasRole('lider_sst') || hasRole('asesor_arl'));
+      return isSignedIn() && (isAdminOrLR() || hasRole('lider_sst') || hasRole('asesor_arl'));
     }
 
     // Valida acceso de lectura a una verificación según el rol:
@@ -220,7 +226,7 @@ service cloud.firestore {
       allow update: if canAccessContractorModule() && canReadVerification(resource.data);
 
       // Eliminar: solo admin.
-      allow delete: if isAdmin();
+      allow delete: if isAdminOrLR();
 
       // Subcolección: respuestas (answers).
       match /answers/{answerId} {
@@ -287,8 +293,7 @@ service cloud.firestore {
                      (resource.data.empresaId == getEmpresa() &&
                       (!getPlanta() || resource.data.planta == getPlanta())));
 
-      // Solo admins pueden eliminar hallazgos.
-      allow delete: if isAdmin();
+      allow delete: if isAdminOrLR();
     }
 
   }

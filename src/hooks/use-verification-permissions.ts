@@ -1,11 +1,14 @@
 'use client';
 
 import type { User, ContractorVerification, ChecklistTemplate } from '@/types';
+import { isInLiderRegionalScope } from '@/lib/role-config';
 
-const ALLOWED_ROLES = ['admin', 'lider_sst', 'asesor_arl'] as const;
+const ALLOWED_ROLES = ['admin', 'lider_sst', 'asesor_arl', 'lider_regional'] as const;
 
 export function useVerificationPermissions(user: User | null) {
-  const canAccessModule = ALLOWED_ROLES.includes(user?.role as any);
+  const isLiderRegional = user?.role === 'lider_regional';
+  const canAccessModule = ALLOWED_ROLES.includes(user?.role as any) &&
+    (!isLiderRegional || (user?.allowedModules?.includes('contractor_verifications') ?? false));
   const isAdmin = user?.role === 'admin';
   const isAsesorARL = user?.role === 'asesor_arl';
   const isLiderSST = user?.role === 'lider_sst';
@@ -13,6 +16,13 @@ export function useVerificationPermissions(user: User | null) {
   function canViewVerification(verification: ContractorVerification): boolean {
     if (!user) return false;
     if (isAdmin) return true;
+    if (isLiderRegional) {
+      return isInLiderRegionalScope(user, {
+        empresa: verification.companyName,
+        planta: verification.plantId,
+        ciudad: verification.city,
+      });
+    }
     if (isAsesorARL) return verification.createdBy === user.uid;
     if (isLiderSST) return verification.plantId === user.planta;
     return false;

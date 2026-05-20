@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useUser } from '@/hooks/use-user';
+import { isInLiderRegionalScope } from '@/lib/role-config';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -194,7 +195,27 @@ export default function PermitsPage() {
     const permitsCollection = collection(db, 'permits');
     let unsubscribers: Unsubscribe[] = [];
 
-    if (user.role === 'lider_sst') {
+    if (user.role === 'lider_regional') {
+      const unsub = onSnapshot(query(permitsCollection, orderBy('createdAt', 'desc')), (snapshot) => {
+        const data = snapshot.docs
+          .map(doc => {
+            const d = doc.data();
+            return { id: doc.id, ...d, createdAt: parseFirestoreDate(d.createdAt) } as unknown as Permit;
+          })
+          .filter(p => isInLiderRegionalScope(user, {
+            empresa: p.generalInfo?.empresa,
+            planta: p.generalInfo?.planta,
+            ciudad: p.generalInfo?.ciudad,
+          }));
+        setAllPermits(data);
+        setLoading(false);
+      }, () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
+        setLoading(false);
+      });
+      unsubscribers.push(unsub);
+
+    } else if (user.role === 'lider_sst') {
       const sstConstraints: QueryConstraint[] = user.planta
         ? [where('generalInfo.planta', '==', user.planta), orderBy('createdAt', 'desc')]
         : [orderBy('createdAt', 'desc')];

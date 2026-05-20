@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
+import { isInLiderRegionalScope } from '@/lib/role-config';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -95,7 +96,7 @@ export default function HallazgosPage() {
         if (!db || !user) return;
 
         const constraints: any[] = [orderBy('createdAt', 'desc')];
-        if (user.role !== 'admin') {
+        if (user.role !== 'admin' && user.role !== 'lider_regional') {
             if (user.role === 'asesor_arl') {
                 constraints.unshift(where('createdBy', '==', user.uid));
             } else if (user.role === 'lider_sst' && user.planta) {
@@ -129,7 +130,13 @@ export default function HallazgosPage() {
             const matchClase = filterClase === 'all' || h.clase === filterClase;
 
             let matchEmpresaPlanta = true;
-            if (user?.role === 'asesor_arl') {
+            if (user?.role === 'lider_regional') {
+                matchEmpresaPlanta = isInLiderRegionalScope(user, {
+                    empresa: h.empresa,
+                    planta: h.planta,
+                    ciudad: h.ciudad,
+                });
+            } else if (user?.role === 'asesor_arl') {
                 matchEmpresaPlanta = h.createdBy === user.uid;
             } else if (user?.role === 'lider_sst') {
                 const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();

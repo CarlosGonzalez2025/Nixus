@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
+import { isInLiderRegionalScope } from '@/lib/role-config';
 import {
   collection, query, where, onSnapshot, orderBy,
   Unsubscribe, QueryConstraint, getDocs,
@@ -167,7 +168,23 @@ export default function Dashboard() {
     // Asesor ARL — no consulta permisos
     if (user.role === 'asesor_arl') {
       setAllPermits([]);
-      // loading lo cierra el snapshot de hallazgos
+
+    } else if (user.role === 'lider_regional') {
+      // Lider Regional — carga todos y filtra por scope asignado
+      unsubscribers.push(onSnapshot(query(permitsCollection, orderBy('createdAt', 'desc')), (snap) => {
+        const data = snap.docs
+          .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
+          .filter(p => isInLiderRegionalScope(user, {
+            empresa: p.generalInfo?.empresa,
+            planta: p.generalInfo?.planta,
+            ciudad: p.generalInfo?.ciudad,
+          }));
+        setAllPermits(data);
+        setLoading(false);
+      }, () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
+        setLoading(false);
+      }));
 
     } else if (user.role === 'lider_sst') {
       const q1 = query(permitsCollection, where('selectedWorkTypes.alturas', '==', true));
@@ -255,7 +272,7 @@ export default function Dashboard() {
 
     // ── Hallazgos ────────────────────────────────────────────────────────
     let qH;
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'lider_regional') {
       qH = query(collection(db, 'hallazgos'));
     } else if (user.role === 'lider_sst') {
       const c: QueryConstraint[] = [];
@@ -271,7 +288,13 @@ export default function Dashboard() {
       let hData = snap.docs.map(d => ({
         id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
       } as unknown as Hallazgo));
-      if (user.planta && user.role !== 'admin') {
+      if (user.role === 'lider_regional') {
+        hData = hData.filter(h => isInLiderRegionalScope(user, {
+          empresa: h.empresa,
+          planta: h.planta,
+          ciudad: h.ciudad,
+        }));
+      } else if (user.planta && user.role !== 'admin') {
         hData = hData.filter(h => !h.planta || h.planta.toLowerCase() === user.planta!.toLowerCase());
       }
       setAllHallazgos(hData);

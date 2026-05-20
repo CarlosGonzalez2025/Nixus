@@ -577,8 +577,11 @@ export default function ListsPage() {
     return () => unsubscribers.forEach(unsub => unsub());
   }, []);
 
+  const canAccessListsPage = adminUser?.role === 'admin' ||
+    (adminUser?.role === 'lider_regional' && adminUser.allowedModules?.includes('lists'));
+
   useEffect(() => {
-    if (!adminLoading && adminUser?.role !== 'admin') {
+    if (!adminLoading && !canAccessListsPage) {
       toast({
         variant: 'destructive',
         title: 'Acceso Denegado',
@@ -586,9 +589,9 @@ export default function ListsPage() {
       });
       router.replace('/dashboard');
     }
-  }, [adminUser, adminLoading, router, toast]);
+  }, [adminUser, adminLoading, canAccessListsPage, router, toast]);
 
-  if (adminLoading || !adminUser || adminUser.role !== 'admin') {
+  if (adminLoading || !canAccessListsPage) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
