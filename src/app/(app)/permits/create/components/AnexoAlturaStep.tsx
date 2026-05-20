@@ -9,36 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
-import { Signature, Trash2, Plus, ChevronDown, Info } from 'lucide-react';
+import { ChevronDown, Info, Search, Check } from 'lucide-react';
 import Image from 'next/image';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { SignaturePad } from '@/components/ui/signature-pad';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { AutorizacionPersona, ValidacionDiaria, AnexoAltura } from '@/types';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import type { AnexoAltura } from '@/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const anexoAlturaEstructuras = [
@@ -53,74 +37,14 @@ const anexoAlturaEstructuras = [
 
 const tareasTrabajoAltura = [
   {
-    id: 'mantenimiento-aires',
-    nombre: 'Mantenimiento de aires',
-    descripcion: 'Realización de mantenimiento, reparación y limpieza de aires acondicionados'
+    id: 'ajuste-tableros-electricos',
+    nombre: 'Ajuste de tableros eléctricos',
+    descripcion: 'Ajuste, apriete y verificación de conexiones en tableros eléctricos de control y distribución'
   },
   {
-    id: 'cambio-estanterias',
-    nombre: 'Cambio y reparación de estanterías',
-    descripcion: 'Reparación, inspección y cambio de elementos de la estantería'
-  },
-  {
-    id: 'instalacion-luminarias',
-    nombre: 'Instalación y cambio de luminarias',
-    descripcion: 'Reparación y cambio de luminaria'
-  },
-  {
-    id: 'desnidacion-palomas',
-    nombre: 'Des nidación de palomas',
-    descripcion: 'Retiro de nidos generados con palomas'
-  },
-  {
-    id: 'instalacion-carpas',
-    nombre: 'Instalación de carpas',
-    descripcion: 'Instalar carpas (lona) de carpas móviles'
-  },
-  {
-    id: 'modificacion-equipos-oficina',
-    nombre: 'Modificación y adecuación de equipos de oficina',
-    descripcion: 'Cambio de módulos, divisiones de oficina'
-  },
-  {
-    id: 'instalacion-avisos',
-    nombre: 'Instalación de avisos',
-    descripcion: 'Instalar vallas, pendones, avisos'
-  },
-  {
-    id: 'estudios-isocineticos',
-    nombre: 'Estudios isocinéticos',
-    descripcion: 'Instalación y desmonte equipo, en chimenea de caldera'
-  },
-  {
-    id: 'cargue-graneleros',
-    nombre: 'Cargue de graneleros',
-    descripcion: 'Abrir compuertas superiores de graneleros y realizar cargue'
-  },
-  {
-    id: 'mantenimiento-antena',
-    nombre: 'Instalación y mantenimiento de antena de telefonía',
-    descripcion: 'Revisión de antena de telecomunicaciones'
-  },
-  {
-    id: 'impermeabilizacion-cubierta',
-    nombre: 'Impermeabilización de cubierta y limpieza (sobre losa)',
-    descripcion: 'Aplicar impermeabilizante a cubierta'
-  },
-  {
-    id: 'poda-arboles',
-    nombre: 'Poda de árboles (si se encuentra retirado de líneas con tensión)',
-    descripcion: 'Realización de poda de árboles'
-  },
-  {
-    id: 'instalacion-malla',
-    nombre: 'Instalación de malla y/o poli sombra',
-    descripcion: 'Instalación y desmonte de mallas y poli sombra'
-  },
-  {
-    id: 'polarizacion-ventanas',
-    nombre: 'Polarización de ventanas, instalación de cortinas',
-    descripcion: 'Colocar papel polarizado en ventanas e instalación de cortinas'
+    id: 'cambio-luminarias',
+    nombre: 'Cambio de luminarias',
+    descripcion: 'Reemplazo y cambio de luminarias en distintas áreas de la planta'
   },
   {
     id: 'cambio-piezas-equipos',
@@ -128,14 +52,189 @@ const tareasTrabajoAltura = [
     descripcion: 'Instalación de sensores, luces, cámaras, etc., en los equipos'
   },
   {
-    id: 'mantenimiento-camaras',
-    nombre: 'Mantenimiento e instalación de cámaras',
-    descripcion: 'Instalar cámaras de seguridad en puntos de la planta'
+    id: 'cambio-estanterias',
+    nombre: 'Cambio y reparación de estanterías',
+    descripcion: 'Reparación, inspección y cambio de elementos de la estantería'
+  },
+  {
+    id: 'cargue-graneleros',
+    nombre: 'Cargue de graneleros',
+    descripcion: 'Abrir compuertas superiores de graneleros y realizar cargue'
+  },
+  {
+    id: 'desnidacion-palomas',
+    nombre: 'Des nidación de palomas',
+    descripcion: 'Retiro de nidos generados con palomas'
+  },
+  {
+    id: 'estudios-isocineticos',
+    nombre: 'Estudios isocinéticos',
+    descripcion: 'Instalación y desmonte de equipo en chimenea de caldera'
+  },
+  {
+    id: 'impermeabilizacion-cubierta',
+    nombre: 'Impermeabilización de cubierta y limpieza (sobre losa)',
+    descripcion: 'Aplicar impermeabilizante a cubierta'
+  },
+  {
+    id: 'instalacion-avisos',
+    nombre: 'Instalación de avisos',
+    descripcion: 'Instalar vallas, pendones, avisos'
+  },
+  {
+    id: 'instalacion-carpas',
+    nombre: 'Instalación de carpas',
+    descripcion: 'Instalar carpas (lona) de carpas móviles'
+  },
+  {
+    id: 'instalacion-malla',
+    nombre: 'Instalación de malla y/o poli sombra',
+    descripcion: 'Instalación y desmonte de mallas y poli sombra'
   },
   {
     id: 'instalacion-tuberia',
     nombre: 'Instalación de tubería eléctrica',
     descripcion: 'Instalar tubería y sondear cableado, instalar soportes de tubería'
+  },
+  {
+    id: 'instalacion-luminarias',
+    nombre: 'Instalación y cambio de luminarias',
+    descripcion: 'Reparación y cambio de luminaria'
+  },
+  {
+    id: 'mantenimiento-antena',
+    nombre: 'Instalación y mantenimiento de antena de telefonía',
+    descripcion: 'Revisión de antena de telecomunicaciones'
+  },
+  {
+    id: 'isocinetico',
+    nombre: 'Isocinético',
+    descripcion: 'Medición y muestreo isocinético en chimeneas y ductos de emisión'
+  },
+  {
+    id: 'limpieza-filtros-manga',
+    nombre: 'Limpieza de filtros de manga',
+    descripcion: 'Limpieza y mantenimiento de filtros de manga del sistema de extracción de polvos'
+  },
+  {
+    id: 'limpieza-tableros-electricos',
+    nombre: 'Limpieza de tableros eléctricos',
+    descripcion: 'Limpieza interna de tableros eléctricos, revisión de conexiones y componentes'
+  },
+  {
+    id: 'mantenimiento-tolva-ceniza',
+    nombre: 'Mantenimiento a tolva de ceniza',
+    descripcion: 'Limpieza, inspección y mantenimiento de tolva de almacenamiento de ceniza'
+  },
+  {
+    id: 'mantenimiento-cabezote-elevador',
+    nombre: 'Mantenimiento cabezote de elevador',
+    descripcion: 'Inspección y mantenimiento del cabezote del sistema elevador de cangilones'
+  },
+  {
+    id: 'mantenimiento-aire-acondicionado',
+    nombre: 'Mantenimiento de aire acondicionado',
+    descripcion: 'Mantenimiento preventivo y correctivo de unidades de aire acondicionado'
+  },
+  {
+    id: 'mantenimiento-aires',
+    nombre: 'Mantenimiento de aires',
+    descripcion: 'Realización de mantenimiento, reparación y limpieza de aires acondicionados'
+  },
+  {
+    id: 'mantenimiento-banda-merryck',
+    nombre: 'Mantenimiento de banda Merryck',
+    descripcion: 'Mantenimiento preventivo y correctivo de banda transportadora Merryck'
+  },
+  {
+    id: 'mantenimiento-bomba-condensados',
+    nombre: 'Mantenimiento de bomba de condensados',
+    descripcion: 'Revisión, mantenimiento y reparación de bomba de condensados de vapor'
+  },
+  {
+    id: 'mantenimiento-cribas',
+    nombre: 'Mantenimiento de cribas',
+    descripcion: 'Mantenimiento preventivo y correctivo de cribas y tamizadoras industriales'
+  },
+  {
+    id: 'mantenimiento-monocangilon',
+    nombre: 'Mantenimiento de monocangilón',
+    descripcion: 'Mantenimiento preventivo y correctivo del transportador monocangilón'
+  },
+  {
+    id: 'mantenimiento-tolva-descarga-molino',
+    nombre: 'Mantenimiento de tolva de descarga de molino',
+    descripcion: 'Mantenimiento y limpieza de tolva de descarga del molino'
+  },
+  {
+    id: 'mantenimiento-camaras',
+    nombre: 'Mantenimiento e instalación de cámaras',
+    descripcion: 'Instalar cámaras de seguridad en puntos de la planta'
+  },
+  {
+    id: 'mantenimiento-estructural',
+    nombre: 'Mantenimiento estructural (soldadura)',
+    descripcion: 'Trabajos de soldadura y mantenimiento correctivo de estructuras metálicas'
+  },
+  {
+    id: 'mantenimiento-limpieza-canales',
+    nombre: 'Mantenimiento y/o limpieza de canales',
+    descripcion: 'Limpieza y mantenimiento de canales de conducción y evacuación de aguas'
+  },
+  {
+    id: 'mantenimiento-limpieza-cerramiento',
+    nombre: 'Mantenimiento y/o limpieza de cerramiento',
+    descripcion: 'Limpieza, inspección y mantenimiento de cerramientos perimetrales'
+  },
+  {
+    id: 'mantenimiento-limpieza-ciclones',
+    nombre: 'Mantenimiento y/o limpieza de ciclones',
+    descripcion: 'Limpieza y mantenimiento de ciclones del sistema de extracción de polvo'
+  },
+  {
+    id: 'mantenimiento-limpieza-cubierta',
+    nombre: 'Mantenimiento y/o limpieza de cubierta',
+    descripcion: 'Limpieza, inspección y mantenimiento preventivo de cubierta'
+  },
+  {
+    id: 'mantenimiento-limpieza-enfriador',
+    nombre: 'Mantenimiento y/o limpieza de enfriador',
+    descripcion: 'Mantenimiento preventivo, correctivo y limpieza del sistema enfriador'
+  },
+  {
+    id: 'mantenimiento-limpieza-fachada',
+    nombre: 'Mantenimiento y/o limpieza de fachada',
+    descripcion: 'Limpieza, pintura y mantenimiento de fachadas del edificio'
+  },
+  {
+    id: 'mantenimiento-limpieza-secador',
+    nombre: 'Mantenimiento y/o limpieza de secador',
+    descripcion: 'Mantenimiento preventivo, correctivo y limpieza del secador industrial'
+  },
+  {
+    id: 'mantenimiento-limpieza-silos',
+    nombre: 'Mantenimiento y/o limpieza de silos',
+    descripcion: 'Limpieza, inspección y mantenimiento de silos de almacenamiento a granel'
+  },
+  {
+    id: 'mantenimiento-limpieza-tolvas',
+    nombre: 'Mantenimiento y/o limpieza de tolvas',
+    descripcion: 'Limpieza y mantenimiento de tolvas de almacenamiento o descarga de material'
+  },
+  {
+    id: 'modificacion-equipos-oficina',
+    nombre: 'Modificación y adecuación de equipos de oficina',
+    descripcion: 'Cambio de módulos, divisiones de oficina'
+  },
+  {
+    id: 'poda-arboles',
+    nombre: 'Poda de árboles (si se encuentra retirado de líneas con tensión)',
+    descripcion: 'Realización de poda de árboles'
+  },
+  {
+    id: 'polarizacion-ventanas',
+    nombre: 'Polarización de ventanas, instalación de cortinas',
+    descripcion: 'Colocar papel polarizado en ventanas e instalación de cortinas'
   },
 ];
 
@@ -222,6 +321,20 @@ export function AnexoAlturaStep() {
   const anexoAltura = state.anexoAltura ?? {} as NonNullable<typeof state.anexoAltura>;
   const isSSTRequired = anexoAltura.tareaRealizar?.id === 'otro';
 
+  const [tareaSelectOpen, setTareaSelectOpen] = React.useState(false);
+  const [tareaSearchQuery, setTareaSearchQuery] = React.useState('');
+
+  // eslint-disable-next-line no-control-regex
+  const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+  const filteredTareas = React.useMemo(() => {
+    const q = normalize(tareaSearchQuery);
+    if (!q) return tareasTrabajoAltura;
+    return tareasTrabajoAltura.filter(t => normalize(t.nombre).includes(q));
+  }, [tareaSearchQuery]);
+
+  const selectedTarea = tareasTrabajoAltura.find(t => t.id === anexoAltura.tareaRealizar?.id);
+
   const handleUpdate = (payload: Partial<AnexoAltura>) => {
     dispatch({ type: 'UPDATE_ANEXO_ALTURA', payload });
   };
@@ -239,15 +352,10 @@ export function AnexoAlturaStep() {
     dispatch({ type: 'SET_SST_REQUIRED', payload: isSSTRequired });
   }, [isSSTRequired, dispatch]);
 
-  // Handler para el cambio de tarea
   const handleTareaChange = (tareaId: string) => {
     if (tareaId === 'otro') {
       handleUpdate({
-        tareaRealizar: {
-          id: 'otro',
-          nombre: '',
-          descripcion: ''
-        }
+        tareaRealizar: { id: 'otro', nombre: '', descripcion: '' }
       });
     } else {
       const tareaSeleccionada = tareasTrabajoAltura.find(t => t.id === tareaId);
@@ -263,12 +371,8 @@ export function AnexoAlturaStep() {
     }
   };
 
-  // Obtener la descripción de la tarea seleccionada
   const getDescripcionTarea = () => {
-    if (!anexoAltura.tareaRealizar?.id) return '';
-    if (anexoAltura.tareaRealizar.id === 'otro') {
-      return anexoAltura.tareaRealizar.descripcion || '';
-    }
+    if (!anexoAltura.tareaRealizar?.id || anexoAltura.tareaRealizar.id === 'otro') return '';
     const tarea = tareasTrabajoAltura.find(t => t.id === anexoAltura.tareaRealizar?.id);
     return tarea?.descripcion || '';
   };
@@ -300,28 +404,94 @@ export function AnexoAlturaStep() {
             <div><Label>Equipo o Área Específica:</Label><Input value={generalInfo.proceso || ''} readOnly disabled /></div>
           </div>
 
-          {/* Nueva Sección: Tarea a Realizar */}
+          {/* Tarea a Realizar */}
           <div className="mt-4 space-y-4">
             <div>
-              <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+              <Label className="after:content-['*'] after:ml-0.5 after:text-red-500 mb-1.5 block">
                 Tarea a Realizar:
               </Label>
-              <Select
-                value={anexoAltura.tareaRealizar?.id || ''}
-                onValueChange={handleTareaChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione la tarea a realizar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tareasTrabajoAltura.map(tarea => (
-                    <SelectItem key={tarea.id} value={tarea.id}>
-                      {tarea.nombre}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="otro">Otro (especificar)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover open={tareaSelectOpen} onOpenChange={(open) => { setTareaSelectOpen(open); if (!open) setTareaSearchQuery(''); }}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={tareaSelectOpen}
+                    className="w-full justify-between h-auto min-h-[44px] text-left font-normal px-3 py-2"
+                  >
+                    <span className={cn("flex-1 text-sm leading-snug", !selectedTarea && anexoAltura.tareaRealizar?.id !== 'otro' && "text-muted-foreground")}>
+                      {anexoAltura.tareaRealizar?.id === 'otro'
+                        ? 'Otro (especificar)'
+                        : selectedTarea?.nombre ?? 'Seleccione la tarea a realizar'}
+                    </span>
+                    <ChevronDown className={cn('ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform', tareaSelectOpen && 'rotate-180')} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0"
+                  align="start"
+                  style={{ width: 'var(--radix-popover-trigger-width)' }}
+                >
+                  {/* Buscador */}
+                  <div className="flex items-center gap-2 px-3 py-2 border-b bg-white sticky top-0 z-10">
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      autoComplete="off"
+                      placeholder="Buscar actividad..."
+                      value={tareaSearchQuery}
+                      onChange={e => setTareaSearchQuery(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                    />
+                    {tareaSearchQuery && (
+                      <button type="button" onClick={() => setTareaSearchQuery('')} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
+                    )}
+                  </div>
+                  <div className="overflow-y-auto max-h-[280px] overscroll-contain">
+                    {filteredTareas.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No se encontraron actividades</p>
+                    ) : (
+                      <div className="py-1">
+                        {filteredTareas.map(tarea => (
+                          <button
+                            key={tarea.id}
+                            type="button"
+                            onClick={() => { handleTareaChange(tarea.id); setTareaSelectOpen(false); setTareaSearchQuery(''); }}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-3 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors',
+                              anexoAltura.tareaRealizar?.id === tarea.id && 'bg-accent text-accent-foreground font-medium'
+                            )}
+                          >
+                            <Check className={cn('h-4 w-4 shrink-0', anexoAltura.tareaRealizar?.id === tarea.id ? 'opacity-100' : 'opacity-0')} />
+                            <span className="leading-snug">{tarea.nombre}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {/* Opción "Otro" siempre visible al final */}
+                    {(!tareaSearchQuery || 'otro'.includes(tareaSearchQuery.toLowerCase()) || 'especificar'.includes(tareaSearchQuery.toLowerCase())) && (
+                      <div className="border-t">
+                        <button
+                          type="button"
+                          onClick={() => { handleTareaChange('otro'); setTareaSelectOpen(false); setTareaSearchQuery(''); }}
+                          className={cn(
+                            'w-full flex items-center gap-2 px-3 py-3 text-sm text-left hover:bg-accent transition-colors italic text-muted-foreground',
+                            anexoAltura.tareaRealizar?.id === 'otro' && 'bg-accent font-medium not-italic text-foreground'
+                          )}
+                        >
+                          <Check className={cn('h-4 w-4 shrink-0', anexoAltura.tareaRealizar?.id === 'otro' ? 'opacity-100' : 'opacity-0')} />
+                          Otro (especificar)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Contador de resultados */}
+                  {tareaSearchQuery && (
+                    <div className="px-3 py-1.5 border-t bg-muted/50">
+                      <p className="text-xs text-muted-foreground">{filteredTareas.length} resultado{filteredTareas.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Mostrar descripción de la tarea seleccionada */}

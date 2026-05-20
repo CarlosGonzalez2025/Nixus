@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-13
+> **Última actualización de este documento:** 2026-05-20
 
 ---
 
@@ -61,6 +61,117 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-20 — Módulo de Auditoría de Datos, mejoras UX en formularios y correcciones de scroll
+
+#### Nuevo módulo: Auditoría de Datos (`/admin/audit`)
+
+Se creó un módulo completo de auditoría que permite detectar valores "huérfanos" (valores presentes en documentos de Firestore pero ausentes en las listas maestras de `dynamic_lists`) y renombrarlos en lote desde la interfaz.
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/app/(app)/admin/audit/actions.ts` | Server actions: `scanAuditField` (escaneo de colecciones), `renameAuditValue` (renombrado en batch) |
+| `src/app/(app)/admin/audit/page.tsx` | Página cliente con 4 pestañas (Empresa, Ciudad, Planta, Área), `AuditPanel`, `RenameDialog` |
+
+**`src/app/(app)/admin/audit/actions.ts`:**
+- `AUDIT_CONFIG`: configuración de rutas de campo por tipo (soporta rutas anidadas con notación punto, ej: `generalInfo.empresa`)
+- `scanAuditField(field)`: carga la lista maestra, escanea las colecciones configuradas, compara con el maestro (case-insensitive + trim), devuelve entradas clasificadas (huérfanos / con datos / sin datos)
+- `renameAuditValue(field, oldValue, newValue, addToMasterList)`: actualiza todos los documentos afectados en batch (chunks de 499 para respetar límite de Firestore), opcionalmente añade el nuevo valor al maestro con `FieldValue.arrayUnion`
+- Helper `getNestedValue()`: resuelve rutas anidadas de Firestore con notación punto
+
+**Colecciones auditadas por campo:**
+
+| Campo | Colecciones |
+|---|---|
+| `empresa` | users · permits (`generalInfo.empresa`) · hallazgos · contractorVerifications |
+| `ciudad` | users · permits (`generalInfo.ciudad`) · hallazgos |
+| `planta` | users · permits (`generalInfo.planta`) · hallazgos · contractorVerifications |
+| `area` | users · permits (`generalInfo.areaEspecifica`) · hallazgos |
+
+**`src/app/(app)/admin/audit/page.tsx`:**
+- 4 pestañas con íconos: Empresa (Building2), Ciudad (MapPin), Planta (Factory), Área (LayoutGrid)
+- `AuditPanel`: botón "Escanear", chips de filtro (Todos / Huérfanos / Sin datos), leyenda, tabla con columnas: estado (ícono color), valor (+badge), total docs, presencia por colección, acción Renombrar
+- `RenameDialog`: dos modos — "Mapear a valor del maestro" (Select) o "Escribir nombre personalizado" (input libre); switch para añadir al maestro; vista previa del valor; advertencia de irreversibilidad
+- Badge de huérfanos totales en el encabezado de la página
+
+**`src/app/(app)/layout.tsx`:**
+- Añadido `ScanSearch` a los imports de `lucide-react`
+- Nuevo `SidebarMenuItem` "Auditoría de Datos" con ícono `ScanSearch` bajo el grupo Administración
+
+---
+
+#### Combobox con búsqueda en "Tarea a Realizar" (Anexo de Alturas)
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/AnexoAlturaStep.tsx`
+
+- Se amplió la lista `tareasTrabajoAltura` de 17 a 40 actividades, añadiendo 23 nuevas tareas en formato título (sentence case, sin ALL CAPS)
+- Nuevas actividades añadidas: Ajuste de tableros eléctricos, Cambio de luminarias, Isocinético, Limpieza de filtros de manga, Limpieza de tableros eléctricos, Mantenimiento a tolva de ceniza, Mantenimiento cabezote de elevador, Mantenimiento de aire acondicionado, Mantenimiento de banda Merryck, Mantenimiento de bomba de condensados, Mantenimiento de cribas, Mantenimiento de monocangilón, Mantenimiento de tolva de descarga de molino, Mantenimiento estructural (soldadura), Mantenimiento y/o limpieza de canales, cerramiento, ciclones, cubierta, enfriador, fachada, secador, silos, tolvas
+- El campo `Select` fue reemplazado por un **Combobox** (`Popover` + `PopoverContent`) con:
+  - Input de búsqueda dinámica (insensible a acentos y mayúsculas via `normalize('NFD')`)
+  - Lista con scroll nativo (`overflow-y-auto max-h-[280px]`) — no usa `ScrollArea` de Radix (que causaba listas estáticas)
+  - Checkmark en el ítem seleccionado
+  - "Otro" fijo al final de la lista
+  - Contador de resultados al buscar
+  - Limpieza automática del query al cerrar
+
+---
+
+#### Fix: inputs de gases con separador decimal en español
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx`
+
+**Causa raíz:** Los inputs de gas usaban `type="number"`, que en Chrome/Android con locale `es` devuelve `""` cuando el usuario escribe `0,1` (coma como separador decimal). Los campos quedaban en blanco y los datos se almacenaban como cadenas vacías.
+
+**Cambios aplicados:**
+- Nueva función `normalizeDecimal(val)`: convierte comas a puntos, elimina caracteres no numéricos y previene múltiples puntos decimales
+- Todos los inputs de gas cambiados de `type="number"` a `type="text"` con `inputMode="decimal"` y `autoComplete="off"`
+- Aplica a: `resultadosPruebasGases` (lel, o2, h2s, co) y la tabla `pruebasGasesPeriodicas.pruebas`
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/ReviewStep.tsx`
+
+- Nueva función `fmtGas(val)`: muestra `—` si el valor está vacío o no es numérico; muestra el valor tal cual si es válido
+- Reemplaza el acceso directo `{p.lel}` etc. por `{fmtGas(p.lel)}` en la tabla de pruebas periódicas
+
+---
+
+#### Fix global: scroll en componentes Select (Radix UI)
+
+**Archivo modificado:** `src/components/ui/select.tsx`
+
+**Causa raíz:** `SelectViewport` usaba la variable CSS `--radix-select-trigger-height` (altura del botón trigger, ~44px) en lugar de `--radix-select-content-available-height` (espacio disponible en pantalla). El viewport quedaba limitado a la altura del botón, impidiendo el scroll aunque hubiera muchos ítems.
+
+**Cambio aplicado (una línea):**
+```tsx
+// Antes (incorrecto — viewport = altura del botón ~44px)
+"h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+
+// Después (correcto — viewport = espacio disponible en pantalla)
+"h-[var(--radix-select-content-available-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+```
+
+> **Impacto:** corrección global — afecta todos los `Select` de la aplicación (formularios de permisos, modales de usuario, filtros de dashboard, etc.)
+
+---
+
+#### Mejoras en Gestión de Usuarios (`/admin/users`)
+
+**Archivo modificado:** `src/app/(app)/admin/users/page.tsx`
+
+**Ordenamiento alfabético con locale español:**
+- Los `onSnapshot` de `dynamic_lists` (empresas, ciudades, plantas) ahora aplican `.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))` antes de guardar en estado
+- `uniqueEmpresas` también ordenado con `localeCompare('es')`
+
+**Nuevo filtro por Ciudad:**
+- Estado `filterCiudad` (string, default `'all'`)
+- `uniqueCiudades` calculado con `useMemo` desde la lista de usuarios (ordenado con locale español)
+- Lógica de filtrado: `if (filterCiudad !== 'all') filtered = filtered.filter(u => u.ciudad === filterCiudad)`
+- `hasActiveFilters` actualizado para incluir `filterCiudad`
+- `clearFilters` resetea también `filterCiudad`
+- Select de ciudad añadido en la barra de filtros (entre Empresa y Estado), con opción "Todas las Ciudades"
 
 ---
 

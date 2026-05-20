@@ -138,6 +138,15 @@ const SectionWrapper = React.memo<SectionWrapperProps>(({ title, children, secti
 
 SectionWrapper.displayName = 'SectionWrapper';
 
+// Normaliza entrada decimal: acepta coma o punto como separador (ej: "0,1" → "0.1")
+const normalizeDecimal = (val: string): string => {
+  let v = val.replace(',', '.');
+  v = v.replace(/[^0-9.]/g, '');
+  const parts = v.split('.');
+  if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  return v;
+};
+
 export function AnexoConfinadoStep() {
   const { state, dispatch } = usePermitForm();
   const { generalInfo, anexoConfinado } = state;
@@ -430,30 +439,46 @@ export function AnexoConfinadoStep() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div>
               <Label>LEL (0%)</Label>
-              <Input 
-                value={anexoConfinado?.resultadosPruebasGases?.lel || ''} 
-                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'lel', e.target.value)} 
+              <Input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="Ej: 0.1"
+                value={anexoConfinado?.resultadosPruebasGases?.lel || ''}
+                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'lel', normalizeDecimal(e.target.value))}
               />
             </div>
             <div>
               <Label>O2 (19.5-22%)</Label>
-              <Input 
-                value={anexoConfinado?.resultadosPruebasGases?.o2 || ''} 
-                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'o2', e.target.value)} 
+              <Input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="Ej: 20.9"
+                value={anexoConfinado?.resultadosPruebasGases?.o2 || ''}
+                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'o2', normalizeDecimal(e.target.value))}
               />
             </div>
             <div>
               <Label>H2S (0-10 PPM)</Label>
-              <Input 
-                value={anexoConfinado?.resultadosPruebasGases?.h2s || ''} 
-                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'h2s', e.target.value)} 
+              <Input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="Ej: 0"
+                value={anexoConfinado?.resultadosPruebasGases?.h2s || ''}
+                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'h2s', normalizeDecimal(e.target.value))}
               />
             </div>
             <div>
               <Label>CO (0-25 PPM)</Label>
-              <Input 
-                value={anexoConfinado?.resultadosPruebasGases?.co || ''} 
-                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'co', e.target.value)} 
+              <Input
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                placeholder="Ej: 0"
+                value={anexoConfinado?.resultadosPruebasGases?.co || ''}
+                onChange={e => handleNestedFieldChange('resultadosPruebasGases', 'co', normalizeDecimal(e.target.value))}
               />
             </div>
             <div className="col-span-2">
@@ -593,31 +618,47 @@ export function AnexoConfinadoStep() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Input 
-                        className="h-8" 
-                        value={prueba.lel || ''} 
-                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'lel', e.target.value)} 
+                      <Input
+                        className="h-8"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={prueba.lel || ''}
+                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'lel', normalizeDecimal(e.target.value))}
                       />
                     </TableCell>
                     <TableCell>
-                      <Input 
-                        className="h-8" 
-                        value={prueba.o2 || ''} 
-                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'o2', e.target.value)} 
+                      <Input
+                        className="h-8"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={prueba.o2 || ''}
+                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'o2', normalizeDecimal(e.target.value))}
                       />
                     </TableCell>
                     <TableCell>
-                      <Input 
-                        className="h-8" 
-                        value={prueba.h2s || ''} 
-                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'h2s', e.target.value)} 
+                      <Input
+                        className="h-8"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={prueba.h2s || ''}
+                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'h2s', normalizeDecimal(e.target.value))}
                       />
                     </TableCell>
                     <TableCell>
-                      <Input 
-                        className="h-8" 
-                        value={prueba.co || ''} 
-                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'co', e.target.value)} 
+                      <Input
+                        className="h-8"
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={prueba.co || ''}
+                        onChange={e => handleListChange('pruebasGasesPeriodicas', 'pruebas', index, 'co', normalizeDecimal(e.target.value))}
                       />
                     </TableCell>
                     <TableCell>

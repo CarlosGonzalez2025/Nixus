@@ -38,6 +38,7 @@ import {
   Box,
   Flame,
   Zap,
+  ScanSearch,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -371,6 +372,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       >
                         <List className="h-5 w-5 md:h-4 md:w-4" />
                         <span className="font-medium">Gestión de Listas</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => handleNavigation('/admin/audit')}
+                        isActive={pathname === '/admin/audit'}
+                        tooltip="Auditoría de Datos"
+                        className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <ScanSearch className="h-5 w-5 md:h-4 md:w-4" />
+                        <span className="font-medium">Auditoría de Datos</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
 

@@ -115,6 +115,13 @@ const SectionHeader = ({
     );
 };
 
+// Muestra valor numérico de gas; acepta coma o punto como separador decimal
+const fmtGas = (val: string | undefined): string => {
+    if (!val || val.trim() === '') return '—';
+    const normalized = val.replace(',', '.');
+    return isNaN(Number(normalized)) ? '—' : val;
+};
+
 const getStatusSymbol = (value: string | boolean | undefined): string => {
     if (value === 'si' || value === true) return '✓ SÍ';
     if (value === 'no' || value === false) return '✗ NO';
@@ -730,10 +737,10 @@ export function ReviewStep() {
                                                         className={cn(idx % 2 === 0 && "bg-muted/20")}
                                                     >
                                                         <TableCell className="font-medium">{p.hora}</TableCell>
-                                                        <TableCell>{p.lel}</TableCell>
-                                                        <TableCell>{p.o2}</TableCell>
-                                                        <TableCell>{p.h2s}</TableCell>
-                                                        <TableCell>{p.co}</TableCell>
+                                                        <TableCell>{fmtGas(p.lel)}</TableCell>
+                                                        <TableCell>{fmtGas(p.o2)}</TableCell>
+                                                        <TableCell>{fmtGas(p.h2s)}</TableCell>
+                                                        <TableCell>{fmtGas(p.co)}</TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>

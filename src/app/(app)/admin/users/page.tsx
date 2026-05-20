@@ -344,6 +344,7 @@ export default function UsersPage() {
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('all');
+  const [filterCiudad, setFilterCiudad] = useState<string>('all');
 
   // DataTable state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -474,15 +475,16 @@ export default function UsersPage() {
 
   // Suscripción a listas dinámicas (empresas, plantas, ciudades)
   useEffect(() => {
+    const sortEs = (a: string, b: string) => a.localeCompare(b, 'es', { sensitivity: 'base' });
     const unsubs = [
       onSnapshot(doc(db, 'dynamic_lists', 'empresas'), snap => {
-        setListEmpresas((snap.data()?.items ?? []).sort());
+        setListEmpresas((snap.data()?.items ?? []).slice().sort(sortEs));
       }),
       onSnapshot(doc(db, 'dynamic_lists', 'plantas'), snap => {
-        setListPlantas((snap.data()?.items ?? []).sort());
+        setListPlantas((snap.data()?.items ?? []).slice().sort(sortEs));
       }),
       onSnapshot(doc(db, 'dynamic_lists', 'ciudades'), snap => {
-        setListCiudades((snap.data()?.items ?? []).sort());
+        setListCiudades((snap.data()?.items ?? []).slice().sort(sortEs));
       }),
     ];
     return () => unsubs.forEach(u => u());
@@ -553,9 +555,13 @@ export default function UsersPage() {
       filtered = filtered.filter(user => user.empresa === filterEmpresa);
     }
 
+    if (filterCiudad !== 'all') {
+      filtered = filtered.filter(user => user.ciudad === filterCiudad);
+    }
+
     setFilteredUsers(filtered);
     setCurrentPage(1);
-  }, [searchTerm, users, filterRole, filterStatus, filterEmpresa]);
+  }, [searchTerm, users, filterRole, filterStatus, filterEmpresa, filterCiudad]);
 
   // ── Sort + paginate filteredUsers ────────────────────────────────────────
   const sortedUsers = useMemo(() => {
@@ -600,18 +606,26 @@ export default function UsersPage() {
     setCurrentPage(1);
   };
 
-  const uniqueEmpresas = useMemo(() => 
-    Array.from(new Set(users.map(u => u.empresa).filter(Boolean))).sort() as string[], 
+  const uniqueEmpresas = useMemo(() =>
+    Array.from(new Set(users.map(u => u.empresa).filter(Boolean)))
+      .sort((a, b) => (a as string).localeCompare(b as string, 'es', { sensitivity: 'base' })) as string[],
     [users]
   );
 
-  const hasActiveFilters = searchTerm !== '' || filterRole !== 'all' || filterStatus !== 'all' || filterEmpresa !== 'all';
+  const uniqueCiudades = useMemo(() =>
+    Array.from(new Set(users.map(u => u.ciudad).filter(Boolean)))
+      .sort((a, b) => (a as string).localeCompare(b as string, 'es', { sensitivity: 'base' })) as string[],
+    [users]
+  );
+
+  const hasActiveFilters = searchTerm !== '' || filterRole !== 'all' || filterStatus !== 'all' || filterEmpresa !== 'all' || filterCiudad !== 'all';
 
   const clearFilters = () => {
     setSearchTerm('');
     setFilterRole('all');
     setFilterStatus('all');
     setFilterEmpresa('all');
+    setFilterCiudad('all');
     setCurrentPage(1);
   };
 
@@ -1017,6 +1031,17 @@ export default function UsersPage() {
                     <SelectItem value="all">Todas las Empresas</SelectItem>
                     {uniqueEmpresas.map(emp => (
                       <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filterCiudad} onValueChange={setFilterCiudad}>
+                  <SelectTrigger className="w-full md:w-[160px] h-11 bg-white">
+                    <SelectValue placeholder="Ciudad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las Ciudades</SelectItem>
+                    {uniqueCiudades.map(ciudad => (
+                      <SelectItem key={ciudad} value={ciudad}>{ciudad}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
