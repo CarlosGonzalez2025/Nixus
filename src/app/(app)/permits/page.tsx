@@ -219,7 +219,8 @@ export default function PermitsPage() {
             empresa: p.generalInfo?.empresa,
             planta: p.generalInfo?.planta,
             ciudad: p.generalInfo?.ciudad,
-          }));
+          }))
+          .filter(p => p.status !== 'borrador' || p.createdBy === user.uid);
         setAllPermits(data);
         setLoading(false);
       }, () => {
@@ -241,6 +242,7 @@ export default function PermitsPage() {
         if (user.empresa) {
           data = data.filter(p => !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa!.toLowerCase());
         }
+        data = data.filter(p => p.status !== 'borrador' || p.createdBy === user.uid);
         setAllPermits(data);
         setLoading(false);
       }, () => {
@@ -302,6 +304,7 @@ export default function PermitsPage() {
 
         if (user.role === 'autorizante') {
           data = data.filter(p => {
+            if (p.status === 'borrador') return p.createdBy === user.uid;
             const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
             const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
             return matchEmpresa && matchPlanta;
@@ -656,7 +659,7 @@ export default function PermitsPage() {
     if (!permitToDelete || !user) return;
     setIsDeleting(true);
     try {
-      const result = await deletePermit(permitToDelete.id, { uid: user.uid, role: user.role });
+      const result = await deletePermit(permitToDelete.id, { uid: user.uid, role: user.role! });
       if (result.success) {
         toast({ title: 'Permiso eliminado', description: `El borrador #${permitToDelete.number || permitToDelete.id.slice(0, 8)} fue eliminado.` });
         setPermitToDelete(null);

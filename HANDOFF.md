@@ -57,10 +57,209 @@ Next.js 15 (App Router)
 | `lider_sst` | Firma SST, suspende/reactiva permisos |
 | `mantenimiento` | Firma permisos de control de energía |
 | `asesor_arl` | Acceso a hallazgos propios; verificaciones de contratistas propias; gestión completa de plantillas (crea todas, edita/elimina solo las propias) y tipos de riesgo |
+| `lider_regional` | Supervisión de permisos, verificaciones y hallazgos en un subconjunto de empresas/plantas/ciudades; puede aprobar, cancelar y gestionar permisos dentro de su scope; acceso controlado por `allowedEmpresas`, `allowedPlantas`, `allowedCiudades` y `allowedModules` |
 
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-20 (Sesión 3) — Visibilidad de borradores, ownership en guardado y compatibilidad Edge
+
+#### Fix: borradores ajenos visibles para `autorizante`, `lider_sst` y `lider_regional`
+
+**Problema:** Los roles `autorizante`, `lider_sst` y `lider_regional` podían ver los borradores de otros usuarios en la lista de permisos. El enlace de la fila de borrador apunta a `/permits/create?edit=<id>`, por lo que podían cargar el formulario ajeno y potencialmente sobreescribirlo con el botón "Borrador".
+
+**Archivos modificados:** `src/app/(app)/permits/page.tsx`
+
+| Rol | Corrección aplicada |
+|---|---|
+| `lider_regional` | `.filter(p => p.status !== 'borrador' \|\| p.createdBy === user.uid)` al final del pipeline de scope |
+| `lider_sst` | Mismo filtro añadido tras el filtro por empresa |
+| `autorizante` | Dentro del filtro empresa/planta: borradores solo pasan si `createdBy === user.uid`; el resto de estados siguen el filtro normal |
+
+El rol `admin` mantiene visibilidad total de borradores (necesario para administración).  
+El rol `solicitante` ya usaba `where('createdBy', '==', user.uid)` — sin cambios.
+
+---
+
+#### Fix: `savePermitDraft` sin validación de ownership en el servidor
+
+**Problema:** La server action `savePermitDraft` al recibir un `draftId` existente actualizaba el documento sin verificar que el `userId` del request coincidiera con el `createdBy` del documento. Cualquier usuario que conociera el ID de un borrador ajeno podía sobreescribirlo.
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+```typescript
+// Antes: actualizaba directamente
+await docRef.update({ ...permitPayload, updatedAt: ... });
+
+// Después: verifica ownership primero
+const existing = await docRef.get();
+if (!existing.exists) return { success: false, error: 'El borrador no existe.' };
+if (existing.data()?.createdBy !== userId)
+  return { success: false, error: 'No tienes permiso para modificar este borrador.' };
+await docRef.update({ ...permitPayload, updatedAt: ... });
+```
+
+---
+
+#### Fix: inicialización de Firebase con fallback para Edge / IndexedDB bloqueado
+
+**Problema:** Microsoft Edge con "Prevención de rastreo" en modo Equilibrado (predeterminado) puede bloquear el acceso a IndexedDB para dominios de Firebase (`firebaseapp.com`). Esto causaba que `onSnapshot` devolviera resultados incompletos o no se actualizara, haciendo que los permisos aparecieran parcialmente en Edge. Además, en Next.js con hot reload, `initializeFirestore` lanzaba "already initialized" si el módulo se re-evaluaba.
+
+**Archivo modificado:** `src/lib/firebase.ts`
+
+```typescript
+// Antes: inicialización sin manejo de errores
+const db = !getApps().length || getApps().length === 1
+  ? initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) })
+  : getFirestore(app);
+
+// Después: try/catch con fallback a Firestore sin persistencia
+let db: ReturnType<typeof getFirestore>;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  });
+} catch {
+  db = getFirestore(app); // fallback: sin caché persistente, siempre lee del servidor
+}
+```
+
+**Comportamiento tras el fix:**
+- Chrome/Firefox: comportamiento sin cambios (persistencia IndexedDB activa)
+- Edge con Tracking Prevention: fallback a Firestore sin caché → datos siempre leídos del servidor → lista completa
+- Next.js hot reload: el `catch` captura "already initialized" → retorna la instancia ya existente
+
+**Nota para usuarios en Edge:** Si persiste el problema, indicar al usuario que vaya a `edge://settings/privacy` → Prevención de rastreo → agregar el dominio del app como excepción o cambiar a modo **Básica**.
+
+---
+
+### 2026-05-20 (Sesión 2) — Rol Líder Regional, estado Cancelado, simplificación de tabs y eliminación de borradores
+
+#### Nuevo rol: `lider_regional`
+
+Se implementó el rol `lider_regional` en toda la aplicación con control de acceso por scope (empresas, plantas, ciudades y módulos).
+
+**Campos nuevos en el tipo `User` (`src/types/index.ts`):**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `allowedEmpresas` | `string[]` | Empresas accesibles para el líder regional |
+| `allowedPlantas` | `string[]` | Plantas accesibles |
+| `allowedCiudades` | `string[]` | Ciudades accesibles |
+| `allowedModules` | `AppModule[]` | Módulos habilitados (`permits`, `contractor_verifications`, `hallazgos`) |
+
+**`src/lib/role-config.ts`:**
+- `isInLiderRegionalScope(user, { empresa, planta, ciudad })`: helper que verifica si un permiso/verificación/hallazgo cae dentro del scope del lider_regional usando `.toLowerCase()` en ambos lados (insensible a mayúsculas)
+- `liderRegionalHasModule(user, module)`: helper que verifica si el módulo está en `allowedModules`
+- `ROLE_LABELS`: añadida etiqueta `lider_regional: 'Líder Regional'`
+
+**Archivos de permisos de trabajo:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/permits/actions.ts` | `validateStateTransition`: `lider_regional` añadido a todas las transiciones de estado; puede aprobar, cancelar (nuevo), suspender/reactivar y cerrar permisos dentro de su scope |
+| `src/app/(app)/permits/[id]/page.tsx` | `canBeCancelled`: añadido `lider_regional` |
+
+**Verificaciones de contratistas:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/hooks/use-verification-permissions.ts` | `ALLOWED_ROLES`: añadido `lider_regional`; `canAccessModule`: verifica `allowedModules.includes('contractor_verifications')`; `canViewVerification`: verifica scope con `verification.companyName` (empresa), `verification.plantId` (planta), `verification.city` (ciudad) — campos correctos del tipo `ContractorVerification` |
+
+**Nota sobre Firestore Rules:** La protección real de scope es client-side (igual que `autorizante`/`lider_sst`) porque Firestore rules no pueden evaluar `array-contains` en campos del usuario autenticado contra campos del documento. Las rules permiten lectura amplia con `isAdminOrLR()` y el filtrado de scope se aplica en los hooks.
+
+---
+
+#### Nuevo estado: `cancelado` (separado de `rechazado`)
+
+Se introdujo `cancelado` como estado dedicado para cuando un permiso es cancelado explícitamente por un usuario autorizado. `rechazado` queda reservado exclusivamente para rechazos durante la fase de aprobación (`pendiente_revision` → `rechazado`).
+
+**Motivación:** Antes, el botón "Cancelar Permiso" producía `status: 'rechazado'`. Esto mezclaba dos conceptos distintos y generaba permisos con `closure.cancelado='si'` pero `status='rechazado'`, lo que era semánticamente incorrecto.
+
+**`src/types/index.ts`:**
+- `PermitStatus`: añadido `'cancelado'`
+
+**`src/app/(app)/permits/actions.ts`:**
+- `STATUS_LABEL` y `getStatusText`: añadido `cancelado: 'Cancelado'`
+- `validateStateTransition`:
+  - `pendiente_revision`: mantiene `rechazado` (rechazo real del autorizante) + añade `cancelado`
+  - `aprobado`, `en_ejecucion`, `suspendido`: solo `cancelado` (se eliminó `rechazado` de estas transiciones)
+  - **Bug fix:** `en_ejecucion` → `rechazado` estaba ausente en la función original — permisos en ejecución quedaban atascados con `closure.cancelado='si'` pero `status` sin cambiar
+- `updatePermitStatus`: nuevo `case 'cancelado'` con notificación tipo `'cancellation'`; `rejectionReason` se guarda tanto para `rechazado` como para `cancelado`
+- Nueva server action `deletePermit(permitId, currentUser)`:
+  - Valida `status === 'borrador'` (solo borradores)
+  - Valida ownership: `createdBy === uid` O rol admin/lider_regional
+  - Llama `docRef.delete()` via Admin SDK (Firestore rules tienen `allow delete: if false` para el cliente)
+  - Llama `revalidatePath('/permits')`
+
+**`src/app/(app)/permits/[id]/page.tsx`:**
+- `getStatusInfo`: añadido `cancelado` con ícono `Ban`, color `text-rose-700 / bg-rose-100`
+- `canSign`: bloqueado cuando `status === 'cancelado'`
+- Diálogo de cancelación rediseñado:
+  - Reemplazado `AlertDialog` por `Dialog` con `SignaturePad`
+  - Auto-rellena nombre del usuario (read-only)
+  - Auto-rellena fecha y hora en formato `dd/MM/yyyy HH:mm` (read-only)
+  - Campo de razón obligatorio (Textarea)
+  - `handleSaveCancellationSignature(signatureDataUrl)`: primero registra la firma con rol `cancelacion` via `addSignatureAndNotify`, luego llama `handleChangeStatus('cancelado', cancellationReason)`
+  - Eliminado el estado muerto `rejectionReason` e `isRejectionDialogOpen`
+
+**`src/app/(app)/dashboard/page.tsx`:**
+- Mapa de colores: `cancelado: 'bg-rose-100 text-rose-800'`
+- Mapa de etiquetas: `cancelado: 'Cancelado'`
+
+**`src/lib/permit-email-template.ts`:**
+- `STATUS_LABEL`: `cancelado: 'Cancelado'`
+- `STATUS_COLOR`: `cancelado: '#be123c'`
+
+---
+
+#### Script de migración: `rechazado` → `cancelado`
+
+**Archivo creado:** `scripts/migrate-rechazado-to-cancelado.ts`
+
+Migra TODOS los permisos con `status === 'rechazado'` al nuevo estado `cancelado`.
+
+**Comportamiento:**
+1. Consulta la colección `permits` filtrando `status == 'rechazado'`
+2. Muestra preview de cada permiso afectado (número, ID, razón, cancelado por)
+3. Espera 5 segundos (Ctrl+C para abortar)
+4. Escribe en lotes de 400 (límite Firestore = 500 por batch)
+5. Actualiza `status: 'cancelado'` + `updatedAt: serverTimestamp()`
+
+**Uso:**
+```bash
+npx tsx scripts/migrate-rechazado-to-cancelado.ts
+```
+
+> Requiere variables `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` en `.env`
+
+---
+
+#### Simplificación de tabs en la lista de permisos
+
+**Archivo modificado:** `src/app/(app)/permits/page.tsx`
+
+| Cambio | Detalle |
+|---|---|
+| Tab **"Rechazado"** eliminado | Los permisos `rechazado` ahora se agrupan bajo el tab `cancelado` (retrocompatibilidad) |
+| Tab **"Suspendido"** eliminado | Los permisos `suspendido` ahora se muestran bajo el tab **"Activos"** (un permiso suspendido es un permiso activo en pausa, no un estado terminal) |
+| Lógica de filtrado | `activos`: incluye `['aprobado', 'en_ejecucion', 'suspendido']`; `cancelado`: incluye `status === 'cancelado' \|\| status === 'rechazado'` |
+| Reporte Excel | `cancelled` agrupa `cancelado \|\| rechazado` |
+
+---
+
+#### Eliminación de permisos en borrador
+
+**Archivo modificado:** `src/app/(app)/permits/page.tsx`
+
+- Botón `Trash2` junto al botón "Continuar" en la fila de permisos con `status === 'borrador'`
+- Estado `permitToDelete` (objeto `Permit | null`) e `isDeleting` (boolean)
+- `handleDeleteConfirm`: llama la server action `deletePermit`; maneja error con toast; limpia estado al finalizar
+- `AlertDialog` de confirmación al final del componente: muestra número del permiso a eliminar
+- El botón de eliminar solo es visible en filas de borradores — no aparece en ningún otro estado
 
 ---
 
@@ -891,4 +1090,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-13 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-20 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*

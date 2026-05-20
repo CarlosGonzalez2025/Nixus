@@ -21,16 +21,19 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-// Persistencia offline: los datos leídos quedan en IndexedDB y las escrituras
-// realizadas sin conexión se encolan y sincronizan automáticamente al reconectar.
-// persistentMultipleTabManager permite compartir el caché entre pestañas del mismo origen.
-const db = !getApps().length || getApps().length === 1
-  ? initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-      }),
-    })
-  : getFirestore(app);
+// Persistencia offline con fallback: si el navegador bloquea IndexedDB (ej. Edge con
+// Tracking Prevention activada), se usa Firestore sin caché persistente para garantizar
+// que los datos siempre se lean desde el servidor.
+let db: ReturnType<typeof getFirestore>;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+} catch {
+  db = getFirestore(app);
+}
 
 const storage = getStorage(app);
 

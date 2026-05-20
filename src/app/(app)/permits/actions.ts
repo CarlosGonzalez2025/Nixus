@@ -387,6 +387,13 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
   try {
     if (draftId) {
       const docRef = adminDb.collection('permits').doc(draftId);
+      const existing = await docRef.get();
+      if (!existing.exists) {
+        return { success: false, error: 'El borrador no existe.' };
+      }
+      if (existing.data()?.createdBy !== userId) {
+        return { success: false, error: 'No tienes permiso para modificar este borrador.' };
+      }
       await docRef.update({ ...permitPayload, updatedAt: FieldValue.serverTimestamp() });
       revalidatePath(`/permits/${draftId}`);
       revalidatePath('/permits');
