@@ -63,6 +63,7 @@ const getStatusColor = (status: string) => {
     suspendido: 'bg-orange-100 text-orange-800',
     cerrado: 'bg-blue-100 text-blue-800',
     rechazado: 'bg-red-100 text-red-800',
+    cancelado: 'bg-rose-100 text-rose-800',
   };
   return map[status] || 'bg-gray-100 text-gray-800';
 };
@@ -76,6 +77,7 @@ const getStatusText = (status: string) => {
     suspendido: 'Suspendido',
     cerrado: 'Cerrado',
     rechazado: 'Rechazado',
+    cancelado: 'Cancelado',
   };
   return map[status] || status;
 };

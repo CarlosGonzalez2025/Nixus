@@ -54,6 +54,7 @@ const getStatusColor = (status: string) => {
     suspendido: 'bg-orange-100 text-orange-800',
     cerrado: 'bg-blue-100 text-blue-800',
     rechazado: 'bg-red-100 text-red-800',
+    cancelado: 'bg-rose-100 text-rose-800',
   };
   return statusColors[status] || 'bg-gray-100 text-gray-800';
 };
@@ -67,6 +68,7 @@ const getStatusText = (status: string) => {
     suspendido: 'Suspendido',
     cerrado: 'Cerrado',
     rechazado: 'Rechazado',
+    cancelado: 'Cancelado',
   };
   return statusText[status] || status;
 };
@@ -148,7 +150,7 @@ type UnifiedPermitStatus =
   | 'pendiente_revision'
   | 'activos'
   | 'cerrado'
-  | 'rechazado'
+  | 'cancelado'
   | 'suspendido';
 
 const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
@@ -156,7 +158,7 @@ const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
   { key: 'pendiente_revision', label: 'Pendiente' },
   { key: 'activos', label: 'Activos' },
   { key: 'cerrado', label: 'Cerrado' },
-  { key: 'rechazado', label: 'Rechazado' },
+  { key: 'cancelado', label: 'Cancelado' },
   { key: 'suspendido', label: 'Suspendido' },
 ];
 
@@ -333,7 +335,9 @@ export default function PermitsPage() {
       let matchesStatus =
         activeTab === 'activos'
           ? permit.status === 'aprobado' || permit.status === 'en_ejecucion'
-          : permit.status === activeTab;
+          : activeTab === 'cancelado'
+            ? permit.status === 'cancelado' || permit.status === 'rechazado'
+            : permit.status === activeTab;
       if (!matchesStatus) return false;
 
       if (workTypeFilter !== 'all') {
@@ -600,11 +604,11 @@ export default function PermitsPage() {
     aTitle('ESTADO DE APROBACIÓN');
     aHead('Categoría', 'Cantidad', '% del Total');
     const approved = sortedPermits.filter(p => ['aprobado', 'en_ejecucion', 'cerrado'].includes(p.status)).length;
-    const rejected = sortedPermits.filter(p => p.status === 'rechazado').length;
-    const pending = sortedPermits.length - approved - rejected;
+    const cancelled = sortedPermits.filter(p => p.status === 'cancelado' || p.status === 'rechazado').length;
+    const pending = sortedPermits.length - approved - cancelled;
     aData('Completamente aprobados / activos / cerrados', approved, pct(approved));
     aData('En proceso de aprobación', pending, pct(pending));
-    aData('Rechazados', rejected, pct(rejected));
+    aData('Cancelados', cancelled, pct(cancelled));
 
     // Build analysis worksheet
     const analysisWs: XLSX.WorkSheet = {};

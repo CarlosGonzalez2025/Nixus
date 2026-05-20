@@ -41,6 +41,7 @@ const STATUS_LABEL: Record<string, string> = {
   suspendido:         'Suspendido',
   cerrado:            'Cerrado',
   rechazado:          'Rechazado',
+  cancelado:          'Cancelado',
 };
 
 // buildPermitEmailHtml se importa desde @/lib/permit-email-template
@@ -257,7 +258,8 @@ const getStatusText = (status: string) => {
       'en_ejecucion': 'En Ejecución',
       'suspendido': 'Suspendido',
       'cerrado': 'Cerrado',
-      'rechazado': 'Rechazado'
+      'rechazado': 'Rechazado',
+      'cancelado': 'Cancelado'
     };
     return statusText[status] || status;
   };
@@ -658,20 +660,22 @@ function validateStateTransition(currentStatus: PermitStatus, targetStatus: Perm
         'pendiente_revision': {
             'en_ejecucion': ['autorizante', 'admin', 'solicitante', 'lider_regional'],
             'aprobado': ['autorizante', 'admin', 'lider_regional'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
+            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional'],
+            'cancelado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'aprobado': {
             'en_ejecucion': ['solicitante', 'admin', 'lider_regional'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
+            'cancelado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'en_ejecucion': {
             'suspendido': ['lider_sst', 'admin', 'autorizante', 'lider_regional'],
             'cerrado': ['solicitante', 'admin', 'autorizante', 'lider_regional'],
-            'rechazado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
+            'cancelado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         },
         'suspendido': {
             'en_ejecucion': ['lider_sst', 'admin', 'autorizante', 'lider_regional'],
-            'cerrado': ['solicitante', 'admin', 'autorizante', 'lider_regional']
+            'cerrado': ['solicitante', 'admin', 'autorizante', 'lider_regional'],
+            'cancelado': ['autorizante', 'lider_sst', 'admin', 'lider_regional']
         }
     };
     
@@ -727,7 +731,7 @@ export async function updatePermitStatus(
 
         const updateData: UpdateData<Permit> = { status };
 
-        if (status === 'rechazado' && reason) {
+        if ((status === 'rechazado' || status === 'cancelado') && reason) {
             updateData.rejectionReason = reason;
         }
         
@@ -768,6 +772,11 @@ export async function updatePermitStatus(
             case 'rechazado':
                 notificationType = 'rejection';
                 message = `Atención: El permiso #${permitData.number} ha sido RECHAZADO.`;
+                if (reason) message += ` Motivo: ${reason}`;
+                break;
+            case 'cancelado':
+                notificationType = 'cancellation';
+                message = `El permiso #${permitData.number} ha sido CANCELADO.`;
                 if (reason) message += ` Motivo: ${reason}`;
                 break;
             case 'cerrado':

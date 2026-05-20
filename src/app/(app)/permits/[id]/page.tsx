@@ -38,6 +38,8 @@ import {
   MessageSquare,
   Info,
   FileX,
+  Ban,
+  CalendarX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -122,6 +124,7 @@ const getStatusInfo = (status: string): { text: string; icon: React.ElementType;
     suspendido: { text: 'Suspendido', icon: PauseCircle, color: 'text-orange-600', bgColor: 'bg-orange-100' },
     cerrado: { text: 'Cerrado', icon: Lock, color: 'text-blue-600', bgColor: 'bg-blue-100' },
     rechazado: { text: 'Rechazado', icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100' },
+    cancelado: { text: 'Cancelado', icon: Ban, color: 'text-rose-700', bgColor: 'bg-rose-100' },
   };
   return statusInfo[status] || { text: status, icon: FileText, color: 'text-gray-500', bgColor: 'bg-gray-100' };
 };
@@ -207,8 +210,6 @@ export default function PermitDetailPage() {
   const [signatureObservation, setSignatureObservation] = useState("");
 
   const [isStatusChanging, setIsStatusChanging] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
 
   const [isSolicitanteSignAlertOpen, setIsSolicitanteSignAlertOpen] = useState(false);
 
@@ -231,6 +232,7 @@ export default function PermitDetailPage() {
   const [isClosureDialogOpen, setIsClosureDialogOpen] = useState(false);
   const [isCancellationDialogOpen, setIsCancellationDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [cancellationDateTime, setCancellationDateTime] = useState("");
 
   // ESTADOS PARA CIERRE DE EMERGENCIA
   const [showEmergencyClosureDialog, setShowEmergencyClosureDialog] = useState(false);
@@ -499,8 +501,6 @@ export default function PermitDetailPage() {
           description: `El permiso ahora está ${getStatusInfo(newStatus).text}.`,
           className: 'bg-green-100 dark:bg-green-900',
         });
-        if (isRejectionDialogOpen) setIsRejectionDialogOpen(false);
-        if (rejectionReason) setRejectionReason("");
         if (isClosureDialogOpen) setIsClosureDialogOpen(false);
         if (isCancellationDialogOpen) setIsCancellationDialogOpen(false);
       } else {
@@ -538,7 +538,7 @@ export default function PermitDetailPage() {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
     const { status, approvals, selectedWorkTypes, createdBy } = permit;
 
-    if (['rechazado', 'cerrado', 'suspendido'].includes(status)) {
+    if (['rechazado', 'cerrado', 'cancelado', 'suspendido'].includes(status)) {
       return { can: false, reason: `El permiso está ${status}.` };
     }
 
@@ -746,22 +746,29 @@ export default function PermitDetailPage() {
   };
 
   const handleOpenCancellationDialog = () => {
-    setCancellationReason(""); // Limpiar razón anterior
+    setCancellationReason("");
+    setCancellationDateTime(format(new Date(), "dd/MM/yyyy HH:mm"));
     setIsCancellationDialogOpen(true);
   };
 
-  const handleConfirmCancellation = async () => {
+  const handleSaveCancellationSignature = async (signatureDataUrl: string) => {
     if (!cancellationReason.trim()) {
       toast({ variant: 'destructive', title: 'Motivo Requerido', description: 'Debe especificar un motivo para la cancelación.' });
       return;
     }
-    // Se utiliza la misma acción de firma, pero con un rol especial
     if (!permit || !currentUser) return;
     setIsSigning(true);
     try {
-      const result = await addSignatureAndNotify(permit.id, 'cancelacion', 'firmaCierre', '', { uid: currentUser.uid, displayName: currentUser.displayName ?? null, role: currentUser.role }, cancellationReason);
+      const result = await addSignatureAndNotify(
+        permit.id,
+        'cancelacion',
+        'firmaCierre',
+        signatureDataUrl,
+        { uid: currentUser.uid, displayName: currentUser.displayName ?? null, role: currentUser.role },
+        cancellationReason
+      );
       if (result.success) {
-        await handleChangeStatus('rechazado', `Cancelado: ${cancellationReason}`);
+        await handleChangeStatus('cancelado', cancellationReason);
         setIsCancellationDialogOpen(false);
       } else {
         throw new Error(result.error);
@@ -2109,27 +2116,45 @@ export default function PermitDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isCancellationDialogOpen} onOpenChange={setIsCancellationDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Permiso de Trabajo</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción cambiará el estado del permiso a "Rechazado" y no podrá ser revertida. Por favor, especifique el motivo de la cancelación.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={cancellationReason}
-            onChange={e => setCancellationReason(e.target.value)}
-            placeholder="Motivo de la cancelación..."
+      <Dialog open={isCancellationDialogOpen} onOpenChange={setIsCancellationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-700">
+              <CalendarX className="h-5 w-5" />
+              Cancelar Permiso de Trabajo
+            </DialogTitle>
+            <DialogDescription>
+              Esta acción cambiará el estado del permiso a <strong>Cancelado</strong> y no podrá ser revertida. Complete los datos y firme para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Cancelado por</Label>
+                <Input value={currentUser?.displayName || ''} readOnly className="bg-gray-50 text-gray-600" />
+              </div>
+              <div className="space-y-1">
+                <Label>Fecha y hora</Label>
+                <Input value={cancellationDateTime} readOnly className="bg-gray-50 text-gray-600" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cancellation-reason">Motivo de la cancelación <span className="text-red-500">*</span></Label>
+              <Textarea
+                id="cancellation-reason"
+                value={cancellationReason}
+                onChange={e => setCancellationReason(e.target.value)}
+                placeholder="Explique el motivo por el cual se cancela este permiso..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <SignaturePad
+            onSave={handleSaveCancellationSignature}
+            isSaving={isSigning}
           />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Volver</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancellation} disabled={isSigning || !cancellationReason.trim()}>
-              {isSigning ? <Loader2 className="animate-spin" /> : 'Confirmar Cancelación'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showEmergencyClosureDialog} onOpenChange={setShowEmergencyClosureDialog}>
         <AlertDialogContent>

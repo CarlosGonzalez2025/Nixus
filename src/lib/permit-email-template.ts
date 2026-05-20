@@ -10,6 +10,7 @@ const STATUS_LABEL: Record<string, string> = {
   suspendido:         'Suspendido',
   cerrado:            'Cerrado',
   rechazado:          'Rechazado',
+  cancelado:          'Cancelado',
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -20,6 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
   suspendido:         '#ea580c',
   cerrado:            '#2563eb',
   rechazado:          '#dc2626',
+  cancelado:          '#be123c',
 };
 
 const WORK_TYPE_LABELS: Record<string, string> = {
