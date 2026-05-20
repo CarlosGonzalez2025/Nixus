@@ -15,8 +15,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   PlusCircle, Search, Loader2, FileX, Filter, Edit,
-  ArrowUp, ArrowDown, ArrowUpDown, Download, Building2, MapPin,
+  ArrowUp, ArrowDown, ArrowUpDown, Download, Building2, MapPin, Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { deletePermit } from './actions';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -150,8 +161,7 @@ type UnifiedPermitStatus =
   | 'pendiente_revision'
   | 'activos'
   | 'cerrado'
-  | 'cancelado'
-  | 'suspendido';
+  | 'cancelado';
 
 const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
   { key: 'borrador', label: 'Borrador' },
@@ -159,7 +169,6 @@ const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
   { key: 'activos', label: 'Activos' },
   { key: 'cerrado', label: 'Cerrado' },
   { key: 'cancelado', label: 'Cancelado' },
-  { key: 'suspendido', label: 'Suspendido' },
 ];
 
 type SortDir = 'asc' | 'desc';
@@ -177,6 +186,8 @@ export default function PermitsPage() {
   const [plantaFilter, setPlantaFilter] = useState('all');
   const [ciudadFilter, setCiudadFilter] = useState('all');
   const { toast } = useToast();
+  const [permitToDelete, setPermitToDelete] = useState<Permit | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // DataTable state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -334,7 +345,7 @@ export default function PermitsPage() {
     return allPermits.filter(permit => {
       let matchesStatus =
         activeTab === 'activos'
-          ? permit.status === 'aprobado' || permit.status === 'en_ejecucion'
+          ? ['aprobado', 'en_ejecucion', 'suspendido'].includes(permit.status)
           : activeTab === 'cancelado'
             ? permit.status === 'cancelado' || permit.status === 'rechazado'
             : permit.status === activeTab;
@@ -641,6 +652,22 @@ export default function PermitsPage() {
       ? `Borrador #${permit.id.substring(0, 8)}`
       : permit.number || `ID: ${permit.id.substring(0, 8)}`;
 
+  const handleDeleteConfirm = async () => {
+    if (!permitToDelete || !user) return;
+    setIsDeleting(true);
+    try {
+      const result = await deletePermit(permitToDelete.id, { uid: user.uid, role: user.role });
+      if (result.success) {
+        toast({ title: 'Permiso eliminado', description: `El borrador #${permitToDelete.number || permitToDelete.id.slice(0, 8)} fue eliminado.` });
+        setPermitToDelete(null);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const renderPermitList = (permits: Permit[]) => {
     if (loading) {
       return (
@@ -774,12 +801,22 @@ export default function PermitsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {permit.status === 'borrador' ? (
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/permits/create?edit=${permit.id}`}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Continuar
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/permits/create?edit=${permit.id}`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Continuar
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-red-200 text-red-600 hover:bg-red-50"
+                          onClick={() => setPermitToDelete(permit)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ) : (
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/permits/${permit.id}`}>Ver Detalles</Link>
@@ -944,6 +981,28 @@ export default function PermitsPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!permitToDelete} onOpenChange={(open) => { if (!open) setPermitToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar borrador</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas eliminar el permiso <strong>#{permitToDelete?.number || permitToDelete?.id?.slice(0, 8)}</strong>? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

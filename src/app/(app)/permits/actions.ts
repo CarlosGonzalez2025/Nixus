@@ -1225,3 +1225,46 @@ export async function processOfflineQueue(
     };
   }
 }
+
+export async function deletePermit(
+  permitId: string,
+  currentUser: { uid: string; role: UserRole }
+) {
+  if (!permitId || !currentUser.uid) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador no configuradas.' };
+  }
+
+  try {
+    const docRef = adminDb.collection('permits').doc(permitId);
+    const snap = await docRef.get();
+
+    if (!snap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+
+    const permitData = snap.data() as Permit;
+
+    if (permitData.status !== 'borrador') {
+      return { success: false, error: 'Solo se pueden eliminar permisos en estado Borrador.' };
+    }
+
+    const isAdminOrLR = currentUser.role === 'admin' || currentUser.role === 'lider_regional';
+    const isOwner = permitData.createdBy === currentUser.uid;
+
+    if (!isAdminOrLR && !isOwner) {
+      return { success: false, error: 'No tienes permiso para eliminar este permiso.' };
+    }
+
+    await docRef.delete();
+    revalidatePath('/permits');
+    return { success: true };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: getActionErrorMessage(error, 'Error al eliminar el permiso.'),
+    };
+  }
+}
