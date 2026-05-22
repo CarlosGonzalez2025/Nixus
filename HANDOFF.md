@@ -65,6 +65,34 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-05-22 — Exclusión de administradores de correos de permisos
+
+#### Fix: admins excluidos de las notificaciones por email del proceso de permisos de trabajo
+
+**Problema:** Los administradores recibían correos electrónicos cuando un permiso pasaba al estado `en_ejecucion` (vía `getAdminUserIds()`). Se requería excluirlos de **todas** las notificaciones por email de permisos, manteniendo intactas sus notificaciones in-app, push y los correos del resumen diario de hallazgos.
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Cambios aplicados:**
+
+1. **Nueva función `getEmailsForNonAdminUsers(userIds[])`** — reemplaza `getEmailsForUsers` en el pipeline de email de `notifyUsers`. Hace una sola lectura de Firestore por usuario, verifica el campo `role`, y excluye a los que tengan `'admin'`. Retorna únicamente los correos de usuarios no-admin.
+
+2. **`notifyUsers` actualizada** — reemplaza `getEmailsForUsers(recipients)` por `getEmailsForNonAdminUsers(recipients)`. Al estar centralizado en esta función, el cambio cubre **todos los flujos** de forma automática: creación, firmas, cambios de estado, activación automática a `en_ejecucion`, cierre, etc.
+
+3. **Import limpiado** — se eliminó `getEmailsForUsers` de los imports de `@/lib/email` ya que no se usa más directamente.
+
+**Alcance del cambio:**
+
+| Proceso | Comportamiento para admins |
+|---|---|
+| Permisos de trabajo — cualquier evento | ✅ Excluidos del correo (corrección aplicada) |
+| Notificaciones in-app de permisos | Sin cambio — siguen llegando normalmente |
+| Notificaciones push de permisos | Sin cambio — siguen llegando normalmente |
+| Hallazgos — notificación inmediata | Sin cambio — solo notifica a `lider_sst` (admins nunca estuvieron en ese flujo) |
+| Hallazgos — resumen diario (cron) | Sin cambio — sigue enviando **exclusivamente a admins** |
+
+---
+
 ### 2026-05-20 (Sesión 3) — Visibilidad de borradores, ownership en guardado y compatibilidad Edge
 
 #### Fix: borradores ajenos visibles para `autorizante`, `lider_sst` y `lider_regional`
@@ -1090,4 +1118,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-20 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-22. Mantener actualizado con cada sesión de desarrollo.*

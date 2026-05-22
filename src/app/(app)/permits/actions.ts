@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
 import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
-import { getEmailsForUsers, sendGroupEmail } from '@/lib/email';
+import { sendGroupEmail } from '@/lib/email';
 import { buildPermitEmailHtml } from '@/lib/permit-email-template';
 import { sendPushToUser } from '@/lib/push-notifications';
 import { config } from 'dotenv';
@@ -161,6 +161,28 @@ const getAdminUserIds = async (permitPlant?: string): Promise<string[]> => {
     .map(doc => doc.id);
 };
 
+/**
+ * Devuelve los correos de los usuarios que NO son admin.
+ * Los administradores quedan excluidos de todas las notificaciones por email de permisos.
+ */
+const getEmailsForNonAdminUsers = async (userIds: string[]): Promise<string[]> => {
+  if (userIds.length === 0) return [];
+  const results = await Promise.all(
+    userIds.map(async id => {
+      try {
+        const doc = await adminDb.collection('users').doc(id).get();
+        if (!doc.exists) return null;
+        const data = doc.data()!;
+        if (data.role === 'admin') return null;
+        return (data.email as string) || null;
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter((e): e is string => e !== null);
+};
+
 const createNotification = async (
   userId: string,
   permit: Permit,
@@ -210,7 +232,7 @@ async function notifyUsers(
   const permitUrl = `${baseUrl}/permits/${permit.id}`;
   const permitNumber = permit.number || permit.id;
   const statusLabel = STATUS_LABEL[permit.status] || permit.status;
-  const emails = await getEmailsForUsers(recipients);
+  const emails = await getEmailsForNonAdminUsers(recipients);
 
   if (emails.length > 0) {
     await sendGroupEmail({
