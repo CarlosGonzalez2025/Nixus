@@ -92,6 +92,7 @@ const workerRoles = [
 const epsEntidades = [
   "Salud Total",
   "Sanitas",
+  "Savia Salud",
   "Compensar",
   "Sura",
   "Nueva EPS",
@@ -148,6 +149,7 @@ function CreatePermitWizard() {
   const [isWorkerDialogOpen, setIsWorkerDialogOpen] = useState(false);
   const [currentWorker, setCurrentWorker] = useState<Partial<ExternalWorker> | null>(null);
   const [editingWorkerIndex, setEditingWorkerIndex] = useState<number | null>(null);
+  const [otroSocialMode, setOtroSocialMode] = useState({ eps: false, arl: false, pensiones: false });
   
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
@@ -211,12 +213,18 @@ function CreatePermitWizard() {
       firmaApertura: '',
       firmaCierre: ''
     });
+    setOtroSocialMode({ eps: false, arl: false, pensiones: false });
     setIsWorkerDialogOpen(true);
   };
   
   const openEditWorkerDialog = (worker: ExternalWorker, index: number) => {
     setEditingWorkerIndex(index);
     setCurrentWorker(worker);
+    setOtroSocialMode({
+      eps: !!worker.eps && !epsEntidades.includes(worker.eps),
+      arl: !!worker.arl && !arlEntidades.includes(worker.arl),
+      pensiones: !!worker.pensiones && !pensionEntidades.includes(worker.pensiones),
+    });
     setIsWorkerDialogOpen(true);
   };
 
@@ -1065,9 +1073,17 @@ function CreatePermitWizard() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="worker-eps" className="text-sm font-medium">EPS</Label>
-                                    <Select 
-                                        value={currentWorker?.eps || ''} 
-                                        onValueChange={(value) => handleWorkerInputChange('eps', value)}
+                                    <Select
+                                        value={otroSocialMode.eps ? '__otro__' : (currentWorker?.eps || '')}
+                                        onValueChange={(value) => {
+                                            if (value === '__otro__') {
+                                                setOtroSocialMode(prev => ({ ...prev, eps: true }));
+                                                handleWorkerInputChange('eps', '');
+                                            } else {
+                                                setOtroSocialMode(prev => ({ ...prev, eps: false }));
+                                                handleWorkerInputChange('eps', value);
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger id="worker-eps" className="h-10">
                                             <SelectValue placeholder="Seleccione EPS"/>
@@ -1076,15 +1092,33 @@ function CreatePermitWizard() {
                                             {epsEntidades.map(eps => (
                                                 <SelectItem key={eps} value={eps}>{eps}</SelectItem>
                                             ))}
+                                            <SelectItem value="__otro__">Otra EPS</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {otroSocialMode.eps && (
+                                        <Input
+                                            placeholder="Nombre de la EPS"
+                                            value={currentWorker?.eps || ''}
+                                            onChange={(e) => handleWorkerInputChange('eps', e.target.value)}
+                                            className="h-10"
+                                            autoFocus
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="worker-arl" className="text-sm font-medium">ARL</Label>
-                                    <Select 
-                                        value={currentWorker?.arl || ''} 
-                                        onValueChange={(value) => handleWorkerInputChange('arl', value)}
+                                    <Select
+                                        value={otroSocialMode.arl ? '__otro__' : (currentWorker?.arl || '')}
+                                        onValueChange={(value) => {
+                                            if (value === '__otro__') {
+                                                setOtroSocialMode(prev => ({ ...prev, arl: true }));
+                                                handleWorkerInputChange('arl', '');
+                                            } else {
+                                                setOtroSocialMode(prev => ({ ...prev, arl: false }));
+                                                handleWorkerInputChange('arl', value);
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger id="worker-arl" className="h-10">
                                             <SelectValue placeholder="Seleccione ARL"/>
@@ -1093,15 +1127,33 @@ function CreatePermitWizard() {
                                             {arlEntidades.map(arl => (
                                                 <SelectItem key={arl} value={arl}>{arl}</SelectItem>
                                             ))}
+                                            <SelectItem value="__otro__">Otra ARL</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {otroSocialMode.arl && (
+                                        <Input
+                                            placeholder="Nombre de la ARL"
+                                            value={currentWorker?.arl || ''}
+                                            onChange={(e) => handleWorkerInputChange('arl', e.target.value)}
+                                            className="h-10"
+                                            autoFocus
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="worker-pension" className="text-sm font-medium">Pensión</Label>
-                                    <Select 
-                                        value={currentWorker?.pensiones || ''} 
-                                        onValueChange={(value) => handleWorkerInputChange('pensiones', value)}
+                                    <Select
+                                        value={otroSocialMode.pensiones ? '__otro__' : (currentWorker?.pensiones || '')}
+                                        onValueChange={(value) => {
+                                            if (value === '__otro__') {
+                                                setOtroSocialMode(prev => ({ ...prev, pensiones: true }));
+                                                handleWorkerInputChange('pensiones', '');
+                                            } else {
+                                                setOtroSocialMode(prev => ({ ...prev, pensiones: false }));
+                                                handleWorkerInputChange('pensiones', value);
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger id="worker-pension" className="h-10">
                                             <SelectValue placeholder="Seleccione Pensión"/>
@@ -1110,8 +1162,18 @@ function CreatePermitWizard() {
                                             {pensionEntidades.map(pension => (
                                                 <SelectItem key={pension} value={pension}>{pension}</SelectItem>
                                             ))}
+                                            <SelectItem value="__otro__">Otro fondo</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {otroSocialMode.pensiones && (
+                                        <Input
+                                            placeholder="Nombre del fondo de pensión"
+                                            value={currentWorker?.pensiones || ''}
+                                            onChange={(e) => handleWorkerInputChange('pensiones', e.target.value)}
+                                            className="h-10"
+                                            autoFocus
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
