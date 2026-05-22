@@ -332,6 +332,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
 const PermitFormContext = createContext<{
     state: FormState;
     dispatch: Dispatch<FormAction>;
+    isFormDirty: boolean;
 } | undefined>(undefined);
 
 // Función para inicializar el estado, intentando cargar desde localStorage.
@@ -390,16 +391,22 @@ export const validateEmergenciasStep = (eppEmergencias: EppEmergencias): {
 };
 
 // Create the provider component
-export function PermitFormProvider({ children, userId }: { children: React.ReactNode; userId?: string }) {
-  const storageKey = userId ? `${STORAGE_KEY_PREFIX}_${userId}` : null;
+export function PermitFormProvider({ children, userId, isNewPermit = false }: { children: React.ReactNode; userId?: string; isNewPermit?: boolean }) {
+  // Cuando es un permiso nuevo, se deshabilita localStorage para que el formulario
+  // siempre arranque en blanco. Solo se persiste cuando se edita un borrador.
+  const storageKey = userId && !isNewPermit ? `${STORAGE_KEY_PREFIX}_${userId}` : null;
 
   const [state, rawDispatch] = useReducer(formReducer, null, initializer);
   const [draftLoaded, setDraftLoaded] = React.useState(false);
+  const [isFormDirty, setIsFormDirty] = React.useState(false);
 
-  // Wrap dispatch to clear the user-specific key when RESET_FORM is dispatched
+  // Wrap dispatch: limpia localStorage en RESET_FORM y rastrea cambios reales del usuario
   const dispatch: Dispatch<FormAction> = useCallback((action) => {
-    if (action.type === 'RESET_FORM' && storageKey) {
-      try { localStorage.removeItem(storageKey); } catch {}
+    if (action.type === 'RESET_FORM') {
+      setIsFormDirty(false);
+      if (storageKey) try { localStorage.removeItem(storageKey); } catch {}
+    } else if (action.type !== 'INITIALIZE_WITH_USER' && action.type !== 'SET_ENTIRE_STATE') {
+      setIsFormDirty(true);
     }
     rawDispatch(action);
   }, [storageKey]);
@@ -433,7 +440,7 @@ export function PermitFormProvider({ children, userId }: { children: React.React
   }, [state, storageKey, draftLoaded]);
 
   return (
-    <PermitFormContext.Provider value={{ state, dispatch }}>
+    <PermitFormContext.Provider value={{ state, dispatch, isFormDirty }}>
       {children}
     </PermitFormContext.Provider>
   );

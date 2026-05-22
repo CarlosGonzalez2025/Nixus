@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { savePermitDraft, addSignatureAndNotify } from '../actions';
@@ -135,7 +135,7 @@ function CreatePermitWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { state: formData, dispatch } = usePermitForm();
+  const { state: formData, dispatch, isFormDirty } = usePermitForm();
   
   const [draftId, setDraftId] = useState<string | undefined>(undefined);
   const [isLoadingForm, setIsLoadingForm] = useState(true);
@@ -154,10 +154,42 @@ function CreatePermitWizard() {
   const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
   const [signatureTarget, setSignatureTarget] = useState<string | null>(null);
   const [signatureContext, setSignatureContext] = useState<any>(null);
+
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const originalPushStateRef = useRef<typeof window.history.pushState | null>(null);
+  const pendingNavArgsRef = useRef<Parameters<typeof window.history.pushState> | null>(null);
   
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  // Advierte al usuario si intenta cerrar o recargar la página con el formulario sucio
+  useEffect(() => {
+    if (!isFormDirty || showSuccessDialog) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isFormDirty, showSuccessDialog]);
+
+  // Intercepta navegación in-app de Next.js (pushState) cuando el formulario tiene datos
+  useEffect(() => {
+    if (!isFormDirty || showSuccessDialog) return;
+
+    const original = window.history.pushState.bind(window.history);
+    originalPushStateRef.current = original;
+
+    window.history.pushState = (...args: Parameters<typeof window.history.pushState>) => {
+      pendingNavArgsRef.current = args;
+      setShowLeaveDialog(true);
+    };
+
+    return () => {
+      if (originalPushStateRef.current) {
+        window.history.pushState = originalPushStateRef.current;
+        originalPushStateRef.current = null;
+      }
+    };
+  }, [isFormDirty, showSuccessDialog]);
 
   useEffect(() => {
     const editId = searchParams.get('edit');
@@ -291,17 +323,17 @@ function CreatePermitWizard() {
     setSignatureContext(null);
   };
   
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (): Promise<boolean> => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error de Autenticación' });
-      return;
+      return false;
     }
 
     setIsSavingDraft(true);
     try {
       const result = await savePermitDraft({
-          userId: user.uid, 
-          userDisplayName: user.displayName || null, 
+          userId: user.uid,
+          userDisplayName: user.displayName || null,
           userEmail: user.email || null,
           userPhotoURL: user.photoURL || null,
           draftId: draftId,
@@ -313,13 +345,36 @@ function CreatePermitWizard() {
           setDraftId(result.permitId);
         }
         toast({ title: "Borrador Guardado", description: "Tu progreso ha sido guardado." });
+        return true;
       } else {
         throw new Error(result.error || 'No se pudo guardar el borrador.');
       }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message });
+      return false;
     } finally {
       setIsSavingDraft(false);
+    }
+  };
+
+  const handleLeaveConfirm = () => {
+    if (originalPushStateRef.current) {
+      window.history.pushState = originalPushStateRef.current;
+      originalPushStateRef.current = null;
+    }
+    const args = pendingNavArgsRef.current;
+    pendingNavArgsRef.current = null;
+    setShowLeaveDialog(false);
+    if (args) window.history.pushState(...args);
+  };
+
+  const handleSaveDraftAndLeave = async () => {
+    const saved = await handleSaveDraft();
+    if (saved) {
+      handleLeaveConfirm();
+    } else {
+      setShowLeaveDialog(false);
+      pendingNavArgsRef.current = null;
     }
   };
 
@@ -1226,6 +1281,46 @@ function CreatePermitWizard() {
           <SignaturePad onSave={handleSaveSignature} />
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de advertencia al salir con el formulario sin guardar */}
+      <Dialog
+        open={showLeaveDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            pendingNavArgsRef.current = null;
+            setShowLeaveDialog(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Salir sin guardar?</DialogTitle>
+            <DialogDescription>
+              Tienes un permiso en edición con datos sin guardar. Te recomendamos guardarlo como borrador para no perder tu progreso.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              onClick={handleSaveDraftAndLeave}
+              disabled={isSavingDraft}
+              className="w-full"
+            >
+              {isSavingDraft
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Save className="mr-2 h-4 w-4" />}
+              Guardar borrador y salir
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleLeaveConfirm}
+              disabled={isSavingDraft}
+              className="w-full"
+            >
+              Salir sin guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </>
   );
@@ -1233,8 +1328,10 @@ function CreatePermitWizard() {
 
 export default function CreatePermitPage() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
+  const isNewPermit = !searchParams.get('edit');
   return (
-    <PermitFormProvider userId={user?.uid}>
+    <PermitFormProvider userId={user?.uid} isNewPermit={isNewPermit}>
       <CreatePermitWizard />
     </PermitFormProvider>
   );

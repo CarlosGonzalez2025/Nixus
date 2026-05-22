@@ -65,6 +65,44 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-05-22 (Sesión 2) — Formulario nuevo siempre en blanco y guard de navegación
+
+#### Fix: "Nuevo Permiso" mostraba datos del último permiso editado
+
+**Problema:** `PermitFormProvider` guardaba el estado del formulario en `localStorage` bajo `permitFormDraft_${userId}` y lo cargaba automáticamente en cada visita a `/permits/create`, sin importar si era un permiso nuevo o la edición de un borrador. Al hacer clic en "Nuevo Permiso" el formulario aparecía con datos de la sesión anterior.
+
+**Archivos modificados:** `src/app/(app)/permits/create/form-context.tsx`, `src/app/(app)/permits/create/page.tsx`
+
+**Cambios:**
+- `PermitFormProvider` recibe nuevo prop `isNewPermit?: boolean`. Cuando es `true`, la `storageKey` se fija en `null`, deshabilitando lectura y escritura en `localStorage` para esa sesión.
+- `CreatePermitPage` (componente raíz) lee `useSearchParams()` y pasa `isNewPermit={!searchParams.get('edit')}` al provider.
+- **Regla resultante:** formulario en blanco siempre que la URL no tenga `?edit=<id>`; solo se cargan datos previos al abrir desde estado borrador.
+
+---
+
+#### Feat: guard de navegación al salir del formulario con datos sin guardar
+
+**Problema:** Si el usuario tenía un permiso en edición y navegaba a otra sección (sidebar, botón atrás) perdía su trabajo sin advertencia.
+
+**Archivo modificado:** `src/app/(app)/permits/create/form-context.tsx`, `src/app/(app)/permits/create/page.tsx`
+
+**Cambios en `form-context.tsx`:**
+- Se añadió `isFormDirty: boolean` al contexto. El dispatch envuelto activa `isFormDirty = true` en cualquier acción de usuario (`UPDATE_*`, `SET_WORKERS`, etc.) y lo resetea a `false` en `RESET_FORM`.
+- `INITIALIZE_WITH_USER` y `SET_ENTIRE_STATE` no marcan el formulario como sucio (son inicializaciones del sistema, no ediciones del usuario).
+
+**Cambios en `CreatePermitWizard`:**
+- `handleSaveDraft` retorna `Promise<boolean>` para que la lógica de salida sepa si el guardado fue exitoso.
+- Dos efectos nuevos que se activan cuando `isFormDirty && !showSuccessDialog`:
+  - **`beforeunload`**: avisa al browser (refresh, cierre de tab, botón atrás nativo).
+  - **`pushState` intercept**: cuando Next.js intenta navegar in-app, almacena los argumentos pendientes y abre el dialog en lugar de ejecutar la navegación.
+- Nuevo `Dialog` "¿Salir sin guardar?" con dos opciones:
+  - **"Guardar borrador y salir"**: llama `handleSaveDraft()` y, si tiene éxito, ejecuta la navegación pendiente.
+  - **"Salir sin guardar"**: ejecuta la navegación pendiente directamente.
+  - **Cancelar (X)**: descarta la navegación pendiente y cierra el dialog.
+- El guard se desactiva automáticamente cuando el permiso se envía (`showSuccessDialog = true`).
+
+---
+
 ### 2026-05-22 — Exclusión de administradores de correos de permisos
 
 #### Fix: admins excluidos de las notificaciones por email del proceso de permisos de trabajo
@@ -1118,4 +1156,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-22. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-22 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*
