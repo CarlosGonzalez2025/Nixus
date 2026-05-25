@@ -291,7 +291,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
     case 'UPDATE_SIGNATURE': {
         const { target, signature } = action.payload;
         if (target === 'solicitanteFirmaApertura') {
-            return { ...state, solicitanteFirmaApertura: signature };
+            const workers = [...(state.workers || [])];
+            if (workers[0]) {
+                workers[0] = { ...workers[0], firmaApertura: signature };
+            }
+            return { ...state, workers, solicitanteFirmaApertura: signature };
         }
         console.warn(`Signature update for target "${target}" not implemented in reducer.`);
         return state;

@@ -59,6 +59,10 @@ function generateOfflinePermitNumber(docId: string): string {
  * Verifica si todas las firmas requeridas están completas (lógica espejada del Server Action).
  * Se usa para calcular la auto-transición a 'en_ejecucion' offline.
  */
+function requiresMaintenanceSignature(permit: Partial<Permit>): boolean {
+  return permit.controlEnergia === true || permit.selectedWorkTypes?.energia === true;
+}
+
 function allRequiredSignaturesComplete(permit: Partial<Permit>): boolean {
   const approvals = permit.approvals;
   if (!approvals) return false;
@@ -68,7 +72,7 @@ function allRequiredSignaturesComplete(permit: Partial<Permit>): boolean {
       approvals.coordinador_alturas?.status !== 'aprobado') return false;
   if ((permit.espaciosConfinados || permit.selectedWorkTypes?.confinado) &&
       approvals.supervisor_confinado?.status !== 'aprobado') return false;
-  if (permit.controlEnergia && approvals.mantenimiento?.status !== 'aprobado') return false;
+  if (requiresMaintenanceSignature(permit) && approvals.mantenimiento?.status !== 'aprobado') return false;
   if (permit.isSSTSignatureRequired && approvals.lider_sst?.status !== 'aprobado') return false;
   return true;
 }
@@ -168,6 +172,14 @@ export async function addSignatureOffline(
       [`approvals.${role}`]: approvalData,
       offlinePendingSync: true,
     };
+
+    if (role === 'solicitante') {
+      const workers = [...(permitData.workers || [])];
+      if (workers[0] && !workers[0].firmaApertura) {
+        workers[0] = { ...workers[0], firmaApertura: signatureDataUrl };
+        updatePayload.workers = workers;
+      }
+    }
 
     // Auto-transición a en_ejecucion si es la última firma requerida
     const updatedApprovals = {

@@ -533,6 +533,8 @@ export default function PermitDetailPage() {
   };
 
   const isSSTSignatureRequired = permit?.isSSTSignatureRequired;
+  const requiresMaintenanceSignature = (p?: Permit | null) =>
+    p?.controlEnergia === true || p?.selectedWorkTypes?.energia === true;
 
   const canSign = (role: SignatureRole): { can: boolean; reason?: string } => {
     if (!currentUser || !permit || !permit.approvals) return { can: false, reason: 'Cargando datos...' };
@@ -592,7 +594,7 @@ export default function PermitDetailPage() {
         return { can: true };
 
       case 'mantenimiento':
-        if (!permit.controlEnergia) return { can: false, reason: 'No se requiere para este trabajo.' };
+        if (!requiresMaintenanceSignature(permit)) return { can: false, reason: 'No se requiere para este trabajo.' };
         if (!hasCorrectRole('mantenimiento')) return { can: false, reason: 'No tienes el rol requerido.' };
         if (!hasSigned(solicitante)) return { can: false, reason: 'Esperando firma del Ejecutante del trabajo.' };
         return { can: true };
@@ -603,7 +605,7 @@ export default function PermitDetailPage() {
         if (isSSTSignatureRequired && !hasSigned(lider_sst)) {
           return { can: false, reason: 'Esperando firma del Líder SST.' };
         }
-        if (permit.controlEnergia && !hasSigned(mantenimiento)) {
+        if (requiresMaintenanceSignature(permit) && !hasSigned(mantenimiento)) {
           return { can: false, reason: 'Esperando firma de Mantenimiento.' };
         }
         return { can: true };
@@ -703,7 +705,7 @@ export default function PermitDetailPage() {
     if (approvals?.autorizante?.status !== 'aprobado') return false;
     if ((permit.trabajoAlturas || selectedWorkTypes?.alturas) && approvals?.coordinador_alturas?.status !== 'aprobado') return false;
     if ((permit.espaciosConfinados || selectedWorkTypes?.confinado) && approvals?.supervisor_confinado?.status !== 'aprobado') return false;
-    if (permit.controlEnergia && approvals?.mantenimiento?.status !== 'aprobado') return false;
+    if (requiresMaintenanceSignature(permit) && approvals?.mantenimiento?.status !== 'aprobado') return false;
     if (sstRequired && approvals?.lider_sst?.status !== 'aprobado') return false;
     return true;
   };
@@ -1898,7 +1900,7 @@ export default function PermitDetailPage() {
               <SignatureCard role="solicitante" />
               {isSSTSignatureRequired && <SignatureCard role="lider_sst" />}
               <SignatureCard role="autorizante" />
-              {permit.controlEnergia && <SignatureCard role="mantenimiento" />}
+              {requiresMaintenanceSignature(permit) && <SignatureCard role="mantenimiento" />}
             </div>
           </Section>
 

@@ -258,7 +258,7 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   const selectedTypes: string[] = [];
   if (permit.trabajoAlturas) selectedTypes.push('Trabajo en Alturas');
   if (permit.espaciosConfinados) selectedTypes.push('Espacios Confinados');
-  if (permit.controlEnergia) selectedTypes.push('Control de Energías');
+  if (permit.controlEnergia || permit.selectedWorkTypes?.energia) selectedTypes.push('Control de Energías');
   if (permit.izajeCargas) selectedTypes.push('Izaje de Cargas');
   if (permit.excavaciones) selectedTypes.push('Excavaciones');
   
@@ -271,6 +271,22 @@ const getWorkTypesString = (permit: Partial<Permit>): string => {
   }
   return selectedTypes.join(', ');
 };
+
+const requiresMaintenanceSignature = (permit: Partial<Permit>): boolean =>
+  permit.controlEnergia === true || permit.selectedWorkTypes?.energia === true;
+
+const getWorkersWithMissingSocialSecurity = (workers: ExternalWorker[] = []) =>
+  workers
+    .map((worker, index) => ({
+      worker,
+      index,
+      missing: [
+        !worker.eps?.trim() ? 'EPS' : null,
+        !worker.arl?.trim() ? 'ARL' : null,
+        !worker.pensiones?.trim() ? 'Pensión' : null,
+      ].filter((field): field is string => Boolean(field)),
+    }))
+    .filter(item => item.missing.length > 0);
 
 const getStatusText = (status: string) => {
     const statusText: {[key: string]: string} = {
@@ -491,6 +507,32 @@ export async function addSignatureAndNotify(
                 return { success: false, error: canSign.reason };
             }
 
+            if (role === 'solicitante') {
+                const workersForValidation = [...(permitBeforeData.workers || [])];
+                if (workersForValidation[0] && !workersForValidation[0].firmaApertura) {
+                    workersForValidation[0] = { ...workersForValidation[0], firmaApertura: signatureDataUrl };
+                }
+                const workersWithoutOpeningSignature = workersForValidation.filter(worker => !worker.firmaApertura);
+                const missingSignatureCount = !workersForValidation[0]?.firmaApertura
+                    ? Math.max(1, workersWithoutOpeningSignature.length)
+                    : workersWithoutOpeningSignature.length;
+                if (missingSignatureCount > 0) {
+                    return {
+                        success: false,
+                        error: `No se puede enviar el permiso: faltan ${missingSignatureCount} firma(s) de apertura del personal autorizado.`,
+                    };
+                }
+
+                const workersWithMissingSocialSecurity = getWorkersWithMissingSocialSecurity(workersForValidation);
+                if (workersWithMissingSocialSecurity.length > 0) {
+                    const first = workersWithMissingSocialSecurity[0];
+                    return {
+                        success: false,
+                        error: `No se puede enviar el permiso: ${first.worker.nombre || `Trabajador ${first.index + 1}`} tiene pendiente ${first.missing.join(', ')}.`,
+                    };
+                }
+            }
+
             const newApprovalEntry = {
                 status: 'aprobado',
                 firmaApertura: signatureDataUrl,
@@ -505,6 +547,12 @@ export async function addSignatureAndNotify(
             (updateData as any)[`approvals.${role}`] = newApprovalEntry;
 
             if (role === 'solicitante') {
+                const workers = [...(permitBeforeData.workers || [])];
+                if (workers[0] && !workers[0].firmaApertura) {
+                    workers[0] = { ...workers[0], firmaApertura: signatureDataUrl };
+                    (updateData as any).workers = workers;
+                }
+
                 const validationPayload: ValidacionDiaria = { 
                     dia: 1, 
                     nombre: user.displayName || '', 
@@ -665,7 +713,7 @@ async function checkAllRequiredSignaturesComplete(
         }
     }
     
-    if (permitData.controlEnergia) {
+    if (requiresMaintenanceSignature(permitData)) {
         if (approvals?.mantenimiento?.status !== 'aprobado') {
             return false;
         }
@@ -898,7 +946,7 @@ async function validateSignaturePermission(
              if (currentUser.role !== 'mantenimiento' && currentUser.role !== 'admin') {
                 return { allowed: false, reason: 'Rol de Mantenimiento requerido para esta firma.' };
             }
-            if (!permit.controlEnergia) {
+            if (!requiresMaintenanceSignature(permit)) {
                 return { allowed: false, reason: 'Firma de Mantenimiento solo aplica cuando hay control de energías.' };
             }
             if (permit.approvals?.solicitante?.status !== 'aprobado') {
@@ -916,7 +964,7 @@ async function validateSignaturePermission(
             if (permit.isSSTSignatureRequired && permit.approvals?.lider_sst?.status !== 'aprobado') {
                 return { allowed: false, reason: 'Se requiere primero la firma del Líder SST.' };
             }
-            if (permit.controlEnergia && permit.approvals?.mantenimiento?.status !== 'aprobado') {
+            if (requiresMaintenanceSignature(permit) && permit.approvals?.mantenimiento?.status !== 'aprobado') {
                 return { allowed: false, reason: 'Se requiere primero la firma de Mantenimiento.' };
             }
             break;

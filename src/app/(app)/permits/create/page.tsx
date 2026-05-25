@@ -279,6 +279,17 @@ function CreatePermitWizard() {
       return;
     }
 
+    const missingSocialSecurityFields = getMissingSocialSecurityFields(currentWorker);
+    if (missingSocialSecurityFields.length > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Seguridad Social Requerida',
+        description: `Debe registrar ${missingSocialSecurityFields.join(', ')} antes de guardar el trabajador.`,
+        duration: 7000,
+      });
+      return;
+    }
+
     if (editingWorkerIndex !== null) {
       const updatedWorkers = [...(formData.workers || [])];
       updatedWorkers[editingWorkerIndex] = currentWorker as ExternalWorker;
@@ -301,6 +312,14 @@ function CreatePermitWizard() {
   
   const handleWorkerInputChange = (field: keyof ExternalWorker, value: any) => {
     setCurrentWorker(prev => prev ? { ...prev, [field]: value } : null);
+  };
+
+  const getMissingSocialSecurityFields = (worker: Partial<ExternalWorker>) => {
+    const missing: string[] = [];
+    if (!worker.eps?.trim()) missing.push('EPS');
+    if (!worker.arl?.trim()) missing.push('ARL');
+    if (!worker.pensiones?.trim()) missing.push('PensiÃ³n');
+    return missing;
   };
 
   const openSignaturePad = (target: string, context?: any) => {
@@ -386,6 +405,43 @@ function CreatePermitWizard() {
       return;
     }
 
+    const normalizedWorkers = [...(formData.workers || [])];
+    if (normalizedWorkers[0] && !normalizedWorkers[0].firmaApertura) {
+      normalizedWorkers[0] = { ...normalizedWorkers[0], firmaApertura: firmaParaEnvio };
+    }
+    const normalizedFormData = {
+      ...formData,
+      workers: normalizedWorkers,
+      solicitanteFirmaApertura: firmaParaEnvio,
+    };
+    const missingWorkerSignatures = normalizedWorkers.filter(w => !w.firmaApertura);
+    const missingSignatureCount = !normalizedWorkers[0]?.firmaApertura
+      ? Math.max(1, missingWorkerSignatures.length)
+      : missingWorkerSignatures.length;
+    if (missingSignatureCount > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Faltan firmas de trabajadores',
+        description: `No se puede enviar el permiso hasta completar todas las firmas de apertura. Faltan ${missingSignatureCount} firma(s).`,
+        duration: 7000,
+      });
+      return;
+    }
+
+    const workersWithMissingSocialSecurity = normalizedWorkers
+      .map((worker, index) => ({ worker, index, missing: getMissingSocialSecurityFields(worker) }))
+      .filter(item => item.missing.length > 0);
+    if (workersWithMissingSocialSecurity.length > 0) {
+      const first = workersWithMissingSocialSecurity[0];
+      toast({
+        variant: 'destructive',
+        title: 'Seguridad Social Incompleta',
+        description: `${first.worker.nombre || `Trabajador ${first.index + 1}`} tiene pendiente: ${first.missing.join(', ')}.`,
+        duration: 8000,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     let currentPermitId = draftId;
 
@@ -396,7 +452,7 @@ function CreatePermitWizard() {
         const nombreSolicitante = solicitanteWorker?.nombre || user.displayName || null;
 
         const createResult = await createPermitOffline(
-          { ...formData, status: 'pendiente_revision', createdBy: user.uid, approvals: { solicitante: { status: 'pendiente' }, autorizante: { status: 'pendiente' }, mantenimiento: { status: 'pendiente' }, lider_sst: { status: 'pendiente' }, coordinador_alturas: { status: 'pendiente' }, supervisor_confinado: { status: 'pendiente' } }, closure: {} } as any,
+          { ...normalizedFormData, status: 'pendiente_revision', createdBy: user.uid, approvals: { solicitante: { status: 'pendiente' }, autorizante: { status: 'pendiente' }, mantenimiento: { status: 'pendiente' }, lider_sst: { status: 'pendiente' }, coordinador_alturas: { status: 'pendiente' }, supervisor_confinado: { status: 'pendiente' } }, closure: {} } as any,
           offlineUser
         );
 
@@ -405,12 +461,12 @@ function CreatePermitWizard() {
         setDraftId(currentPermitId);
 
         // Firmas especiales offline (coordinador alturas / supervisor confinado)
-        if (formData.selectedWorkTypes?.alturas) {
-          const cw = formData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+        if (normalizedFormData.selectedWorkTypes?.alturas) {
+          const cw = normalizedFormData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
           if (cw?.firmaApertura) await addSignatureOffline(currentPermitId, 'coordinador_alturas', cw.firmaApertura, { ...offlineUser, displayName: cw.nombre || offlineUser.displayName });
         }
-        if (formData.selectedWorkTypes?.confinado) {
-          const sw = formData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+        if (normalizedFormData.selectedWorkTypes?.confinado) {
+          const sw = normalizedFormData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
           if (sw?.firmaApertura) await addSignatureOffline(currentPermitId, 'supervisor_confinado', sw.firmaApertura, { ...offlineUser, displayName: sw.nombre || offlineUser.displayName });
         }
 
@@ -440,7 +496,7 @@ function CreatePermitWizard() {
           userDisplayName: user.displayName || null,
           userEmail: user.email || null,
           userPhotoURL: user.photoURL || null,
-          ...formData
+          ...normalizedFormData
         });
 
         if (!draftResult.success || !draftResult.permitId) {
@@ -451,8 +507,8 @@ function CreatePermitWizard() {
       }
 
       // Registrar firma del Coordinador de TA si aplica
-      if (formData.selectedWorkTypes?.alturas) {
-        const coordWorker = formData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+      if (normalizedFormData.selectedWorkTypes?.alturas) {
+        const coordWorker = normalizedFormData.workers?.find(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
         if (coordWorker?.firmaApertura) {
           await addSignatureAndNotify(
             currentPermitId,
@@ -466,8 +522,8 @@ function CreatePermitWizard() {
       }
 
       // Registrar firma del Supervisor de EC si aplica
-      if (formData.selectedWorkTypes?.confinado) {
-        const supervisorWorker = formData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+      if (normalizedFormData.selectedWorkTypes?.confinado) {
+        const supervisorWorker = normalizedFormData.workers?.find(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
         if (supervisorWorker?.firmaApertura) {
           await addSignatureAndNotify(
             currentPermitId,
@@ -1127,7 +1183,7 @@ function CreatePermitWizard() {
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="worker-eps" className="text-sm font-medium">EPS</Label>
+                                    <Label htmlFor="worker-eps" className="text-sm font-medium">EPS <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={otroSocialMode.eps ? '__otro__' : (currentWorker?.eps || '')}
                                         onValueChange={(value) => {
@@ -1162,7 +1218,7 @@ function CreatePermitWizard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="worker-arl" className="text-sm font-medium">ARL</Label>
+                                    <Label htmlFor="worker-arl" className="text-sm font-medium">ARL <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={otroSocialMode.arl ? '__otro__' : (currentWorker?.arl || '')}
                                         onValueChange={(value) => {
@@ -1197,7 +1253,7 @@ function CreatePermitWizard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="worker-pension" className="text-sm font-medium">Pensión</Label>
+                                    <Label htmlFor="worker-pension" className="text-sm font-medium">Pensión <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={otroSocialMode.pensiones ? '__otro__' : (currentWorker?.pensiones || '')}
                                         onValueChange={(value) => {
