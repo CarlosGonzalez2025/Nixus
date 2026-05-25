@@ -322,6 +322,20 @@ function CreatePermitWizard() {
     return missing;
   };
 
+  const getWorkerCountMismatch = (workers: ExternalWorker[], numTrabajadores?: string) => {
+    const expectedAdditionalWorkers = Number.parseInt(numTrabajadores || '0', 10);
+    if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
+      return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+    }
+
+    const actualAdditionalWorkers = Math.max(0, workers.length - 1);
+    if (actualAdditionalWorkers !== expectedAdditionalWorkers) {
+      return `Ha especificado ${expectedAdditionalWorkers} trabajador(es) adicional(es), pero hay ${actualAdditionalWorkers} registrado(s).`;
+    }
+
+    return null;
+  };
+
   const openSignaturePad = (target: string, context?: any) => {
     setSignatureTarget(target);
     setSignatureContext(context);
@@ -428,6 +442,17 @@ function CreatePermitWizard() {
       return;
     }
 
+    const workerCountMismatch = getWorkerCountMismatch(normalizedWorkers, normalizedFormData.generalInfo.numTrabajadores);
+    if (workerCountMismatch) {
+      toast({
+        variant: 'destructive',
+        title: 'NÃºmero de Trabajadores no Coincide',
+        description: workerCountMismatch,
+        duration: 8000,
+      });
+      return;
+    }
+
     const workersWithMissingSocialSecurity = normalizedWorkers
       .map((worker, index) => ({ worker, index, missing: getMissingSocialSecurityFields(worker) }))
       .filter(item => item.missing.length > 0);
@@ -489,22 +514,23 @@ function CreatePermitWizard() {
 
     // ── RUTA ONLINE (flujo original) ─────────────────────────────────────────
     try {
-      // Siempre guardar el borrador primero para asegurar que el ID existe
-      if (!currentPermitId) {
-        const draftResult = await savePermitDraft({
-          userId: user.uid,
-          userDisplayName: user.displayName || null,
-          userEmail: user.email || null,
-          userPhotoURL: user.photoURL || null,
-          ...normalizedFormData
-        });
+      // Guardar siempre el estado completo antes de registrar firmas.
+      // Esto cubre borradores existentes: workers/anexos/datos quedan persistidos
+      // antes de que el permiso cambie a pendiente_revision.
+      const draftResult = await savePermitDraft({
+        userId: user.uid,
+        userDisplayName: user.displayName || null,
+        userEmail: user.email || null,
+        userPhotoURL: user.photoURL || null,
+        draftId: currentPermitId || undefined,
+        ...normalizedFormData
+      });
 
-        if (!draftResult.success || !draftResult.permitId) {
-          throw new Error(draftResult.error || "No se pudo crear el borrador inicial.");
-        }
-        currentPermitId = draftResult.permitId;
-        setDraftId(currentPermitId);
+      if (!draftResult.success || !draftResult.permitId) {
+        throw new Error(draftResult.error || "No se pudo guardar el borrador actualizado.");
       }
+      currentPermitId = draftResult.permitId;
+      setDraftId(currentPermitId);
 
       // Registrar firma del Coordinador de TA si aplica
       if (normalizedFormData.selectedWorkTypes?.alturas) {

@@ -63,6 +63,34 @@ function requiresMaintenanceSignature(permit: Partial<Permit>): boolean {
   return permit.controlEnergia === true || permit.selectedWorkTypes?.energia === true;
 }
 
+function getWorkerCountMismatch(permit: Partial<Permit>): string | null {
+  const expectedAdditionalWorkers = Number.parseInt(permit.generalInfo?.numTrabajadores || '0', 10);
+  if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
+    return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+  }
+
+  const actualAdditionalWorkers = Math.max(0, (permit.workers || []).length - 1);
+  if (actualAdditionalWorkers !== expectedAdditionalWorkers) {
+    return `Ha especificado ${expectedAdditionalWorkers} trabajador(es) adicional(es), pero hay ${actualAdditionalWorkers} registrado(s).`;
+  }
+
+  return null;
+}
+
+function getWorkersWithMissingSocialSecurity(workers: NonNullable<Partial<Permit>['workers']> = []) {
+  return workers
+    .map((worker, index) => ({
+      worker,
+      index,
+      missing: [
+        !worker.eps?.trim() ? 'EPS' : null,
+        !worker.arl?.trim() ? 'ARL' : null,
+        !worker.pensiones?.trim() ? 'PensiÃ³n' : null,
+      ].filter((field): field is string => Boolean(field)),
+    }))
+    .filter(item => item.missing.length > 0);
+}
+
 function allRequiredSignaturesComplete(permit: Partial<Permit>): boolean {
   const approvals = permit.approvals;
   if (!approvals) return false;
@@ -178,6 +206,28 @@ export async function addSignatureOffline(
       if (workers[0] && !workers[0].firmaApertura) {
         workers[0] = { ...workers[0], firmaApertura: signatureDataUrl };
         updatePayload.workers = workers;
+      }
+
+      const workersWithoutOpeningSignature = workers.filter(worker => !worker.firmaApertura);
+      const missingSignatureCount = !workers[0]?.firmaApertura
+        ? Math.max(1, workersWithoutOpeningSignature.length)
+        : workersWithoutOpeningSignature.length;
+      if (missingSignatureCount > 0) {
+        return { success: false, error: `Faltan ${missingSignatureCount} firma(s) de apertura del personal autorizado.` };
+      }
+
+      const workerCountMismatch = getWorkerCountMismatch({ ...permitData, workers });
+      if (workerCountMismatch) {
+        return { success: false, error: workerCountMismatch };
+      }
+
+      const workersWithMissingSocialSecurity = getWorkersWithMissingSocialSecurity(workers);
+      if (workersWithMissingSocialSecurity.length > 0) {
+        const first = workersWithMissingSocialSecurity[0];
+        return {
+          success: false,
+          error: `${first.worker.nombre || `Trabajador ${first.index + 1}`} tiene pendiente ${first.missing.join(', ')}.`,
+        };
       }
     }
 

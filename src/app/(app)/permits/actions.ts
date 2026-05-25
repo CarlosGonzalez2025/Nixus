@@ -288,6 +288,20 @@ const getWorkersWithMissingSocialSecurity = (workers: ExternalWorker[] = []) =>
     }))
     .filter(item => item.missing.length > 0);
 
+const getWorkerCountMismatch = (permit: Partial<Permit>): string | null => {
+  const expectedAdditionalWorkers = Number.parseInt(permit.generalInfo?.numTrabajadores || '0', 10);
+  if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
+    return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+  }
+
+  const actualAdditionalWorkers = Math.max(0, (permit.workers || []).length - 1);
+  if (actualAdditionalWorkers !== expectedAdditionalWorkers) {
+    return `Ha especificado ${expectedAdditionalWorkers} trabajador(es) adicional(es), pero hay ${actualAdditionalWorkers} registrado(s).`;
+  }
+
+  return null;
+};
+
 const getStatusText = (status: string) => {
     const statusText: {[key: string]: string} = {
       'borrador': 'Borrador',
@@ -520,6 +534,14 @@ export async function addSignatureAndNotify(
                     return {
                         success: false,
                         error: `No se puede enviar el permiso: faltan ${missingSignatureCount} firma(s) de apertura del personal autorizado.`,
+                    };
+                }
+
+                const workerCountMismatch = getWorkerCountMismatch({ ...permitBeforeData, workers: workersForValidation });
+                if (workerCountMismatch) {
+                    return {
+                        success: false,
+                        error: `No se puede enviar el permiso: ${workerCountMismatch}`,
                     };
                 }
 
