@@ -318,14 +318,14 @@ function CreatePermitWizard() {
     const missing: string[] = [];
     if (!worker.eps?.trim()) missing.push('EPS');
     if (!worker.arl?.trim()) missing.push('ARL');
-    if (!worker.pensiones?.trim()) missing.push('PensiÃ³n');
+    if (!worker.pensiones?.trim()) missing.push('Pensión');
     return missing;
   };
 
   const getWorkerCountMismatch = (workers: ExternalWorker[], numTrabajadores?: string) => {
     const expectedAdditionalWorkers = Number.parseInt(numTrabajadores || '0', 10);
     if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
-      return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+      return 'El número de trabajadores no es válido.';
     }
 
     const actualAdditionalWorkers = Math.max(0, workers.length - 1);
@@ -446,7 +446,7 @@ function CreatePermitWizard() {
     if (workerCountMismatch) {
       toast({
         variant: 'destructive',
-        title: 'NÃºmero de Trabajadores no Coincide',
+        title: 'Número de Trabajadores no Coincide',
         description: workerCountMismatch,
         duration: 8000,
       });

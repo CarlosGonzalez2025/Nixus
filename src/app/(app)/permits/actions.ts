@@ -291,7 +291,7 @@ const getWorkersWithMissingSocialSecurity = (workers: ExternalWorker[] = []) =>
 const getWorkerCountMismatch = (permit: Partial<Permit>): string | null => {
   const expectedAdditionalWorkers = Number.parseInt(permit.generalInfo?.numTrabajadores || '0', 10);
   if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
-    return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+    return 'El número de trabajadores no es válido.';
   }
 
   const actualAdditionalWorkers = Math.max(0, (permit.workers || []).length - 1);

@@ -66,7 +66,7 @@ function requiresMaintenanceSignature(permit: Partial<Permit>): boolean {
 function getWorkerCountMismatch(permit: Partial<Permit>): string | null {
   const expectedAdditionalWorkers = Number.parseInt(permit.generalInfo?.numTrabajadores || '0', 10);
   if (!Number.isFinite(expectedAdditionalWorkers) || expectedAdditionalWorkers < 0) {
-    return 'El nÃºmero de trabajadores no es vÃ¡lido.';
+    return 'El número de trabajadores no es válido.';
   }
 
   const actualAdditionalWorkers = Math.max(0, (permit.workers || []).length - 1);
@@ -85,7 +85,7 @@ function getWorkersWithMissingSocialSecurity(workers: NonNullable<Partial<Permit
       missing: [
         !worker.eps?.trim() ? 'EPS' : null,
         !worker.arl?.trim() ? 'ARL' : null,
-        !worker.pensiones?.trim() ? 'PensiÃ³n' : null,
+        !worker.pensiones?.trim() ? 'Pensión' : null,
       ].filter((field): field is string => Boolean(field)),
     }))
     .filter(item => item.missing.length > 0);

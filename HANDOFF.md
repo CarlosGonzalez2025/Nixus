@@ -65,6 +65,109 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-05-25 — Validaciones de trabajadores antes de firmas finales y persistencia de borrador
+
+#### Fix: firma de mantenimiento no aparecía cuando el trabajo de energías venía de `selectedWorkTypes`
+
+**Problema:** La condición para mostrar la firma de mantenimiento solo evaluaba `permit.controlEnergia`. Si el trabajo de control de energías había sido marcado a través de `permit.selectedWorkTypes.energia` (la ruta más nueva del wizard), la firma no se mostraba en la vista de detalle, no se exigía en `canOpenPermit` y no se registraba como requerida en el servidor.
+
+**Archivos modificados:** `src/app/(app)/permits/[id]/page.tsx`, `src/app/(app)/permits/actions.ts`, `src/lib/offline-permits.ts`
+
+**Cambios:**
+- Nueva función helper `requiresMaintenanceSignature(permit)` → `permit.controlEnergia === true || permit.selectedWorkTypes?.energia === true`
+- Reemplaza todos los usos directos de `permit.controlEnergia` en las 3 capas: UI (`[id]/page.tsx`), servidor (`actions.ts`) y flujo offline (`offline-permits.ts`)
+- Cubre: visibilidad de `<SignatureCard role="mantenimiento">`, bloqueo de `canOpenPermit`, `checkAllRequiredSignaturesComplete` y `validateSignaturePermission`
+
+---
+
+#### Fix: seguridad social (EPS/ARL/Pensión) requerida antes de guardar trabajador y enviar permiso
+
+**Problema:** Era posible agregar un trabajador al formulario sin EPS, ARL o Pensión, y el permiso se podía enviar con esos campos vacíos. El permiso quedaba en Firestore sin los datos de seguridad social del personal expuesto.
+
+**Archivos modificados:** `src/app/(app)/permits/create/page.tsx`, `src/app/(app)/permits/actions.ts`, `src/lib/offline-permits.ts`
+
+**Cambios:**
+
+1. **Validación al guardar trabajador** (`create/page.tsx`): antes de agregar un trabajador al array `workers`, se llama `getMissingSocialSecurityFields(currentWorker)`. Si hay campos faltantes, se muestra un toast destructivo y se bloquea el guardado.
+
+2. **Labels marcados como requeridos** (`create/page.tsx`): los campos EPS, ARL y Pensión ahora muestran `*` rojo en su label.
+
+3. **Validación antes de enviar** (`create/page.tsx`): `handleSubmitPermit()` valida que todos los trabajadores en `normalizedWorkers` tengan EPS/ARL/Pensión completos. Si alguno falta, toast descriptivo que nombra al trabajador y los campos pendientes.
+
+4. **Validación servidor** (`actions.ts`): `addSignatureAndNotify` cuando `role === 'solicitante'` verifica `getWorkersWithMissingSocialSecurity(workersForValidation)` antes de procesar la firma. Retorna `{ success: false, error }` si hay datos incompletos.
+
+5. **Parity offline** (`offline-permits.ts`): misma validación en `addSignatureOffline`.
+
+---
+
+#### Fix: firma del solicitante no se propagaba a `workers[0].firmaApertura`
+
+**Problema:** Al firmar el solicitante en el paso de firma del wizard, la firma se guardaba en `state.solicitanteFirmaApertura` pero **no** en `workers[0].firmaApertura`. Las validaciones posteriores que iteran `workers` para verificar firmas de apertura fallaban porque `workers[0]` siempre aparecía sin firma, bloqueando el envío del permiso.
+
+**Archivos modificados:** `src/app/(app)/permits/create/form-context.tsx`, `src/app/(app)/permits/create/page.tsx`, `src/app/(app)/permits/actions.ts`, `src/lib/offline-permits.ts`
+
+**Cambios:**
+- `form-context.tsx`: en el reducer `SET_SOLICITANTE_FIRMA_APERTURA`, además de actualizar `solicitanteFirmaApertura`, copia la firma a `workers[0].firmaApertura` (si existe).
+- `create/page.tsx` y `actions.ts`: `handleSubmitPermit()` construye `normalizedWorkers` que aplica la firma del solicitante a `workers[0]` antes de las validaciones y el envío, cubriendo el caso de borradores existentes cargados desde Firestore donde el reducer ya no se re-ejecuta.
+- `offline-permits.ts`: `addSignatureOffline` para rol `solicitante` copia igualmente la firma a `workers[0]`.
+
+---
+
+#### Fix: número de trabajadores registrados no coincidía con el campo `numTrabajadores`
+
+**Problema:** Un solicitante podía declarar N trabajadores adicionales en los datos generales pero agregar más o menos en el paso de trabajadores, enviando el permiso con una inconsistencia entre el campo declarado y los trabajadores reales.
+
+**Archivos modificados:** `src/app/(app)/permits/create/page.tsx`, `src/app/(app)/permits/actions.ts`, `src/lib/offline-permits.ts`
+
+**Cambios:**
+- Nueva función `getWorkerCountMismatch(workers, numTrabajadores)`: compara `workers.length - 1` (excluyendo al solicitante que es el índice 0) contra `parseInt(numTrabajadores)`.
+- Validación cliente en `handleSubmitPermit()`: toast destructivo si hay discrepancia.
+- Validación servidor en `addSignatureAndNotify` (rol `solicitante`): retorna `{ success: false, error }` si hay discrepancia.
+- Parity offline en `addSignatureOffline`.
+
+---
+
+#### Fix: borrador existente no se persistía antes de las firmas finales
+
+**Problema:** `handleSubmitPermit()` solo llamaba `savePermitDraft()` cuando `!currentPermitId` (permiso nuevo sin ID). Si el usuario había abierto un borrador existente (`?edit=<id>`) y navegado hasta el paso de firma sin guardar manualmente, los cambios realizados en esa sesión (nuevos trabajadores, anexos actualizados, etc.) **no se guardaban** antes de que el permiso transitara a `pendiente_revision`. Firestore quedaba con el estado anterior del borrador.
+
+**Archivo modificado:** `src/app/(app)/permits/create/page.tsx`
+
+**Cambio:** `savePermitDraft()` ahora se llama **siempre** antes de registrar la firma final, tanto para permisos nuevos como para borradores existentes. Se pasa `draftId: currentPermitId || undefined` para actualizar el documento correcto. Si el guardado falla, se lanza error y el proceso se detiene antes de tocar `addSignatureAndNotify`.
+
+```typescript
+// Antes: solo guardaba si era nuevo
+if (!currentPermitId) {
+  const draftResult = await savePermitDraft({ ... });
+  ...
+}
+
+// Después: siempre guarda el estado completo primero
+const draftResult = await savePermitDraft({
+  ...normalizedFormData,
+  draftId: currentPermitId || undefined,
+});
+if (!draftResult.success || !draftResult.permitId) {
+  throw new Error(draftResult.error || "No se pudo guardar el borrador actualizado.");
+}
+currentPermitId = draftResult.permitId;
+```
+
+---
+
+#### Fix de encoding: caracteres especiales corruptos en mensajes de error
+
+**Problema:** Los strings con tildes (`ó`, `ú`, `á`) en las funciones nuevas fueron guardados con encoding incorrecto (`PensiÃ³n`, `nÃºmero`, `vÃ¡lido`), lo que causaría que los mensajes de error se mostraran corruptos al usuario.
+
+**Archivos corregidos:** `src/app/(app)/permits/actions.ts`, `src/app/(app)/permits/create/page.tsx`, `src/lib/offline-permits.ts`
+
+**Correcciones aplicadas:**
+- `'PensiÃ³n'` → `'Pensión'` (3 instancias en 2 archivos)
+- `'El nÃºmero de trabajadores no es vÃ¡lido.'` → `'El número de trabajadores no es válido.'` (3 instancias en 3 archivos)
+- `'NÃºmero de Trabajadores no Coincide'` → `'Número de Trabajadores no Coincide'` (1 instancia)
+
+---
+
 ### 2026-05-22 (Sesión 2) — Formulario nuevo siempre en blanco y guard de navegación
 
 #### Fix: "Nuevo Permiso" mostraba datos del último permiso editado
@@ -1156,4 +1259,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-22 (sesión 2). Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-05-25. Mantener actualizado con cada sesión de desarrollo.*
