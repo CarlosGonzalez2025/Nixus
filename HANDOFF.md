@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-20
+> **Última actualización de este documento:** 2026-05-25
 
 ---
 
@@ -155,6 +155,24 @@ currentPermitId = draftResult.permitId;
 
 ---
 
+#### Fix: emails rechazados por cuentas suprimidas en Resend
+
+**Problema:** Cuando un destinatario había marcado un correo como spam o su cuenta estaba en la lista de supresiones de Resend, el envío generaba un error de entregabilidad ("Suppressed"). Esto podía bloquear el envío a todos los destinatarios del grupo o generar errores en los logs del servidor.
+
+**Archivo modificado:** `src/lib/email.ts`
+
+**Cambios:**
+- Nueva función `fetchSuppressedEmails()`: consulta `GET https://api.resend.com/suppressions` con caché en memoria de 10 minutos (`SUPPRESSION_CACHE_TTL_MS = 10 * 60 * 1000`). Si el API falla retorna `Set` vacío (fail-safe: se envía sin filtrar en lugar de bloquear).
+- Nueva función `filterSuppressed(emails[])`: separa destinatarios en `valid[]` (enviar) y `suppressed[]` (omitir con `console.warn`).
+- `sendPermitUpdateEmail()` y `sendGroupEmail()` llaman `filterSuppressed()` antes de ejecutar el envío. Si todos los destinatarios están suprimidos → retorna `{ success: true }` (no es error del sistema).
+
+**Comportamiento:**
+- El caché de 10 minutos evita llamadas repetidas al API de Resend por cada envío.
+- Un correo suprimido se omite silenciosamente con log — no bloquea ni genera error visible.
+- Si el API de supresiones no responde, se envía a todos sin filtrar (comportamiento previo como fallback).
+
+---
+
 #### Fix de encoding: caracteres especiales corruptos en mensajes de error
 
 **Problema:** Los strings con tildes (`ó`, `ú`, `á`) en las funciones nuevas fueron guardados con encoding incorrecto (`PensiÃ³n`, `nÃºmero`, `vÃ¡lido`), lo que causaría que los mensajes de error se mostraran corruptos al usuario.
@@ -165,6 +183,40 @@ currentPermitId = draftResult.permitId;
 - `'PensiÃ³n'` → `'Pensión'` (3 instancias en 2 archivos)
 - `'El nÃºmero de trabajadores no es vÃ¡lido.'` → `'El número de trabajadores no es válido.'` (3 instancias en 3 archivos)
 - `'NÃºmero de Trabajadores no Coincide'` → `'Número de Trabajadores no Coincide'` (1 instancia)
+
+---
+
+### 2026-05-25 (Sesión 2) — Refactor completo del generador de PDFs
+
+#### Refactor: rediseño del generador de PDFs de permisos de trabajo
+
+**Archivo modificado:** `src/lib/pdf-generators.ts` (~311 inserciones, ~263 eliminaciones)
+
+**Cambios principales:**
+
+1. **Paleta de colores unificada:** `ITALCOL_ORANGE = SYSTEM_PRIMARY = [0, 34, 72]` (azul marino `#002248`, coincide con `--primary` CSS del sistema). Se mantiene `ITALCOL_ORANGE` como alias de compatibilidad — todo el código existente hereda el nuevo color automáticamente.
+
+2. **Nuevas funciones helper:**
+   - `formatKey(key)` → convierte camelCase/snake_case a etiqueta legible en mayúsculas
+   - `selectedMapLabels(value)` → extrae ítems seleccionados de objetos `{key: boolean}`
+   - `objectStatusRows(value)` → construye filas `[label, símbolo]` para tablas de estado
+   - `renderStatusTable(doc, yPos, rows)` → renderiza tabla de estado genérica con estilo unificado
+   - `drawSignatureImage(doc, signature, x, y, w, h)` → dibuja imagen de firma con manejo de errores
+   - `formatAnyDate(value)` → convierte timestamps Firestore o strings ISO a `dd/MM/yyyy HH:mm`
+
+3. **`isWorkTypeSelected(permit, legacyKey, selectedKey)`:** evalúa `permit[legacyKey] === true || permit.selectedWorkTypes?.[selectedKey] === true`. Cubre ambas rutas del wizard, en paridad con `requiresMaintenanceSignature()` del servidor (`actions.ts`).
+
+4. **`generateUnifiedPDF()`:** usa `isWorkTypeSelected()` para incluir solo los anexos marcados (alturas, confinado, energía, izaje, excavaciones).
+
+5. **`drawSignatures()`:** layout de tarjetas 2 columnas con imágenes de firma embebidas, auto page-break al alcanzar el margen inferior.
+
+6. **Tabla de trabajadores:** columnas F.APE / F.CIE renderizan imágenes de firma reales via callback `didDrawCell`.
+
+7. **`drawFooter()`:** pie de página con número de página en todas las hojas.
+
+**Correcciones adicionales aplicadas:**
+- **EPP duplicado eliminado:** `renderPermitContent()` renderizaba `eppEmergencias.epp` y `eppEmergencias.emergencias` dos veces (secciones 4+5 con nuevo estilo y secciones 7+8 con código antiguo). Se eliminaron las secciones 7+8 (código muerto).
+- **Logo local:** `ITALCOL_LOGO_URL` cambiado de `https://i.postimg.cc/VsZBSkmH/Italcol.png` a `/logo-italcol-full.png` (archivo local en `public/`), consistente con el fix de logos del 2026-04-28.
 
 ---
 
