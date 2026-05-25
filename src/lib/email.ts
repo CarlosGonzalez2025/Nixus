@@ -29,22 +29,33 @@ async function fetchSuppressedEmails(): Promise<Set<string>> {
   if (!resendApiKey) return new Set();
 
   try {
-    const res = await fetch('https://api.resend.com/suppressions', {
-      headers: { Authorization: `Bearer ${resendApiKey}` },
-      cache: 'no-store',
-    });
+    const allEmails: string[] = [];
+    let page = 1;
+    const limit = 100;
 
-    if (!res.ok) {
-      console.warn(`⚠️ [Email] No se pudo obtener la lista de supresiones (HTTP ${res.status}). Se enviarán sin filtrar.`);
-      return new Set();
+    // Paginar hasta obtener todas las supresiones (Resend max 100/página)
+    while (page <= 20) {
+      const res = await fetch(
+        `https://api.resend.com/suppressions?page=${page}&limit=${limit}`,
+        { headers: { Authorization: `Bearer ${resendApiKey}` }, cache: 'no-store' }
+      );
+
+      if (!res.ok) {
+        console.warn(`⚠️ [Email] No se pudo obtener supresiones (HTTP ${res.status}, página ${page}). Se enviarán sin filtrar.`);
+        return new Set();
+      }
+
+      const json = await res.json();
+      const items: Array<{ email: string }> = json.data || [];
+      allEmails.push(...items.map((i) => i.email.toLowerCase()));
+
+      if (items.length < limit) break; // última página
+      page++;
     }
 
-    const json = await res.json();
-    const items: Array<{ email: string }> = json.data || [];
-    const emailSet = new Set(items.map((i) => i.email.toLowerCase()));
-
+    const emailSet = new Set(allEmails);
     suppressionCache = { emails: emailSet, expiresAt: now + SUPPRESSION_CACHE_TTL_MS };
-    console.log(`[Email] Lista de supresiones actualizada: ${emailSet.size} dirección(es) suprimida(s).`);
+    console.log(`[Email] Supresiones cargadas: ${emailSet.size} dirección(es) en ${page} página(s).`);
     return emailSet;
   } catch (err) {
     console.warn('⚠️ [Email] Error al consultar supresiones de Resend. Se enviarán sin filtrar.', err);
