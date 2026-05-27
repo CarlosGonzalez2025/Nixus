@@ -15,16 +15,6 @@ if (resendApiKey && fromEmail && resendApiKey !== 'YOUR_API_KEY') {
   console.warn('⚠️ [Resend] API Key o correo de origen no configurado. Las notificaciones por email están deshabilitadas.');
 }
 
-// ─── Envíos ───────────────────────────────────────────────────────────────────
-//
-// Estrategia BCC con dirección del sistema como campo "to":
-//   • El campo "to" usa siempre fromEmail (dirección del sistema, nunca suprimida).
-//   • Todos los destinatarios reales van en BCC.
-//   • Resend procesa cada BCC de forma independiente: si una dirección está
-//     suprimida (bounce anterior, spam, etc.) esa persona no recibe el correo
-//     pero el resto sí. Así se cumple "enviar a todos, omitir los problemáticos"
-//     sin necesidad de pre-filtrado manual ni limpieza de la lista de supresiones.
-
 interface EmailParams {
   to: string;
   subject: string;
@@ -55,6 +45,18 @@ export async function sendPermitUpdateEmail({ to, subject, html }: EmailParams) 
   }
 }
 
+// Tamaño máximo de lote soportado por la API Batch de Resend.
+const RESEND_BATCH_LIMIT = 100;
+
+/**
+ * Envía un correo individual a cada destinatario usando la API Batch de Resend.
+ *
+ * Por qué batch en vez de BCC:
+ *   Con BCC, si UNA dirección está en la lista de supresión de Resend, el registro
+ *   completo puede quedar en estado "Suppressed" y los demás no reciben nada.
+ *   Con batch, cada correo es independiente: una dirección suprimida solo afecta
+ *   a ese destinatario y el resto recibe el correo sin problema.
+ */
 export async function sendGroupEmail({
   emails,
   subject,
@@ -72,23 +74,34 @@ export async function sendGroupEmail({
   const unique = [...new Set(emails.filter(Boolean))];
   if (unique.length === 0) return { success: true };
 
+  let totalSent = 0;
+  let totalFailed = 0;
+
   try {
-    // "to" = dirección del sistema (siempre válida). Destinatarios reales en BCC.
-    // Resend evalúa cada BCC de forma independiente — suprimidos se omiten solos.
-    const { data, error } = await resend.emails.send({
-      from: `SGTC Móvil <${fromEmail}>`,
-      to: fromEmail,
-      bcc: unique,
-      subject,
-      html,
-    });
+    for (let i = 0; i < unique.length; i += RESEND_BATCH_LIMIT) {
+      const chunk = unique.slice(i, i + RESEND_BATCH_LIMIT);
+      const messages = chunk.map(to => ({
+        from: `SGTC Móvil <${fromEmail!}>`,
+        to,
+        subject,
+        html,
+      }));
 
-    if (error) throw error;
+      const { data, error } = await resend.batch.send(messages);
 
-    console.log(`✅ [Email] Correo enviado a ${unique.length} destinatario(s) vía BCC. ID: ${data?.id}`);
-    return { success: true, data };
+      if (error) {
+        console.error(`❌ [Email] Error en batch [${i}–${i + chunk.length}]:`, error);
+        totalFailed += chunk.length;
+      } else {
+        totalSent += chunk.length;
+        console.log(`✅ [Email] Batch enviado: ${chunk.length} correo(s). IDs: ${data?.map(d => d.id).join(', ')}`);
+      }
+    }
+
+    console.log(`📧 [Email] Resumen: ${totalSent} enviados, ${totalFailed} fallidos de ${unique.length} destinatarios.`);
+    return { success: true, sent: totalSent, failed: totalFailed };
   } catch (error) {
-    console.error(`❌ [Email] Error en envío grupal (${unique.length} destinatarios):`, error);
+    console.error(`❌ [Email] Error crítico en envío grupal (${unique.length} destinatarios):`, error);
     return { success: false, error: 'No se pudo enviar la notificación por correo.' };
   }
 }

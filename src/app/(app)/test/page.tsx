@@ -13,9 +13,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Mail, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle2, XCircle, ShieldOff, Trash2, RefreshCw } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
-import { sendTestPermitEmail } from './actions';
+import { sendTestPermitEmail, listResendSuppressions, removeResendSuppression } from './actions';
 
 export default function TestPage() {
   const { user } = useUser();
@@ -25,6 +25,12 @@ export default function TestPage() {
   const [emailTarget, setEmailTarget] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailResult, setEmailResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [suppressions, setSuppressions] = useState<{ email: string; reason: string; created_at: string }[] | null>(null);
+  const [isLoadingSuppressions, setIsLoadingSuppressions] = useState(false);
+  const [suppressionEmail, setSuppressionEmail] = useState('');
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [removeResult, setRemoveResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const { toast } = useToast();
 
@@ -54,6 +60,38 @@ export default function TestPage() {
       toast({ variant: 'destructive', title: 'Falló la Conexión', description: error.message || 'No se pudo escribir en Firestore.' });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // ── Supresiones ───────────────────────────────────────────
+  const handleLoadSuppressions = async () => {
+    setIsLoadingSuppressions(true);
+    try {
+      const result = await listResendSuppressions();
+      if (result.success) {
+        setSuppressions(result.suppressions ?? []);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+      }
+    } finally {
+      setIsLoadingSuppressions(false);
+    }
+  };
+
+  const handleRemoveSuppression = async (email: string) => {
+    setIsRemoving(true);
+    setRemoveResult(null);
+    try {
+      const result = await removeResendSuppression(email);
+      if (result.success) {
+        setRemoveResult({ success: true, message: result.message ?? 'Eliminado correctamente.' });
+        setSuppressions(prev => prev ? prev.filter(s => s.email !== email) : prev);
+        setSuppressionEmail('');
+      } else {
+        setRemoveResult({ success: false, message: result.error ?? 'No se pudo eliminar.' });
+      }
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -159,6 +197,93 @@ export default function TestPage() {
                   <p className="mt-1 text-xs opacity-70">Revise la bandeja de entrada (y la carpeta de spam).</p>
                 )}
               </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {/* ── Supresiones de Resend ── */}
+      <Card className="border-amber-200">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ShieldOff className="h-5 w-5 text-amber-600" />
+            <CardTitle>Gestión de Supresiones (Resend)</CardTitle>
+          </div>
+          <CardDescription>
+            Consulta y elimina correos que Resend bloqueó por rebote o spam. Si <strong>nixus@sistedigital.net</strong> aparece aquí, elimínala — está bloqueando todos los envíos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button variant="outline" onClick={handleLoadSuppressions} disabled={isLoadingSuppressions}>
+            {isLoadingSuppressions
+              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando...</>
+              : <><RefreshCw className="mr-2 h-4 w-4" /> Ver lista de supresiones</>
+            }
+          </Button>
+
+          {suppressions !== null && (
+            <div className="space-y-2">
+              {suppressions.length === 0 ? (
+                <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3">
+                  No hay direcciones suprimidas.
+                </p>
+              ) : (
+                <div className="border rounded-lg divide-y text-sm max-h-64 overflow-y-auto">
+                  {suppressions.map(s => (
+                    <div key={s.email} className="flex items-center justify-between px-3 py-2 gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{s.email}</p>
+                        <p className="text-xs text-muted-foreground">{s.reason} · {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={isRemoving}
+                        onClick={() => handleRemoveSuppression(s.email)}
+                      >
+                        {isRemoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="border-t pt-4 space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">Eliminar una dirección específica:</p>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="correo@ejemplo.com"
+                value={suppressionEmail}
+                onChange={e => setSuppressionEmail(e.target.value)}
+                disabled={isRemoving}
+                className="flex-1"
+              />
+              <Button
+                variant="destructive"
+                disabled={isRemoving || !suppressionEmail.includes('@')}
+                onClick={() => handleRemoveSuppression(suppressionEmail)}
+              >
+                {isRemoving
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Eliminando...</>
+                  : <><Trash2 className="mr-2 h-4 w-4" /> Eliminar</>
+                }
+              </Button>
+            </div>
+          </div>
+
+          {removeResult && (
+            <div className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+              removeResult.success
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              {removeResult.success
+                ? <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                : <XCircle className="h-5 w-5 text-red-600 shrink-0" />
+              }
+              <p>{removeResult.message}</p>
             </div>
           )}
         </CardContent>

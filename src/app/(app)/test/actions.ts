@@ -4,6 +4,56 @@ import { sendPermitUpdateEmail } from '@/lib/email';
 import { isAdminReady } from '@/lib/firebase-admin';
 import { buildPermitEmailHtml } from '@/lib/permit-email-template';
 
+// ─── Gestión de supresiones de Resend ────────────────────────────────────────
+
+export async function listResendSuppressions(): Promise<{
+  success: boolean;
+  suppressions?: { email: string; reason: string; created_at: string }[];
+  error?: string;
+}> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: 'RESEND_API_KEY no configurada.' };
+
+  try {
+    const res = await fetch('https://api.resend.com/v1/emails/suppress', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json?.message || `HTTP ${res.status}` };
+    return { success: true, suppressions: json?.data ?? json ?? [] };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function removeResendSuppression(email: string): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, error: 'RESEND_API_KEY no configurada.' };
+  if (!email?.includes('@')) return { success: false, error: 'Email inválido.' };
+
+  try {
+    const encoded = encodeURIComponent(email);
+    const res = await fetch(`https://api.resend.com/v1/emails/suppress/${encoded}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    if (res.status === 204 || res.status === 200) {
+      return { success: true, message: `${email} eliminado de la lista de supresión.` };
+    }
+
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: json?.message || `HTTP ${res.status}: ${res.statusText}` };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 // Datos de permiso de muestra para previsualizar el correo
 const SAMPLE_PERMIT: any = {
   id: 'PT-TEST-000',
