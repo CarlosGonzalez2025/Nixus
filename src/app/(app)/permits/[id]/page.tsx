@@ -1233,15 +1233,30 @@ export default function PermitDetailPage() {
         let canSignClosure = false;
         let tooltipContent = "No tienes permiso para firmar.";
 
+        // Verificar que el día anterior esté completamente firmado antes de habilitar el día actual.
+        // Para 'responsable': el día i-1 debe tener firma de apertura Y firma de cierre.
+        // Para 'autoridad':   el día i-1 solo necesita firma de apertura (no tiene cierre).
+        const prevResponsable = validationData?.responsable?.[i - 1];
+        const prevAutoridad   = validationData?.autoridad?.[i - 1];
+        const prevDayResponsableComplete = i === 0 || (!!prevResponsable?.firma && !!prevResponsable?.firmaCierre);
+        const prevDayAutoridadComplete   = i === 0 || !!prevAutoridad?.firma;
+
         if (permit.status === 'en_ejecucion' || permit.status === 'suspendido') {
           if (type === 'autoridad') {
-            canSignValidation = (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
-            tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
+            if (!prevDayAutoridadComplete) {
+              tooltipContent = `Complete la firma del Día ${i} antes de firmar el Día ${i + 1}.`;
+            } else {
+              canSignValidation = (currentUser?.role === 'autorizante' || currentUser?.role === 'admin') && !v?.firma;
+              tooltipContent = "Solo un Autorizante o Administrador puede firmar.";
+            }
           } else if (type === 'responsable') {
-            canSignValidation = (currentUser?.uid === permit.createdBy || currentUser?.role === 'solicitante') && !v?.firma;
-            // ✨ NUEVO: Permitir firma de cierre solo si ya firmó apertura
+            if (!prevDayResponsableComplete) {
+              tooltipContent = `Complete la firma y el cierre del Día ${i} antes de firmar el Día ${i + 1}.`;
+            } else {
+              canSignValidation = (currentUser?.uid === permit.createdBy || currentUser?.role === 'solicitante') && !v?.firma;
+              tooltipContent = "Solo el creador o ejecutante del trabajo puede firmar.";
+            }
             canSignClosure = (currentUser?.uid === permit.createdBy || currentUser?.role === 'solicitante') && !!v?.firma && !v?.firmaCierre;
-            tooltipContent = "Solo el creador o ejecutante del trabajo puede firmar.";
           }
         } else {
           tooltipContent = "El permiso no está en ejecución.";

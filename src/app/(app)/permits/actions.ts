@@ -1137,7 +1137,29 @@ export async function addDailyValidationSignature(
     if (!anexoData) {
       return { success: false, error: `El anexo ${anexoName} no existe en el permiso.` };
     }
-    
+
+    // Validar que el día anterior esté completo antes de permitir firmar el día actual.
+    // Aplica a todos los anexos (genérico via anexoName).
+    if (index > 0) {
+      const prevResponsable = (anexoData.validacion?.responsable as ValidacionDiaria[])?.[index - 1];
+      const prevAutoridad   = (anexoData.validacion?.autoridad   as ValidacionDiaria[])?.[index - 1];
+
+      if (validationType === 'responsable') {
+        if (!prevResponsable?.firma) {
+          return { success: false, error: `Debe completar la firma del Día ${index} antes de registrar el Día ${index + 1}.` };
+        }
+        if (!prevResponsable?.firmaCierre) {
+          return { success: false, error: `Debe completar la firma de cierre del Día ${index} antes de registrar el Día ${index + 1}.` };
+        }
+      }
+
+      if (validationType === 'autoridad') {
+        if (!prevAutoridad?.firma) {
+          return { success: false, error: `Debe completar la firma de la Autoridad del Día ${index} antes de registrar el Día ${index + 1}.` };
+        }
+      }
+    }
+
     const anexoUpdate: any = { ...anexoData };
     if (!anexoUpdate.validacion) {
         anexoUpdate.validacion = { autoridad: [], responsable: [] };
