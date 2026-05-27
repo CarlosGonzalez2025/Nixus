@@ -465,8 +465,63 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
   }
 }
 
+// ─── Helpers para notificación de Mantenimiento/Aislador ─────────────────────
+
+async function getMantenimientoUserIds(permit: Permit): Promise<string[]> {
+  const permitPlant   = permit.generalInfo?.planta?.trim().toLowerCase() || '';
+  const permitEmpresa = permit.generalInfo?.empresa?.trim().toLowerCase() || '';
+  const snap = await adminDb.collection('users').where('role', '==', 'mantenimiento').get();
+  const ids: string[] = [];
+  snap.forEach(doc => {
+    const data = doc.data();
+    if (data.disabled) return;
+    if (permitPlant) {
+      const userPlant   = (data.planta   || '').trim().toLowerCase();
+      const userEmpresa = (data.empresa  || '').trim().toLowerCase();
+      if (
+        (!userPlant   || userPlant   === permitPlant) &&
+        (!userEmpresa || !permitEmpresa || userEmpresa === permitEmpresa)
+      ) ids.push(doc.id);
+    } else {
+      ids.push(doc.id);
+    }
+  });
+  return ids;
+}
+
+async function notifyMantenimientoIfRequired(
+  permit: Permit,
+  triggeredBy: { uid: string; displayName: string | null },
+  permitUrl: string
+): Promise<void> {
+  if (!requiresMaintenanceSignature(permit)) return;
+  if (permit.approvals?.mantenimiento?.status === 'aprobado') return;
+
+  const mantenimientoIds = await getMantenimientoUserIds(permit);
+  if (mantenimientoIds.length === 0) return;
+
+  const msg = `Se requiere tu firma como <strong>Mantenimiento / Aislador Competente</strong> en el permiso <strong>#${permit.number}</strong>. El ejecutante <strong>${triggeredBy.displayName || 'N/A'}</strong> ha completado su firma y el permiso está esperando tu autorización para continuar.`;
+
+  await runNotificationBatch(
+    mantenimientoIds
+      .filter(id => id !== triggeredBy.uid)
+      .map(id => () => createNotification(id, permit, msg, 'signature', triggeredBy))
+  );
+
+  const emails = await getEmailsForNonAdminUsers(mantenimientoIds);
+  if (emails.length > 0) {
+    await sendGroupEmail({
+      emails,
+      subject: `[SGTC] Firma requerida — Mantenimiento/Aislador — Permiso #${permit.number}`,
+      html: buildPermitEmailHtml(permit, msg, permitUrl),
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function addSignatureAndNotify(
-  permitId: string, 
+  permitId: string,
   role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
@@ -634,6 +689,7 @@ export async function addSignatureAndNotify(
             const workTypesText = getWorkTypesString(updatedPermitData);
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
             const permitUrl = `${baseUrl}/permits/${permitId}`;
+            await notifyMantenimientoIfRequired(updatedPermitData, user, permitUrl);
             const messageBody = `*¡Alerta de Seguridad SGPT!* 🚨
 Se ha enviado una nueva solicitud de permiso de trabajo.
 
@@ -664,6 +720,7 @@ ${permitUrl}`;
                 const workTypesText = getWorkTypesString(updatedPermitData);
                 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
                 const permitUrl = `${baseUrl}/permits/${permitId}`;
+                await notifyMantenimientoIfRequired(updatedPermitData, user, permitUrl);
                 const whatsappMessage = `*¡Alerta de Seguridad SGPT!* 🚨
 Se ha enviado un nuevo permiso para su revisión.
 
