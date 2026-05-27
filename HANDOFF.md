@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-27
+> **Última actualización de este documento:** 2026-05-27 (sesión 2)
 
 ---
 
@@ -62,6 +62,61 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-27 (Sesión 2) — Suspensión/reactivación de permisos con trazabilidad completa
+
+#### Feat: flujo completo de suspensión y reactivación de permisos
+
+El cliente solicitó que el Líder SST (u otros roles autorizados) pudiera suspender temporalmente un permiso en ejecución — por ejemplo, cuando un trabajador no cuenta con el EPP requerido — y reactivarlo una vez resuelto el problema.
+
+**Archivos modificados:** `src/types/index.ts`, `src/app/(app)/permits/actions.ts`, `src/app/(app)/permits/[id]/page.tsx`
+
+**Cambios en `src/types/index.ts`:**
+- Nuevo tipo `SuspensionInfo`:
+  ```typescript
+  export type SuspensionInfo = {
+    suspendedBy: { uid: string; displayName: string | null; role: UserRole };
+    suspendedAt: Timestamp;
+    reason: string;
+  };
+  ```
+- Campo opcional `suspension?: SuspensionInfo` añadido al tipo `Permit`
+
+**Cambios en `src/app/(app)/permits/actions.ts`:**
+- En `updatePermitStatus`, al transicionar a `suspendido`:
+  - Valida que `reason` no esté vacío (retorna error si falta)
+  - Escribe el objeto `suspension` en Firestore con `FieldValue.serverTimestamp()` para `suspendedAt`
+- Mensaje de notificación enriquecido: incluye nombre del usuario que suspendió y el motivo
+
+**Cambios en `src/app/(app)/permits/[id]/page.tsx`:**
+
+| Elemento | Descripción |
+|---|---|
+| `canSuspend` | `true` cuando `status === 'en_ejecucion'` y rol es `lider_sst`, `autorizante`, `admin` o `lider_regional` |
+| `canReactivate` | `true` cuando `status === 'suspendido'` y mismo conjunto de roles |
+| Botón "Suspender" (naranja) | Aparece en el header cuando `canSuspend`; abre el diálogo de suspensión |
+| Botón "Reactivar" (verde) | Aparece en el header cuando `canReactivate`; abre el AlertDialog de confirmación |
+| Diálogo de suspensión | Muestra nombre del usuario y fecha/hora actuales (read-only); campo de motivo obligatorio; botón "Confirmar Suspensión" |
+| AlertDialog de reactivación | Muestra el motivo original de la suspensión como recordatorio de que el problema debe estar resuelto antes de reactivar |
+| Banner naranja informativo | Visible para todos cuando el permiso está suspendido; muestra quién lo suspendió, cuándo y por qué; incluye instrucción de reactivación solo si el usuario tiene el rol adecuado |
+
+**Nota de arquitectura:** Las transiciones de estado `en_ejecucion → suspendido` y `suspendido → en_ejecucion` ya existían en `validateStateTransition` desde la implementación anterior. Esta sesión solo añadió la capa de datos (`SuspensionInfo`) y la UI faltante.
+
+---
+
+#### Fix(UI): tarjeta de firma de Mantenimiento reubicada antes de Autorizante
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+El orden visual de las tarjetas de firma ahora refleja el orden cronológico real de firmas:
+
+```
+Solicitante → Líder SST (si aplica) → Mantenimiento (si aplica) → Autorizante
+```
+
+Cambio de una línea: intercambiadas las posiciones de `<SignatureCard role="mantenimiento" />` y `<SignatureCard role="autorizante" />` en el JSX. Sin cambios de lógica.
 
 ---
 
