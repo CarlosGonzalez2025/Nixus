@@ -430,6 +430,16 @@ export type SelectedWorkTypes = {
   general: boolean;
 }
 
+export type SuspensionInfo = {
+  suspendedBy: {
+    uid: string;
+    displayName: string | null;
+    role: UserRole;
+  };
+  suspendedAt: Timestamp;
+  reason: string;
+};
+
 export type Permit = {
   id: string;
   number?: string;
@@ -437,6 +447,7 @@ export type Permit = {
   createdBy: string;
   createdAt: Timestamp;
   rejectionReason?: string;
+  suspension?: SuspensionInfo;
   user?: {
     displayName?: string | null;
     email?: string | null;

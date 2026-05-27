@@ -235,6 +235,10 @@ export default function PermitDetailPage() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancellationDateTime, setCancellationDateTime] = useState("");
 
+  const [isSuspensionDialogOpen, setIsSuspensionDialogOpen] = useState(false);
+  const [suspensionReason, setSuspensionReason] = useState('');
+  const [isReactivationAlertOpen, setIsReactivationAlertOpen] = useState(false);
+
   // ESTADOS PARA CIERRE DE EMERGENCIA
   const [showEmergencyClosureDialog, setShowEmergencyClosureDialog] = useState(false);
   const [emergencyClosureObservation, setEmergencyClosureObservation] = useState('');
@@ -719,6 +723,14 @@ export default function PermitDetailPage() {
     currentUser?.role === 'admin' &&
     allRequiredSignaturesComplete();
 
+  const suspensionRoles: (typeof currentUser.role)[] = ['lider_sst', 'admin', 'autorizante', 'lider_regional'];
+  const canSuspend =
+    permit?.status === 'en_ejecucion' &&
+    suspensionRoles.includes(currentUser?.role as any);
+  const canReactivate =
+    permit?.status === 'suspendido' &&
+    suspensionRoles.includes(currentUser?.role as any);
+
 
   const handleOpenClosureDialog = () => {
     if (!permit) return;
@@ -917,6 +929,21 @@ export default function PermitDetailPage() {
     } finally {
       setIsSigning(false);
     }
+  };
+
+  const handleSuspend = async () => {
+    if (!suspensionReason.trim()) {
+      toast({ variant: 'destructive', title: 'Motivo requerido', description: 'Especifique el motivo de la suspensión antes de continuar.' });
+      return;
+    }
+    await handleChangeStatus('suspendido', suspensionReason.trim());
+    setIsSuspensionDialogOpen(false);
+    setSuspensionReason('');
+  };
+
+  const handleReactivate = async () => {
+    setIsReactivationAlertOpen(false);
+    await handleChangeStatus('en_ejecucion');
   };
 
   const handleEmergencyClosure = () => {
@@ -1403,6 +1430,34 @@ export default function PermitDetailPage() {
               <span className="hidden md:inline">PDF</span>
             </Button>
 
+            {canSuspend && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setSuspensionReason(''); setIsSuspensionDialogOpen(true); }}
+                disabled={isStatusChanging}
+                className="border-orange-400 text-orange-600 hover:bg-orange-50"
+              >
+                <PauseCircle className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Suspender</span>
+              </Button>
+            )}
+
+            {canReactivate && (
+              <Button
+                size="sm"
+                onClick={() => setIsReactivationAlertOpen(true)}
+                disabled={isStatusChanging}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isStatusChanging
+                  ? <Loader2 className="h-4 w-4 animate-spin md:mr-2" />
+                  : <PlayCircle className="h-4 w-4 md:mr-2" />
+                }
+                <span className="hidden md:inline">Reactivar</span>
+              </Button>
+            )}
+
             {canQuickClose && (
               <Button
                 variant="destructive"
@@ -1435,6 +1490,25 @@ export default function PermitDetailPage() {
               Esto ocurre en dos casos: <strong>(1)</strong> el permiso es anterior a la implementación de la auto-transición,
               o <strong>(2)</strong> la última firma se registró sin conexión y la sincronización no disparó el cambio de estado.
               Use el botón <strong>"Activar Permiso"</strong> en la barra superior para activarlo manualmente.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {permit.status === 'suspendido' && permit.suspension && (
+          <Alert className="mb-4 border-orange-300 bg-orange-50">
+            <PauseCircle className="h-4 w-4 text-orange-600" />
+            <AlertTitle className="font-semibold text-orange-800">Permiso Suspendido</AlertTitle>
+            <AlertDescription className="text-orange-700 text-sm mt-1 space-y-1">
+              <p>
+                Suspendido por <strong>{permit.suspension.suspendedBy.displayName || 'N/A'}</strong>
+                {' '}el {safeFormat(permit.suspension.suspendedAt, 'dd/MM/yyyy HH:mm')}.
+              </p>
+              <p>Motivo: <em>"{permit.suspension.reason}"</em></p>
+              {canReactivate && (
+                <p className="text-orange-600 font-medium mt-1">
+                  Use el botón <strong>"Reactivar"</strong> en la barra superior una vez resuelto el problema.
+                </p>
+              )}
             </AlertDescription>
           </Alert>
         )}
@@ -2252,6 +2326,103 @@ export default function PermitDetailPage() {
           <SignaturePad onSave={executeEmergencyClosure} isSaving={isEmergencyClosing} />
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de Suspensión */}
+      <Dialog open={isSuspensionDialogOpen} onOpenChange={setIsSuspensionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700">
+              <PauseCircle className="h-5 w-5" />
+              Suspender Permiso
+            </DialogTitle>
+            <DialogDescription>
+              La suspensión detiene temporalmente la ejecución del permiso. Quedará registrado quién
+              lo suspendió, la fecha y hora, y el motivo. El permiso podrá reactivarse una vez se
+              resuelva la causa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Suspendido por</p>
+                <p className="font-semibold">{currentUser?.displayName || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Fecha y hora</p>
+                <p className="font-semibold">{format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">
+                Motivo de la suspensión <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={suspensionReason}
+                onChange={e => setSuspensionReason(e.target.value)}
+                placeholder="Ej: El trabajador Juan García no cuenta con el EPP requerido para trabajo en alturas..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSuspensionDialogOpen(false)} disabled={isStatusChanging}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSuspend}
+              disabled={isStatusChanging || !suspensionReason.trim()}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {isStatusChanging
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <PauseCircle className="mr-2 h-4 w-4" />
+              }
+              {isStatusChanging ? 'Suspendiendo...' : 'Confirmar Suspensión'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AlertDialog de Reactivación */}
+      <AlertDialog open={isReactivationAlertOpen} onOpenChange={setIsReactivationAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <PlayCircle className="h-5 w-5 text-green-600" />
+              ¿Reactivar el permiso?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>
+                  El permiso volverá al estado <strong>En Ejecución</strong> y los trabajadores
+                  podrán continuar con las actividades.
+                </p>
+                {permit?.suspension && (
+                  <div className="rounded-md border border-orange-200 bg-orange-50 p-3 text-orange-800">
+                    <p className="text-xs font-semibold mb-1">Causa de la suspensión:</p>
+                    <p className="text-xs italic">"{permit.suspension.reason}"</p>
+                    <p className="text-xs mt-1 text-orange-600">
+                      Asegúrese de que el problema ha sido resuelto antes de reactivar.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isStatusChanging}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReactivate}
+              disabled={isStatusChanging}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isStatusChanging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Reactivar Permiso
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

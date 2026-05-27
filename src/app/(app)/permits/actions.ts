@@ -928,6 +928,21 @@ export async function updatePermitStatus(
         if ((status === 'rechazado' || status === 'cancelado') && reason) {
             updateData.rejectionReason = reason;
         }
+
+        if (status === 'suspendido') {
+            if (!reason?.trim()) {
+                return { success: false, error: 'Debe especificar el motivo de la suspensión.' };
+            }
+            (updateData as any).suspension = {
+                suspendedBy: {
+                    uid: currentUser.uid,
+                    displayName: currentUser.displayName,
+                    role: currentUser.role,
+                },
+                suspendedAt: FieldValue.serverTimestamp(),
+                reason: reason.trim(),
+            };
+        }
         
         if (status === 'cerrado') {
             // Validar que las firmas de cierre requeridas existan
@@ -979,7 +994,7 @@ export async function updatePermitStatus(
                 break;
             case 'suspendido':
                 notificationType = 'status_change';
-                message = `Alerta: El permiso #${permitData.number} ha sido SUSPENDIDO.`;
+                message = `Alerta: El permiso #${permitData.number} ha sido <strong>SUSPENDIDO</strong> por ${currentUser.displayName || 'un usuario'}.${reason ? ` Motivo: <em>${reason}</em>` : ''}`;
                 break;
         }
         
