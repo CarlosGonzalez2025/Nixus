@@ -2016,8 +2016,8 @@ export default function PermitDetailPage() {
               {permit.selectedWorkTypes?.confinado && <SignatureCard role="supervisor_confinado" />}
               <SignatureCard role="solicitante" />
               {isSSTSignatureRequired && <SignatureCard role="lider_sst" />}
-              <SignatureCard role="autorizante" />
               {requiresMaintenanceSignature(permit) && <SignatureCard role="mantenimiento" />}
+              <SignatureCard role="autorizante" />
             </div>
           </Section>
 
