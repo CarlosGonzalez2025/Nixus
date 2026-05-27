@@ -85,6 +85,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -710,11 +711,12 @@ export default function PermitDetailPage() {
     return true;
   };
 
-  // Un admin o autorizante puede activar manualmente permisos que ya tienen todas las firmas
-  // (útil para permisos históricos atascados en pendiente_revision)
+  // Solo el admin puede activar manualmente permisos atascados en pendiente_revision.
+  // En el flujo normal la auto-transición lo maneja; este botón existe como escape hatch
+  // para permisos históricos o casos donde la auto-transición no se disparó (ej. firma offline).
   const canManuallyActivate =
     permit?.status === 'pendiente_revision' &&
-    (currentUser?.role === 'admin' || currentUser?.role === 'autorizante') &&
+    currentUser?.role === 'admin' &&
     allRequiredSignaturesComplete();
 
 
@@ -1396,6 +1398,20 @@ export default function PermitDetailPage() {
       </div>
 
       <main className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+
+        {canManuallyActivate && (
+          <Alert className="mb-4 border-amber-300 bg-amber-50 text-amber-900">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="font-semibold text-amber-800">Activación manual requerida (solo visible para administradores)</AlertTitle>
+            <AlertDescription className="text-amber-700 text-sm mt-1">
+              Este permiso tiene todas las firmas de aprobación completas pero no pasó automáticamente a <strong>En Ejecución</strong>.
+              Esto ocurre en dos casos: <strong>(1)</strong> el permiso es anterior a la implementación de la auto-transición,
+              o <strong>(2)</strong> la última firma se registró sin conexión y la sincronización no disparó el cambio de estado.
+              Use el botón <strong>"Activar Permiso"</strong> en la barra superior para activarlo manualmente.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg space-y-8">
 
           {/* Cabecera del Permiso - Estilo PDF Corporativo */}
