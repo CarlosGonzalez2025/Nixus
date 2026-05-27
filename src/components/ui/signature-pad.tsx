@@ -114,8 +114,17 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, isSaving = f
         alert("Por favor, provea una firma.");
         return;
       }
-      
-      const dataUrl = canvas.toDataURL('image/png');
+
+      // Render sobre fondo blanco y exportar como JPEG para reducir tamaño
+      // (~10-20KB vs ~150-300KB en PNG) y evitar el límite de 1MB de Firestore.
+      const compressed = document.createElement('canvas');
+      compressed.width = canvas.width;
+      compressed.height = canvas.height;
+      const ctx2 = compressed.getContext('2d')!;
+      ctx2.fillStyle = '#ffffff';
+      ctx2.fillRect(0, 0, compressed.width, compressed.height);
+      ctx2.drawImage(canvas, 0, 0);
+      const dataUrl = compressed.toDataURL('image/jpeg', 0.5);
       onSave(dataUrl);
     }
   };
