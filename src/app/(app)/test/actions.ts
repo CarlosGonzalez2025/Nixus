@@ -15,13 +15,24 @@ export async function listResendSuppressions(): Promise<{
   if (!apiKey) return { success: false, error: 'RESEND_API_KEY no configurada.' };
 
   try {
-    const res = await fetch('https://api.resend.com/v1/emails/suppress', {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const json = await res.json();
-    if (!res.ok) return { success: false, error: json?.message || `HTTP ${res.status}` };
-    return { success: true, suppressions: json?.data ?? json ?? [] };
+    const all: { email: string; reason: string; created_at: string }[] = [];
+    let page = 1;
+
+    while (page <= 20) {
+      const res = await fetch(
+        `https://api.resend.com/suppressions?page=${page}&limit=100`,
+        { headers: { Authorization: `Bearer ${apiKey}` }, cache: 'no-store' }
+      );
+      const json = await res.json();
+      if (!res.ok) return { success: false, error: json?.message || `HTTP ${res.status}` };
+
+      const items: { email: string; reason: string; created_at: string }[] = json.data || [];
+      all.push(...items);
+      if (items.length < 100) break;
+      page++;
+    }
+
+    return { success: true, suppressions: all };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -37,14 +48,16 @@ export async function removeResendSuppression(email: string): Promise<{
   if (!email?.includes('@')) return { success: false, error: 'Email inválido.' };
 
   try {
-    const encoded = encodeURIComponent(email);
-    const res = await fetch(`https://api.resend.com/v1/emails/suppress/${encoded}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const res = await fetch(
+      `https://api.resend.com/suppressions/${encodeURIComponent(email)}`,
+      { method: 'DELETE', headers: { Authorization: `Bearer ${apiKey}` } }
+    );
 
-    if (res.status === 204 || res.status === 200) {
+    if (res.ok || res.status === 204) {
       return { success: true, message: `${email} eliminado de la lista de supresión.` };
+    }
+    if (res.status === 404) {
+      return { success: true, message: `${email} no estaba en la lista de supresión.` };
     }
 
     const json = await res.json().catch(() => ({}));
