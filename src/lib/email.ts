@@ -45,17 +45,21 @@ export async function sendPermitUpdateEmail({ to, subject, html }: EmailParams) 
   }
 }
 
-// Tamaño máximo de lote soportado por la API Batch de Resend.
-const RESEND_BATCH_LIMIT = 100;
+// Máx destinatarios por email y máx grupos por llamada batch de Resend.
+const GROUP_SIZE = 10;
+const BATCH_LIMIT = 100;
 
 /**
- * Envía un correo individual a cada destinatario usando la API Batch de Resend.
+ * Envía notificaciones grupales agrupando hasta GROUP_SIZE destinatarios
+ * por email usando la API Batch de Resend.
  *
- * Por qué batch en vez de BCC:
- *   Con BCC, si UNA dirección está en la lista de supresión de Resend, el registro
- *   completo puede quedar en estado "Suppressed" y los demás no reciben nada.
- *   Con batch, cada correo es independiente: una dirección suprimida solo afecta
- *   a ese destinatario y el resto recibe el correo sin problema.
+ * Estrategia de agrupación (balance entre fiabilidad y cuota):
+ *   - Los destinatarios se dividen en grupos de máx 10.
+ *   - Cada grupo se envía como un email independiente vía resend.batch.send().
+ *   - Si una dirección de un grupo está suprimida, Resend la omite y entrega
+ *     al resto del grupo sin afectar a los demás grupos.
+ *   - Cuota: 36 destinatarios → 4 emails contados (vs 36 con envío individual
+ *     o 1 con BCC —que bloqueaba todo si había una suprimida—).
  */
 export async function sendGroupEmail({
   emails,
@@ -74,15 +78,22 @@ export async function sendGroupEmail({
   const unique = [...new Set(emails.filter(Boolean))];
   if (unique.length === 0) return { success: true };
 
+  // Dividir destinatarios en grupos de GROUP_SIZE
+  const groups: string[][] = [];
+  for (let i = 0; i < unique.length; i += GROUP_SIZE) {
+    groups.push(unique.slice(i, i + GROUP_SIZE));
+  }
+
   let totalSent = 0;
   let totalFailed = 0;
 
   try {
-    for (let i = 0; i < unique.length; i += RESEND_BATCH_LIMIT) {
-      const chunk = unique.slice(i, i + RESEND_BATCH_LIMIT);
-      const messages = chunk.map(to => ({
+    // Enviar grupos en lotes de BATCH_LIMIT (límite de la API batch de Resend)
+    for (let i = 0; i < groups.length; i += BATCH_LIMIT) {
+      const batchGroups = groups.slice(i, i + BATCH_LIMIT);
+      const messages = batchGroups.map(group => ({
         from: `SGTC Móvil <${fromEmail!}>`,
-        to,
+        to: group.length === 1 ? group[0] : group,
         subject,
         html,
       }));
@@ -90,18 +101,19 @@ export async function sendGroupEmail({
       const { data, error } = await resend.batch.send(messages);
 
       if (error) {
-        console.error(`❌ [Email] Error en batch [${i}–${i + chunk.length}]:`, error);
-        totalFailed += chunk.length;
+        console.error(`❌ [Email] Error en batch grupal [${i}–${i + batchGroups.length}]:`, error);
+        totalFailed += batchGroups.reduce((s, g) => s + g.length, 0);
       } else {
-        totalSent += chunk.length;
-        console.log(`✅ [Email] Batch enviado: ${chunk.length} correo(s). IDs: ${data?.map(d => d.id).join(', ')}`);
+        const enviados = batchGroups.reduce((s, g) => s + g.length, 0);
+        totalSent += enviados;
+        console.log(`✅ [Email] Batch grupal: ${batchGroups.length} grupo(s), ${enviados} destinatario(s). IDs: ${data?.map(d => d.id).join(', ')}`);
       }
     }
 
-    console.log(`📧 [Email] Resumen: ${totalSent} enviados, ${totalFailed} fallidos de ${unique.length} destinatarios.`);
-    return { success: true, sent: totalSent, failed: totalFailed };
+    console.log(`📧 [Email] Resumen: ${totalSent} enviados en ${groups.length} grupo(s), ${totalFailed} fallidos de ${unique.length} destinatarios.`);
+    return { success: true, sent: totalSent, failed: totalFailed, groups: groups.length };
   } catch (error) {
-    console.error(`❌ [Email] Error crítico en envío grupal (${unique.length} destinatarios):`, error);
+    console.error(`❌ [Email] Error crítico en envío grupal (${unique.length} destinatarios, ${groups.length} grupos):`, error);
     return { success: false, error: 'No se pudo enviar la notificación por correo.' };
   }
 }
