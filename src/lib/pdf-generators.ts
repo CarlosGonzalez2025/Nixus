@@ -321,7 +321,8 @@ const drawSignatureImage = (
 ) => {
   if (!signature) return;
   try {
-    doc.addImage(signature, 'PNG', x, y, width, height);
+    const fmt = signature.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+    doc.addImage(signature, fmt, x, y, width, height);
   } catch {
     doc.setFontSize(5);
     doc.setTextColor(150, 0, 0);

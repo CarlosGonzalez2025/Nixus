@@ -460,9 +460,9 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
     pdf.rect(bx, y, sigBoxW, sigBoxH, 'FD');
 
     if (sigDataUrl) {
-      // Renderizar imagen de firma (base64 PNG)
       try {
-        pdf.addImage(sigDataUrl, 'PNG', bx + 6, y + 2, sigBoxW - 12, sigBoxH - 16);
+        const fmt = sigDataUrl.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+        pdf.addImage(sigDataUrl, fmt, bx + 6, y + 2, sigBoxW - 12, sigBoxH - 16);
       } catch { /* ignorar si la imagen falla */ }
     }
 
