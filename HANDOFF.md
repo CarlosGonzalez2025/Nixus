@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-25
+> **Última actualización de este documento:** 2026-05-27
 
 ---
 
@@ -62,6 +62,110 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-27 — Compresión de firmas, notificaciones de cierre y correcciones de errores
+
+#### Fix: "Error al Guardar - Load failed" al guardar firmas de revalidación diaria y trabajadores
+
+**Causa raíz:** Las firmas exportadas como PNG sin comprimir ocupaban entre 150–300 KB cada una. Con múltiples trabajadores × firmas de apertura y cierre × validaciones diarias de varios anexos, el documento Firestore superaba el límite de 1 MB.
+
+**Archivos modificados:** `src/components/ui/signature-pad.tsx`, `src/lib/pdf-generators.ts`, `src/lib/pdf-hallazgo.ts`
+
+**Cambios:**
+
+1. **`signature-pad.tsx` — compresión JPEG:** `handleSave()` ahora renderiza la firma sobre un canvas con fondo blanco y exporta como JPEG al 50% de calidad (`toDataURL('image/jpeg', 0.5)`). Resultado: ~10–20 KB por firma (reducción ~10–15×). La verificación de canvas en blanco sigue usando PNG (sin cambio).
+
+2. **`pdf-generators.ts` — auto-detección de formato:** `drawSignatureImage()` cambia de `'PNG'` hardcodeado a detección automática:
+   ```typescript
+   const fmt = signature.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+   doc.addImage(signature, fmt, x, y, width, height);
+   ```
+   Retrocompatible — firmas antiguas en PNG siguen funcionando correctamente.
+
+3. **`pdf-hallazgo.ts` — mismo fix:** misma detección de formato en el generador PDF de hallazgos.
+
+---
+
+#### Fix: "Server Action not found" al guardar firmas de trabajador, validación diaria y cierre diario
+
+**Causa raíz:** Después de varios deploys recientes, los hashes de Server Actions compilados cambiaron. El navegador del usuario tenía cacheado el bundle antiguo con IDs que ya no existen en el servidor. El handler `handleStaleServerActionError` ya existía y funcionaba en `handleSaveSignature` y `handleChangeStatus`, pero no se usaba en los demás handlers de firma.
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+**Cambios:** Se añadió `handleStaleServerActionError` a los tres catch blocks faltantes:
+
+| Handler | Antes | Después |
+|---|---|---|
+| `handleSaveWorkerSignature` | Toast rojo con mensaje crudo | Detecta stale action → toast azul + recarga automática |
+| `handleSaveDailyValidationSignature` | Toast rojo con mensaje crudo | Detecta stale action → toast azul + recarga automática |
+| `handleSaveDailyClosureSignature` | Toast rojo con mensaje crudo | Detecta stale action → toast azul + recarga automática |
+
+**Solución inmediata para usuarios afectados:** hard refresh con `Ctrl + Shift + R`.
+
+---
+
+#### Feat: notificación email + in-app a Mantenimiento/Aislador cuando se requiere su firma
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Contexto:** El cliente solicitó que el usuario de Mantenimiento reciba un correo y alerta en la app cuando debe firmar (permisos con Control de Energías). El momento correcto es cuando el solicitante firma y el permiso entra a `pendiente_revision`.
+
+**Cambios:**
+
+1. **Nueva función `getMantenimientoUserIds(permit)`:** consulta usuarios con `role === 'mantenimiento'`, filtra por planta/empresa del permiso usando la misma lógica que `addUsersMatchingPlant` (usuarios sin planta = rol global, siempre incluidos).
+
+2. **Nueva función `notifyMantenimientoIfRequired(permit, triggeredBy, permitUrl)`:**
+   - Guarda si `requiresMaintenanceSignature(permit)` es `false` → no notifica
+   - Guarda si la firma de mantenimiento ya está `'aprobado'` → idempotente
+   - Envía notificación in-app (tipo `'signature'`) a cada usuario de mantenimiento coincidente
+   - Envía email agrupado (BCC) con asunto `[SGTC] Firma requerida — Mantenimiento/Aislador — Permiso #XXX`
+
+3. **Punto de disparo:** llamada a `notifyMantenimientoIfRequired` en los dos bloques donde se produce la transición `borrador → pendiente_revision` (firma directa del solicitante y firma previa de coordinador/supervisor).
+
+---
+
+#### Feat: notificación email + in-app a Autoridad del Área cuando debe firmar el cierre
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Contexto:** Al completar el proceso de cierre, el Responsable del Trabajo firma primero (`cierre_responsable`). El Autorizante (Autoridad del Área) no recibía ningún aviso de que debía firmar el cierre.
+
+**Cambios:**
+
+1. **Nueva función `notifyAutorizanteForClosure(permit, triggeredBy, permitUrl)`:**
+   - Retorna inmediatamente si `closure.autoridad.firma` ya existe (idempotente)
+   - Obtiene el ID del autorizante desde `permit.approvals.autorizante.userId` (el usuario específico que aprobó la apertura)
+   - Retorna si el autorizante es el mismo que firmó como responsable (evita auto-notificación)
+   - Envía notificación in-app (tipo `'signature'`)
+   - Envía email con asunto `[SGTC] Firma de cierre requerida — Autoridad del Área — Permiso #XXX`
+
+2. **Punto de disparo:** llamada a `notifyAutorizanteForClosure` inmediatamente después de `docRef.update(updateData)` dentro del bloque `role === 'cierre_responsable'`.
+
+---
+
+#### Fix: botón "Activar Permiso" visible solo para administradores + banner informativo
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+**Contexto:** El botón "Activar Permiso" aparecía para `autorizante` además de `admin`, generando confusión. En el flujo normal, la auto-transición `pendiente_revision → en_ejecucion` maneja el cambio automáticamente cuando el autorizante firma. El botón es un escape hatch para casos edge (permisos históricos o firmas offline sin sincronización de estado).
+
+**Cambios:**
+
+1. **`canManuallyActivate` restringido a `admin`:**
+   ```typescript
+   // Antes: currentUser?.role === 'admin' || currentUser?.role === 'autorizante'
+   const canManuallyActivate =
+     permit?.status === 'pendiente_revision' &&
+     currentUser?.role === 'admin' &&
+     allRequiredSignaturesComplete();
+   ```
+
+2. **Banner ámbar informativo** visible al inicio del detalle del permiso, solo cuando `canManuallyActivate` es `true`:
+   - Explica que el permiso tiene todas las firmas completas pero no auto-transitó
+   - Describe los dos casos que producen esto: (1) permiso histórico anterior a la auto-transición, (2) firma offline sin sincronización de estado
+   - Solo visible para admins — no genera confusión en otros roles
 
 ---
 

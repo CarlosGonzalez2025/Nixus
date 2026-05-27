@@ -518,6 +518,33 @@ async function notifyMantenimientoIfRequired(
   }
 }
 
+// ─── Helper: notificar al Autorizante cuando el Responsable firma el cierre ───
+
+async function notifyAutorizanteForClosure(
+  permit: Permit,
+  triggeredBy: { uid: string; displayName: string | null },
+  permitUrl: string
+): Promise<void> {
+  // Si la autoridad ya firmó el cierre, no hay nada que notificar
+  if (permit.closure?.autoridad?.firma) return;
+
+  const autorizanteId = permit.approvals?.autorizante?.userId;
+  if (!autorizanteId || autorizanteId === triggeredBy.uid) return;
+
+  const msg = `Se requiere tu firma como <strong>Autoridad del Área</strong> para cerrar el permiso <strong>#${permit.number}</strong>. El responsable del trabajo <strong>${triggeredBy.displayName || 'N/A'}</strong> ha completado la firma de cierre y está pendiente tu autorización.`;
+
+  await createNotification(autorizanteId, permit, msg, 'signature', triggeredBy);
+
+  const emails = await getEmailsForNonAdminUsers([autorizanteId]);
+  if (emails.length > 0) {
+    await sendGroupEmail({
+      emails,
+      subject: `[SGTC] Firma de cierre requerida — Autoridad del Área — Permiso #${permit.number}`,
+      html: buildPermitEmailHtml(permit, msg, permitUrl),
+    });
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function addSignatureAndNotify(
@@ -570,6 +597,17 @@ export async function addSignatureAndNotify(
             }
 
             await docRef.update(updateData);
+
+            // Notificar al Autorizante cuando el Responsable firma el cierre
+            if (role === 'cierre_responsable') {
+                const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+                const permitUrl = `${baseUrl}/permits/${permitId}`;
+                await notifyAutorizanteForClosure(
+                    { ...permitBeforeData, id: permitId },
+                    user,
+                    permitUrl
+                );
+            }
         } else {
             const canSign = await validateSignaturePermission(permitId, role, user);
             if (!canSign.allowed) {

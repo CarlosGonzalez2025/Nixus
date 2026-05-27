@@ -815,6 +815,15 @@ export default function PermitDetailPage() {
         throw new Error(result.error);
       }
     } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
       setIsDailyClosureSigning(false);
@@ -853,6 +862,15 @@ export default function PermitDetailPage() {
         throw new Error(result.error);
       }
     } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
     } finally {
       setIsDailyValidationSigning(false);
@@ -886,6 +904,15 @@ export default function PermitDetailPage() {
         throw new Error(result.error);
       }
     } catch (error: any) {
+      if (handleStaleServerActionError(error)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
       toast({ variant: 'destructive', title: 'Error al guardar firma', description: error.message });
     } finally {
       setIsSigning(false);
