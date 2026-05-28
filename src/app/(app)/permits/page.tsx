@@ -32,7 +32,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  collection, onSnapshot, query, orderBy, where,
+  collection, onSnapshot, query, orderBy, where, or,
   QueryConstraint, Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -252,20 +252,29 @@ export default function PermitsPage() {
       unsubscribers.push(unsub);
 
     } else if (user.role === 'mantenimiento') {
+      // Cubre permisos creados con el campo legacy (controlEnergia) Y los
+      // creados con el wizard actual (selectedWorkTypes.energia).
       const unsub = onSnapshot(
-        query(permitsCollection, where('controlEnergia', '==', true)),
+        query(
+          permitsCollection,
+          or(
+            where('controlEnergia', '==', true),
+            where('selectedWorkTypes.energia', '==', true),
+          ),
+        ),
         (snapshot) => {
           const data = snapshot.docs
             .map(doc => {
               const d = doc.data();
               return { id: doc.id, ...d, createdAt: parseFirestoreDate(d.createdAt) } as unknown as Permit;
             })
+            // Filtrar por planta del usuario; usuarios sin planta ven todos (rol global)
             .filter(p =>
-              p.status === 'pendiente_revision' &&
-              p.approvals?.mantenimiento?.status === 'pendiente' &&
-              p.approvals?.solicitante?.status === 'aprobado' &&
-              (!user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase()),
+              !user.planta ||
+              p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase(),
             )
+            // Excluir borradores ajenos
+            .filter(p => p.status !== 'borrador' || p.createdBy === user.uid)
             .sort((a, b) =>
               (parseFirestoreDate(b.createdAt)?.getTime() || 0) -
               (parseFirestoreDate(a.createdAt)?.getTime() || 0),
@@ -353,6 +362,19 @@ export default function PermitsPage() {
             ? permit.status === 'cancelado' || permit.status === 'rechazado'
             : permit.status === activeTab;
       if (!matchesStatus) return false;
+
+      // Para el rol mantenimiento en la tab "Pendiente": mostrar solo los permisos
+      // que requieren su firma (solicitante ya firmó, mantenimiento aún no).
+      if (
+        user?.role === 'mantenimiento' &&
+        activeTab === 'pendiente_revision' &&
+        !(
+          permit.approvals?.solicitante?.status === 'aprobado' &&
+          permit.approvals?.mantenimiento?.status !== 'aprobado'
+        )
+      ) {
+        return false;
+      }
 
       if (workTypeFilter !== 'all') {
         const types = permit.selectedWorkTypes || {};
