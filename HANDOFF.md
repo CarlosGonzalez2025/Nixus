@@ -65,6 +65,45 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-05-28 (Sesión 2) — Fix: rol mantenimiento no veía permisos en la lista
+
+#### Fix crítico: query Firestore de la lista de permisos no cubría `selectedWorkTypes.energia`
+
+**Archivo modificado:** `src/app/(app)/permits/page.tsx`
+
+**Causa raíz:** La query Firestore en el branch `mantenimiento` del `useEffect` de permisos usaba `where('controlEnergia', '==', true)`. Los permisos creados con el wizard actual guardan el tipo de trabajo en `selectedWorkTypes.energia = true` y dejan `controlEnergia` en `undefined`. Firestore no devolvía esos documentos, así que el usuario de mantenimiento veía la lista vacía aunque hubiera permisos pendientes de su firma.
+
+**Cambios aplicados:**
+
+1. **Query Firestore corregida** — se importó `or` de `firebase/firestore` y se cambió:
+   ```typescript
+   // Antes (solo permisos legacy)
+   query(permitsCollection, where('controlEnergia', '==', true))
+
+   // Después (cubre campo legacy y campo nuevo del wizard)
+   query(permitsCollection, or(
+     where('controlEnergia', '==', true),
+     where('selectedWorkTypes.energia', '==', true),
+   ))
+   ```
+
+2. **Historial expandido** — `allPermits` para el rol `mantenimiento` ahora incluye todos los permisos de control de energía de su planta (no solo los pendientes de firma). Antes, al firmar un permiso desaparecía de la vista y las tabs Activos / Cerrado / Cancelado siempre mostraban 0.
+
+3. **Filtro de tab "Pendiente" mantenido** — en `filteredPermits` se agregó una condición específica para el rol `mantenimiento`: en la tab "Pendiente" solo se muestran los permisos donde el solicitante ya firmó y mantenimiento aún no, conservando el comportamiento de "bandeja de acciones pendientes".
+
+4. **Borradores ajenos excluidos** — se añadió `.filter(p => p.status !== 'borrador' || p.createdBy === user.uid)` para que los borradores de otros usuarios no aparezcan en la lista del rol mantenimiento.
+
+**Comportamiento resultante por tab:**
+
+| Tab | Antes | Ahora |
+|---|---|---|
+| Pendiente | Solo permisos legacy (`controlEnergia`) que requieren firma | Todos los permisos de energía que requieren su firma |
+| Activos | Siempre 0 | Permisos de energía en ejecución / suspendidos de su planta |
+| Cerrado | Siempre 0 | Historial de permisos cerrados |
+| Cancelado | Siempre 0 | Historial de permisos cancelados |
+
+---
+
 ### 2026-05-28 — Auditoría y corrección completa del pipeline de notificaciones para rol Mantenimiento/Aislador + soporte de doble rol
 
 #### Contexto
