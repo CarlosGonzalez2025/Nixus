@@ -49,25 +49,21 @@ export function AlertsBell() {
       return;
     }
 
-    // To avoid a composite index, we query only by userId and then sort/filter on the client.
+    // Filtramos directamente en Firestore por isRead:false + orden descendente,
+    // evitando que notificaciones recientes queden fuera de una ventana arbitraria.
+    // Requiere índice compuesto: userId ASC + isRead ASC + createdAt DESC.
+    // (Firestore lo solicita automáticamente la primera vez que se ejecuta la query.)
     const notifsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
-      limit(50) 
+      where('isRead', '==', false),
+      orderBy('createdAt', 'desc'),
+      limit(30)
     );
 
     const unsubscribe = onSnapshot(notifsQuery, (snapshot) => {
-      const allUserNotifs = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Notification));
-
-      // Filter for unread and sort on the client side
-      const unreadNotifs = allUserNotifs
-        .filter(notif => !notif.isRead)
-        .sort((a, b) => {
-          const timeA = a.createdAt?.toMillis() || 0;
-          const timeB = b.createdAt?.toMillis() || 0;
-          return timeB - timeA; // Sort descending (newest first)
-        });
+      const unreadNotifs = snapshot.docs
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Notification));
 
       setNotifications(unreadNotifs);
     }, (error) => {
@@ -93,16 +89,16 @@ export function AlertsBell() {
     }
   };
 
-  // Marca todas como leídas y limpia la lista de forma optimista.
+  // Marca todas como leídas usando un batch atómico para evitar escrituras parciales.
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
     const toUpdate = [...notifications];
     // Actualización optimista: vaciar lista inmediatamente
     setNotifications([]);
     try {
-      await Promise.all(
-        toUpdate.map(n => updateDoc(doc(db, 'notifications', n.id), { isRead: true }))
-      );
+      const batch = writeBatch(db);
+      toUpdate.forEach(n => batch.update(doc(db, 'notifications', n.id), { isRead: true }));
+      await batch.commit();
     } catch (error) {
       console.error('[AlertsBell] Error al marcar todas como leídas:', error);
     }

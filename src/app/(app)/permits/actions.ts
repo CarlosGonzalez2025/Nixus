@@ -66,6 +66,31 @@ function getActionErrorMessage(error: unknown, fallback: string) {
 
 // --- Funciones Auxiliares para Notificaciones ---
 
+/**
+ * Devuelve todos los documentos de usuarios que tienen el rol indicado,
+ * ya sea como rol principal (campo `role`) o como rol secundario (campo `otherRoles`).
+ * Elimina duplicados cuando un usuario aparece en ambas consultas.
+ */
+async function getDocsByRole(
+  role: UserRole | 'coordinador_alturas' | 'supervisor_confinado'
+): Promise<FirebaseFirestore.QueryDocumentSnapshot[]> {
+  const [primarySnap, otherSnap] = await Promise.all([
+    adminDb.collection('users').where('role', '==', role).get(),
+    adminDb.collection('users').where('otherRoles', 'array-contains', role).get(),
+  ]);
+  const seen = new Set<string>();
+  const docs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  for (const snap of [primarySnap, otherSnap]) {
+    for (const doc of snap.docs) {
+      if (!seen.has(doc.id)) {
+        seen.add(doc.id);
+        docs.push(doc);
+      }
+    }
+  }
+  return docs;
+}
+
 const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   const userIds = new Set<string>();
 
@@ -88,13 +113,14 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
   const permitEmpresaLower = permitEmpresa.toLowerCase();
 
   /**
-   * Filtra un snapshot incluyendo solo usuarios cuya empresa Y planta coinciden
+   * Filtra un array de docs incluyendo solo usuarios cuya empresa Y planta coinciden
    * con las del permiso (case-insensitive).
    * - Si el usuario NO tiene empresa/planta → se incluye siempre (rol global).
    * - Si el permiso NO tiene empresa/planta → se incluyen todos los usuarios del rol.
+   * Acepta el resultado de getDocsByRole() para cubrir roles primarios y secundarios.
    */
-  const addUsersMatchingPlant = (snap: FirebaseFirestore.QuerySnapshot) => {
-    snap.forEach(doc => {
+  const addUsersMatchingPlant = (docs: FirebaseFirestore.QueryDocumentSnapshot[]) => {
+    docs.forEach(doc => {
       const data = doc.data();
       if (data.disabled) return;
       if (permitPlant) {
@@ -109,31 +135,31 @@ const getInvolvedUsers = async (permit: Permit): Promise<string[]> => {
     });
   };
 
-  // Autorizantes de la misma planta
-  const autorizantesSnap = await adminDb.collection('users').where('role', '==', 'autorizante').get();
-  addUsersMatchingPlant(autorizantesSnap);
+  // Autorizantes de la misma planta (rol primario o secundario)
+  const autorizantesDocs = await getDocsByRole('autorizante');
+  addUsersMatchingPlant(autorizantesDocs);
 
   // Líderes SST: siempre notificar para que hagan seguimiento a todas las actividades
   // de su planta/empresa, independiente de si el permiso requiere su firma.
-  const sstSnap = await adminDb.collection('users').where('role', '==', 'lider_sst').get();
-  addUsersMatchingPlant(sstSnap);
+  const sstDocs = await getDocsByRole('lider_sst');
+  addUsersMatchingPlant(sstDocs);
 
   // Mantenimiento / Aislador Competente (solo permisos con control de energía)
   if (permit.controlEnergia || permit.selectedWorkTypes?.energia) {
-    const mantenimientoSnap = await adminDb.collection('users').where('role', '==', 'mantenimiento').get();
-    addUsersMatchingPlant(mantenimientoSnap);
+    const mantenimientoDocs = await getDocsByRole('mantenimiento');
+    addUsersMatchingPlant(mantenimientoDocs);
   }
 
-  // FIX 3B: Coordinador de Alturas (solo si el permiso requiere trabajo en alturas)
+  // Coordinador de Alturas (solo si el permiso requiere trabajo en alturas)
   if (permit.trabajoAlturas || permit.selectedWorkTypes?.alturas) {
-    const coordSnap = await adminDb.collection('users').where('role', '==', 'coordinador_alturas').get();
-    addUsersMatchingPlant(coordSnap);
+    const coordDocs = await getDocsByRole('coordinador_alturas');
+    addUsersMatchingPlant(coordDocs);
   }
 
-  // FIX 3B: Supervisor de Espacios Confinados (solo si el permiso lo requiere)
+  // Supervisor de Espacios Confinados (solo si el permiso lo requiere)
   if (permit.espaciosConfinados || permit.selectedWorkTypes?.confinado) {
-    const supSnap = await adminDb.collection('users').where('role', '==', 'supervisor_confinado').get();
-    addUsersMatchingPlant(supSnap);
+    const supDocs = await getDocsByRole('supervisor_confinado');
+    addUsersMatchingPlant(supDocs);
   }
 
   return Array.from(userIds);
@@ -206,7 +232,7 @@ const createNotification = async (
   const permitUrl = `${baseUrl}/permits/${permit.id}`;
   const statusLabel = STATUS_LABEL[permit.status] || permit.status;
 
-  sendPushToUser(userId, {
+  await sendPushToUser(userId, {
     title: `SGTC Móvil — ${statusLabel}`,
     body: message,
     url: permitUrl,
@@ -374,6 +400,11 @@ export async function createPermit(data: PermitCreateData) {
 
     await notifyUsers(involvedUsers, userId, createdPermit, message, 'creation', triggeredBy);
 
+    // Notificación específica de "firma requerida" para Mantenimiento/Aislador
+    const baseUrlCreate = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+    const permitUrlCreate = `${baseUrlCreate}/permits/${docRef.id}`;
+    await notifyMantenimientoIfRequired(createdPermit, triggeredBy, permitUrlCreate);
+
     const workTypesText = getWorkTypesString(permitPayload);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
     const permitUrl = `${baseUrl}/permits/${docRef.id}`;
@@ -470,28 +501,35 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
 async function getMantenimientoUserIds(permit: Permit): Promise<string[]> {
   const permitPlant   = permit.generalInfo?.planta?.trim().toLowerCase() || '';
   const permitEmpresa = permit.generalInfo?.empresa?.trim().toLowerCase() || '';
-  const snap = await adminDb.collection('users').where('role', '==', 'mantenimiento').get();
+
+  // Incluye usuarios con 'mantenimiento' como rol primario O secundario (otherRoles)
+  const docs = await getDocsByRole('mantenimiento');
   const ids: string[] = [];
-  snap.forEach(doc => {
+
+  docs.forEach(doc => {
     const data = doc.data();
     if (data.disabled) return;
-    if (permitPlant) {
-      const userPlant   = (data.planta   || '').trim().toLowerCase();
-      const userEmpresa = (data.empresa  || '').trim().toLowerCase();
-      if (
-        (!userPlant   || userPlant   === permitPlant) &&
-        (!userEmpresa || !permitEmpresa || userEmpresa === permitEmpresa)
-      ) ids.push(doc.id);
-    } else {
-      ids.push(doc.id);
-    }
+
+    const userPlant   = (data.planta   || '').trim().toLowerCase();
+    const userEmpresa = (data.empresa  || '').trim().toLowerCase();
+
+    // Filtro de planta: si el permiso tiene planta, el usuario debe coincidir
+    // (usuario sin planta asignada se considera global y siempre pasa)
+    const plantMatch = !permitPlant || !userPlant || userPlant === permitPlant;
+
+    // Filtro de empresa: evaluado de forma INDEPENDIENTE de la planta
+    // (usuario sin empresa asignada se considera global y siempre pasa)
+    const empresaMatch = !permitEmpresa || !userEmpresa || userEmpresa === permitEmpresa;
+
+    if (plantMatch && empresaMatch) ids.push(doc.id);
   });
+
   return ids;
 }
 
 async function notifyMantenimientoIfRequired(
   permit: Permit,
-  triggeredBy: { uid: string; displayName: string | null },
+  triggeredBy: { uid: string; displayName: string | null; role?: UserRole },
   permitUrl: string
 ): Promise<void> {
   if (!requiresMaintenanceSignature(permit)) return;
@@ -500,21 +538,32 @@ async function notifyMantenimientoIfRequired(
   const mantenimientoIds = await getMantenimientoUserIds(permit);
   if (mantenimientoIds.length === 0) return;
 
-  const msg = `Se requiere tu firma como <strong>Mantenimiento / Aislador Competente</strong> en el permiso <strong>#${permit.number}</strong>. El ejecutante <strong>${triggeredBy.displayName || 'N/A'}</strong> ha completado su firma y el permiso está esperando tu autorización para continuar.`;
+  // Mensaje dinámico según el rol del disparador
+  const triggerRoleLabel = triggeredBy.role
+    ? (SIGNATURE_ROLE_LABELS[triggeredBy.role] || triggeredBy.role)
+    : 'el ejecutante del trabajo';
+  const msg = `Se requiere tu firma como <strong>Mantenimiento / Aislador Competente</strong> en el permiso <strong>#${permit.number}</strong>. <strong>${triggeredBy.displayName || 'N/A'}</strong> (${triggerRoleLabel}) ha completado su firma y el permiso está esperando tu autorización para continuar.`;
+
+  // IDs que recibirán notificación (excluye al disparador si también tiene el rol)
+  const recipientIds = mantenimientoIds.filter(id => id !== triggeredBy.uid);
 
   await runNotificationBatch(
-    mantenimientoIds
-      .filter(id => id !== triggeredBy.uid)
-      .map(id => () => createNotification(id, permit, msg, 'signature', triggeredBy))
+    recipientIds.map(id => () => createNotification(id, permit, msg, 'signature', triggeredBy))
   );
 
-  const emails = await getEmailsForNonAdminUsers(mantenimientoIds);
+  // Email: usa la misma lista filtrada para consistencia con las notificaciones in-app
+  const emails = await getEmailsForNonAdminUsers(recipientIds);
   if (emails.length > 0) {
-    await sendGroupEmail({
+    const emailResult = await sendGroupEmail({
       emails,
       subject: `[SGTC] Firma requerida — Mantenimiento/Aislador — Permiso #${permit.number}`,
       html: buildPermitEmailHtml(permit, msg, permitUrl),
     });
+    if (!emailResult.success) {
+      console.error(
+        `[NOTIF] ⚠️ Email "firma requerida" fallido para permiso #${permit.number}. Destinatarios: ${emails.join(', ')}`
+      );
+    }
   }
 }
 
@@ -549,10 +598,10 @@ async function notifyAutorizanteForClosure(
 
 export async function addSignatureAndNotify(
   permitId: string,
-  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion', 
+  role: 'solicitante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado' | 'cierre_autoridad' | 'cierre_responsable' | 'cancelacion',
   signatureType: 'firmaApertura' | 'firmaCierre',
   signatureDataUrl: string,
-  user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string },
+  user: { uid: string, displayName: string | null, role?: UserRole, empresa?: string, otherRoles?: UserRole[] },
   comments?: string
 ) {
     if (!permitId || !role || !user || !user.uid || !user.role) {
@@ -1022,9 +1071,9 @@ export async function updatePermitStatus(
 
 // ✅ FUNCIÓN MEJORADA: Validación de permisos de firma con orden jerárquico
 async function validateSignaturePermission(
-    permitId: string, 
-    signatureRole: string, 
-    currentUser: { uid: string, role?: UserRole }
+    permitId: string,
+    signatureRole: string,
+    currentUser: { uid: string, role?: UserRole, otherRoles?: UserRole[] }
 ): Promise<{ allowed: boolean, reason?: string }> {
     const docRef = adminDb.collection('permits').doc(permitId);
     const permitDoc = await docRef.get();
@@ -1074,8 +1123,12 @@ async function validateSignaturePermission(
             }
             break;
             
-        case 'mantenimiento':
-             if (currentUser.role !== 'mantenimiento' && currentUser.role !== 'admin') {
+        case 'mantenimiento': {
+            const hasMantenimientoRole =
+              currentUser.role === 'mantenimiento' ||
+              currentUser.role === 'admin' ||
+              (currentUser.otherRoles || []).includes('mantenimiento');
+            if (!hasMantenimientoRole) {
                 return { allowed: false, reason: 'Rol de Mantenimiento requerido para esta firma.' };
             }
             if (!requiresMaintenanceSignature(permit)) {
@@ -1085,6 +1138,7 @@ async function validateSignaturePermission(
                 return { allowed: false, reason: 'Se requiere primero la firma del solicitante.' };
             }
             break;
+        }
 
         case 'autorizante':
             if (currentUser.role !== 'autorizante' && currentUser.role !== 'admin') {
@@ -1442,6 +1496,14 @@ export async function processOfflineQueue(
         : 'status_change';
 
       await notifyUsers(involvedUsers, triggeredBy.uid, permit, item.message, notifType, triggeredBy);
+
+      // Notificación específica "firma requerida" para Mantenimiento/Aislador.
+      // Aplica cuando el permiso fue creado o firmado (solicitante completó su firma).
+      if (item.type === 'permit_created' || item.type === 'permit_signed') {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
+        const permitUrl = `${baseUrl}/permits/${permit.id}`;
+        await notifyMantenimientoIfRequired(permit, triggeredBy, permitUrl);
+      }
 
       // Quitar la marca de sincronización pendiente
       await docRef.update({ offlinePendingSync: false });

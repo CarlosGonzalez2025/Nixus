@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-27 (sesión 2)
+> **Última actualización de este documento:** 2026-05-28
 
 ---
 
@@ -62,6 +62,162 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-05-28 — Auditoría y corrección completa del pipeline de notificaciones para rol Mantenimiento/Aislador + soporte de doble rol
+
+#### Contexto
+
+Se realizó una auditoría exhaustiva del sistema de notificaciones para el rol `mantenimiento` (Mantenimiento / Aislador Competente). Se identificaron y corrigieron 10 problemas — 2 críticos, 3 altos y 5 de severidad media/baja — que podían dejar permisos en espera de firma sin que ningún usuario de ese rol fuera notificado correctamente. Adicionalmente se implementó soporte completo de **doble rol** (`otherRoles`) en todo el pipeline de notificaciones y validación de firma.
+
+---
+
+#### Fix crítico (NOTIF-001): Regla Firestore para `mantenimiento` no cubría `selectedWorkTypes.energia`
+
+**Archivo modificado:** `src/firestore.rules`
+
+**Causa raíz:** La condición `allow read` para el rol `mantenimiento` solo evaluaba `resource.data.controlEnergia == true`. La función `requiresMaintenanceSignature()` del servidor acepta también `selectedWorkTypes.energia === true`. Si un permiso usaba únicamente `selectedWorkTypes.energia`, el usuario de mantenimiento recibía la notificación pero obtenía "Permission denied" al intentar abrir el permiso.
+
+```js
+// Antes
+(hasRole('mantenimiento') && resource.data.controlEnergia == true)
+
+// Después
+(hasRole('mantenimiento') &&
+  (resource.data.controlEnergia == true ||
+   resource.data.selectedWorkTypes.energia == true))
+```
+
+---
+
+#### Fix crítico (NOTIF-002): `processOfflineQueue` no llamaba a `notifyMantenimientoIfRequired`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Causa raíz:** Al sincronizar permisos creados/firmados offline, `processOfflineQueue()` solo llamaba `notifyUsers()` con mensaje genérico. El usuario de Mantenimiento/Aislador nunca recibía el correo específico `[SGTC] Firma requerida — Mantenimiento/Aislador`. Impacto crítico en operaciones de campo con red intermitente.
+
+```typescript
+// Después: se agrega la llamada específica al reconectar
+if (item.type === 'permit_created' || item.type === 'permit_signed') {
+  const permitUrl = `${baseUrl}/permits/${permit.id}`;
+  await notifyMantenimientoIfRequired(permit, triggeredBy, permitUrl);
+}
+```
+
+---
+
+#### Feat: Helper `getDocsByRole()` — soporte de doble rol en todo el pipeline
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+Nueva función `getDocsByRole(role)` que ejecuta dos queries en paralelo (`role ==` y `otherRoles array-contains`) y devuelve documentos únicos. Es la fuente única de verdad para todas las consultas de rol en notificaciones.
+
+```typescript
+async function getDocsByRole(role): Promise<QueryDocumentSnapshot[]> {
+  const [primarySnap, otherSnap] = await Promise.all([
+    adminDb.collection('users').where('role', '==', role).get(),
+    adminDb.collection('users').where('otherRoles', 'array-contains', role).get(),
+  ]);
+  // deduplica y retorna array plano
+}
+```
+
+**Impacto:** usuarios con `role: 'autorizante'` y `otherRoles: ['mantenimiento']` (o cualquier combinación) ahora reciben notificaciones para ambos roles y pueden firmar los slots correspondientes en sus permisos.
+
+---
+
+#### Fix (NOTIF-005 + doble rol): `getMantenimientoUserIds()` reescrita
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+Dos correcciones:
+1. Usa `getDocsByRole('mantenimiento')` para incluir usuarios con el rol como secundario.
+2. El filtro de empresa ahora se evalúa **independientemente de la planta**. Antes, si el permiso no tenía planta, se incluían todos los usuarios de mantenimiento sin importar empresa (cross-company spam).
+
+---
+
+#### Fix (doble rol): `validateSignaturePermission` — caso `mantenimiento`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+Un usuario con `otherRoles: ['mantenimiento']` ahora puede firmar el slot de mantenimiento. Se añadió `otherRoles?: UserRole[]` al parámetro `currentUser` de `addSignatureAndNotify` y `validateSignaturePermission`.
+
+```typescript
+// Antes
+if (currentUser.role !== 'mantenimiento' && currentUser.role !== 'admin') { ... }
+
+// Después
+const hasMantenimientoRole =
+  currentUser.role === 'mantenimiento' ||
+  currentUser.role === 'admin' ||
+  (currentUser.otherRoles || []).includes('mantenimiento');
+if (!hasMantenimientoRole) { ... }
+```
+
+---
+
+#### Fix (doble rol): `getInvolvedUsers()` — todas las queries de rol actualizadas
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+Las cinco queries de rol dentro de `getInvolvedUsers()` (`autorizante`, `lider_sst`, `mantenimiento`, `coordinador_alturas`, `supervisor_confinado`) ahora usan `getDocsByRole()`. `addUsersMatchingPlant` actualizada para recibir `QueryDocumentSnapshot[]`.
+
+---
+
+#### Fix (NOTIF-004): `sendPushToUser` ahora se awaita en `createNotification`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+La llamada a `sendPushToUser()` pasó de fire-and-forget a `await`. En entornos serverless (Firebase App Hosting / Vercel), una Promise sin await puede perderse antes de que el runtime responda.
+
+---
+
+#### Fix (NOTIF-006/007/008): correcciones múltiples en `notifyMantenimientoIfRequired`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+| Fix | Cambio |
+|---|---|
+| NOTIF-007 | Mensaje dinámico según rol real del disparador (antes siempre decía "el ejecutante") |
+| NOTIF-008 | `recipientIds` filtrado se usa tanto para in-app como para email (antes el email usaba la lista sin filtrar) |
+| NOTIF-006 | Si `sendGroupEmail()` falla, se loguea el error con los destinatarios para trazabilidad |
+
+---
+
+#### Fix (NOTIF-009): `createPermit()` ahora llama a `notifyMantenimientoIfRequired`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+La server action `createPermit()` (que crea el permiso directamente en `pendiente_revision`) ahora dispara la notificación específica de "firma requerida" para Mantenimiento/Aislador, igualando el comportamiento del flujo principal `savePermitDraft` → `addSignatureAndNotify`.
+
+---
+
+#### Fix (NOTIF-003): `AlertsBell` — query con `isRead: false` + `orderBy`
+
+**Archivo modificado:** `src/components/AlertsBell.tsx`
+
+La query de Firestore ahora filtra directamente `where('isRead', '==', false)` con `orderBy('createdAt', 'desc')` y `limit(30)`. Antes usaba `limit(50)` sin orden, lo que podía excluir notificaciones recientes si el usuario tenía muchos documentos acumulados.
+
+> **Índice requerido:** `notifications` → `userId ASC + isRead ASC + createdAt DESC` (crear manualmente en Firebase Console o se solicita automáticamente la primera ejecución).
+
+---
+
+#### Fix (NOTIF-010): `handleMarkAllAsRead` usa `writeBatch`
+
+**Archivo modificado:** `src/components/AlertsBell.tsx`
+
+Reemplazado `Promise.all(individual updateDoc)` por `writeBatch(db)`. Operación atómica: o todas las notificaciones se marcan como leídas o ninguna, sin riesgo de actualizaciones parciales.
+
+---
+
+#### Resumen de archivos modificados
+
+| Archivo | Cambios |
+|---|---|
+| `src/firestore.rules` | Regla `allow read` para mantenimiento: agrega `selectedWorkTypes.energia == true` |
+| `src/app/(app)/permits/actions.ts` | `getDocsByRole`, `getInvolvedUsers`, `getMantenimientoUserIds`, `createNotification`, `notifyMantenimientoIfRequired`, `validateSignaturePermission`, `addSignatureAndNotify`, `createPermit`, `processOfflineQueue` |
+| `src/components/AlertsBell.tsx` | Query Firestore, `handleMarkAllAsRead` |
 
 ---
 

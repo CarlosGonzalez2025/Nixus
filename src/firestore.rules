@@ -89,7 +89,9 @@ service cloud.firestore {
                      (hasRole('lider_sst') &&
                        (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
                        (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
-                     (hasRole('mantenimiento') && resource.data.controlEnergia == true)
+                     (hasRole('mantenimiento') &&
+                       (resource.data.controlEnergia == true ||
+                        resource.data.selectedWorkTypes.energia == true))
                     );
 
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
