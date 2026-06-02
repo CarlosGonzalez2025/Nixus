@@ -24,7 +24,13 @@ const withPWA = withPWAInit({
 } as any);
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // Permite payloads de hasta 4 MB para importaciones masivas de hallazgos.
+      // El default de Next.js es 1 MB, insuficiente para lotes grandes de filas.
+      bodySizeLimit: '4mb',
+    },
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

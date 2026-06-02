@@ -26,7 +26,7 @@ import {
 import {
     PlusCircle, Search, Loader2, FileX,
     AlertTriangle, Timer, Shield, Hash,
-    Filter, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Download,
+    Filter, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Download, Upload,
 } from 'lucide-react';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
@@ -556,6 +556,12 @@ export default function HallazgosPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Exportar Excel
                     </Button>
+                    {user?.role === 'admin' && (
+                        <Button variant="outline" size="sm" onClick={() => router.push('/hallazgos/importar')}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Importar Excel
+                        </Button>
+                    )}
                     {canCreate && (
                         <Button onClick={() => router.push('/hallazgos/crear')} size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
