@@ -31,8 +31,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles, deleteUser } from './actions';
-import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { createUser, updateUser, updateUserStatus, createMultipleUsers, syncAuthAndFirestoreUsers, migrateObsoleteRoles, deleteUser, changeUserPassword } from './actions';
+import { Loader2, UserPlus, Users, Edit, Trash2, Search, X, UserCog, Shield, ChevronDown, Upload, Download, FileText, FileUp, CircleCheck, CircleX, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 import { useRouter } from 'next/navigation';
 import type { User, UserRole, AppModule } from '@/types';
@@ -108,6 +108,14 @@ const updateFormSchema = z.object({
   allowedPlantas: z.array(z.string()).optional(),
   allowedCiudades: z.array(z.string()).optional(),
   allowedModules: z.array(z.enum(APP_MODULES_ENUM)).optional(),
+});
+
+const changePasswordSchema = z.object({
+  newPassword: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
+  confirmPassword: z.string().min(6, { message: 'La confirmación es requerida.' }),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Las contraseñas no coinciden.',
+  path: ['confirmPassword'],
 });
 
 const bulkCreateUserSchema = createFormSchema.extend({});
@@ -352,6 +360,12 @@ export default function UsersPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
 
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordTargetUser, setPasswordTargetUser] = useState<User | null>(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('all');
@@ -389,6 +403,11 @@ export default function UsersPage() {
 
   const updateForm = useForm<z.infer<typeof updateFormSchema>>({
     resolver: zodResolver(updateFormSchema),
+  });
+
+  const passwordForm = useForm<z.infer<typeof changePasswordSchema>>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { newPassword: '', confirmPassword: '' },
   });
 
   const handleExportExcel = () => {
@@ -753,6 +772,36 @@ export default function UsersPage() {
     });
     setIsEditModalOpen(true);
   }
+
+  const openPasswordModal = (user: User) => {
+    setPasswordTargetUser(user);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+    passwordForm.reset({ newPassword: '', confirmPassword: '' });
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleChangePassword = async (values: z.infer<typeof changePasswordSchema>) => {
+    if (!passwordTargetUser) return;
+    setIsChangingPassword(true);
+    try {
+      const result = await changeUserPassword(passwordTargetUser.uid, values.newPassword);
+      if (result.error) throw new Error(result.error);
+      toast({
+        title: 'Contraseña actualizada',
+        description: `La contraseña de ${passwordTargetUser.displayName || passwordTargetUser.email} fue cambiada exitosamente.`,
+      });
+      setIsPasswordModalOpen(false);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error al cambiar contraseña',
+        description: error.message || 'Ocurrió un error inesperado.',
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   // Stats
   const stats = {
@@ -1316,6 +1365,15 @@ export default function UsersPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => openPasswordModal(user)}
+                                className="h-9 w-9 text-amber-600 hover:bg-amber-100 hover:text-amber-700"
+                                title="Cambiar Contraseña"
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => handleDeleteUser(user.uid, user.displayName ?? undefined)}
                                 className="h-9 w-9 text-red-600 hover:bg-red-100 hover:text-red-700"
                                 title="Eliminar Usuario"
@@ -1349,6 +1407,121 @@ export default function UsersPage() {
       </div>
 
       <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} />
+
+      {/* Modal cambio de contraseña */}
+      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+        <DialogContent className="max-w-md mx-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-amber-600" />
+              Cambiar Contraseña
+            </DialogTitle>
+            <DialogDescription>
+              Establece una nueva contraseña para{' '}
+              <span className="font-medium text-foreground">
+                {passwordTargetUser?.displayName || passwordTargetUser?.email}
+              </span>
+              . El usuario deberá usarla en su próximo inicio de sesión.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Info del usuario */}
+          {passwordTargetUser && (
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 border px-4 py-3 text-sm">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{passwordTargetUser.displayName}</p>
+                <p className="text-muted-foreground truncate text-xs">{passwordTargetUser.email}</p>
+              </div>
+              <Badge variant="outline" className={cn('text-xs shrink-0', roleColors[passwordTargetUser.role as UserRole])}>
+                {roleNames[passwordTargetUser.role as UserRole] ?? passwordTargetUser.role}
+              </Badge>
+            </div>
+          )}
+
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(handleChangePassword)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nueva contraseña</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          placeholder="Mínimo 6 caracteres"
+                          className="pr-10"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full w-10 text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowNewPassword(v => !v)}
+                          tabIndex={-1}
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar contraseña</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Repite la nueva contraseña"
+                          className="pr-10"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full w-10 text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowConfirmPassword(v => !v)}
+                          tabIndex={-1}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="pt-2">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" disabled={isChangingPassword}>
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {isChangingPassword
+                    ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</>
+                    : <><KeyRound className="mr-2 h-4 w-4" /> Cambiar contraseña</>
+                  }
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

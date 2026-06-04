@@ -211,6 +211,26 @@ export async function deleteUser(userId: string) {
   }
 }
 
+export async function changeUserPassword(uid: string, newPassword: string) {
+  if (!isAdminReady()) {
+    return { error: 'El servicio de base de datos no está configurado en el servidor.' };
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return { error: 'La contraseña debe tener al menos 6 caracteres.' };
+  }
+  try {
+    const auth = getAuth();
+    await auth.updateUser(uid, { password: newPassword });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error changing user password:', error);
+    if (error.code === 'auth/invalid-password') {
+      return { error: 'La contraseña no cumple los requisitos mínimos (mínimo 6 caracteres).' };
+    }
+    return { error: 'No se pudo cambiar la contraseña. Inténtalo de nuevo.' };
+  }
+}
+
 export async function updateUserStatus(userId: string, disabled: boolean) {
   if (!isAdminReady()) {
     return { error: 'El servicio de base de datos no está configurado en el servidor.' };
