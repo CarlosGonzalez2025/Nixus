@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-05-28
+> **Última actualización de este documento:** 2026-06-04
 
 ---
 
@@ -62,6 +62,139 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-04 (Sesión 2) — Submódulo Análisis & Métricas (ML) — Módulo Confinados
+
+#### Feat: nuevo submódulo `/confinados/analisis` con análisis avanzado de datos
+
+Se implementó un dashboard analítico completo que consume los registros de `diagnosticosConfinados` y los procesa con estadística descriptiva, K-Means clustering, regresión lineal y detección de anomalías. El motor de análisis (`confinados-analytics.ts`) ya existía; esta sesión construyó toda la capa de visualización.
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/app/(app)/confinados/analisis/page.tsx` | Página cliente completa del submódulo (~530 líneas) |
+
+**Archivo modificado:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/confinados/page.tsx` | Añadida tarjeta "Análisis & Métricas" (ícono `Brain`, color `bg-indigo-600`); "Historial & Seguimiento" cambiado a `bg-sky-500` |
+
+**Secciones del dashboard:**
+
+| Sección | Descripción técnica |
+|---|---|
+| **Barra de filtros** | Filtros reactivos por Organización, Planta/Sede, Año, Estado — filtrado client-side sobre el snapshot de Firestore |
+| **KPI Cards (×4)** | Total registros · Cumplimiento promedio (con badge de tendencia) · Alto Riesgo (≤50%) · Cumplen (>70%) |
+| **Distribución de Riesgo** | `PieChart` donut (innerRadius 52) con percentiles P25/P75/σ y mini progress bars |
+| **Segmentación K-Means** | Visualiza los 3 clusters devueltos por `kMeansCluster()` con centroid heatmap de colores semafóricos por dimensión |
+| **Cumplimiento por Dimensión** | `BarChart` horizontal apilado (Cumple vs No cumple) con labels de porcentaje a la derecha |
+| **Radar de perfil SST** | `RadarChart` con 7 ejes (una por dimensión de la norma) |
+| **Tendencia temporal** | `LineChart` con 3 series: promedio real, media móvil 3m, regresión lineal; muestra pendiente, R² y pronóstico 3m |
+| **Clasificación de espacios** | `BarChart` por Tipo (1/2) y Grado (A/B/C) con colores semafóricos (A=rojo, B=ámbar, C=verde) |
+| **Equipos críticos & protocolos** | Barras de disponibilidad para 6 equipos; indicadores IPER%, alto riesgo adicional%, completados%; ranking "Desarrollada por" |
+| **Comparativa por organización** | Tabla con mini progress-bar, `RiskBadge`, y % por cada dimensión SST con colores semafóricos |
+| **Detección de anomalías** | Lista de registros con z-score < −2 (crítico) o > +2 (outlier); muestra empresa, planta, fecha, dimensiones débiles |
+| **Recomendaciones prioritarias** | Motor de reglas de `confinados-analytics.ts`; código de colores por prioridad (1=rojo, 2=ámbar, 3=azul) |
+
+**Estado vacío y loading:** skeleton con `Loader2` animado mientras carga Firestore; empty state con opción de limpiar filtros.
+
+**`computeAdditionalStats()`** — función local que calcula métricas extra desde el raw data:
+- `tipoEspacio` / `gradoPeligrosidad`: frecuencia por categoría
+- `equiposCriticos`: % de registros donde cada equipo tiene `"Se utiliza"` en el array
+- `desarrolladaPor`: flatten de arrays + conteo de frecuencia; top 7
+- `iperRate`, `altoRiesgoAdicionalRate`, `completadoRate`: porcentajes booleanos
+
+**Acceso al submódulo:** requiere rol `lider_sst`, `asesor_arl`, `autorizante`, `admin` o `lider_regional` (misma regla `canAccessConfinados()` de Firestore).
+
+---
+
+### 2026-06-04 (Sesión 1) — Módulo Confinados: Hub + Submódulo Diagnóstico completo
+
+#### Feat: módulo Confinados con hub de navegación, submódulo Diagnóstico y motor de análisis
+
+Se implementó el módulo completo de espacios confinados desde cero. El módulo sigue el patrón de submódulos del resto del sistema (hub + cards de navegación) y expone un formulario de diagnóstico detallado conforme a la norma GTC 34.
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/types/confinados.ts` | Tipos `DiagnosticoConfinado`, `DiagnosticoResultados`, `calcDiagnosticoScore()` |
+| `src/lib/confinados-service.ts` | CRUD Firestore: `createDiagnostico`, `getDiagnostico`, `getDiagnosticos`, `updateDiagnostico`, `deleteDiagnostico` |
+| `src/lib/analytics/confinados-analytics.ts` | Motor de análisis ML: K-Means clustering, regresión lineal, Z-score, recomendaciones (612 líneas) |
+| `src/hooks/use-diagnosticos.ts` | Hook `useDiagnosticos()` con listener `onSnapshot` en tiempo real |
+| `src/hooks/use-dynamic-lists.ts` | Hook para listas dinámicas de Firestore (`dynamic_lists`) |
+| `src/app/(app)/confinados/page.tsx` | Hub con cards de navegación a los submódulos |
+| `src/app/(app)/confinados/diagnostico/page.tsx` | Lista con búsqueda, ordenamiento y paginación |
+| `src/app/(app)/confinados/diagnostico/[id]/page.tsx` | Vista de detalle con score panel, grupos acordeón y firma |
+| `src/app/(app)/confinados/diagnostico/nuevo/page.tsx` | Formulario de creación (5 grupos acordeón) |
+| `src/app/(app)/confinados/diagnostico/actions.ts` | Server actions: guardar, eliminar, obtener diagnóstico |
+| `src/app/(app)/confinados/diagnostico/importar/page.tsx` | UI de importación masiva desde Excel |
+| `src/app/(app)/confinados/diagnostico/importar/actions.ts` | Validación de columnas y batch import (XLSX library) |
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/layout.tsx` | Añadido grupo "Confinados" al sidebar con ítems Diagnóstico, Análisis e Historial |
+| `firestore.rules` | Nueva colección `diagnosticosConfinados`: acceso por rol con función `canAccessConfinados()`; asesor_arl ve solo los suyos; lider_sst ve los de su planta; admin/lider_regional acceso total |
+
+**Modelo de datos — `diagnosticosConfinados`:**
+
+| Grupo | Campos clave |
+|---|---|
+| Metadata | `createdAt`, `createdById`, `createdByName`, `status` (borrador/completado) |
+| Datos generales | `fecha`, `planta`, `proceso`, `empresa`, `contratista` |
+| Descripción actividad | `actividadAnalizada`, `alturaPromedio`, `desarrolladaPor[]`, `tieneAltoRiesgoAdicional`, `actividadesAltoRiesgo[]` |
+| Evaluación | `evaluadaEnIPER`, `tipoEspacioConfinado`, `gradoPeligrosidad`, `medidasPrevencion[]`, `monitoreoPrevioIngreso`, `cuentaConProcedimiento`, `metodologiaBloqueoEnergias` |
+| Equipos/EPP | 13 campos `string[]` (escaleraFosaVertical, tripodeEquipoRescate, equipoComunicacion, sistemaVentilacionMecanica, etc.) |
+| Firma | `nombreSST`, `firmaSST` (base64 JPEG), `nombreResponsable`, `firmaResponsable` |
+| Resultados calculados | `resultados.{identificacionPeligros, permisosDeTrabajo, gestionMedidasPrevencion, monitoreoDeLaAtmosfera, procedimientoEspaciosConfinados, manejoEnergiasPeligrosas, planDeEmergencias, sumaTotal}` |
+
+**Sistema de puntuación (calcDiagnosticoScore):**
+
+Cada dimensión vale 0 o 2 puntos. Máximo 14 pts = 100%.
+
+| Dimensión | Trigger |
+|---|---|
+| Identificación de Peligros | `evaluadaEnIPER === 'Si'` |
+| Permisos de Trabajo | `medidasPrevencion` es exactamente "Permiso de trabajo" |
+| Gestión Medidas Prevención | `medidasPrevencion` incluye "Permiso de trabajo" + otros |
+| Monitoreo Atmósfera | `monitoreoPrevioIngreso === 'Si'` |
+| Procedimiento EC | `cuentaConProcedimiento === 'Si'` |
+| Manejo Energías Peligrosas | `metodologiaBloqueoEnergias === 'Si'` |
+| Plan de Emergencias | `equipoPrimerosAuxilios` contiene "Se utiliza" |
+
+**Clasificación de riesgo:** Alto (≤50%) · Riesgo Medio (50–70%) · Cumple (>70%)
+
+**Motor de análisis `confinados-analytics.ts` — funciones implementadas:**
+
+| Función | Técnica |
+|---|---|
+| `kMeansCluster(points, K=3)` | K-Means++ con semilla determinista (0.37 / 0.618 golden ratio), max 150 iteraciones |
+| `linearRegression(x, y)` | Regresión por mínimos cuadrados; devuelve slope, intercept, R² |
+| `computeTrend()` | Agrupación mensual (YYYY-MM), media móvil 3 meses, predicción lineal, dirección |
+| `detectAnomalies()` | Z-Score: crítico si z < −2, outlier_high si z > +2; requiere mínimo 5 registros |
+| `generateRecommendations()` | 8 recomendaciones predefinidas por dimensión + recomendación general si >30% en alto riesgo |
+| `computeOrgStats()` | Estadísticas por empresa con avg, riskLevel y desglose por dimensión |
+| `analyzeConfinados(data)` | Función principal que coordina todo y retorna `AnalyticsResult` |
+
+**Importación Excel:** mapeo de 81+ alias de columnas (insensible a tildes/mayúsculas), validación Zod por fila, preview de errores y batch import vía Admin SDK.
+
+**Seguridad Firestore (`diagnosticosConfinados`):**
+
+```js
+function canAccessConfinados() {
+  return isSignedIn() && (isAdminOrLR() || hasRole('lider_sst') || hasRole('asesor_arl') || hasRole('autorizante'));
+}
+// get: asesor_arl solo ve los suyos (createdById == uid); lider_sst ve los de su planta
+// create: createdById debe coincidir con request.auth.uid
+// update: creador, admin, lider_regional o lider_sst
+// delete: solo admin/lider_regional
+```
 
 ---
 
@@ -1665,4 +1798,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-05-25. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-06-04. Mantener actualizado con cada sesión de desarrollo.*

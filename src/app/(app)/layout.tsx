@@ -292,7 +292,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <Box className="h-5 w-5 md:h-4 md:w-4" />
                     <span className="font-medium">Confinados</span>
-                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 

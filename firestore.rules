@@ -296,5 +296,44 @@ service cloud.firestore {
       allow delete: if isAdminOrLR();
     }
 
+    // --- Módulo Confinados: Diagnóstico (diagnosticosConfinados) ---
+    match /diagnosticosConfinados/{docId} {
+
+      // Roles con acceso al módulo
+      function canAccessConfinados() {
+        return isSignedIn() && (
+          isAdminOrLR() ||
+          hasRole('lider_sst') ||
+          hasRole('asesor_arl') ||
+          hasRole('autorizante')
+        );
+      }
+
+      // Lectura individual
+      allow get: if canAccessConfinados() && (
+        isAdminOrLR() ||
+        hasRole('lider_sst') ||
+        (hasRole('asesor_arl') && resource.data.createdById == request.auth.uid) ||
+        (hasRole('autorizante') && resource.data.createdById == request.auth.uid)
+      );
+
+      // Listado (la restricción fina la aplica el cliente con where/filtros)
+      allow list: if canAccessConfinados();
+
+      // Creación: el campo createdById debe coincidir con el usuario que firma la petición
+      allow create: if canAccessConfinados()
+                    && request.resource.data.createdById == request.auth.uid;
+
+      // Actualización: el creador o admin/lider pueden editar
+      allow update: if canAccessConfinados() && (
+        isAdminOrLR() ||
+        hasRole('lider_sst') ||
+        resource.data.createdById == request.auth.uid
+      );
+
+      // Eliminación: solo admin / líder regional
+      allow delete: if isAdminOrLR();
+    }
+
   }
 }
