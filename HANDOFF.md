@@ -65,6 +65,74 @@ Next.js 15 (App Router)
 
 ---
 
+### 2026-06-04 (Sesión 4) — Script: corrección masiva de contraseñas creadas hoy
+
+#### Script `fix-passwords-2026-06-04.ts` — migración puntual de contraseña
+
+Se detectó un error tipográfico en la contraseña con la que fueron creados los 184 usuarios del día: `"Italco2026*"` en lugar de `"Italcol2026*"` (faltaba la `l`). Se creó un script de uso único para corregirlo en lote sin intervención manual.
+
+**Archivo creado:** `scripts/fix-passwords-2026-06-04.ts`
+
+**Comportamiento:**
+
+1. Inicializa Firebase Admin SDK — soporta dos fuentes de credenciales en orden de prioridad:
+   - `scripts/serviceAccountKey.json` (opción recomendada para uso local)
+   - Variables de entorno `.env`: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`
+2. Lista **todos** los usuarios de Firebase Auth con paginación automática (`listUsers(1000, pageToken)`) para cubrir proyectos con más de 1000 usuarios.
+3. Filtra por rango UTC exacto que cubre el día `2026-06-04` completo en Colombia (UTC-5):
+   - Inicio: `2026-06-04T05:00:00Z` (00:00 COL)
+   - Fin: `2026-06-05T04:59:59Z` (23:59 COL)
+4. Muestra el listado de usuarios afectados con hora local Colombia antes de aplicar.
+5. Countdown de 5 segundos con posibilidad de cancelar con `Ctrl+C`.
+6. Actualiza cada contraseña con `auth.updateUser(uid, { password: NEW_PASSWORD })` e imprime progreso `[N/Total]`.
+7. Resumen final con conteo de éxitos y errores.
+
+**Modo dry-run** (no aplica cambios, solo muestra la lista):
+```powershell
+$env:DRY_RUN="true"; npx tsx scripts/fix-passwords-2026-06-04.ts
+```
+
+**Ejecución real:**
+```powershell
+npx tsx scripts/fix-passwords-2026-06-04.ts
+```
+
+**Resultado:** 184 usuarios actualizados exitosamente. El script es idempotente — se puede volver a ejecutar sin riesgo si algún usuario falla.
+
+---
+
+### 2026-06-04 (Sesión 3) — Feat: cambio de contraseña de usuarios desde el panel de administración
+
+#### Feat: el administrador puede cambiar la contraseña de cualquier usuario
+
+Se implementó la capacidad para que el rol `admin` cambie la contraseña de cualquier usuario existente directamente desde `/admin/users`, sin necesidad de conocer la contraseña actual (privilegio del Admin SDK de Firebase).
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/admin/users/actions.ts` | Nueva server action `changeUserPassword(uid, newPassword)` |
+| `src/app/(app)/admin/users/page.tsx` | Botón `KeyRound` en tabla + Dialog modal completo |
+
+**Server action `changeUserPassword`** (`actions.ts`):
+- Valida longitud mínima de 6 caracteres en el servidor antes de llamar a Firebase
+- Usa `auth.updateUser(uid, { password: newPassword })` del Admin SDK — no requiere contraseña actual
+- Manejo de error específico para `auth/invalid-password`
+
+**UI en la tabla de usuarios** (`page.tsx`):
+- Botón **`KeyRound`** (color ámbar) añadido entre Editar (azul) y Eliminar (rojo), visible al hacer hover sobre la fila
+- `changePasswordSchema` (Zod): mínimo 6 caracteres + `.refine()` que valida que ambas contraseñas coincidan
+- `passwordForm` con `react-hook-form` + `zodResolver`
+- Dialog modal con:
+  - Tarjeta de info del usuario (nombre, email, badge de rol) en modo read-only
+  - Campo **Nueva contraseña** con toggle Eye/EyeOff
+  - Campo **Confirmar contraseña** con toggle Eye/EyeOff
+  - Estado de carga en el botón de submit
+  - Toast de éxito o error al completar
+- Estados locales: `isPasswordModalOpen`, `passwordTargetUser`, `showNewPassword`, `showConfirmPassword`, `isChangingPassword`
+
+---
+
 ### 2026-06-04 (Sesión 2) — Submódulo Análisis & Métricas (ML) — Módulo Confinados
 
 #### Feat: nuevo submódulo `/confinados/analisis` con análisis avanzado de datos
