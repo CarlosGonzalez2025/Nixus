@@ -188,7 +188,28 @@ const getAdminUserIds = async (permitPlant?: string): Promise<string[]> => {
 };
 
 /**
- * Devuelve los correos de los usuarios que NO son admin.
+ * Devuelve solo los UIDs de usuarios que NO están desactivados (disabled !== true).
+ * Filtra tanto usuarios inexistentes como explícitamente inactivos.
+ */
+const filterActiveUserIds = async (userIds: string[]): Promise<string[]> => {
+  if (userIds.length === 0) return [];
+  const checks = await Promise.all(
+    userIds.map(async uid => {
+      try {
+        const doc = await adminDb.collection('users').doc(uid).get();
+        if (!doc.exists) return null;
+        if (doc.data()?.disabled === true) return null;
+        return uid;
+      } catch {
+        return null;
+      }
+    })
+  );
+  return checks.filter((uid): uid is string => uid !== null);
+};
+
+/**
+ * Devuelve los correos de los usuarios que NO son admin y NO están inactivos.
  * Los administradores quedan excluidos de todas las notificaciones por email de permisos.
  */
 const getEmailsForNonAdminUsers = async (userIds: string[]): Promise<string[]> => {
@@ -200,6 +221,7 @@ const getEmailsForNonAdminUsers = async (userIds: string[]): Promise<string[]> =
         if (!doc.exists) return null;
         const data = doc.data()!;
         if (data.role === 'admin') return null;
+        if (data.disabled === true) return null;
         return (data.email as string) || null;
       } catch {
         return null;
@@ -247,7 +269,12 @@ async function notifyUsers(
   type: Notification['type'],
   triggeredBy: { uid: string, displayName: string | null }
 ): Promise<void> {
-  const recipients = userIds.filter(uid => uid !== excludeUid);
+  const potentialRecipients = userIds.filter(uid => uid !== excludeUid);
+  if (potentialRecipients.length === 0) return;
+
+  // Excluir usuarios inactivos (disabled: true) de todo tipo de notificación
+  // (in-app, push y email) independientemente de si crearon o firmaron el permiso.
+  const recipients = await filterActiveUserIds(potentialRecipients);
   if (recipients.length === 0) return;
 
   await runNotificationBatch(
