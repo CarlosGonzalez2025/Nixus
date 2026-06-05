@@ -1,11 +1,15 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, X } from 'lucide-react';
 
 export function PWAUpdater() {
   const [showUpdate, setShowUpdate] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  // Solo recargar en controllerchange si fue el usuario quien pidió la actualización.
+  // Sin esta guardia, la primera activación del SW (sin SW previo) causaría un
+  // reload automático inesperado.
+  const userConsentedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
@@ -13,10 +17,11 @@ export function PWAUpdater() {
     }
 
     let intervalId: ReturnType<typeof setInterval> | null = null;
-    let registrationRef: ServiceWorkerRegistration | null = null;
 
     const handleControllerChange = () => {
-      window.location.reload();
+      if (userConsentedRef.current) {
+        window.location.reload();
+      }
     };
 
     const attachWaitingWorkerListeners = (registration: ServiceWorkerRegistration) => {
@@ -39,10 +44,12 @@ export function PWAUpdater() {
       });
     };
 
-    const registerServiceWorker = async () => {
+    const initServiceWorker = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-        registrationRef = registration;
+        // next-pwa (register: true) ya maneja el registro del SW automáticamente
+        // vía el script swe-worker inyectado. Usamos ready para obtener el
+        // registro existente en lugar de crear uno duplicado.
+        const registration = await navigator.serviceWorker.ready;
 
         attachWaitingWorkerListeners(registration);
 
@@ -51,7 +58,7 @@ export function PWAUpdater() {
           registration.update();
         }, 30 * 60 * 1000);
 
-        // Chequear al recuperar visibilidad (el usuario vuelve a la pestaña)
+        // Chequear al recuperar visibilidad (el usuario vuelve a la pestaña/app)
         const handleVisibilityChange = () => {
           if (document.visibilityState === 'visible') {
             registration.update();
@@ -59,14 +66,14 @@ export function PWAUpdater() {
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // Exponer función global para forzar activación inmediata desde otros módulos
+        // Exponer función global para forzar activación desde otros módulos
         // (usada cuando un Server Action falla por desincronización de versiones)
         (window as any).__swForceUpdate = () => {
-          const waiting = registration.waiting ?? registrationRef?.waiting;
+          const waiting = registration.waiting;
           if (waiting) {
+            userConsentedRef.current = true;
             waiting.postMessage({ type: 'SKIP_WAITING' });
           } else {
-            // No hay SW esperando — verificar si hay uno nuevo disponible
             registration.update();
           }
         };
@@ -75,13 +82,12 @@ export function PWAUpdater() {
           document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
       } catch (error) {
-        console.error('Service worker registration failed:', error);
+        console.error('Error al obtener el registro del Service Worker:', error);
       }
     };
 
-    registerServiceWorker();
+    initServiceWorker();
 
-    // Recargar cuando se active la nueva versión
     navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
     return () => {
@@ -93,6 +99,7 @@ export function PWAUpdater() {
 
   const handleUpdate = () => {
     if (waitingWorker) {
+      userConsentedRef.current = true;
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     }
   };

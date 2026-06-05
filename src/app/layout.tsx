@@ -12,17 +12,20 @@ export const metadata: Metadata = {
   title: 'SGTC Móvil - Sistema de Gestión Tareas de Alto Riesgo',
   description: 'Sistema de Gestión Tareas de Alto Riesgo - Nixus Consultoría',
   manifest: '/manifest.json', // 🔥 Link al manifest
-  appleWebApp: { // 🔥 Soporte iOS
+  appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'SGTC Móvil',
   },
-  formatDetection: { // 🔥 Evitar auto-detección de teléfonos
+  formatDetection: {
     telephone: false,
   },
-  icons: { // 🔥 Iconos para diferentes plataformas
-    icon: '/icon-192.png',
-    apple: '/icon-192.png',
+  icons: {
+    icon: [
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
 };
 
