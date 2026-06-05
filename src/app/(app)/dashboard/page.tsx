@@ -225,9 +225,11 @@ export default function Dashboard() {
       }));
       fetchData();
 
-    } else if (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento')) {
+    } else if (user.role !== 'admin' && (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento'))) {
       // Dos queries independientes porque Firestore no soporta OR entre campos distintos.
       // requiresMaintenanceSignature activa la firma por controlEnergia O selectedWorkTypes.energia.
+      // Guardia user.role !== 'admin': el admin siempre debe ver TODOS los permisos
+      // sin importar si tiene mantenimiento en otherRoles.
       const mergedMap = new Map<string, Permit>();
 
       const applyAndSet = () => {
