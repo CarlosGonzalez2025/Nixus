@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-05
+> **Última actualización de este documento:** 2026-06-05 (Sesión 3)
 
 ---
 
@@ -62,6 +62,137 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-05 (Sesión 3) — Fix: íconos PWA + notificaciones a usuarios inactivos
+
+#### Fix: íconos de la app mostraban logo Nixus en lugar del logo oficial Piloso
+
+**Archivos modificados:** todos los archivos `public/*.png` y `public/*.svg` (16 archivos), `src/app/favicon.ico`
+
+**Causa raíz:** Los íconos oficiales de la app (logo "Piloso — Reglas que salvan vidas") estaban en la raíz del proyecto pero Next.js solo sirve estáticos desde `public/`. Los archivos en `public/` eran el logo de Nixus (copiados erróneamente en la sesión de auditoría PWA).
+
+**Fix:** Se copiaron todos los archivos de ícono desde la raíz del proyecto a `public/`, reemplazando los que mostraban el logo incorrecto:
+
+| Ícono | Antes | Ahora |
+|---|---|---|
+| `favicon-96x96.png` | Logo Nixus (6.1 KB) | Logo Piloso (6.9 KB) |
+| `web-app-manifest-192x192.png` | Logo Nixus (12.5 KB) | Logo Piloso (22.9 KB) |
+| `web-app-manifest-512x512.png` | Logo Nixus (37 KB) | Logo Piloso (100.9 KB) |
+| `apple-touch-icon.png` | Logo Nixus (11.2 KB) | Logo Piloso (15 KB) |
+| `favicon.svg` | SVG Nixus (18.1 KB) | SVG Piloso (238 KB) |
+| `icon-*.png` (10 archivos) | Logo Nixus | Logo Piloso |
+| `src/app/favicon.ico` | Confirmado correcto | Sin cambio |
+
+**Nota para PWA instalada en móviles:** Android guarda el ícono al momento de la instalación. Para que el nuevo ícono aparezca, el usuario debe **desinstalar** la app del home screen y volver a instalarla desde el navegador después del siguiente deploy.
+
+**Commit:** `94074f6`
+
+---
+
+#### Fix: usuarios inactivos (`disabled: true`) seguían recibiendo notificaciones
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Causa raíz:** Al inactivar un usuario el sistema establece `disabled: true` en Firebase Auth (bloquea login) y en Firestore. Los filtros de rol en `addUsersMatchingPlant` y `getMantenimientoUserIds` sí chequeaban `disabled`, pero `getInvolvedUsers` agregaba directamente `permit.createdBy` y los UIDs de `permit.approvals` sin verificar si esos usuarios estaban desactivados. Esto hacía que un usuario inactivo siguiera recibiendo notificaciones in-app, push y emails de permisos donde había participado anteriormente.
+
+**Cambios aplicados:**
+
+1. **Nueva función `filterActiveUserIds(userIds[])`** — filtra en paralelo (Firestore reads) todos los UIDs recibidos, devuelve solo los que tienen `disabled !== true` y existen en la colección `users`.
+
+```typescript
+const filterActiveUserIds = async (userIds: string[]): Promise<string[]> => {
+  const checks = await Promise.all(
+    userIds.map(async uid => {
+      const doc = await adminDb.collection('users').doc(uid).get();
+      if (!doc.exists || doc.data()?.disabled === true) return null;
+      return uid;
+    })
+  );
+  return checks.filter((uid): uid is string => uid !== null);
+};
+```
+
+2. **`notifyUsers` actualizada** — aplica `filterActiveUserIds` sobre los destinatarios potenciales antes de crear cualquier notificación (in-app, push y email). Un solo filtro cubre los tres canales.
+
+```typescript
+const potentialRecipients = userIds.filter(uid => uid !== excludeUid);
+const recipients = await filterActiveUserIds(potentialRecipients); // excluye disabled
+```
+
+3. **`getEmailsForNonAdminUsers` actualizada** — agrega `if (data.disabled === true) return null` como red de seguridad adicional (ya que esta función también lee los docs de Firestore).
+
+**Cobertura resultante:**
+
+| Escenario | Antes | Ahora |
+|---|---|---|
+| Notificaciones por rol (autorizante, lider_sst, etc.) | ✅ Excluía `disabled` | ✅ Sin cambio |
+| Permisos creados por el usuario (`createdBy`) | ⚠️ Seguía notificando | ✅ Excluido |
+| Permisos firmados por el usuario (`approvals`) | ⚠️ Seguía notificando | ✅ Excluido |
+| Emails (red de seguridad) | ⚠️ No chequeaba `disabled` | ✅ Chequea `disabled` |
+
+**Commit:** `c8409db`
+
+---
+
+### 2026-06-05 (Sesión 2) — Fix: regresión dashboard admin + auditoría PWA completa
+
+#### Fix: admin con `mantenimiento` en `otherRoles` veía solo permisos de energía en el dashboard
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+**Causa raíz:** El fix del Bug 5 (sesión anterior) añadió `|| (user.otherRoles ?? []).includes('mantenimiento')` a la condición de la vista mantenimiento sin excluir al rol `admin`. Un usuario admin con `mantenimiento` en `otherRoles` (ej. Carlos González) caía en el branch de mantenimiento y veía únicamente permisos de control de energía pendientes de su firma, en lugar de todos los permisos del sistema.
+
+```typescript
+// Antes (buggy)
+} else if (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento')) {
+
+// Después (correcto)
+} else if (user.role !== 'admin' && (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento'))) {
+  // Guardia user.role !== 'admin': el admin siempre debe ver TODOS los permisos
+```
+
+**Commit:** `a39585c`
+
+---
+
+#### Auditoría PWA completa — correcciones de instalación y actualización
+
+**Archivos modificados:** `src/components/PWAUpdater.tsx`, `next.config.ts`, `public/manifest.json`, `public/site.webmanifest`, `src/app/layout.tsx`
+
+**Problema 1 — Double SW registration:**
+`register: true` en next-pwa Y `navigator.serviceWorker.register('/sw.js')` en `PWAUpdater.tsx` causaban registro doble del service worker.
+
+**Fix:** Reemplazado `navigator.serviceWorker.register()` por `navigator.serviceWorker.ready` (usa el SW ya registrado por next-pwa sin crear uno adicional).
+
+**Problema 2 — Recarga automática sin consentimiento del usuario:**
+El evento `controllerchange` disparaba `window.location.reload()` incondicionalmente, lo que causaba una recarga inesperada al activarse el SW por primera vez (instalación, sin versión anterior).
+
+**Fix:** Patrón `userConsentedRef = useRef(false)`:
+```typescript
+const handleControllerChange = () => {
+  if (userConsentedRef.current) window.location.reload(); // solo si el usuario consintió
+};
+const handleUpdate = () => {
+  userConsentedRef.current = true; // el usuario clickeó "Actualizar"
+  waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+};
+```
+
+**Problema 3 — `skipWaiting: false` no declarado en workboxOptions:**
+El SW podía activarse automáticamente en algunos contextos. Se añadió `skipWaiting: false` tanto en el nivel raíz del config como en `workboxOptions`.
+
+**Problema 4 — Íconos en `manifest.json` con `purpose: "any maskable"` combinado:**
+Chrome 96+ depreca el valor combinado y lo trata como `maskable`, recortando el logo con máscara segura. Se separaron en dos entradas distintas (`any` y `maskable`).
+
+**Problema 5 — `site.webmanifest` genérico:**
+Tenía `name: "MyWebSite"`, `short_name: "MySite"`. Actualizado con datos reales de la app.
+
+**Problema 6 — `layout.tsx` referenciaba íconos vacíos:**
+`icon: '/icon-192.png'` apuntaba a un archivo de 0 bytes. Actualizado a `favicon-96x96.png` y `web-app-manifest-192x192.png`.
+
+**Commit:** `1b0a770`
 
 ---
 
