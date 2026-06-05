@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-05 (Sesión 3)
+> **Última actualización de este documento:** 2026-06-05 (Sesión 4)
 
 ---
 
@@ -62,6 +62,44 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-05 (Sesión 4) — Feat: Confinados Análisis 100% responsive + corrección etiquetas gases
+
+#### Feat: módulo Confinados Análisis responsivo en mobile
+
+**Archivo modificado:** `src/app/(app)/confinados/analisis/page.tsx`
+
+**Causa raíz:** El módulo tenía anchos fijos en selects, el gráfico donut usaba `width={180}` en `ResponsiveContainer` (causaba overflow), la tabla de organización no tenía scroll horizontal y los badges de tendencia se podían truncar en pantallas pequeñas.
+
+**Cambios aplicados (solo CSS/Tailwind, sin cambios de lógica o datos):**
+
+1. **Sección de filtros** — separada en dos filas: icono + badge en la primera, selects en la segunda con `grid grid-cols-2 sm:flex sm:flex-wrap`. Los selects usan `w-full sm:w-XX` para ocupar ancho completo en mobile y ancho fijo en desktop.
+
+2. **Gráfico donut (PieChart)** — envuelto en `<div className="w-full max-w-[180px] mx-auto sm:mx-0 shrink-0">` y `ResponsiveContainer width="100%"` en lugar de `width={180}` fijo que causaba overflow.
+
+3. **Gráfico de barras horizontales** — padding reducido `px-1 sm:px-2`, margen derecho 48px, margen izquierdo 4px, `YAxis width={80} tick={{ fontSize: 9 }}` para evitar recorte de etiquetas.
+
+4. **Tabla de organizaciones** — añadido `min-w-[640px]` para que el scroll horizontal funcione correctamente en mobile (el contenedor ya tenía `overflow-x-auto`).
+
+5. **Badges de tendencia** — añadido `shrink-0` a badge y spans de estadísticas para evitar truncado en flex-wrap.
+
+**Resultado:** El módulo es completamente usable en mobile sin afectar lógica, cálculos ni datos mostrados.
+
+**Commit:** `41af387`
+
+---
+
+#### Fix: etiquetas de rangos de gases en Anexo Confinado
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx`
+
+**Cambios aplicados:**
+- `O2 (19.5-22%)` → `O2 (19.5-23.5%)` — rango superior corregido
+- `H2S (0-10 PPM)` → `H2S (1 PPM)` — límite TLV-C correcto
+
+**Commit:** `41af387`
 
 ---
 
