@@ -228,12 +228,18 @@ export default function ConfinadosAnalisisPage() {
 
       {/* Filters ──────────────────────────────────────────────────────────── */}
       <Card>
-        <CardContent className="p-3">
-          <div className="flex flex-wrap gap-2 items-center">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center gap-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-
+            {hasFilters && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {filtered.length} de {diagnosticos.length} registros
+              </Badge>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
-              <SelectTrigger className="h-8 w-44 text-xs">
+              <SelectTrigger className="h-8 w-full sm:w-44 text-xs">
                 <SelectValue placeholder="Organización" />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +249,7 @@ export default function ConfinadosAnalisisPage() {
             </Select>
 
             <Select value={filterPlanta} onValueChange={setFilterPlanta}>
-              <SelectTrigger className="h-8 w-36 text-xs">
+              <SelectTrigger className="h-8 w-full sm:w-36 text-xs">
                 <SelectValue placeholder="Planta / Sede" />
               </SelectTrigger>
               <SelectContent>
@@ -253,7 +259,7 @@ export default function ConfinadosAnalisisPage() {
             </Select>
 
             <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="h-8 w-24 text-xs">
+              <SelectTrigger className="h-8 w-full sm:w-24 text-xs">
                 <SelectValue placeholder="Año" />
               </SelectTrigger>
               <SelectContent>
@@ -263,7 +269,7 @@ export default function ConfinadosAnalisisPage() {
             </Select>
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 w-32 text-xs">
+              <SelectTrigger className="h-8 w-full sm:w-32 text-xs">
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
@@ -272,12 +278,6 @@ export default function ConfinadosAnalisisPage() {
                 <SelectItem value="borrador">Borrador</SelectItem>
               </SelectContent>
             </Select>
-
-            {hasFilters && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                {filtered.length} de {diagnosticos.length} registros
-              </Badge>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -360,18 +360,20 @@ export default function ConfinadosAnalisisPage() {
               </CardHeader>
               <CardContent className="pt-2 px-4 pb-4">
                 <div className="flex flex-col sm:flex-row items-center gap-4">
-                  <ResponsiveContainer width={180} height={180}>
-                    <PieChart>
-                      <Pie
-                        data={riskPieData} cx="50%" cy="50%"
-                        innerRadius={52} outerRadius={80}
-                        paddingAngle={3} dataKey="value"
-                      >
-                        {riskPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                      </Pie>
-                      <RechartsTooltip formatter={(v: number) => [`${v} registros`]} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="w-full max-w-[180px] mx-auto sm:mx-0 shrink-0">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={riskPieData} cx="50%" cy="50%"
+                          innerRadius={52} outerRadius={80}
+                          paddingAngle={3} dataKey="value"
+                        >
+                          {riskPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                        </Pie>
+                        <RechartsTooltip formatter={(v: number) => [`${v} registros`]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
 
                   <div className="flex-1 space-y-3 w-full">
                     {[
@@ -397,7 +399,7 @@ export default function ConfinadosAnalisisPage() {
                       <div><p className="text-muted-foreground">P75</p><p className="font-semibold">{kpis.p75.toFixed(1)}%</p></div>
                     </div>
                   </div>
-                </div>
+                </div> {/* end flex donut row */}
               </CardContent>
             </Card>
 
@@ -460,12 +462,12 @@ export default function ConfinadosAnalisisPage() {
               <CardHeader className="pb-0 pt-4 px-4">
                 <CardTitle className="text-sm font-semibold">Cumplimiento por Dimensión SST</CardTitle>
               </CardHeader>
-              <CardContent className="pt-3 px-2 pb-4">
-                <ResponsiveContainer width="100%" height={230}>
-                  <BarChart data={dimBarData} layout="vertical" margin={{ top: 0, right: 55, left: 8, bottom: 0 }}>
+              <CardContent className="pt-3 px-1 sm:px-2 pb-4">
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={dimBarData} layout="vertical" margin={{ top: 0, right: 48, left: 4, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
-                    <YAxis dataKey="name" type="category" width={88} tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 9 }} />
                     <RechartsTooltip
                       formatter={(v: number, name: string) => [
                         `${v.toFixed(1)}%`,
@@ -517,10 +519,10 @@ export default function ConfinadosAnalisisPage() {
                 <CardTitle className="text-sm font-semibold flex-1">
                   Tendencia Temporal de Cumplimiento
                 </CardTitle>
-                <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                   <Badge
                     variant="outline"
-                    className={cn('text-xs', {
+                    className={cn('text-xs shrink-0', {
                       'text-green-600 border-green-200': trend.direction === 'Mejorando',
                       'text-red-600   border-red-200':   trend.direction === 'Deteriorando',
                       'text-gray-500':                   trend.direction === 'Estable',
@@ -531,9 +533,9 @@ export default function ConfinadosAnalisisPage() {
                     {trend.direction === 'Estable'      && <Minus        className="h-3 w-3 mr-0.5 inline" />}
                     {trend.direction}
                   </Badge>
-                  <span>Pendiente: <strong>{trend.slope > 0 ? '+' : ''}{trend.slope.toFixed(2)}%/mes</strong></span>
-                  <span>R²: <strong>{trend.r2.toFixed(2)}</strong></span>
-                  <span>Pronóstico 3m: <strong>{trend.forecast3m.toFixed(1)}%</strong></span>
+                  <span className="shrink-0">Pendiente: <strong>{trend.slope > 0 ? '+' : ''}{trend.slope.toFixed(2)}%/mes</strong></span>
+                  <span className="shrink-0">R²: <strong>{trend.r2.toFixed(2)}</strong></span>
+                  <span className="shrink-0">Pronóstico 3m: <strong>{trend.forecast3m.toFixed(1)}%</strong></span>
                 </div>
               </div>
             </CardHeader>
@@ -682,7 +684,7 @@ export default function ConfinadosAnalisisPage() {
               <CardTitle className="text-sm font-semibold">Comparativa por Organización</CardTitle>
             </CardHeader>
             <CardContent className="pt-3 px-0 pb-0 overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full min-w-[640px] text-xs">
                 <thead>
                   <tr className="border-b bg-muted/40 text-muted-foreground">
                     <th className="text-left py-2 pl-4 pr-3 font-medium">Organización</th>

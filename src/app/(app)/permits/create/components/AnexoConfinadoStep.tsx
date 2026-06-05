@@ -449,7 +449,7 @@ export function AnexoConfinadoStep() {
               />
             </div>
             <div>
-              <Label>O2 (19.5-22%)</Label>
+              <Label>O2 (19.5-23.5%)</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -460,7 +460,7 @@ export function AnexoConfinadoStep() {
               />
             </div>
             <div>
-              <Label>H2S (0-10 PPM)</Label>
+              <Label>H2S (1 PPM)</Label>
               <Input
                 type="text"
                 inputMode="decimal"
