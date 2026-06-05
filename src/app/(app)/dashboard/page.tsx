@@ -225,11 +225,13 @@ export default function Dashboard() {
       }));
       fetchData();
 
-    } else if (user.role === 'mantenimiento') {
-      const q = query(permitsCollection, where('controlEnergia', '==', true));
-      unsubscribers.push(onSnapshot(q, (snap) => {
-        const data = snap.docs
-          .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
+    } else if (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento')) {
+      // Dos queries independientes porque Firestore no soporta OR entre campos distintos.
+      // requiresMaintenanceSignature activa la firma por controlEnergia O selectedWorkTypes.energia.
+      const mergedMap = new Map<string, Permit>();
+
+      const applyAndSet = () => {
+        const data = Array.from(mergedMap.values())
           .filter(p =>
             p.status === 'pendiente_revision' &&
             p.approvals?.mantenimiento?.status === 'pendiente' &&
@@ -239,10 +241,25 @@ export default function Dashboard() {
           .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
         setAllPermits(data);
         setLoading(false);
-      }, () => {
+      };
+
+      const onMantErr = () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
         setLoading(false);
-      }));
+      };
+
+      const qMant1 = query(permitsCollection, where('controlEnergia', '==', true));
+      const qMant2 = query(permitsCollection, where('selectedWorkTypes.energia', '==', true));
+
+      unsubscribers.push(onSnapshot(qMant1, (snap) => {
+        snap.docs.forEach(d => mergedMap.set(d.id, { id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit));
+        applyAndSet();
+      }, onMantErr));
+
+      unsubscribers.push(onSnapshot(qMant2, (snap) => {
+        snap.docs.forEach(d => mergedMap.set(d.id, { id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit));
+        applyAndSet();
+      }, onMantErr));
 
     } else {
       const finalQuery: QueryConstraint[] = user.role === 'solicitante'

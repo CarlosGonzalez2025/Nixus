@@ -708,7 +708,7 @@ export function GeneralInfoStep() {
           )}
 
           <div className="space-y-2 md:col-span-2">
-            <RequiredLabel>Ejecutante del trabajo / Líder del equipo Ejecutante</RequiredLabel>
+            <RequiredLabel>Ejecutante del trabajo</RequiredLabel>
             <Input
               value={generalInfo.nombreSolicitante || ''}
               onChange={(e) => handleInputChange('nombreSolicitante', e.target.value)}

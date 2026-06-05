@@ -733,18 +733,17 @@ export async function addSignatureAndNotify(
                     }
                 });
 
-                await docRef.update(updateData);
-                
-                const updatedPermitAfterSign = (await docRef.get()).data() as Permit;
-                
-                if ((updatedPermitAfterSign.trabajoAlturas || updatedPermitAfterSign.selectedWorkTypes?.alturas) && updatedPermitAfterSign.approvals?.coordinador_alturas?.status !== 'aprobado') {
+                // Validar prerrequisitos ANTES de escribir para evitar actualizaciones parciales.
+                if ((permitBeforeData.trabajoAlturas || permitBeforeData.selectedWorkTypes?.alturas) && permitBeforeData.approvals?.coordinador_alturas?.status !== 'aprobado') {
                     return { success: false, error: 'Se requiere primero la firma del Coordinador Alturas.' };
                 }
-                if ((updatedPermitAfterSign.espaciosConfinados || updatedPermitAfterSign.selectedWorkTypes?.confinado) && updatedPermitAfterSign.approvals?.supervisor_confinado?.status !== 'aprobado') {
+                if ((permitBeforeData.espaciosConfinados || permitBeforeData.selectedWorkTypes?.confinado) && permitBeforeData.approvals?.supervisor_confinado?.status !== 'aprobado') {
                     return { success: false, error: 'Se requiere primero la firma del Supervisor Esp. Confinado.' };
                 }
 
-                if (updatedPermitAfterSign.status === 'borrador') {
+                await docRef.update(updateData);
+
+                if (permitBeforeData.status === 'borrador') {
                     const permitNumber = `PT-${Date.now()}-${permitId.substring(0, 6).toUpperCase()}`;
                     await docRef.update({
                         number: permitNumber,

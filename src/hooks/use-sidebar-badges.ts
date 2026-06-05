@@ -27,12 +27,51 @@ export function useSidebarBadges() {
       return;
     }
 
+    // Mantenimiento necesita dos queries independientes: Firestore no soporta OR entre
+    // campos distintos, y requiresMaintenanceSignature activa la firma por controlEnergia
+    // O selectedWorkTypes.energia (cualquiera de los dos es suficiente).
+    if (role === 'mantenimiento') {
+      const map1 = new Map<string, Permit>();
+      const map2 = new Map<string, Permit>();
+
+      const calcPending = () => {
+        const merged = new Map([...map1, ...map2]);
+        const count = Array.from(merged.values()).filter(permit => {
+          if (permit.status !== 'pendiente_revision') return false;
+          const approvals = permit.approvals || {};
+          return approvals.mantenimiento?.status === 'pendiente' &&
+                 approvals.solicitante?.status === 'aprobado';
+        }).length;
+        setPendingPermits(count);
+      };
+
+      const onErr = (error: Error) => {
+        console.error('Error al escuchar permisos pendientes:', error.message);
+        setPendingPermits(0);
+      };
+
+      const q1 = query(collection(db, 'permits'), where('controlEnergia', '==', true));
+      const q2 = query(collection(db, 'permits'), where('selectedWorkTypes.energia', '==', true));
+
+      const unsub1 = onSnapshot(q1, (snap) => {
+        map1.clear();
+        snap.docs.forEach(d => map1.set(d.id, d.data() as Permit));
+        calcPending();
+      }, onErr);
+
+      const unsub2 = onSnapshot(q2, (snap) => {
+        map2.clear();
+        snap.docs.forEach(d => map2.set(d.id, d.data() as Permit));
+        calcPending();
+      }, onErr);
+
+      return () => { unsub1(); unsub2(); };
+    }
+
     const queryConstraints: QueryConstraint[] = [];
 
     // Add specific constraints based on role to satisfy security rules.
-    if (role === 'mantenimiento') {
-      queryConstraints.push(where('controlEnergia', '==', true));
-    } else if (role === 'admin' || role === 'lider_regional') {
+    if (role === 'admin' || role === 'lider_regional') {
       queryConstraints.push(where('status', '==', 'pendiente_revision'));
     } else if (role === 'autorizante' || role === 'lider_sst') {
       // FIX 2C: Filtrar por status en la query; empresa/planta se aplican en el callback.
@@ -49,7 +88,6 @@ export function useSidebarBadges() {
         const pendingForMe = snapshot.docs.filter(doc => {
           const permit = doc.data() as Permit;
 
-          // Client-side filter for status if it wasn't in the query (for 'mantenimiento')
           if (permit.status !== 'pendiente_revision') {
             return false;
           }
@@ -82,11 +120,6 @@ export function useSidebarBadges() {
               if (role === 'lider_sst' && !permit.isSSTSignatureRequired) {
                 return false;
               }
-              return isSolicitanteSigned;
-            }
-
-            // Mantenimiento firma después del solicitante (y antes del autorizante).
-            if (role === 'mantenimiento') {
               return isSolicitanteSigned;
             }
 

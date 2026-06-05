@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-04
+> **Última actualización de este documento:** 2026-06-05
 
 ---
 
@@ -62,6 +62,192 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-05 — Fix: flujo de firmas del rol Mantenimiento + correcciones de UI
+
+#### Contexto
+
+Se realizó una auditoría completa del flujo de firmas y vistas para el rol `mantenimiento` (Mantenimiento / Aislador Competente). Se identificaron y corrigieron 7 bugs distribuidos en 4 archivos. Adicionalmente el usuario aplicó una simplificación de label en `GeneralInfoStep.tsx`.
+
+---
+
+#### Bug 1 — `hasCorrectRole` ignoraba `otherRoles` en `canSign` (UI)
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+**Causa raíz:** La función cliente `hasCorrectRole` solo comparaba `currentUser.role`, ignorando `currentUser.otherRoles`. Los usuarios con `mantenimiento` como rol secundario veían el botón de firma bloqueado en la UI aunque el servidor sí los autorizaba.
+
+```typescript
+// Antes
+const hasCorrectRole = (targetRole) => {
+  if (currentUser.role === 'admin') return true;
+  return Array.isArray(targetRole) ? targetRole.includes(currentUser.role) : currentUser.role === targetRole;
+};
+
+// Después
+const hasCorrectRole = (targetRole) => {
+  if (currentUser.role === 'admin') return true;
+  const userRoles = [currentUser.role!, ...(currentUser.otherRoles ?? [])];
+  return Array.isArray(targetRole) ? userRoles.some(r => targetRole.includes(r)) : userRoles.includes(targetRole);
+};
+```
+
+---
+
+#### Bug 2 — Query del Dashboard no cubría `selectedWorkTypes.energia`
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+**Causa raíz:** La query Firestore del branch `mantenimiento` solo filtraba `controlEnergia == true`. Los permisos creados con el wizard que usan `selectedWorkTypes.energia` no aparecían en el dashboard.
+
+**Fix:** Dos queries independientes mergeadas con `Map<string, Permit>` para deduplicar:
+
+```typescript
+const qMant1 = query(permitsCollection, where('controlEnergia', '==', true));
+const qMant2 = query(permitsCollection, where('selectedWorkTypes.energia', '==', true));
+// merge via Map — último snapshot gana para actualizaciones en tiempo real
+```
+
+---
+
+#### Bug 3 — Firestore Rules `allow read` para mantenimiento no cubría `selectedWorkTypes.energia`
+
+**Archivo modificado:** `firestore.rules`
+
+**Causa raíz:** La regla `allow read` para el rol `mantenimiento` solo evaluaba `resource.data.controlEnergia == true`. Un permiso con `selectedWorkTypes.energia == true` generaba "Permission denied" al abrirlo.
+
+**Fix:** Nueva función helper `requiresMaintenanceSign(data)` que usa la API segura de Firestore Rules para acceder a campos anidados opcionales:
+
+```js
+function requiresMaintenanceSign(data) {
+  return data.controlEnergia == true ||
+    (data.keys().hasAny(['selectedWorkTypes']) &&
+     data.selectedWorkTypes.get('energia', false) == true);
+}
+// En allow read:
+(hasRole('mantenimiento') && requiresMaintenanceSign(resource.data))
+```
+
+---
+
+#### Bug 4 — Badge lateral (sidebar) no cubría `selectedWorkTypes.energia`
+
+**Archivo modificado:** `src/hooks/use-sidebar-badges.ts`
+
+**Causa raíz:** El badge de permisos pendientes para mantenimiento usaba una sola query con `controlEnergia`, perdiendo permisos del wizard nuevo.
+
+**Fix:** Bloque early-return con dos queries independientes mergeadas con doble `Map` (una por query), recalculando el conteo en cada snapshot:
+
+```typescript
+if (role === 'mantenimiento') {
+  const map1 = new Map<string, Permit>(); // controlEnergia
+  const map2 = new Map<string, Permit>(); // selectedWorkTypes.energia
+  const calcPending = () => {
+    const merged = new Map([...map1, ...map2]);
+    const count = Array.from(merged.values()).filter(permit =>
+      permit.status === 'pendiente_revision' &&
+      permit.approvals?.mantenimiento?.status === 'pendiente' &&
+      permit.approvals?.solicitante?.status === 'aprobado'
+    ).length;
+    setPendingPermits(count);
+  };
+  // ... dos onSnapshot + retorno de cleanup
+}
+```
+
+---
+
+#### Bug 5 — Cambio de vista del Dashboard ignoraba `otherRoles`
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+**Causa raíz:** La condición para cargar la vista de mantenimiento en el dashboard era `user.role === 'mantenimiento'`, sin verificar `otherRoles`.
+
+```typescript
+// Antes
+} else if (user.role === 'mantenimiento') {
+
+// Después
+} else if (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento')) {
+```
+
+---
+
+#### Bug 6 — `canSign` permitía `en_ejecucion` pero el servidor lo rechazaba
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+**Causa raíz:** El guard de estado cliente incluía `en_ejecucion` como estado válido para firmas de apertura, pero `validateSignaturePermission` en el servidor solo acepta `pendiente_revision` y `borrador`. El usuario veía el botón habilitado, firmaba, y recibía un error del servidor.
+
+```typescript
+// Antes: permitía en_ejecucion
+if (status !== 'pendiente_revision' && status !== 'borrador' && status !== 'en_ejecucion') { ... }
+
+// Después: alineado con el servidor
+if (status !== 'pendiente_revision' && status !== 'borrador') { ... }
+```
+
+---
+
+#### Fix — `simpleUser` no incluía `otherRoles` al llamar al servidor
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+**Causa raíz:** El objeto `simpleUser` construido en `handleSaveSignature` antes de llamar `addSignatureAndNotify` omitía `otherRoles`. El servidor rechazaba la firma de usuarios con `mantenimiento` como rol secundario porque `validateSignaturePermission` no recibía ese campo.
+
+```typescript
+// Antes
+const simpleUser = { uid, displayName, role, empresa };
+
+// Después
+const simpleUser = { uid, displayName, role, empresa, otherRoles: currentUser.otherRoles };
+```
+
+---
+
+#### Fix — Write-before-validate en `addSignatureAndNotify` para rol `solicitante`
+
+**Archivo modificado:** `src/app/(app)/permits/actions.ts`
+
+**Causa raíz:** La validación de prerrequisitos (`coordinador_alturas` aprobado antes del solicitante) ocurría **después** de `await docRef.update(updateData)`. Si la validación fallaba, el error se retornaba pero el documento ya había sido escrito parcialmente en Firestore.
+
+**Fix:** Los checks se movieron **antes** del `await docRef.update()`, usando `permitBeforeData` (ya cargado) en lugar de releer el documento después de escribir. Se eliminó también la lectura redundante `docRef.get()` post-update.
+
+```typescript
+// Antes (write → validate → posible corrupción)
+await docRef.update(updateData);
+const updatedPermit = (await docRef.get()).data();
+if (... coordinador_alturas?.status !== 'aprobado') return { success: false, error: '...' }; // tarde
+
+// Después (validate → write)
+if (permitBeforeData.approvals?.coordinador_alturas?.status !== 'aprobado') {
+  return { success: false, error: 'Se requiere primero la firma del Coordinador Alturas.' };
+}
+await docRef.update(updateData);
+```
+
+---
+
+#### Fix (usuario) — Simplificación de label en campo Ejecutante
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/GeneralInfoStep.tsx`
+
+Se renombró el label del campo `nombreSolicitante` de `"Ejecutante del trabajo / Líder del equipo Ejecutante"` a `"Ejecutante del trabajo"` para simplificar la UI.
+
+---
+
+#### Resumen de archivos modificados
+
+| Archivo | Cambios |
+|---|---|
+| `firestore.rules` | Helper `requiresMaintenanceSign()` + regla `allow read` para mantenimiento con doble campo |
+| `src/app/(app)/dashboard/page.tsx` | Dos queries mergeadas para mantenimiento; condición de vista con `otherRoles` |
+| `src/app/(app)/permits/[id]/page.tsx` | `hasCorrectRole` con `otherRoles`; guard de estado en `canSign`; `simpleUser` con `otherRoles` |
+| `src/app/(app)/permits/actions.ts` | Write-before-validate corregido en `addSignatureAndNotify('solicitante')` |
+| `src/app/(app)/permits/create/components/GeneralInfoStep.tsx` | Label `nombreSolicitante` simplificado |
+| `src/hooks/use-sidebar-badges.ts` | Dos queries mergeadas con doble Map para badge de mantenimiento |
 
 ---
 

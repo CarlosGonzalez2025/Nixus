@@ -414,7 +414,8 @@ export default function PermitDetailPage() {
       uid: currentUser.uid,
       displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
       role: currentUser.role,
-      empresa: currentUser.empresa || 'N/A'
+      empresa: currentUser.empresa || 'N/A',
+      otherRoles: currentUser.otherRoles,
     };
 
     // OFFLINE PATH
@@ -549,8 +550,7 @@ export default function PermitDetailPage() {
       return { can: false, reason: `El permiso está ${status}.` };
     }
 
-    // Permitir firmar si está pendiente o incluso si ya está en ejecución (para firmas secundarias)
-    if (status !== 'pendiente_revision' && status !== 'borrador' && status !== 'en_ejecucion') {
+    if (status !== 'pendiente_revision' && status !== 'borrador') {
       return { can: false, reason: 'Las firmas de apertura ya están cerradas.' };
     }
 
@@ -559,10 +559,11 @@ export default function PermitDetailPage() {
 
     const hasCorrectRole = (targetRole: UserRole | UserRole[]) => {
       if (currentUser.role === 'admin') return true;
+      const userRoles = [currentUser.role!, ...(currentUser.otherRoles ?? [])];
       if (Array.isArray(targetRole)) {
-        return targetRole.includes(currentUser.role!);
+        return userRoles.some(r => targetRole.includes(r));
       }
-      return currentUser.role === targetRole;
+      return userRoles.includes(targetRole);
     }
 
     const isCreator = currentUser.uid === createdBy;
@@ -2039,7 +2040,7 @@ export default function PermitDetailPage() {
         </div>
         <footer className="text-center text-xs text-gray-400 py-4 mt-8">
           <p>Código: DN-FR-SST-016</p>
-          <p>Versión: 04</p>
+          <p>Versión: 05</p>
         </footer>
       </main>
 

@@ -36,6 +36,15 @@ service cloud.firestore {
       return isAdmin() || isLiderRegional();
     }
 
+    // Determina si un permiso activa la firma de Mantenimiento/Aislador Competente.
+    // Espeja la lógica de requiresMaintenanceSignature() en actions.ts para mantener
+    // consistencia: ambos campos (controlEnergia y selectedWorkTypes.energia) activan el requisito.
+    function requiresMaintenanceSign(data) {
+      return data.controlEnergia == true ||
+        (data.keys().hasAny(['selectedWorkTypes']) &&
+         data.selectedWorkTypes.get('energia', false) == true);
+    }
+
     function isCreator(permit) {
       return request.auth.uid == permit.createdBy;
     }
@@ -96,7 +105,7 @@ service cloud.firestore {
                      (hasRole('lider_sst') &&
                        (!getEmpresa() || resource.data.generalInfo.empresa == getEmpresa()) &&
                        (!getPlanta()  || resource.data.generalInfo.planta  == getPlanta())) ||
-                     (hasRole('mantenimiento') && resource.data.controlEnergia == true)
+                     (hasRole('mantenimiento') && requiresMaintenanceSign(resource.data))
                     );
 
       // LISTA: Permite listar a roles que ven todo y a usuarios que solo ven lo suyo.
