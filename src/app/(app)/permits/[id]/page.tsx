@@ -183,7 +183,7 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 };
 
 
-type SignatureRole = 'solicitante' | 'Ejecutante del trabajo / Líder del equipo Ejecutante' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
+type SignatureRole = 'solicitante' | 'Ejecutante del trabajo' | 'autorizante' | 'mantenimiento' | 'lider_sst' | 'coordinador_alturas' | 'supervisor_confinado';
 const signatureRoles: { [key: string]: string } = SIGNATURE_ROLE_LABELS;
 
 const signatureConsents: Partial<Record<string, string>> = {

@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-05 (Sesión 4)
+> **Última actualización de este documento:** 2026-06-09 (Sesión 5)
 
 ---
 
@@ -62,6 +62,111 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-09 (Sesión 5) — Feat: Módulo Alturas completo + fix Firebase SDK v11.10.0 + migración masiva WA
+
+#### Fix: Firebase SDK v11.10.0 — `INTERNAL ASSERTION FAILED: ca9 / ve:-1`
+
+**Problema:** El cliente Firestore lanzaba `INTERNAL ASSERTION FAILED: Unexpected state (ID: ca9) CONTEXT: {"ve":-1}` de forma intermitente.
+
+**Causa raíz:** Race condition en la capa de transporte `__PRIVATE_PersistentListenStream` (WebChannel/gRPC). El servidor envía un evento RESET después de que el listener JavaScript ya hizo `unsubscribe()`. Al procesar el RESET, `WatchChangeAggregator.forEachTarget` invoca `TargetState.Ue()` sobre targets con contador en 0, bajando a -1 y disparando la assertion fatal. El bug está en el SDK v11.10.0 y no en el código de la app.
+
+**Solución aplicada:** `src/lib/firebase.ts`
+- Se mantiene `localCache: memoryLocalCache()` (fix anterior).
+- Se agrega `experimentalForceLongPolling: true` — fuerza transporte HTTP long-poll en lugar de WebChannel/gRPC, eludiendo completamente el path `PersistentListenStream` donde reside el bug.
+
+```typescript
+db = initializeFirestore(app, {
+  localCache: memoryLocalCache(),
+  experimentalForceLongPolling: true,
+});
+```
+
+**Alternativa recomendada (si persiste):** downgrade a `firebase@11.9.0` (`npm install firebase@11.9.0` con dev server apagado, borrando `.next` y limpiando IndexedDB del navegador).
+
+---
+
+#### Feat: Módulo Alturas — implementación completa (12 archivos)
+
+Nuevo módulo `/alturas` con hub de navegación y submódulo Diagnóstico completo, siguiendo la misma arquitectura que el módulo Confinados.
+
+**Archivos creados/modificados:**
+
+| Archivo | Tipo | Descripción |
+|---|---|---|
+| `src/types/alturas.ts` | Nuevo | Tipos TypeScript, catálogos, lógica de scoring (`calcDiagnosticoAlturaScore`) |
+| `src/lib/alturas-service.ts` | Nuevo | CRUD Firestore para `diagnosticosAlturas` |
+| `src/hooks/use-diagnosticos-alturas.ts` | Nuevo | Hook real-time con filtros y caché |
+| `src/lib/analytics/alturas-analytics.ts` | Nuevo | Motor de análisis: estadísticas, clustering K-Means, tendencias |
+| `src/app/(app)/alturas/page.tsx` | Modificado | Hub de navegación — 3 submódulos sin "Pronto" |
+| `src/app/(app)/alturas/diagnostico/actions.ts` | Nuevo | Server actions: crear, actualizar, eliminar diagnóstico |
+| `src/app/(app)/alturas/diagnostico/page.tsx` | Nuevo | Lista de diagnósticos con filtros |
+| `src/app/(app)/alturas/diagnostico/nuevo/page.tsx` | Nuevo | Formulario de nuevo diagnóstico |
+| `src/app/(app)/alturas/diagnostico/[id]/page.tsx` | Nuevo | Vista de detalle de un diagnóstico |
+| `src/app/(app)/alturas/diagnostico/importar/actions.ts` | Nuevo | Server action para importar desde Excel |
+| `src/app/(app)/alturas/diagnostico/importar/page.tsx` | Nuevo | UI de importación masiva |
+| `src/app/(app)/alturas/analisis/page.tsx` | Nuevo | Dashboard de análisis y métricas ML |
+
+**Scoring (`calcDiagnosticoAlturaScore`):** 7 criterios, máximo 14 puntos.
+
+| # | Criterio | Puntuación |
+|---|---|---|
+| 1 | Procedimientos de gestión en alturas | `evaluadaEnIPER === 'Si'` → 2 |
+| 2 | Permisos de trabajo | `medidasPrevencion` contiene 'Permiso' → 2 |
+| 3 | Gestión de medidas de prevención | otras medidas de prevención → 2 |
+| 4 | Gestión documental | `cuentaConProcedimiento === 'Si'` → 2 |
+| 5 | Gestión de riesgo operacional | inspección+mantenimiento escaleras → 2, buen estado → 1 |
+| 6 | Gestión de equipos y sistemas | inspección anual arneses → 2, buen estado → 1 |
+| 7 | Gestión de emergencias | sistema de rescate activo → 2, en uso → 1 |
+
+**Hub:** `src/app/(app)/alturas/page.tsx` — tarjeta "Historial & Seguimiento" habilitada (se eliminó prop `comingSoon` y la insignia "Pronto").
+
+---
+
+#### Feat: Script de migración masiva — `scripts/migrate-inventario-wa.mjs`
+
+Script ESM para importar 1175 registros desde `ESTRUCTURA DE DATOS INVENTARIO WA (1).xlsx` (hoja `INVENTARIO WA`) a la colección `diagnosticosAlturas` de Firestore.
+
+**Características:**
+- Credenciales: `serviceAccountKey.json` (prioridad) o `.env`
+- Batches de 400 documentos (límite Firestore: 500)
+- Flags: `--dry-run`, `--skip-existing`, `--limit N`
+- Confirmación interactiva antes de escribir en producción
+- Normalización de valores de equipos (10 categorías de texto → 7 valores canónicos)
+- Cálculo inline de score (réplica de `calcDiagnosticoAlturaScore`)
+- Campos de trazabilidad: `_origenId`, `_origenHoja`
+- Parseo de fechas seriales de Excel (época: 1899-12-30)
+- Merge de columnas 30 y 40 (ambas "Arnés de cuerpo completo" por error de diseño del formulario)
+
+**Resultado del dry-run:** 1175/1175 válidos, 0 errores, score promedio 7.9/14, 38 empresas, 29 plantas.
+
+**Uso:**
+```powershell
+node scripts/migrate-inventario-wa.mjs              # producción (pide confirmación)
+node scripts/migrate-inventario-wa.mjs --dry-run    # validar sin escribir
+node scripts/migrate-inventario-wa.mjs --skip-existing  # re-run idempotente
+node scripts/migrate-inventario-wa.mjs --limit 50   # prueba con 50 registros
+```
+
+---
+
+#### Feat: Reglas de seguridad Firestore — colección `diagnosticosAlturas`
+
+**Archivos modificados:** `firestore.rules` (raíz, desplegado) y `src/firestore.rules` (copia sincronizada).
+
+Nueva función de scope `canAccessAlturas()`: usuario autenticado con rol `admin`, `lider_regional`, `lider_sst` o `asesor_arl`.
+
+| Operación | Quién puede |
+|---|---|
+| `get` | `canAccessAlturas()` + (admin/LR, lider_sst, o propietario si asesor_arl/autorizante) |
+| `list` | `canAccessAlturas()` |
+| `create` | `canAccessAlturas()` + `createdById == request.auth.uid` |
+| `update` | `canAccessAlturas()` + (admin/LR, lider_sst, o propietario) |
+| `delete` | Solo `isAdminOrLR()` |
+
+Adicionalmente, `src/firestore.rules` fue sincronizado con la versión raíz: se agregaron las funciones `isLiderRegional()` y `isAdminOrLR()` que faltaban, se corrigió el write de `dynamic_lists` y el delete de `hallazgos` para usar `isAdminOrLR()`, y se añadió el bloque completo de `diagnosticosConfinados` que estaba ausente.
 
 ---
 

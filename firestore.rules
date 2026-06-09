@@ -344,5 +344,49 @@ service cloud.firestore {
       allow delete: if isAdminOrLR();
     }
 
+    // --- Módulo Alturas: Diagnóstico (diagnosticosAlturas) ---
+    match /diagnosticosAlturas/{docId} {
+
+      // Mismos roles que Confinados: admin, lider_regional, lider_sst, asesor_arl, autorizante
+      function canAccessAlturas() {
+        return isSignedIn() && (
+          isAdminOrLR() ||
+          hasRole('lider_sst') ||
+          hasRole('asesor_arl') ||
+          hasRole('autorizante')
+        );
+      }
+
+      // Lectura individual:
+      // - Admin / Líder Regional: acceso total
+      // - Líder SST: acceso total (gestiona todos los registros de su planta)
+      // - Asesor ARL / Autorizante: solo los que él mismo creó
+      allow get: if canAccessAlturas() && (
+        isAdminOrLR() ||
+        hasRole('lider_sst') ||
+        (hasRole('asesor_arl')  && resource.data.createdById == request.auth.uid) ||
+        (hasRole('autorizante') && resource.data.createdById == request.auth.uid)
+      );
+
+      // Listado: acceso habilitado para todos los roles del módulo.
+      // El filtro fino por empresa/planta lo aplica el cliente con where() + onSnapshot.
+      allow list: if canAccessAlturas();
+
+      // Creación: el campo createdById debe coincidir con el usuario autenticado.
+      // Los registros importados vía Admin SDK (scripts) omiten esta regla.
+      allow create: if canAccessAlturas()
+                    && request.resource.data.createdById == request.auth.uid;
+
+      // Actualización: el creador o un rol de gestión puede editar.
+      allow update: if canAccessAlturas() && (
+        isAdminOrLR() ||
+        hasRole('lider_sst') ||
+        resource.data.createdById == request.auth.uid
+      );
+
+      // Eliminación: solo admin / líder regional.
+      allow delete: if isAdminOrLR();
+    }
+
   }
 }

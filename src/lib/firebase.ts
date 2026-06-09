@@ -2,8 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import {
   initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
+  memoryLocalCache,
   getFirestore,
   type QueryConstraint,
 } from 'firebase/firestore';
@@ -21,15 +20,15 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-// Persistencia offline con fallback: si el navegador bloquea IndexedDB (ej. Edge con
-// Tracking Prevention activada), se usa Firestore sin caché persistente para garantizar
-// que los datos siempre se lean desde el servidor.
+// Memory cache + long-polling: workaround for Firebase SDK v11.10.0 bug where
+// server RESET events arrive after unsubscribe, decrementing target count to -1
+// (INTERNAL ASSERTION FAILED: ca9 / ve:-1). experimentalForceLongPolling avoids
+// the PersistentListenStream path where the race condition occurs.
 let db: ReturnType<typeof getFirestore>;
 try {
   db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager(),
-    }),
+    localCache: memoryLocalCache(),
+    experimentalForceLongPolling: true,
   });
 } catch {
   db = getFirestore(app);
