@@ -65,7 +65,7 @@ Next.js 15 (App Router)
 
 ---
 
-### 2026-06-10 (Sesión 7) — Anexo "Trabajos en Caliente" independiente + reescritura del generador de PDF
+### 2026-06-10 (Sesión 7) — Anexo "Trabajos en Caliente" independiente + reescritura del generador de PDF + fix visibilidad PWA
 
 #### Feat: nuevo Anexo "Trabajos en Caliente" separado del Anexo de Energías
 
@@ -95,6 +95,20 @@ El cliente reportó que el PDF mostraba información incompleta e ilegible. Se c
 - Nuevo render `renderAnexoCalienteContent` + wrapper `generateAnexoCalientePDF`; incluido en el PDF unificado y en `handleExportPDF`.
 - Información General del permiso ampliada: Ciudad, Reunión de Inicio, ATS Verificado y "Trabajos en Caliente" en tipos de trabajo.
 - Estado de herramientas legible (`BUENO`/`MALO`); especificaciones de EPP con guiones bajos limpiados (`SI (clase 1)`).
+
+#### Fix: banner "Actualizar app" invisible + validación de configuración PWA
+
+El botón/banner para actualizar la app cuando se publica una nueva versión era casi invisible (solo se veía un botón gris suelto).
+
+**Causa raíz:** la clase `bg-nixus` se usaba en 4 componentes (`PWAUpdater`, `OfflineBanner`, `PushNotificationPrompt` y un badge de `layout.tsx`) pero **el color `nixus` nunca estuvo definido en Tailwind** → fondo transparente + texto blanco = invisible.
+
+**Archivos modificados:**
+- `tailwind.config.ts` — se definió el color de marca `nixus` (`#1DB5C1`, igual al `theme_color` del manifest) con `DEFAULT` + `foreground`. Corrige los 4 componentes de raíz.
+- `src/components/PWAUpdater.tsx` — rediseño del banner para máxima visibilidad: fondo turquesa de marca, botón "Actualizar" blanco de alto contraste con ícono, ancho completo centrado en móvil respetando `safe-area-inset-bottom` (notch/home indicator), borde resaltado (`ring`) y `role="alert"` + `aria-live` para accesibilidad. La lógica de actualización (detección de SW `waiting`, `SKIP_WAITING`, recarga con consentimiento, chequeo cada 30 min y al recuperar foco) no se modificó.
+
+**Validación de la configuración PWA (instalación como app nativa):** se revisó y está **correcta** — `manifest.json` enlazado en el layout root con `display: standalone`, íconos 192/512 (`any` + `maskable`, todos presentes en `/public`), `theme_color`/`background_color`, SW registrado por `next-pwa` (Workbox) con fetch handler, soporte iOS (`appleWebApp.capable` + `apple-touch-icon`) y `customWorkerSrc` que maneja `SKIP_WAITING`/`push`/`notificationclick`. La app es instalable en Android/Chrome (prompt nativo) e iOS (Añadir a inicio).
+
+> **Nota:** el SW está deshabilitado en desarrollo (`disable: NODE_ENV === 'development'` en `next.config.ts`), por lo que el banner de actualización **solo aparece en producción** (`npm run build && npm start` o en el deploy), no en `npm run dev`.
 
 ---
 

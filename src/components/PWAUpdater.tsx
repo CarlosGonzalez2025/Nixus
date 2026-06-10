@@ -111,33 +111,38 @@ export function PWAUpdater() {
   if (!showUpdate) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] animate-in slide-in-from-bottom">
-      <div className="bg-nixus text-white rounded-lg shadow-2xl p-4 flex items-center gap-3 max-w-sm">
-        <div className="flex-shrink-0">
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="fixed inset-x-0 bottom-0 z-[9999] flex justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none animate-in slide-in-from-bottom-4 fade-in duration-300 sm:inset-x-auto sm:right-4 sm:justify-end"
+    >
+      <div className="pointer-events-auto bg-nixus text-nixus-foreground rounded-xl shadow-2xl ring-2 ring-white/30 p-4 flex items-center gap-4 w-full max-w-md sm:max-w-sm">
+        <div className="flex-shrink-0 bg-white/20 rounded-full p-2">
           <RefreshCw className="h-6 w-6 animate-spin" />
         </div>
-        <div className="flex-1">
-          <p className="font-semibold text-sm">Nueva versión disponible</p>
-          <p className="text-xs opacity-90">
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-base leading-tight">Nueva versión disponible</p>
+          <p className="text-sm opacity-90 mt-0.5">
             Actualiza para obtener las últimas mejoras
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleUpdate}
-            size="sm"
-            variant="secondary"
-            className="text-xs"
-          >
-            Actualizar
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch gap-2 flex-shrink-0">
           <Button
             onClick={handleDismiss}
             size="sm"
             variant="ghost"
-            className="text-white hover:bg-white/20 p-2"
+            className="text-nixus-foreground hover:bg-white/20 px-2"
+            aria-label="Descartar"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
+          </Button>
+          <Button
+            onClick={handleUpdate}
+            size="sm"
+            className="bg-white text-nixus font-bold hover:bg-white/90 shadow-md px-4"
+          >
+            <RefreshCw className="h-4 w-4 mr-1.5" />
+            Actualizar
           </Button>
         </div>
       </div>

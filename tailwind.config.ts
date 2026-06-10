@@ -16,6 +16,13 @@ export default {
         code: ['monospace'],
       },
       colors: {
+        // Color de marca NIXUS (coincide con theme_color del manifest PWA).
+        // Definido aquí porque varios componentes (PWAUpdater, OfflineBanner,
+        // PushNotificationPrompt) usan `bg-nixus` / `text-nixus`.
+        nixus: {
+          DEFAULT: '#1DB5C1',
+          foreground: '#FFFFFF',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
