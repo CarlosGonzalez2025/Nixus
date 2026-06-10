@@ -2,14 +2,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function PWAUpdater() {
   const [showUpdate, setShowUpdate] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   // Solo recargar en controllerchange si fue el usuario quien pidió la actualización.
   // Sin esta guardia, la primera activación del SW (sin SW previo) causaría un
   // reload automático inesperado.
   const userConsentedRef = useRef(false);
+  // Evita recargas duplicadas (controllerchange + statechange + timeout).
+  const reloadingRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
@@ -19,7 +23,8 @@ export function PWAUpdater() {
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const handleControllerChange = () => {
-      if (userConsentedRef.current) {
+      if (userConsentedRef.current && !reloadingRef.current) {
+        reloadingRef.current = true;
         window.location.reload();
       }
     };
@@ -98,10 +103,27 @@ export function PWAUpdater() {
   }, []);
 
   const handleUpdate = () => {
-    if (waitingWorker) {
-      userConsentedRef.current = true;
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-    }
+    if (!waitingWorker || isUpdating) return;
+    setIsUpdating(true);
+    userConsentedRef.current = true;
+
+    const reloadNow = () => {
+      if (reloadingRef.current) return;
+      reloadingRef.current = true;
+      window.location.reload();
+    };
+
+    // Señal fiable: recargar cuando el nuevo SW pase a 'activated'. No depende
+    // de 'controllerchange', que puede no dispararse en todos los navegadores.
+    waitingWorker.addEventListener('statechange', () => {
+      if (waitingWorker.state === 'activated') reloadNow();
+    });
+
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+
+    // Salvaguarda: si en 4 s no se recargó (el SW no respondió), forzar recarga
+    // para no dejar al usuario sin respuesta.
+    setTimeout(reloadNow, 4000);
   };
 
   const handleDismiss = () => {
@@ -131,6 +153,7 @@ export function PWAUpdater() {
             onClick={handleDismiss}
             size="sm"
             variant="ghost"
+            disabled={isUpdating}
             className="text-nixus-foreground hover:bg-white/20 px-2"
             aria-label="Descartar"
           >
@@ -139,10 +162,11 @@ export function PWAUpdater() {
           <Button
             onClick={handleUpdate}
             size="sm"
-            className="bg-white text-nixus font-bold hover:bg-white/90 shadow-md px-4"
+            disabled={isUpdating}
+            className="bg-white text-nixus font-bold hover:bg-white/90 shadow-md px-4 disabled:opacity-100"
           >
-            <RefreshCw className="h-4 w-4 mr-1.5" />
-            Actualizar
+            <RefreshCw className={cn('h-4 w-4 mr-1.5', isUpdating && 'animate-spin')} />
+            {isUpdating ? 'Actualizando…' : 'Actualizar'}
           </Button>
         </div>
       </div>

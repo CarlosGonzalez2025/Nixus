@@ -110,6 +110,14 @@ El botón/banner para actualizar la app cuando se publica una nueva versión era
 
 > **Nota:** el SW está deshabilitado en desarrollo (`disable: NODE_ENV === 'development'` en `next.config.ts`), por lo que el banner de actualización **solo aparece en producción** (`npm run build && npm start` o en el deploy), no en `npm run dev`.
 
+#### Fix: el botón "Actualizar" no recargaba la app de forma fiable
+
+Tras hacer clic en "Actualizar", visualmente "no pasaba nada". El cliente enviaba `SKIP_WAITING` y el SW se activaba, pero el reload dependía del evento `controllerchange`, que **no se dispara de forma fiable** porque el SW recién activado no reclamaba (`claim`) la pestaña abierta (Workbox no añade `clientsClaim` con `skipWaiting: false`).
+
+**Archivos modificados:**
+- `src/sw-message-handler.ts` — nuevo listener `activate` que ejecuta `self.clients.claim()`, para que la nueva versión tome control inmediato de las pestañas abiertas (la guardia de consentimiento del cliente evita recargas no deseadas en la primera instalación).
+- `src/components/PWAUpdater.tsx` — recarga fiable: además de `controllerchange`, se escucha el `statechange` del worker a `activated` (señal fiable) y se añade una salvaguarda por timeout (4 s). Guardia `reloadingRef` para evitar recargas duplicadas. **Feedback visual inmediato**: el botón muestra "Actualizando…" con spinner y se deshabilita al hacer clic.
+
 ---
 
 ### 2026-06-10 (Sesión 6) — UX: flujo de firmas de cierre por sesión + mejoras visuales en permisos

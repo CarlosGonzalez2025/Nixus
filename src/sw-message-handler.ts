@@ -17,6 +17,14 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// Al activarse la nueva versión, tomar control inmediato de las pestañas ya
+// abiertas. Sin esto, el SW recién activado no controla la página actual y el
+// evento 'controllerchange' del cliente no se dispara de forma fiable, por lo
+// que el botón "Actualizar" parecería no hacer nada.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 // ── 2. Recepción de notificaciones push ─────────────────────────────────────
 self.addEventListener('push', (event) => {
   let payload = { title: 'SGTC Móvil', body: 'Tienes una nueva notificación', url: '/', icon: '/icon-192.png', badge: '/icon-96x96.png' };
