@@ -158,9 +158,9 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
   }
 
   const iconMap = {
-    si: <CheckCircle className="h-5 w-5 text-green-500" />,
-    no: <XCircle className="h-5 w-5 text-red-500" />,
-    na: <Circle className="h-5 w-5 text-gray-400" />,
+    si: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-300">Sí</span>,
+    no: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-300">No</span>,
+    na: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-300">N/A</span>,
   };
 
   return (
@@ -387,7 +387,7 @@ export default function PermitDetailPage() {
     if (!currentUser) return;
     setSigningRole({ role, type: signatureType });
     setSignatureObservation(""); // Limpiar observaciones anteriores
-    if (role === 'coordinador_alturas' || role === 'supervisor_confinado' || role.startsWith('cierre_') || role === 'cancelacion') {
+    if (role === 'coordinador_alturas' || role === 'supervisor_confinado' || role === 'cancelacion') {
       setSignerName('');
     } else {
       setSignerName(currentUser?.displayName || '');
@@ -398,8 +398,8 @@ export default function PermitDetailPage() {
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!permit || !currentUser || !signingRole) return;
 
-    const isSpecialSignature = signingRole.role === 'coordinador_alturas' || signingRole.role === 'supervisor_confinado' || signingRole.role.startsWith('cierre_') || signingRole.role === 'cancelacion';
-    if (isSpecialSignature && !signerName.trim()) {
+    const needsManualName = signingRole.role === 'coordinador_alturas' || signingRole.role === 'supervisor_confinado' || signingRole.role === 'cancelacion';
+    if (needsManualName && !signerName.trim()) {
       toast({
         variant: 'destructive',
         title: 'Nombre Requerido',
@@ -412,7 +412,7 @@ export default function PermitDetailPage() {
 
     const simpleUser = {
       uid: currentUser.uid,
-      displayName: isSpecialSignature ? signerName : currentUser.displayName || null,
+      displayName: needsManualName ? signerName : currentUser.displayName || null,
       role: currentUser.role,
       empresa: currentUser.empresa || 'N/A',
       otherRoles: currentUser.otherRoles,
@@ -724,7 +724,7 @@ export default function PermitDetailPage() {
     currentUser?.role === 'admin' &&
     allRequiredSignaturesComplete();
 
-  const suspensionRoles: (typeof currentUser.role)[] = ['lider_sst', 'admin', 'autorizante', 'lider_regional'];
+  const suspensionRoles: UserRole[] = ['lider_sst', 'admin', 'autorizante', 'lider_regional'];
   const canSuspend =
     permit?.status === 'en_ejecucion' &&
     suspensionRoles.includes(currentUser?.role as any);
@@ -2050,7 +2050,7 @@ export default function PermitDetailPage() {
             <DialogTitle>Registrar Firma</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {(signingRole?.role === 'coordinador_alturas' || signingRole?.role === 'supervisor_confinado' || signingRole?.role?.startsWith('cierre_') || signingRole?.role === 'cancelacion') && (
+            {(signingRole?.role === 'coordinador_alturas' || signingRole?.role === 'supervisor_confinado' || signingRole?.role === 'cancelacion') && (
               <div className="space-y-1">
                 <Label htmlFor="signerName">Su Nombre Completo</Label>
                 <Input
@@ -2059,6 +2059,12 @@ export default function PermitDetailPage() {
                   onChange={(e) => setSignerName(e.target.value)}
                   placeholder="Ingrese su nombre completo"
                 />
+              </div>
+            )}
+            {(signingRole?.role === 'cierre_responsable' || signingRole?.role === 'cierre_autoridad') && (
+              <div className="space-y-1">
+                <Label>Firmando como</Label>
+                <Input value={signerName} readOnly disabled />
               </div>
             )}
             <div className="space-y-1">
@@ -2157,12 +2163,34 @@ export default function PermitDetailPage() {
       </Dialog>
 
       <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Módulo de Cierre de Permiso</DialogTitle>
             <DialogDescription>Complete las firmas requeridas para finalizar el permiso de trabajo.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+
+            {/* Flujo del cierre */}
+            <div className="bg-gray-50 border rounded-md p-3">
+              <p className="text-xs font-semibold text-gray-600 mb-2">Flujo de cierre del permiso:</p>
+              <div className="flex items-center gap-1 text-xs flex-wrap">
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma ? 'text-green-600' : 'text-blue-600'}`}>
+                  {permit.closure?.responsable?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center font-bold text-[10px]">1</span>}
+                  Ejecutante firma cierre
+                </span>
+                <span className="text-gray-400 mx-1">→</span>
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma && !permit.closure?.autoridad?.firma ? 'text-blue-600' : permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
+                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">2</span>}
+                  Autorizante recibe aviso
+                </span>
+                <span className="text-gray-400 mx-1">→</span>
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
+                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">3</span>}
+                  Autorizante firma y cierra
+                </span>
+              </div>
+            </div>
+
             <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
               <p className="font-bold flex items-center gap-2"><Info size={16} />Condiciones para el Cierre</p>
               <ul className="list-none space-y-1 text-sm mt-2">
@@ -2183,35 +2211,72 @@ export default function PermitDetailPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="p-3 border rounded-md space-y-3">
-                <h5 className="text-sm font-semibold">Responsable del Trabajo (Solicitante)</h5>
-                <Input readOnly disabled value={permit.closure?.responsable?.nombre || ''} />
-                <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')} disabled={!!permit.closure?.responsable?.firma}>
-                  <SignatureIcon className="mr-2" />{permit.closure?.responsable?.firma ? 'Firmado' : 'Firmar Cierre'}
-                </Button>
-                {permit.closure?.responsable?.firma && <Image src={permit.closure.responsable.firma} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2" />}
-              </div>
+              {/* Firma del Responsable — solo el ejecutante (creador) */}
+              {(() => {
+                const isCreator = currentUser?.uid === permit.createdBy;
+                const isAdmin = currentUser?.role === 'admin';
+                const canSign = (isCreator || isAdmin) && !permit.closure?.responsable?.firma;
+                const alreadySigned = !!permit.closure?.responsable?.firma;
+                const noPermission = !isCreator && !isAdmin;
+                return (
+                  <div className="p-3 border rounded-md space-y-3">
+                    <h5 className="text-sm font-semibold">① Responsable del Trabajo (Ejecutante)</h5>
+                    {alreadySigned
+                      ? <p className="text-xs text-muted-foreground">{permit.closure?.responsable?.nombre}</p>
+                      : <p className="text-xs text-muted-foreground">Debe firmar desde la sesión del ejecutante del trabajo.</p>
+                    }
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full">
+                            <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_responsable', 'firmaCierre')} disabled={!canSign}>
+                              <SignatureIcon className="mr-2" />{alreadySigned ? 'Firmado' : 'Firmar Cierre'}
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {noPermission && !alreadySigned && <TooltipContent><p>Solo el ejecutante del trabajo puede firmar aquí.</p></TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+                    {alreadySigned && <Image src={permit.closure!.responsable!.firma!} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2" />}
+                  </div>
+                );
+              })()}
 
-              <div className="p-3 border rounded-md space-y-3">
-                <h5 className="text-sm font-semibold">Autoridad del Área</h5>
-                <Input readOnly disabled value={permit.closure?.autoridad?.nombre || ''} />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="w-full">
-                        <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')} disabled={!permit.closure?.responsable?.firma || !!permit.closure?.autoridad?.firma}>
-                          <SignatureIcon className="mr-2" />{permit.closure?.autoridad?.firma ? 'Firmado' : 'Firmar Cierre'}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    {!permit.closure?.responsable?.firma && <TooltipContent><p>Debe firmar primero el Responsable del Trabajo.</p></TooltipContent>}
-                  </Tooltip>
-                </TooltipProvider>
-                {permit.closure?.autoridad?.firma && <Image src={permit.closure.autoridad.firma} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2" />}
-              </div>
+              {/* Firma de la Autoridad — solo el autorizante */}
+              {(() => {
+                const isAutorizante = currentUser?.role === 'autorizante';
+                const isAdmin = currentUser?.role === 'admin';
+                const responsableSigned = !!permit.closure?.responsable?.firma;
+                const alreadySigned = !!permit.closure?.autoridad?.firma;
+                const canSign = (isAutorizante || isAdmin) && responsableSigned && !alreadySigned;
+                const noPermission = !isAutorizante && !isAdmin;
+                return (
+                  <div className="p-3 border rounded-md space-y-3">
+                    <h5 className="text-sm font-semibold">② Autoridad del Área (Autorizante)</h5>
+                    {alreadySigned
+                      ? <p className="text-xs text-muted-foreground">{permit.closure?.autoridad?.nombre}</p>
+                      : <p className="text-xs text-muted-foreground">Debe firmar desde la sesión del Autorizante del Área.</p>
+                    }
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full">
+                            <Button variant="outline" size="sm" className="w-full" onClick={() => openSignatureDialog('cierre_autoridad', 'firmaCierre')} disabled={!canSign}>
+                              <SignatureIcon className="mr-2" />{alreadySigned ? 'Firmado' : 'Firmar Cierre'}
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {!responsableSigned && !alreadySigned && <TooltipContent><p>Debe firmar primero el Responsable del Trabajo.</p></TooltipContent>}
+                        {noPermission && responsableSigned && !alreadySigned && <TooltipContent><p>Solo el Autorizante del Área puede firmar aquí.</p></TooltipContent>}
+                      </Tooltip>
+                    </TooltipProvider>
+                    {alreadySigned && <Image src={permit.closure!.autoridad!.firma!} alt="Firma Cierre Autoridad" width={100} height={50} className="border rounded mt-2" />}
+                  </div>
+                );
+              })()}
             </div>
           </div>
-          <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <DialogFooter className="flex-col gap-2 sm:flex-col flex-shrink-0 pt-2 border-t">
             <TooltipProvider>
               <Tooltip open={closureStatus.can ? false : undefined}>
                 <TooltipTrigger asChild>
@@ -2252,8 +2317,8 @@ export default function PermitDetailPage() {
       </Dialog>
 
       <Dialog open={isCancellationDialogOpen} onOpenChange={setIsCancellationDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-md">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 text-rose-700">
               <CalendarX className="h-5 w-5" />
               Cancelar Permiso de Trabajo
@@ -2262,7 +2327,7 @@ export default function PermitDetailPage() {
               Esta acción cambiará el estado del permiso a <strong>Cancelado</strong> y no podrá ser revertida. Complete los datos y firme para confirmar.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="overflow-y-auto flex-1 space-y-4 pr-1">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Cancelado por</Label>
@@ -2283,42 +2348,42 @@ export default function PermitDetailPage() {
                 rows={3}
               />
             </div>
+            <SignaturePad
+              onSave={handleSaveCancellationSignature}
+              isSaving={isSigning}
+            />
           </div>
-          <SignaturePad
-            onSave={handleSaveCancellationSignature}
-            isSaving={isSigning}
-          />
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={showEmergencyClosureDialog} onOpenChange={setShowEmergencyClosureDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogContent className="max-h-[90vh] flex flex-col sm:max-w-md">
+          <AlertDialogHeader className="flex-shrink-0">
             <AlertDialogTitle>Cierre de Emergencia</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="text-sm text-muted-foreground">
-                <span className="block mb-3">Se han detectado las siguientes tareas pendientes:</span>
-                <ul className="list-disc pl-5 space-y-1 text-sm text-amber-800 bg-amber-50 p-3 rounded-md border border-amber-200">
-                  {closureStatus.reasons.length > 0 ? (
-                    closureStatus.reasons.map((reason, i) => <li key={i}>{reason}</li>)
-                  ) : (
-                    <li>No hay tareas pendientes. Puede proceder con el cierre normal.</li>
-                  )}
-                </ul>
-                <span className="block mt-3">¿Aún así desea forzar el cierre del permiso?</span>
-              </div>
+            <AlertDialogDescription>
+              Se han detectado las siguientes tareas pendientes:
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="emergency-closure-obs">Observaciones (Obligatorio)</Label>
-            <Textarea
-              id="emergency-closure-obs"
-              value={emergencyClosureObservation}
-              onChange={(e) => setEmergencyClosureObservation(e.target.value)}
-              placeholder="Explique por qué se está realizando un cierre de emergencia."
-            />
+          <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+            <ul className="list-disc pl-5 space-y-1 text-sm text-amber-800 bg-amber-50 p-3 rounded-md border border-amber-200">
+              {closureStatus.reasons.length > 0 ? (
+                closureStatus.reasons.map((reason, i) => <li key={i}>{reason}</li>)
+              ) : (
+                <li>No hay tareas pendientes. Puede proceder con el cierre normal.</li>
+              )}
+            </ul>
+            <p className="text-sm text-muted-foreground">¿Aún así desea forzar el cierre del permiso?</p>
+            <div className="space-y-2">
+              <Label htmlFor="emergency-closure-obs">Observaciones (Obligatorio)</Label>
+              <Textarea
+                id="emergency-closure-obs"
+                value={emergencyClosureObservation}
+                onChange={(e) => setEmergencyClosureObservation(e.target.value)}
+                placeholder="Explique por qué se está realizando un cierre de emergencia."
+              />
+            </div>
           </div>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-shrink-0 pt-2 border-t">
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               disabled={!emergencyClosureObservation.trim()}

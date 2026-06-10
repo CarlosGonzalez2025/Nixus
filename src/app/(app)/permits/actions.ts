@@ -655,6 +655,18 @@ export async function addSignatureAndNotify(
                 }
             }
 
+            // Validar que el rol en sesión corresponde a quien debe firmar el cierre
+            if (role === 'cierre_responsable') {
+                if (permitBeforeData.createdBy !== user.uid && user.role !== 'admin') {
+                    return { success: false, error: 'Solo el ejecutante del trabajo puede registrar la firma de cierre como Responsable.' };
+                }
+            }
+            if (role === 'cierre_autoridad') {
+                if (user.role !== 'autorizante' && user.role !== 'admin') {
+                    return { success: false, error: 'Solo el Autorizante del Área puede registrar la firma de cierre.' };
+                }
+            }
+
             const closureRole = role === 'cierre_autoridad' ? 'autoridad' : (role === 'cierre_responsable' ? 'responsable' : 'canceladoPor');
             const closurePath = `closure.${closureRole}`;
             

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
-import { Signature, Trash2, Plus, ChevronDown } from 'lucide-react';
+import { Signature, Trash2, Plus, ChevronDown, Info } from 'lucide-react';
 import Image from 'next/image';
 import {
   Table,
@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Collapsible,
   CollapsibleContent,
@@ -332,6 +333,13 @@ export function AnexoConfinadoStep() {
           Complete la información requerida para trabajos en espacios confinados.
         </p>
       </div>
+
+      <Alert className="border-blue-300 bg-blue-50 text-blue-800 max-w-2xl mx-auto py-2">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertDescription className="text-xs">
+          <span className="font-semibold">Firma del Supervisor de Espacios Confinados:</span> Debe registrarlo en el paso <span className="font-semibold">Gestión de Trabajadores</span>, seleccionar el rol <span className="font-semibold">"Supervisor de EC"</span> y capturar su firma de apertura. Sin este requisito el permiso no podrá avanzar a Revisión.
+        </AlertDescription>
+      </Alert>
 
       <SectionWrapper 
         title="Información General del Anexo" 

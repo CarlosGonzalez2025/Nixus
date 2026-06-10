@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-09 (Sesión 5)
+> **Última actualización de este documento:** 2026-06-10 (Sesión 6)
 
 ---
 
@@ -62,6 +62,150 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-10 (Sesión 6) — UX: flujo de firmas de cierre por sesión + mejoras visuales en permisos
+
+#### Feat: validación de sesión en firmas de cierre normal
+
+**Archivos modificados:** `src/app/(app)/permits/actions.ts`, `src/app/(app)/permits/[id]/page.tsx`
+
+El cierre normal de un permiso ahora requiere que cada firma la realice el usuario correcto desde su propia sesión, replicando el comportamiento de las firmas de apertura.
+
+**Flujo resultante:**
+```
+① Ejecutante (creador del permiso) abre el modal de cierre desde su sesión y firma.
+② El sistema envía notificación in-app + correo al Autorizante automáticamente.
+③ El Autorizante entra desde su sesión, abre el permiso y firma el cierre.
+④ Se habilita "Confirmar Cierre del Permiso".
+```
+
+**Cambios en `actions.ts` — validación servidor:**
+```typescript
+// cierre_responsable: solo el creador del permiso
+if (role === 'cierre_responsable') {
+    if (permitBeforeData.createdBy !== user.uid && user.role !== 'admin') {
+        return { success: false, error: 'Solo el ejecutante del trabajo puede registrar la firma de cierre como Responsable.' };
+    }
+}
+// cierre_autoridad: solo el autorizante
+if (role === 'cierre_autoridad') {
+    if (user.role !== 'autorizante' && user.role !== 'admin') {
+        return { success: false, error: 'Solo el Autorizante del Área puede registrar la firma de cierre.' };
+    }
+}
+```
+
+**Cambios en `[id]/page.tsx` — validación cliente:**
+- `openSignatureDialog`: para `cierre_responsable` y `cierre_autoridad` el `signerName` se auto-completa desde `currentUser.displayName` (ya no se pide manualmente).
+- `handleSaveSignature`: separado `needsManualName` (coordinador/supervisor/cancelación) de los roles de cierre normal — para cierre se usa siempre el nombre de sesión.
+- Diálogo de firma: muestra campo "Firmando como" en modo solo lectura para cierres normales; el input manual queda solo para `coordinador_alturas`, `supervisor_confinado` y `cancelacion`.
+- Modal de cierre: botones con tooltips según sesión activa — ejecutante ve habilitado su botón, autorizante ve habilitado el suyo; indicador de flujo en 3 pasos con estados visuales (gris → azul → verde).
+
+**Sin impacto en:** cierre de emergencia, cancelación, firmas de apertura, flujo offline.
+
+---
+
+#### UX: alertas mejoradas en paso Trabajadores para Coordinador de TA y Supervisor de EC
+
+**Archivo modificado:** `src/app/(app)/permits/create/components/WorkersStep.tsx`
+
+Las 4 alertas de advertencia (2 por rol × 2 estados: no registrado / registrado sin firma) ahora explican con precisión qué debe hacer el usuario:
+
+| Estado | Mensaje anterior | Mensaje nuevo |
+|---|---|---|
+| No registrado | "Se requiere registrar y firmar al Coordinador de TA..." | "Agregue al **Coordinador de Trabajos en Alturas** al equipo, seleccione el rol **'Coordinador de TA'** y capture su firma. Sin esta firma no podrá avanzar a Revisión." |
+| Registrado sin firma | "El Coordinador de TA está registrado pero aún no ha firmado." | "El **Coordinador de TA** está registrado pero aún no ha firmado. Edite su registro y capture su firma de apertura para continuar." |
+
+Mismo patrón para el Supervisor de EC. Texto compacto con `text-xs py-2`.
+
+---
+
+#### Feat: bloqueo de navegación al paso Revisión sin firmas de Coordinador/Supervisor
+
+**Archivo modificado:** `src/app/(app)/permits/create/page.tsx`
+
+Se añadieron las validaciones 4 y 5 dentro del bloque `canProceed()` para el paso `'Trabajadores'`:
+
+```typescript
+// Si hay trabajo en alturas, el Coordinador de TA debe estar registrado y firmado
+if (formData.selectedWorkTypes?.alturas) {
+  const hasCoordSigned = otherWorkers.some(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+  if (!hasCoordSigned) → toast destructivo + return false
+}
+// Si hay espacios confinados, el Supervisor de EC debe estar registrado y firmado
+if (formData.selectedWorkTypes?.confinado) {
+  const hasSupervisorSigned = otherWorkers.some(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+  if (!hasSupervisorSigned) → toast destructivo + return false
+}
+```
+
+El usuario no puede avanzar al paso 7 (Revisión) sin cumplir ambos requisitos cuando aplican.
+
+---
+
+#### Feat: alertas informativas en Anexo Altura y Anexo Confinado
+
+**Archivos modificados:** `src/app/(app)/permits/create/components/AnexoAlturaStep.tsx`, `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx`
+
+Se agregó un `Alert` azul informativo debajo del título de cada anexo, con `text-xs` y `py-2`:
+
+- **Anexo Altura:** *"Firma del Coordinador de Alturas: Debe registrarlo en el paso Gestión de Trabajadores, seleccionar el rol 'Coordinador de TA' y capturar su firma de apertura. Sin este requisito el permiso no podrá avanzar a Revisión."*
+- **Anexo Confinado:** mismo patrón para el Supervisor de EC.
+
+`AnexoConfinadoStep.tsx` no tenía `Alert`/`Info` importados — se agregaron.
+
+---
+
+#### UX: modal de cierre con scroll interno y footer fijo
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+Los 3 modales de cierre/cancelación quedaban fuera de pantalla cuando la lista de condiciones pendientes era larga (ej. permisos de varios días con validaciones diarias sin completar).
+
+**Cambios aplicados a los 3 modales:**
+
+| Modal | Cambio |
+|---|---|
+| Cierre normal | `DialogContent`: `max-h-[90vh] flex flex-col`; contenido: `overflow-y-auto flex-1`; header y footer: `flex-shrink-0`; footer con `border-t` |
+| Cierre de emergencia | `AlertDialogContent`: `max-h-[90vh] flex flex-col sm:max-w-md`; lista de razones + textarea dentro de zona scrollable; footer fijo |
+| Cancelar permiso | `DialogContent`: `max-h-[90vh] flex flex-col sm:max-w-md`; campos + `SignaturePad` dentro de zona scrollable |
+
+---
+
+#### UX: valores Si/No/N/A como badges en el detalle del permiso
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx`
+
+En la vista de solo lectura del detalle del permiso, los íconos (✓ verde, ✗ rojo, ○ gris) fueron reemplazados por badges de texto para mayor claridad:
+
+```tsx
+// Antes
+si: <CheckCircle className="h-5 w-5 text-green-500" />
+no: <XCircle className="h-5 w-5 text-red-500" />
+na: <Circle className="h-5 w-5 text-gray-400" />
+
+// Después
+si: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-300">Sí</span>
+no: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-300">No</span>
+na: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-300">N/A</span>
+```
+
+Solo afecta el modo lectura (`iconMap`). El modo edición con RadioGroup no fue modificado.
+
+---
+
+#### Resumen de archivos modificados (Sesión 6)
+
+| Archivo | Cambios |
+|---|---|
+| `src/app/(app)/permits/actions.ts` | Validación de sesión para `cierre_responsable` y `cierre_autoridad` |
+| `src/app/(app)/permits/[id]/page.tsx` | Flujo cierre por sesión; badges Si/No/NA; scroll en 3 modales; indicador de flujo |
+| `src/app/(app)/permits/create/page.tsx` | Bloqueo `canProceed` para Coordinador TA y Supervisor EC |
+| `src/app/(app)/permits/create/components/WorkersStep.tsx` | Alertas más descriptivas con instrucciones de rol |
+| `src/app/(app)/permits/create/components/AnexoAlturaStep.tsx` | Alerta informativa de Coordinador TA |
+| `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx` | Alerta informativa de Supervisor EC + imports |
 
 ---
 
@@ -2321,7 +2465,7 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] Agregar iconos PNG para `AtsStep` y `EppEmergenciasStep` (actualmente sin imagen de cabecera)
 - [ ] Implementar funcionalidad de "Olvidé mi contraseña" (enlace existe en login pero apunta a `#`)
 - [ ] Migrar a Firestore Rules v2 con `request.query.filters` para filtros empresa/planta en el servidor
-- [ ] Validar comportamiento del flujo de cierre normal con firmas reales en dispositivos móviles
+- [x] ~~Validar comportamiento del flujo de cierre normal con firmas reales en dispositivos móviles~~ — Implementado en Sesión 6: el cierre ahora requiere sesión del ejecutante y del autorizante por separado
 - [ ] Documentar el proceso de creación de usuarios en producción (actualmente se hace desde el panel de admin)
 
 ---

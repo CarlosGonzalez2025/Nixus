@@ -819,6 +819,34 @@ function CreatePermitWizard() {
         });
         return false;
       }
+
+      // 4. Coordinador de TA debe estar registrado y firmado si hay trabajo en alturas
+      if (formData.selectedWorkTypes?.alturas) {
+        const hasCoordSigned = otherWorkers.some(w => w.rol === 'Coordinador de TA' && w.firmaApertura);
+        if (!hasCoordSigned) {
+          toast({
+            variant: 'destructive',
+            title: 'Firma del Coordinador de Alturas Requerida',
+            description: 'Este permiso incluye Trabajo en Alturas. Debe registrar al Coordinador de TA en el equipo de trabajo y capturar su firma de apertura antes de continuar.',
+            duration: 8000,
+          });
+          return false;
+        }
+      }
+
+      // 5. Supervisor de EC debe estar registrado y firmado si hay espacios confinados
+      if (formData.selectedWorkTypes?.confinado) {
+        const hasSupervisorSigned = otherWorkers.some(w => w.rol === 'Supervisor de EC' && w.firmaApertura);
+        if (!hasSupervisorSigned) {
+          toast({
+            variant: 'destructive',
+            title: 'Firma del Supervisor de Espacios Confinados Requerida',
+            description: 'Este permiso incluye Espacios Confinados. Debe registrar al Supervisor de EC en el equipo de trabajo y capturar su firma de apertura antes de continuar.',
+            duration: 8000,
+          });
+          return false;
+        }
+      }
     }
 
     return true;

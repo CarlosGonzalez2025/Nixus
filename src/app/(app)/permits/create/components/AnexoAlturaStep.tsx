@@ -397,6 +397,13 @@ export function AnexoAlturaStep() {
           </p>
         </div>
 
+        <Alert className="border-blue-300 bg-blue-50 text-blue-800 max-w-2xl mx-auto py-2">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription className="text-xs">
+            <span className="font-semibold">Firma del Coordinador de Alturas:</span> Debe registrarlo en el paso <span className="font-semibold">Gestión de Trabajadores</span>, seleccionar el rol <span className="font-semibold">"Coordinador de TA"</span> y capturar su firma de apertura. Sin este requisito el permiso no podrá avanzar a Revisión.
+          </AlertDescription>
+        </Alert>
+
         <SectionWrapper title="Información General del Anexo" defaultOpen>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><Label>Emitido por:</Label><Input value={generalInfo.nombreSolicitante || ''} readOnly disabled /></div>

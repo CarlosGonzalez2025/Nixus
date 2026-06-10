@@ -171,37 +171,37 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
           )}
 
           {needsCoordinadorTA && !hasCoordinadorTA && (
-            <Alert className="border-orange-300 bg-orange-50 text-orange-800">
+            <Alert className="border-orange-300 bg-orange-50 text-orange-800 py-2">
               <AlertCircle className="h-4 w-4 text-orange-500" />
-              <AlertDescription>
-                <span className="font-semibold">Trabajo en Alturas:</span> Se requiere registrar y firmar al <span className="font-semibold">Coordinador de TA</span> en esta lista antes de enviar el permiso.
+              <AlertDescription className="text-xs">
+                <span className="font-semibold">Trabajo en Alturas — Acción requerida:</span> Agregue al <span className="font-semibold">Coordinador de Trabajos en Alturas</span> al equipo, seleccione el rol <span className="font-semibold">"Coordinador de TA"</span> y capture su firma de apertura. Sin esta firma no podrá avanzar a Revisión.
               </AlertDescription>
             </Alert>
           )}
 
           {needsCoordinadorTA && hasCoordinadorTA && coordinadorTASinFirma && (
-            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800">
+            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 py-2">
               <AlertCircle className="h-4 w-4 text-yellow-500" />
-              <AlertDescription>
-                <span className="font-semibold">Trabajo en Alturas:</span> El <span className="font-semibold">Coordinador de TA</span> está registrado pero aún no ha firmado.
+              <AlertDescription className="text-xs">
+                <span className="font-semibold">Trabajo en Alturas:</span> El <span className="font-semibold">Coordinador de TA</span> está registrado pero aún no ha firmado. Edite su registro y capture su firma de apertura para continuar.
               </AlertDescription>
             </Alert>
           )}
 
           {needsSupervisorEC && !hasSupervisorEC && (
-            <Alert className="border-orange-300 bg-orange-50 text-orange-800">
+            <Alert className="border-orange-300 bg-orange-50 text-orange-800 py-2">
               <AlertCircle className="h-4 w-4 text-orange-500" />
-              <AlertDescription>
-                <span className="font-semibold">Espacios Confinados:</span> Se requiere registrar y firmar al <span className="font-semibold">Supervisor de EC</span> en esta lista antes de enviar el permiso.
+              <AlertDescription className="text-xs">
+                <span className="font-semibold">Espacios Confinados — Acción requerida:</span> Agregue al <span className="font-semibold">Supervisor de Espacios Confinados</span> al equipo, seleccione el rol <span className="font-semibold">"Supervisor de EC"</span> y capture su firma de apertura. Sin esta firma no podrá avanzar a Revisión.
               </AlertDescription>
             </Alert>
           )}
 
           {needsSupervisorEC && hasSupervisorEC && supervisorECSinFirma && (
-            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800">
+            <Alert className="border-yellow-300 bg-yellow-50 text-yellow-800 py-2">
               <AlertCircle className="h-4 w-4 text-yellow-500" />
-              <AlertDescription>
-                <span className="font-semibold">Espacios Confinados:</span> El <span className="font-semibold">Supervisor de EC</span> está registrado pero aún no ha firmado.
+              <AlertDescription className="text-xs">
+                <span className="font-semibold">Espacios Confinados:</span> El <span className="font-semibold">Supervisor de EC</span> está registrado pero aún no ha firmado. Edite su registro y capture su firma de apertura para continuar.
               </AlertDescription>
             </Alert>
           )}
