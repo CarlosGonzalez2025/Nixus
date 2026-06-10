@@ -159,7 +159,7 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
 
   const iconMap = {
     si: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-300">Sí</span>,
-    no: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-300">No</span>,
+    no: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-300">No</span>,
     na: <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-300">N/A</span>,
   };
 
