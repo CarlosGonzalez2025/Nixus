@@ -4,6 +4,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, parseISO } from 'date-fns';
+import { hazardCategories, eppOptions, justificacionOptions } from '@/app/(app)/permits/create/components/AtsStep';
+import { eppItems, emergenciasItems } from '@/app/(app)/permits/create/components/EppEmergenciasStep';
 
 // ============================================================================
 // 🎨 CONSTANTES Y UTILIDADES
@@ -16,16 +18,18 @@ const PAGE_HEIGHT = 279; // A4 alto en mm
 const MARGIN = 10;
 
 const getStatusSymbol = (value: string | boolean | undefined): string => {
-  if (value === 'si' || value === true) return '✓ SÍ';
-  if (value === 'no' || value === false) return '✗ NO';
+  // NOTA: jsPDF (Helvetica) solo soporta Latin-1; los glifos ✓/✗ se rompen.
+  // Usamos texto plano y delegamos la señal visual al color (getStatusColor).
+  if (value === 'si' || value === true) return 'SI';
+  if (value === 'no' || value === false) return 'NO';
   if (value === 'na') return 'N/A';
   return '—';
 };
 
 const getStatusColor = (value: string | boolean | undefined): number[] => {
   if (value === 'si' || value === true) return [34, 139, 34]; // Verde
-  if (value === 'no' || value === false) return [220, 20, 60]; // Rojo
-  if (value === 'na') return [169, 169, 169]; // Gris
+  if (value === 'no' || value === false) return [120, 120, 120]; // Gris (cliente: NO sin rojo)
+  if (value === 'na') return [120, 120, 120]; // Gris
   return [0, 0, 0];
 };
 
@@ -50,13 +54,23 @@ const selectedMapLabels = (value: unknown): string => {
 const objectStatusRows = (value: unknown): string[][] => {
   if (!value || typeof value !== 'object') return [];
   return Object.entries(value as Record<string, unknown>)
-    .filter(([_, item]) => item !== undefined && item !== null && item !== '')
+    .filter(([key]) => !key.endsWith('_spec') && !key.endsWith('_tipo'))
     .map(([key, item]) => [
       formatKey(key),
-      typeof item === 'boolean' || item === 'si' || item === 'no' || item === 'na'
-        ? getStatusSymbol(item as string | boolean)
-        : String(item),
+      item === undefined || item === null || item === ''
+        ? '—'
+        : typeof item === 'boolean' || item === 'si' || item === 'no' || item === 'na'
+          ? getStatusSymbol(item as string | boolean)
+          : String(item),
     ]);
+};
+
+// Devuelve el color [r,g,b] según el texto de estado plano (SI/NO/N/A); negro para texto libre.
+const colorForStatusText = (text: string): [number, number, number] => {
+  if (text === 'SI') return [34, 139, 34];   // Verde
+  if (text === 'NO') return [120, 120, 120]; // Gris (cliente: NO sin rojo)
+  if (text === 'N/A') return [120, 120, 120]; // Gris
+  return [0, 0, 0];
 };
 
 const renderStatusTable = (
@@ -72,10 +86,15 @@ const renderStatusTable = (
     body: rows,
     theme: 'grid',
     headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 6, cellPadding: 1 },
-    columnStyles: { 0: { cellWidth: 95, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
+    bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+    columnStyles: { 0: { cellWidth: 110 }, 1: { cellWidth: 'auto', halign: 'center', fontStyle: 'bold' } },
     tableWidth: PAGE_WIDTH - 2 * MARGIN,
     margin: { left: MARGIN, right: MARGIN },
+    didParseCell: (data: any) => {
+      if (data.section === 'body' && data.column.index === 1) {
+        data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+      }
+    },
   });
   return (doc as any).lastAutoTable.finalY + 3;
 };
@@ -184,6 +203,17 @@ export const ANEXO_EXCAVACION_CAMPOS = [
   { id: 'materialesAlBorde', label: 'G. MATERIALES A MÍNIMO 1M DEL BORDE?' },
   { id: 'escaleraSobresale', label: 'H. ESCALERAS SOBRESALEN MÍNIMO 1M DEL BORDE?' },
   { id: 'metodoRelleno', label: 'I. MÉTODO DE RELLENO Y CONFORMACIÓN PREVISTO?' },
+];
+
+export const ANEXO_CALIENTE_CAMPOS = [
+  { id: 'distanciaSeguridad', label: 'A. REGLA DE DISTANCIA DE SEGURIDAD DE 11M DE MATERIALES COMBUSTIBLES E INFLAMABLES' },
+  { id: 'medicionAtmosfera', label: 'B. MEDICIÓN DE ATMÓSFERA EXPLOSIVA (USO DE MEDIDOR DE ATMÓSFERAS)' },
+  { id: 'aislarArea', label: 'C. AISLAR EL ÁREA DE TRABAJO POR MEDIO DE BIOMBOS, LONAS, MAMPARAS' },
+  { id: 'taparAberturas', label: 'D. TAPAR TODA ABERTURA EXISTENTE A FIN DE IMPEDIR DISPERSIÓN DE CHISPAS' },
+  { id: 'extintores', label: 'E. EXTINTORES PORTÁTILES EN EL ÁREA DE TRABAJO' },
+  { id: 'vigiaFuego', label: 'F. VIGÍA O SUPERVISOR DE FUEGO DE INCENDIO' },
+  { id: 'personalCapacitado', label: 'G. PERSONAL CAPACITADO, COMPETENTE Y ENTRENADO' },
+  { id: 'listasChequeo', label: 'H. LISTAS DE CHEQUEO PRE-OPERACIONAL DE EQUIPOS' },
 ];
 
 // ============================================================================
@@ -432,6 +462,7 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
     if (permit.trabajoAlturas || permit.selectedWorkTypes?.alturas) types.push('Alturas');
     if (permit.espaciosConfinados || permit.selectedWorkTypes?.confinado) types.push('Confinados');
     if (permit.controlEnergia || permit.selectedWorkTypes?.energia) types.push('Energías');
+    if (permit.selectedWorkTypes?.caliente) types.push('Trabajos en Caliente');
     if (permit.izajeCargas || permit.selectedWorkTypes?.izaje) types.push('Izaje');
     if (permit.excavaciones || permit.selectedWorkTypes?.excavacion) types.push('Excavación');
     if (permit.trabajoGeneral || permit.selectedWorkTypes?.general) types.push('General');
@@ -448,11 +479,12 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
     startY: yPos,
     body: [
       ['Número Permiso:', String(permit.number || permit.id?.substring(0, 8) || 'S/N'), 'Planta:', String(permit.generalInfo?.planta || 'N/A')],
-      ['Empresa:', String(permit.generalInfo?.empresa || 'N/A'), 'Área/Ubicación:', String(permit.generalInfo?.areaEspecifica || 'N/A')],
-      ['Contrato:', String(permit.generalInfo?.contrato || 'N/A'), 'Proceso:', String(permit.generalInfo?.proceso || 'N/A')],
+      ['Empresa:', String(permit.generalInfo?.empresa || 'N/A'), 'Ciudad:', String(permit.generalInfo?.ciudad || 'N/A')],
+      ['Área/Ubicación:', String(permit.generalInfo?.areaEspecifica || 'N/A'), 'Proceso:', String(permit.generalInfo?.proceso || 'N/A')],
+      ['Contrato:', String(permit.generalInfo?.contrato || 'N/A'), 'No. Trabajadores:', String(permit.generalInfo?.numTrabajadores || 'N/A')],
       ['Válido Desde:', safeFormat(permit.generalInfo?.validFrom) || 'N/A', 'Válido Hasta:', safeFormat(permit.generalInfo?.validUntil) || 'N/A'],
-      ['Solicitante:', String(permit.user?.displayName || 'N/A'), 'No. Trabajadores:', String(permit.generalInfo?.numTrabajadores || 'N/A')],
-      ['Tipos de Trabajo:', getWorkTypesString(), '', ''],
+      ['Solicitante:', String(permit.user?.displayName || permit.generalInfo?.nombreSolicitante || 'N/A'), 'Reunión de Inicio:', getStatusSymbol(permit.generalInfo?.reunionInicio)],
+      ['ATS Verificado:', getStatusSymbol(permit.generalInfo?.atsVerificado), 'Tipos de Trabajo:', getWorkTypesString()],
     ],
     theme: 'grid',
     styles: { fontSize: 7, cellPadding: 1.5 },
@@ -513,7 +545,7 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
     const toolRows = permit.generalInfo.tools.map((tool: any, idx: number) => [
       String(idx + 1),
       String(tool.name || 'N/A'),
-      tool.status === 'B' ? '✓' : (tool.status === 'M' ? '✗' : '—')
+      tool.status === 'B' ? 'BUENO' : (tool.status === 'M' ? 'MALO' : '—')
     ]);
     autoTable(doc, {
       startY: yPos,
@@ -522,7 +554,7 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
       theme: 'grid',
       headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
       bodyStyles: { fontSize: 7, cellPadding: 1 },
-      columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 20, halign: 'center' } },
+      columnStyles: { 0: { cellWidth: 15, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 25, halign: 'center' } },
       tableWidth: PAGE_WIDTH - 2 * MARGIN,
       margin: { left: MARGIN, right: MARGIN }
     });
@@ -546,64 +578,81 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
       theme: 'grid',
       headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
       bodyStyles: { fontSize: 6, cellPadding: 1 },
-      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 25, halign: 'center' } },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 25, halign: 'center', fontStyle: 'bold' } },
       tableWidth: PAGE_WIDTH - 2 * MARGIN,
-      margin: { left: MARGIN, right: MARGIN }
+      margin: { left: MARGIN, right: MARGIN },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+        }
+      }
     });
     yPos = (doc as any).lastAutoTable.finalY + 3;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SECCIÓN 4: EQUIPOS DE PROTECCIÓN PERSONAL REQUERIDOS
+  // SECCIÓN 4: EQUIPOS DE PROTECCIÓN PERSONAL REQUERIDOS — TODOS los ítems
   // ═══════════════════════════════════════════════════════════════════════════
-  if (permit.eppEmergencias?.epp) {
-    const eppRows = Object.entries(permit.eppEmergencias.epp)
-      .filter(([_, value]) => value === true || value === 'si')
-      .map(([key, value]) => [
-        key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
-        getStatusSymbol(value as string | boolean)
-      ]);
-    if (eppRows.length > 0) {
-      yPos = drawSectionHeader(doc, 'EQUIPOS DE PROTECCIÓN PERSONAL REQUERIDOS', yPos);
-      autoTable(doc, {
-        startY: yPos,
-        head: [['EPP', '✓']],
-        body: eppRows,
-        theme: 'grid',
-        headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 3;
-    }
+  {
+    const eppData = permit.eppEmergencias?.epp ?? {};
+    const allEppRows = eppItems.map(item => {
+      const value = (eppData as Record<string, unknown>)[item.id];
+      let display = getStatusSymbol(value as string | boolean);
+      // Para ítems manuales, mostrar el texto escrito si existe
+      if (item.manual && typeof value === 'string' && value.length > 0 && value !== 'si' && value !== 'no' && value !== 'na') {
+        display = value;
+      }
+      return [item.label, display];
+    });
+    yPos = drawSectionHeader(doc, 'ELEMENTOS DE PROTECCIÓN PERSONAL (EPP)', yPos);
+    autoTable(doc, {
+      startY: yPos,
+      head: [['EPP REQUERIDO', 'ESTADO']],
+      body: allEppRows,
+      theme: 'grid',
+      headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
+      bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 25, halign: 'center', fontStyle: 'bold' } },
+      tableWidth: PAGE_WIDTH - 2 * MARGIN,
+      margin: { left: MARGIN, right: MARGIN },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+        }
+      },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 3;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SECCIÓN 5: NOTIFICACIONES Y MANEJO DE EMERGENCIAS
+  // SECCIÓN 5: NOTIFICACIONES Y MANEJO DE EMERGENCIAS — TODOS los ítems
   // ═══════════════════════════════════════════════════════════════════════════
-  if (permit.eppEmergencias?.emergencias) {
-    const emergRows = Object.entries(permit.eppEmergencias.emergencias)
-      .map(([key, value]) => [
-        key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(),
-        getStatusSymbol(value as string | boolean)
+  {
+    const emergData = permit.eppEmergencias?.emergencias ?? {};
+    const allEmergRows = emergenciasItems
+      .filter((item: any) => !item.isHeader)
+      .map((item: any) => [
+        item.label,
+        getStatusSymbol((emergData as Record<string, string | boolean>)[item.id]),
       ]);
-    if (emergRows.length > 0) {
-      yPos = drawSectionHeader(doc, 'NOTIFICACIONES Y MANEJO DE EMERGENCIAS', yPos);
-      autoTable(doc, {
-        startY: yPos,
-        head: [['EMERGENCIA / NOTIFICACIÓN', '✓']],
-        body: emergRows,
-        theme: 'grid',
-        headStyles: { fillColor: [220, 53, 69] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 3;
-    }
+    yPos = drawSectionHeader(doc, 'NOTIFICACIONES Y MANEJO DE EMERGENCIAS', yPos);
+    autoTable(doc, {
+      startY: yPos,
+      head: [['VERIFICACIÓN', 'ESTADO']],
+      body: allEmergRows,
+      theme: 'grid',
+      headStyles: { fillColor: [220, 53, 69] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
+      bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 25, halign: 'center', fontStyle: 'bold' } },
+      tableWidth: PAGE_WIDTH - 2 * MARGIN,
+      margin: { left: MARGIN, right: MARGIN },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+        }
+      },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 3;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -678,7 +727,7 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
       ['Autoridad Cierre:', String(permit.closure.autoridad?.nombre || 'N/A')],
     ];
     if (permit.closure.cancelado === 'si') {
-      closureRows.push(['PERMISO CANCELADO:', '✗ SÍ']);
+      closureRows.push(['PERMISO CANCELADO:', 'SI']);
       closureRows.push(['Razón Cancelación:', String(permit.closure.razonCancelacion || 'N/A')]);
       closureRows.push(['Cancelado Por:', String(permit.closure.canceladoPor?.nombre || 'N/A')]);
     }
@@ -725,124 +774,112 @@ const renderATSContent = (doc: jsPDF, permit: any) => {
   });
   yPos = (doc as any).lastAutoTable.finalY + 5;
 
-  // 2. PELIGROS IDENTIFICADOS (desde anexoATS.peligros)
-  if (permit.anexoATS?.peligros && typeof permit.anexoATS.peligros === 'object') {
-    const peligrosRows = Object.entries(permit.anexoATS.peligros).map(([key, value]) => [
-      key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim().toUpperCase(),
-      getStatusSymbol(value as string | boolean)
-    ]);
+  const epp = permit.anexoATS?.epp ?? {};
+  const peligros = permit.anexoATS?.peligros ?? {};
 
-    if (peligrosRows.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['PELIGRO IDENTIFICADO', '¿PRESENTE?']],
-        body: peligrosRows,
-        theme: 'grid',
-        headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 8 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-  }
-
-  // 3. EPP REQUERIDOS DEL ATS (desde anexoATS.epp)
-  if (permit.anexoATS?.epp && typeof permit.anexoATS.epp === 'object') {
-    const eppRows = Object.entries(permit.anexoATS.epp)
-      .filter(([key, value]) => value === true || value === 'si' || (typeof value === 'string' && value.length > 0 && !key.endsWith('_spec') && !key.endsWith('_tipo')))
-      .map(([key, value]) => {
-        let displayValue = getStatusSymbol(value as string | boolean);
-        // Check for spec or tipo fields
-        const specKey = `${key}_spec`;
-        const tipoKey = `${key}_tipo`;
-        const spec = (permit.anexoATS.epp as any)[specKey] || (permit.anexoATS.epp as any)[tipoKey];
-        if (spec) displayValue = `✓ (${spec})`;
-        return [key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim(), displayValue];
-      });
-
-    if (eppRows.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['EPP REQUERIDO', '¿APLICA?']],
-        body: eppRows,
-        theme: 'grid',
-        headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 8 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 60, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-  }
-
-  // 4. JUSTIFICACIÓN DE USO DEL PERMISO (desde anexoATS.justificacion)
-  if (permit.anexoATS?.justificacion && typeof permit.anexoATS.justificacion === 'object') {
-    const justRows = Object.entries(permit.anexoATS.justificacion)
-      .filter(([_, value]) => value === true)
-      .map(([key]) => [key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim().toUpperCase(), '✓']);
-
-    if (justRows.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['JUSTIFICACIÓN DE USO', 'APLICA']],
-        body: justRows,
-        theme: 'grid',
-        headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 8 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-  }
-
-  // 5. PELIGROS ADICIONALES (si existen)
-  if (permit.anexoATS?.peligrosAdicionales && Array.isArray(permit.anexoATS.peligrosAdicionales) && permit.anexoATS.peligrosAdicionales.length > 0) {
-    const addRows = permit.anexoATS.peligrosAdicionales.map((p: any) => [
-      String(p.peligro || 'N/A'),
-      String(p.descripcion || 'N/A')
+  // 2. PELIGROS IDENTIFICADOS — todos los ítems con labels correctos, agrupados por categoría
+  yPos = drawSectionHeader(doc, 'IDENTIFICACIÓN DE PELIGROS, RIESGOS Y CONTROLES', yPos);
+  Object.entries(hazardCategories).forEach(([category, items]) => {
+    const categoryRows = items.map(item => [
+      item.label,
+      getStatusSymbol((peligros as Record<string, string | boolean>)[item.id]),
     ]);
     autoTable(doc, {
       startY: yPos,
-      head: [['PELIGRO ADICIONAL', 'DESCRIPCIÓN']],
-      body: addRows,
+      head: [[{ content: category.toUpperCase(), colSpan: 2, styles: { fillColor: [60, 80, 110] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7, fontStyle: 'bold' } }]],
+      body: categoryRows,
       theme: 'grid',
-      headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 8 },
+      headStyles: { fontSize: 7 },
+      bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 22, halign: 'center', fontStyle: 'bold' } },
+      tableWidth: PAGE_WIDTH - 2 * MARGIN,
+      margin: { left: MARGIN, right: MARGIN },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+        }
+      },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 2;
+  });
+
+  // Peligros adicionales
+  if (permit.anexoATS?.peligrosAdicionales && Array.isArray(permit.anexoATS.peligrosAdicionales) && permit.anexoATS.peligrosAdicionales.length > 0) {
+    autoTable(doc, {
+      startY: yPos,
+      head: [['PELIGRO ADICIONAL', 'DESCRIPCIÓN']],
+      body: permit.anexoATS.peligrosAdicionales.map((p: any) => [String(p.peligro || '—'), String(p.descripcion || '—')]),
+      theme: 'grid',
+      headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
       bodyStyles: { fontSize: 6, cellPadding: 1 },
       columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 'auto' } },
       tableWidth: PAGE_WIDTH - 2 * MARGIN,
-      margin: { left: MARGIN, right: MARGIN }
+      margin: { left: MARGIN, right: MARGIN },
     });
-    yPos = (doc as any).lastAutoTable.finalY + 5;
+    yPos = (doc as any).lastAutoTable.finalY + 3;
   }
+  yPos += 3;
 
-  // 6. CONTROLES (si existen)
-  if (permit.anexoATS?.controles && typeof permit.anexoATS.controles === 'object') {
-    const controlRows = Object.entries(permit.anexoATS.controles).map(([key, value]) => [
-      key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim().toUpperCase(),
-      getStatusSymbol(value as string | boolean)
-    ]);
-    if (controlRows.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['CONTROL', 'ESTADO']],
-        body: controlRows,
-        theme: 'grid',
-        headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 8 },
-        bodyStyles: { fontSize: 6, cellPadding: 1 },
-        columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center' } },
-        tableWidth: PAGE_WIDTH - 2 * MARGIN,
-        margin: { left: MARGIN, right: MARGIN }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-    }
-  }
+  // 3. EPP REQUERIDOS DEL ATS — todos los ítems con labels correctos, agrupados por categoría
+  yPos = drawSectionHeader(doc, 'ELEMENTOS DE PROTECCIÓN PERSONAL (EPP) REQUERIDOS', yPos);
+  Object.entries(eppOptions).forEach(([category, items]) => {
+    const eppRows = items.map(item => {
+      const value = (epp as Record<string, unknown>)[item.id];
+      const specKey = `${item.id}_spec`;
+      const tipoKey = `${item.id}_tipo`;
+      const spec = (epp as Record<string, unknown>)[specKey] || (epp as Record<string, unknown>)[tipoKey];
+      let display = getStatusSymbol(value as string | boolean);
+      // Valor de texto libre (select/custom) que no es si/no/na
+      if (typeof value === 'string' && value && !['si', 'no', 'na'].includes(value)) {
+        display = `SI (${String(value).replace(/_/g, ' ')})`;
+      } else if ((value === true || value === 'si') && spec) {
+        display = `SI (${String(spec).replace(/_/g, ' ')})`;
+      }
+      return [item.label, display];
+    });
+    autoTable(doc, {
+      startY: yPos,
+      head: [[{ content: category.toUpperCase(), colSpan: 2, styles: { fillColor: [60, 80, 110] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7, fontStyle: 'bold' } }]],
+      body: eppRows,
+      theme: 'grid',
+      headStyles: { fontSize: 7 },
+      bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 40, halign: 'center', fontStyle: 'bold' } },
+      tableWidth: PAGE_WIDTH - 2 * MARGIN,
+      margin: { left: MARGIN, right: MARGIN },
+      didParseCell: (data: any) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          const raw = String(data.cell.raw ?? '').trim();
+          if (raw.startsWith('SI')) data.cell.styles.textColor = [34, 139, 34];
+          else if (raw === 'NO') data.cell.styles.textColor = [120, 120, 120];
+          else if (raw === 'N/A') data.cell.styles.textColor = [120, 120, 120];
+        }
+      },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 2;
+  });
+  yPos += 3;
 
-  // 7. FIRMAS
+  // 4. JUSTIFICACIÓN DE USO — todos los ítems con labels correctos
+  yPos = drawSectionHeader(doc, 'JUSTIFICACIÓN DE USO DEL PERMISO', yPos);
+  const justRows = justificacionOptions.map(item => [
+    item.label,
+    (permit.anexoATS?.justificacion as Record<string, boolean> | undefined)?.[item.id] === true ? 'SI' : '—',
+  ]);
+  autoTable(doc, {
+    startY: yPos,
+    head: [['JUSTIFICACIÓN', 'APLICA']],
+    body: justRows,
+    theme: 'grid',
+    headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7 },
+    bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, halign: 'center', fontStyle: 'bold' } },
+    tableWidth: PAGE_WIDTH - 2 * MARGIN,
+    margin: { left: MARGIN, right: MARGIN },
+  });
+  yPos = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. FIRMAS
   drawSignatures(doc, permit, yPos);
 };
 
@@ -1034,15 +1071,17 @@ const renderAnexoConfinadoContent = (doc: jsPDF, permit: any) => {
   // Información General
   autoTable(doc, {
     startY: yPos,
-    head: [['INFORMACIÓN GENERAL']],
+    head: [[{ content: 'INFORMACIÓN GENERAL', colSpan: 2 }]],
     body: [
-      ['Área de Trabajo:', permit.generalInfo?.areaEspecifica || ''],
-      ['Equipo/Área Específica:', permit.anexoConfinado?.equipoEspecifico || ''],
+      ['Área de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
+      ['Equipo/Área Específica:', permit.anexoConfinado?.equipoEspecifico || permit.generalInfo?.proceso || 'N/A'],
+      ['Contacto Emergencia:', permit.anexoConfinado?.emergencia?.contacto || 'N/A'],
+      ['Teléfono Emergencia:', permit.anexoConfinado?.emergencia?.telefono || 'N/A'],
     ],
     theme: 'grid',
-    headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255], fontSize: 8 },
+    headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
-    columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 'auto' } },
+    columnStyles: { 0: { cellWidth: 55, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
     tableWidth: PAGE_WIDTH - 2 * MARGIN,
     margin: { left: MARGIN, right: MARGIN }
   });
@@ -1051,10 +1090,10 @@ const renderAnexoConfinadoContent = (doc: jsPDF, permit: any) => {
   // Pruebas de Gases
   if (permit.anexoConfinado?.resultadosPruebasGases) {
     const gasesRows = [
-      ['LEL (%)', permit.anexoConfinado.resultadosPruebasGases.lel || '—', '0%', permit.anexoConfinado.resultadosPruebasGases.lel === '0%' ? '✓' : ''],
-      ['O2 (%)', permit.anexoConfinado.resultadosPruebasGases.o2 || '—', '19.5-22%', ''],
-      ['H2S (PPM)', permit.anexoConfinado.resultadosPruebasGases.h2s || '—', '0-10', ''],
-      ['CO (PPM)', permit.anexoConfinado.resultadosPruebasGases.co || '—', '0-25', ''],
+      ['LEL (%)', permit.anexoConfinado.resultadosPruebasGases.lel || '—', '0%', permit.anexoConfinado.resultadosPruebasGases.lel === '0%' ? 'OK' : '—'],
+      ['O2 (%)', permit.anexoConfinado.resultadosPruebasGases.o2 || '—', '19.5-22%', '—'],
+      ['H2S (PPM)', permit.anexoConfinado.resultadosPruebasGases.h2s || '—', '0-10', '—'],
+      ['CO (PPM)', permit.anexoConfinado.resultadosPruebasGases.co || '—', '0-25', '—'],
     ];
 
     autoTable(doc, {
@@ -1123,23 +1162,27 @@ const renderAnexoEnergiaContent = (doc: jsPDF, permit: any) => {
 
   autoTable(doc, {
     startY: yPos,
-    head: [['INFORMACION GENERAL']],
+    head: [[{ content: 'INFORMACIÓN GENERAL', colSpan: 4 }]],
     body: [
-      ['Area de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A', 'Contacto emergencia:', permit.anexoEnergias?.emergencia?.contacto || 'N/A'],
-      ['Telefono emergencia:', permit.anexoEnergias?.emergencia?.telefono || 'N/A', 'Tipos de energia:', selectedMapLabels(permit.anexoEnergias?.energiasPeligrosas)],
-      ['Metodo de trabajo:', selectedMapLabels(permit.anexoEnergias?.metodoTrabajo), 'Observaciones:', permit.anexoEnergias?.observaciones || 'N/A'],
+      ['Área de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A', 'Equipo/Área:', permit.generalInfo?.proceso || 'N/A'],
+      ['Contacto Emergencia:', permit.anexoEnergias?.emergencia?.contacto || 'N/A', 'Teléfono Emergencia:', permit.anexoEnergias?.emergencia?.telefono || 'N/A'],
+      ['Tipos de Energía:', selectedMapLabels(permit.anexoEnergias?.energiasPeligrosas), 'Método de Trabajo:', selectedMapLabels(permit.anexoEnergias?.metodoTrabajo)],
+      [{ content: 'Observaciones:', styles: { fontStyle: 'bold' } }, { content: permit.anexoEnergias?.observaciones || 'N/A', colSpan: 3 }],
     ],
     theme: 'grid',
-    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8 },
+    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
-    columnStyles: { 0: { cellWidth: 35, fontStyle: 'bold' }, 1: { cellWidth: 55 }, 2: { cellWidth: 35, fontStyle: 'bold' }, 3: { cellWidth: 55 } },
+    columnStyles: { 0: { cellWidth: 38, fontStyle: 'bold' }, 1: { cellWidth: 52 }, 2: { cellWidth: 38, fontStyle: 'bold' }, 3: { cellWidth: 'auto' } },
     tableWidth: PAGE_WIDTH - 2 * MARGIN,
     margin: { left: MARGIN, right: MARGIN }
   });
   yPos = (doc as any).lastAutoTable.finalY + 4;
 
-  yPos = drawSectionHeader(doc, 'TRABAJOS EN CALIENTE', yPos);
-  yPos = renderStatusTable(doc, yPos, objectStatusRows(permit.anexoEnergias?.trabajosEnCaliente), 'CONTROL');
+  // Solo se muestra en permisos anteriores donde caliente era parte de Energías
+  if (!permit.selectedWorkTypes?.caliente && permit.anexoEnergias?.trabajosEnCaliente && Object.keys(permit.anexoEnergias.trabajosEnCaliente).length > 0) {
+    yPos = drawSectionHeader(doc, 'TRABAJOS EN CALIENTE', yPos);
+    yPos = renderStatusTable(doc, yPos, objectStatusRows(permit.anexoEnergias.trabajosEnCaliente), 'CONTROL');
+  }
   yPos = drawSectionHeader(doc, 'PROCEDIMIENTO LO/TO', yPos);
   yPos = renderStatusTable(doc, yPos, objectStatusRows(permit.anexoEnergias?.procedimientoLOTO), 'REQUISITO');
   yPos = drawSectionHeader(doc, 'TENSION EXPUESTA', yPos);
@@ -1162,18 +1205,18 @@ const renderAnexoIzajeContent = (doc: jsPDF, permit: any) => {
   const info = permit.anexoIzaje?.informacionGeneral || {};
   autoTable(doc, {
     startY: yPos,
-    head: [['DETALLES DE IZAJE']],
+    head: [[{ content: 'DETALLES DE IZAJE', colSpan: 2 }]],
     body: [
-      ['Area de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
+      ['Área de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
       ['Acciones:', selectedMapLabels(info.accion)],
       ['Peso de Carga:', selectedMapLabels(info.pesoCarga)],
       ['Equipos a Utilizar:', selectedMapLabels(info.equipoUtilizar)],
       ['Capacidad del Equipo:', info.capacidadEquipo || 'N/A'],
       ['Contacto Emergencia:', permit.anexoIzaje?.emergencia?.contacto || 'N/A'],
-      ['Telefono Emergencia:', permit.anexoIzaje?.emergencia?.telefono || 'N/A'],
+      ['Teléfono Emergencia:', permit.anexoIzaje?.emergencia?.telefono || 'N/A'],
     ],
     theme: 'grid',
-    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8 },
+    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
     columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
     tableWidth: PAGE_WIDTH - 2 * MARGIN,
@@ -1197,18 +1240,18 @@ const renderAnexoExcavacionesContent = (doc: jsPDF, permit: any) => {
   const info = permit.anexoExcavaciones?.informacionGeneral || {};
   autoTable(doc, {
     startY: yPos,
-    head: [['DIMENSIONES DE EXCAVACION']],
+    head: [[{ content: 'DIMENSIONES DE EXCAVACIÓN', colSpan: 2 }]],
     body: [
-      ['Area de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
+      ['Área de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
       ['Dimensiones:', info.dimensiones || 'N/A'],
       ['Profundidad:', info.profundidad || 'N/A'],
       ['Ancho:', info.ancho || 'N/A'],
       ['Largo:', info.largo || 'N/A'],
       ['Contacto Emergencia:', permit.anexoExcavaciones?.emergencia?.contacto || 'N/A'],
-      ['Telefono Emergencia:', permit.anexoExcavaciones?.emergencia?.telefono || 'N/A'],
+      ['Teléfono Emergencia:', permit.anexoExcavaciones?.emergencia?.telefono || 'N/A'],
     ],
     theme: 'grid',
-    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8 },
+    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
     bodyStyles: { fontSize: 7, cellPadding: 1.5 },
     columnStyles: { 0: { cellWidth: 50, fontStyle: 'bold' }, 1: { cellWidth: 'auto' } },
     tableWidth: PAGE_WIDTH - 2 * MARGIN,
@@ -1220,6 +1263,72 @@ const renderAnexoExcavacionesContent = (doc: jsPDF, permit: any) => {
   yPos = renderStatusTable(doc, yPos, objectStatusRows(permit.anexoExcavaciones?.aspectosRequeridos), 'ASPECTO');
   yPos = drawSectionHeader(doc, 'PRECAUCIONES Y CONTROLES', yPos);
   yPos = renderStatusTable(doc, yPos, objectStatusRows(permit.anexoExcavaciones?.precauciones), 'CONTROL');
+
+  drawSignatures(doc, permit, yPos);
+};
+
+const renderAnexoCalienteContent = (doc: jsPDF, permit: any) => {
+  let yPos = MARGIN;
+  yPos = drawPageHeader(doc, 'ANEXO - TRABAJOS EN CALIENTE', '', '', yPos);
+  yPos += 3;
+
+  // Información General
+  autoTable(doc, {
+    startY: yPos,
+    head: [[{ content: 'INFORMACIÓN GENERAL', colSpan: 4 }]],
+    body: [
+      ['Emitido por:', permit.generalInfo?.nombreSolicitante || permit.user?.displayName || 'N/A', 'Área de Trabajo:', permit.generalInfo?.areaEspecifica || 'N/A'],
+      ['Equipo / Área:', permit.generalInfo?.proceso || 'N/A', 'Empresa:', permit.generalInfo?.empresa || 'N/A'],
+      ['Responsable:', permit.generalInfo?.responsable?.nombre || 'N/A', 'Cargo:', permit.generalInfo?.responsable?.cargo || 'N/A'],
+      ['Compañía:', permit.generalInfo?.responsable?.compania || 'N/A', 'Contacto Emergencia:', permit.anexoCaliente?.emergencia?.contacto || 'N/A'],
+      [{ content: 'Teléfono Emergencia:', styles: { fontStyle: 'bold' } }, { content: permit.anexoCaliente?.emergencia?.telefono || 'N/A', colSpan: 3 }],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: ITALCOL_ORANGE, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+    columnStyles: {
+      0: { cellWidth: 40, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 40, fontStyle: 'bold' },
+      3: { cellWidth: 'auto' },
+    },
+    tableWidth: PAGE_WIDTH - 2 * MARGIN,
+    margin: { left: MARGIN, right: MARGIN },
+  });
+  yPos = (doc as any).lastAutoTable.finalY + 4;
+
+  // Lista de verificación con labels correctos — siempre muestra todos los ítems
+  yPos = drawSectionHeader(doc, 'LISTA DE VERIFICACIÓN — TRABAJOS EN CALIENTE', yPos);
+
+  const items = permit.anexoCaliente?.items ?? {};
+  const calienteRows = ANEXO_CALIENTE_CAMPOS.map(campo => [
+    campo.label,
+    getStatusSymbol((items as Record<string, string>)[campo.id]),
+  ]);
+
+  // Campo "Otro"
+  const otroValor = (items as Record<string, string>).otro;
+  if (otroValor) {
+    calienteRows.push(['OTRO (CUAL): ' + otroValor, '—']);
+  }
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['CONTROL / MEDIDA', 'ESTADO']],
+    body: calienteRows,
+    theme: 'grid',
+    headStyles: { fillColor: ITALCOL_ORANGE as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 7, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 6.5, cellPadding: 2 },
+    columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 25, halign: 'center', fontStyle: 'bold' } },
+    tableWidth: PAGE_WIDTH - 2 * MARGIN,
+    margin: { left: MARGIN, right: MARGIN },
+    didParseCell: (data: any) => {
+      if (data.section === 'body' && data.column.index === 1) {
+        data.cell.styles.textColor = colorForStatusText(String(data.cell.raw ?? '').trim());
+      }
+    },
+  });
+  yPos = (doc as any).lastAutoTable.finalY + 3;
 
   drawSignatures(doc, permit, yPos);
 };
@@ -1278,6 +1387,13 @@ export const generateAnexoExcavacionesPDF = (permit: any): Blob => {
   return doc.output('blob');
 };
 
+export const generateAnexoCalientePDF = (permit: any): Blob => {
+  const doc = createNewPDF();
+  renderAnexoCalienteContent(doc, permit);
+  drawFooter(doc);
+  return doc.output('blob');
+};
+
 // ============================================================================
 // 🚀 GENERADOR UNIFICADO (TODO EN UNO)
 // ============================================================================
@@ -1313,6 +1429,12 @@ export const generateUnifiedPDF = (permit: any): Blob => {
   if (isWorkTypeSelected(permit, 'controlEnergia', 'energia') && permit.anexoEnergias) {
     doc.addPage();
     renderAnexoEnergiaContent(doc, permit);
+  }
+
+  // Anexo Caliente (nuevo anexo independiente)
+  if (permit.selectedWorkTypes?.caliente && permit.anexoCaliente) {
+    doc.addPage();
+    renderAnexoCalienteContent(doc, permit);
   }
 
   // Anexo 4: Izaje
@@ -1381,7 +1503,7 @@ export const downloadFile = (blob: Blob, filename: string) => {
 
 export const handleExportPDF = async (
   permit: any,
-  docType: 'permiso' | 'ats' | 'altura' | 'confinado' | 'energia' | 'izaje' | 'excavacion' | 'all'
+  docType: 'permiso' | 'ats' | 'altura' | 'confinado' | 'energia' | 'caliente' | 'izaje' | 'excavacion' | 'all'
 ) => {
   try {
     const rawNum = permit.number || permit.id?.substring(0, 6) || 'SIN_NUM';
@@ -1418,6 +1540,10 @@ export const handleExportPDF = async (
         case 'energia':
           blob = generateAnexoEnergiaPDF(permit);
           filename = `Anexo-03-Energias-${permisoNum}-${dateStr}.pdf`;
+          break;
+        case 'caliente':
+          blob = generateAnexoCalientePDF(permit);
+          filename = `Anexo-Caliente-${permisoNum}-${dateStr}.pdf`;
           break;
         case 'izaje':
           blob = generateAnexoIzajePDF(permit);

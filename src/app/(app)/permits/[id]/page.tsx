@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, use } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones, ValidacionDiaria, AutorizacionPersona, User } from '@/types';
+import type { Permit, Tool, Approval, ExternalWorker, AnexoAltura, AnexoConfinado, AnexoIzaje, MedicionAtmosferica, AnexoEnergias, AnexoCaliente, PermitStatus, UserRole, AnexoATS, PruebaGasesPeriodica, AnexoExcavaciones, ValidacionDiaria, AutorizacionPersona, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/lib/errors';
@@ -348,7 +348,7 @@ export default function PermitDetailPage() {
     };
   }, [permitId]);
 
-  const handlePDFExport = async (docType: 'permiso' | 'ats' | 'altura' | 'confinado' | 'energia' | 'izaje' | 'excavacion' | 'all') => {
+  const handlePDFExport = async (docType: 'permiso' | 'ats' | 'altura' | 'confinado' | 'energia' | 'caliente' | 'izaje' | 'excavacion' | 'all') => {
     if (!permit) {
       toast({ variant: 'destructive', title: 'Error', description: 'Datos del permiso no disponibles.' });
       return;
@@ -1805,6 +1805,36 @@ export default function PermitDetailPage() {
               </CollapsibleContent>
             </Collapsible>
           )}
+          {/* ANEXO CALIENTE */}
+          {permit.selectedWorkTypes?.caliente && permit.anexoCaliente && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border bg-orange-50 px-4 py-3 text-left text-sm font-semibold">
+                <span className="flex items-center gap-2 text-orange-800"><AlertTriangle size={16} /> Anexo: Trabajos en Caliente</span>
+                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg border-orange-100 space-y-6">
+                {permit.anexoCaliente.emergencia && (
+                  <Section title="Contacto de Emergencia">
+                    <Field label="Contactar a" value={permit.anexoCaliente.emergencia.contacto} />
+                    <Field label="Teléfono" value={permit.anexoCaliente.emergencia.telefono} />
+                  </Section>
+                )}
+                <Section title="Lista de Verificación">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                    {Object.entries(permit.anexoCaliente.items || {}).map(([key, value]) => (
+                      <RadioCheck
+                        key={key}
+                        label={key.replace(/([A-Z])/g, ' $1').toUpperCase()}
+                        value={value as string}
+                        spec={key === 'otro' ? (permit.anexoCaliente as AnexoCaliente).items?.otro as string : undefined}
+                      />
+                    ))}
+                  </div>
+                </Section>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
           {/* ANEXO ENERGIAS */}
           {permit.selectedWorkTypes?.energia && permit.anexoEnergias && (
             <Collapsible defaultOpen>
@@ -1818,13 +1848,16 @@ export default function PermitDetailPage() {
                     {Object.entries(permit.anexoEnergias.energiasPeligrosas || {}).map(([key, value]) => value && <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} />)}
                   </div>
                 </Section>
-                <Section title="Trabajos en Caliente">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    {Object.entries(permit.anexoEnergias.trabajosEnCaliente || {}).map(([key, value]) => (
-                      <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'otro' ? permit.anexoEnergias?.trabajosEnCaliente?.otro as string : undefined} />
-                    ))}
-                  </div>
-                </Section>
+                {/* Solo se muestra en permisos anteriores donde caliente era parte de Energías */}
+                {!permit.selectedWorkTypes?.caliente && Object.keys(permit.anexoEnergias.trabajosEnCaliente || {}).length > 0 && (
+                  <Section title="Trabajos en Caliente">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                      {Object.entries(permit.anexoEnergias.trabajosEnCaliente || {}).map(([key, value]) => (
+                        <RadioCheck key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={value as string} spec={key === 'otro' ? permit.anexoEnergias?.trabajosEnCaliente?.otro as string : undefined} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
                 <Section title="Procedimiento LOTO">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                     {Object.entries(permit.anexoEnergias.procedimientoLOTO || {}).map(([key, value]) => (

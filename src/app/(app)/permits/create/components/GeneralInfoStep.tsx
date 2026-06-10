@@ -45,6 +45,7 @@ const workTypes: { key: keyof ReturnType<typeof usePermitForm>['state']['selecte
   { key: 'alturas', name: 'Trabajo en Alturas', icon: <AlertCircle className="h-4 w-4" /> },
   { key: 'confinado', name: 'Espacios Confinados', icon: <AlertCircle className="h-4 w-4" /> },
   { key: 'energia', name: 'Control de Energías', icon: <AlertCircle className="h-4 w-4" /> },
+  { key: 'caliente', name: 'Trabajos en Caliente', icon: <AlertCircle className="h-4 w-4" /> },
   { key: 'izaje', name: 'Izaje de Cargas', icon: <AlertCircle className="h-4 w-4" /> },
   { key: 'excavacion', name: 'Excavaciones', icon: <AlertCircle className="h-4 w-4" /> },
 ];

@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-10 (Sesión 6)
+> **Última actualización de este documento:** 2026-06-10 (Sesión 7)
 
 ---
 
@@ -62,6 +62,39 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-10 (Sesión 7) — Anexo "Trabajos en Caliente" independiente + reescritura del generador de PDF
+
+#### Feat: nuevo Anexo "Trabajos en Caliente" separado del Anexo de Energías
+
+Antes, los "Trabajos en Caliente" eran una sección interna del Anexo de Energías. Por requerimiento del cliente se convirtió en un **anexo independiente**, seleccionable como un tipo de trabajo más, con su propio apartado de datos generales. **No agrega firmas ni altera el flujo de aprobación** — el ciclo de firmas permanece idéntico.
+
+**Archivos modificados:**
+- `src/types/index.ts` — nuevo tipo `AnexoCaliente`; campo `caliente` en `SelectedWorkTypes`; campo `anexoCaliente` en `Permit`.
+- `src/app/(app)/permits/create/form-context.tsx` — acción `UPDATE_ANEXO_CALIENTE`, estado inicial `anexoCaliente`, caso en reducer y en `SET_ENTIRE_STATE`.
+- `src/app/(app)/permits/create/components/GeneralInfoStep.tsx` — nuevo tipo de trabajo "Trabajos en Caliente" en el selector.
+- `src/app/(app)/permits/create/components/AnexoCalienteStep.tsx` — **componente nuevo**: datos generales (solo lectura) + contacto de emergencia + lista de verificación A–H + campo "Otro".
+- `src/app/(app)/permits/create/components/AnexoEnergiaStep.tsx` — se eliminó la sección "Trabajos en Caliente".
+- `src/app/(app)/permits/create/page.tsx` — registro del paso "Anexo Caliente" en el wizard.
+- `src/app/(app)/permits/[id]/page.tsx` — bloque de detalle del nuevo anexo.
+
+**Retrocompatibilidad:** los permisos antiguos que guardaron caliente dentro de `anexoEnergias.trabajosEnCaliente` siguen mostrándolo dentro del bloque Energías; solo se oculta allí cuando `selectedWorkTypes.caliente === true` (permisos nuevos). No se requiere migración de datos en Firestore.
+
+#### Fix: reescritura integral del generador de PDF (`src/lib/pdf-generators.ts`)
+
+El cliente reportó que el PDF mostraba información incompleta e ilegible. Se corrigieron tres causas raíz:
+
+1. **Glifos rotos `✓`/`✗`** — jsPDF (Helvetica) solo soporta Latin-1, por lo que los checkmarks salían como apóstrofes basura. Se reemplazaron por texto plano `SI` / `NO` / `N/A` / `—`; la señal visual ahora la da el **color**.
+2. **Tablas de Información General vacías** en los anexos (Energías, Izaje, Excavación, Confinado, Caliente) — el encabezado tenía una sola celda mientras el cuerpo tenía 2–4 columnas, por lo que `autoTable` descartaba los valores. Se corrigió declarando el número real de columnas con `colSpan`.
+3. **Campos faltantes** — ahora el PDF plasma **todos** los campos del permiso aunque no se hayan diligenciado (se muestran como `NO`/`N/A`/`—`), iterando las definiciones reales de campos (`hazardCategories`, `eppOptions`, `justificacionOptions`, `eppItems`, `emergenciasItems`) en lugar de solo los valores guardados.
+
+**Otros ajustes del PDF:**
+- Color de estado unificado vía `colorForStatusText` + `didParseCell` (el `didDrawCell` previo no coloreaba el texto). `SI` en verde; **`NO` y `N/A` en gris (el cliente pidió no usar rojo para `NO`)**.
+- Nuevo render `renderAnexoCalienteContent` + wrapper `generateAnexoCalientePDF`; incluido en el PDF unificado y en `handleExportPDF`.
+- Información General del permiso ampliada: Ciudad, Reunión de Inicio, ATS Verificado y "Trabajos en Caliente" en tipos de trabajo.
+- Estado de herramientas legible (`BUENO`/`MALO`); especificaciones de EPP con guiones bajos limpiados (`SI (clase 1)`).
 
 ---
 

@@ -64,6 +64,7 @@ import { AtsStep } from './components/AtsStep';
 import { AnexoAlturaStep } from './components/AnexoAlturaStep';
 import { AnexoConfinadoStep } from './components/AnexoConfinadoStep';
 import { AnexoEnergiaStep } from './components/AnexoEnergiaStep';
+import { AnexoCalienteStep } from './components/AnexoCalienteStep';
 import { AnexoIzajeStep } from './components/AnexoIzajeStep';
 import { AnexoExcavacionesStep } from './components/AnexoExcavacionesStep';
 import { VerificacionPeligrosStep } from './components/VerificacionPeligrosStep';
@@ -629,6 +630,7 @@ function CreatePermitWizard() {
     { label: "Anexo Altura", condition: formData.selectedWorkTypes.alturas},
     { label: "Anexo Confinado", condition: formData.selectedWorkTypes.confinado},
     { label: "Anexo Energías", condition: formData.selectedWorkTypes.energia},
+    { label: "Anexo Caliente", condition: formData.selectedWorkTypes.caliente},
     { label: "Anexo Izaje", condition: formData.selectedWorkTypes.izaje},
     { label: "Anexo Excavaciones", condition: formData.selectedWorkTypes.excavacion},
     { label: "Verificación Peligros", condition: false },
@@ -890,6 +892,8 @@ function CreatePermitWizard() {
         return <AnexoConfinadoStep />;
       case "Anexo Energías":
         return <AnexoEnergiaStep />;
+      case "Anexo Caliente":
+        return <AnexoCalienteStep />;
       case "Anexo Izaje":
         return <AnexoIzajeStep />;
       case "Anexo Excavaciones":

@@ -107,20 +107,6 @@ export function AnexoEnergiaStep() {
                 </div>
             </SectionWrapper>
             
-            <SectionWrapper title="Trabajos en Caliente">
-                <div className="space-y-3">
-                    <RadioGroupField id="distanciaSeguridad" label="A.- Regla de distancia de seguridad de 11 m de materiales combustibles e inflamables" value={anexoEnergias?.trabajosEnCaliente?.distanciaSeguridad as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'distanciaSeguridad', value)} />
-                    <RadioGroupField id="medicionAtmosfera" label="B.- Medición de atmósfera explosiva (uso de medidor de atmósferas)" value={anexoEnergias?.trabajosEnCaliente?.medicionAtmosfera as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'medicionAtmosfera', value)} />
-                    <RadioGroupField id="aislarArea" label="C.- Aislar el área de trabajo por medio de biombos, lonas, mamparas" value={anexoEnergias?.trabajosEnCaliente?.aislarArea as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'aislarArea', value)} />
-                    <RadioGroupField id="taparAberturas" label="D.- Tapar toda abertura existente a fin de impedir dispersión de chispas" value={anexoEnergias?.trabajosEnCaliente?.taparAberturas as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'taparAberturas', value)} />
-                    <RadioGroupField id="extintores" label="E.- Extintores portátiles en el área de trabajo" value={anexoEnergias?.trabajosEnCaliente?.extintores as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'extintores', value)} />
-                    <RadioGroupField id="vigiaFuego" label="F - Vigía o supervisor de fuego de incendio" value={anexoEnergias?.trabajosEnCaliente?.vigiaFuego as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'vigiaFuego', value)} />
-                    <RadioGroupField id="personalCapacitado" label="G - Personal capacitado, competente y entrenado" value={anexoEnergias?.trabajosEnCaliente?.personalCapacitado as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'personalCapacitado', value)} />
-                    <RadioGroupField id="listasChequeo" label="H - Listas de chequeo pre-operacional de equipos" value={anexoEnergias?.trabajosEnCaliente?.listasChequeo as string} onChange={(value) => handleFieldChange('trabajosEnCaliente', 'listasChequeo', value)} />
-                    <div className="flex items-center gap-2 pt-2"><Label htmlFor="calienteOtro">Otro (Cual):</Label><Input id="calienteOtro" value={anexoEnergias?.trabajosEnCaliente?.otro as string || ''} onChange={(e) => handleFieldChange('trabajosEnCaliente', 'otro', e.target.value)} /></div>
-                </div>
-            </SectionWrapper>
-            
             <SectionWrapper title="Trabajos con Energías Peligrosas">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {['mecanica', 'neumatica', 'hidraulica', 'agua', 'vapor', 'termica', 'quimica'].map(id => (

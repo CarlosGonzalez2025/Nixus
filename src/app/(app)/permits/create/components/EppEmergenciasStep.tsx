@@ -159,7 +159,7 @@ export const eppItems = [
 
 
 // 🔥 ITEMS DE EMERGENCIAS CON FLAG DE REQUERIDO
-const emergenciasItems = [
+export const emergenciasItems = [
     { 
         id: 'notificacion', 
         label: 'NOTIFICACIÓN: El personal del área potencialmente afectado y los trabajadores vecinos fueron notificados del trabajo a realizar', 

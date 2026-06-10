@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useReducer, useContext, Dispatch, useEffect, useCallback } from 'react';
-import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes, User } from '@/types';
+import type { Permit, ExternalWorker, AnexoATS, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoCaliente, AnexoIzaje, AnexoExcavaciones, VerificacionPeligros, EppEmergencias, PermitGeneralInfo, SelectedWorkTypes, User } from '@/types';
 
 // Define the shape of the form data
 type PermitFormData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
@@ -20,6 +20,7 @@ type FormAction =
   | { type: 'UPDATE_ANEXO_ALTURA'; payload: Partial<FormState['anexoAltura']> }
   | { type: 'UPDATE_ANEXO_CONFINADO'; payload: Partial<FormState['anexoConfinado']> }
   | { type: 'UPDATE_ANEXO_ENERGIA'; payload: Partial<FormState['anexoEnergias']> }
+  | { type: 'UPDATE_ANEXO_CALIENTE'; payload: Partial<AnexoCaliente> }
   | { type: 'UPDATE_ANEXO_IZAJE'; payload: Partial<FormState['anexoIzaje']> }
   | { type: 'UPDATE_ANEXO_EXCAVACIONES'; payload: Partial<FormState['anexoExcavaciones']> }
   | { type: 'UPDATE_VERIFICACION_PELIGROS'; payload: Partial<FormState['verificacionPeligros']> }
@@ -60,6 +61,7 @@ const initialState: FormState = {
     alturas: false,
     confinado: false,
     energia: false,
+    caliente: false,
     izaje: false,
     excavacion: false,
     general: false,
@@ -113,6 +115,9 @@ const initialState: FormState = {
       autoridad: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
       responsable: Array(7).fill(0).map((_, i) => ({ dia: i + 1, nombre: '', firma: '', fecha: '' })),
     },
+  },
+  anexoCaliente: {
+    items: {},
   },
   anexoEnergias: {
     trabajosEnCaliente: {},
@@ -258,6 +263,11 @@ function formReducer(state: FormState, action: FormAction): FormState {
             ...state,
             anexoEnergias: { ...state.anexoEnergias, ...action.payload },
         }
+    case 'UPDATE_ANEXO_CALIENTE':
+        return {
+            ...state,
+            anexoCaliente: { ...state.anexoCaliente, ...action.payload },
+        }
     case 'UPDATE_ANEXO_IZAJE':
         return {
             ...state,
@@ -317,6 +327,7 @@ function formReducer(state: FormState, action: FormAction): FormState {
             anexoAltura: { ...initialState.anexoAltura, ...payload.anexoAltura },
             anexoConfinado: { ...initialState.anexoConfinado, ...payload.anexoConfinado },
             anexoEnergias: { ...initialState.anexoEnergias, ...payload.anexoEnergias },
+            anexoCaliente: { ...initialState.anexoCaliente, ...payload.anexoCaliente },
             anexoIzaje: { ...initialState.anexoIzaje, ...payload.anexoIzaje },
             anexoExcavaciones: { ...initialState.anexoExcavaciones, ...payload.anexoExcavaciones },
             verificacionPeligros: { ...initialState.verificacionPeligros, ...payload.verificacionPeligros },

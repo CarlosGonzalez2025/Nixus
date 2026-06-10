@@ -421,6 +421,16 @@ export type PermitGeneralInfo = {
     }
 }
 
+export type AnexoCaliente = {
+  emergencia?: {
+    contacto: string;
+    telefono: string;
+  };
+  items?: {
+    [key: string]: 'si' | 'no' | 'na' | string;
+  };
+};
+
 export type SelectedWorkTypes = {
   alturas: boolean;
   confinado: boolean;
@@ -428,6 +438,7 @@ export type SelectedWorkTypes = {
   izaje: boolean;
   excavacion: boolean;
   general: boolean;
+  caliente: boolean;
 }
 
 export type SuspensionInfo = {
@@ -484,6 +495,7 @@ export type Permit = {
   anexoAltura?: Partial<AnexoAltura>;
   anexoConfinado?: Partial<AnexoConfinado>;
   anexoEnergias?: Partial<AnexoEnergias>;
+  anexoCaliente?: Partial<AnexoCaliente>;
   anexoIzaje?: Partial<AnexoIzaje>;
   anexoExcavaciones?: Partial<AnexoExcavaciones>;
   verificacionPeligros?: Partial<VerificacionPeligros>;
