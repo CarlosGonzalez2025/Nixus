@@ -35,6 +35,13 @@ export const ROLE_LABELS_FULL: Record<UserRole, string> = {
   solicitante: 'Ejecutante del trabajo / Líder del equipo Ejecutante',
 };
 
+/**
+ * Valor por defecto para campos de perfil sin asignar (empresa, ciudad, planta, área).
+ * Fuente única de verdad: evita que distintos flujos escriban 'N/A',
+ * 'Empresa no especificada' o '' de forma inconsistente.
+ */
+export const UNASSIGNED_PLACEHOLDER = 'N/A';
+
 // ─── Módulos del sistema ────────────────────────────────────────────────────
 
 export const ALL_MODULES: AppModule[] = [

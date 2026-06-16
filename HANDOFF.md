@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-10 (Sesión 7)
+> **Última actualización de este documento:** 2026-06-16 (Sesión 8)
 
 ---
 
@@ -62,6 +62,81 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-16 (Sesión 8) — Fix: usuarios perdían empresa/planta/ciudad (se reseteaban a `N/A` solos)
+
+#### Contexto
+
+El cliente reportó que algunos usuarios que **ya tenían rol, empresa y planta asignados** aparecían tiempo después con todos esos campos en `N/A`, sin que nadie los editara manualmente. Se hizo un diagnóstico completo del módulo de usuarios y se identificaron dos causas raíz.
+
+#### Causa raíz #1 (crítica) — Auto-aprovisionamiento destructivo en el cliente
+
+**Archivo modificado:** `src/components/user-provider.tsx`
+
+El `onSnapshot` del perfil del usuario, cuando recibía `docSnap.exists() === false`, **sobrescribía el documento completo** con un perfil por defecto (`empresa/ciudad/planta = 'N/A'`) usando `setDoc` **sin `merge`**.
+
+El problema: Firestore tiene caché offline (`localCache`/persistencia) y el **primer emit del snapshot puede venir de la caché local** (dispositivo nuevo, caché fría, primer render offline). En ese caso `exists()` devuelve `false` aunque el perfil **sí existe en el servidor** → la app creaba un perfil `N/A` y, al reconectar, **ese `N/A` pisaba los datos reales del servidor**. El literal `'N/A'` solo se generaba en este archivo (huella forense que confirmó el origen).
+
+**Fix aplicado:**
+```typescript
+} else {
+    // Solo aprovisionamos cuando el SERVIDOR confirma que el doc no existe.
+    if (docSnap.metadata.fromCache) {
+        return; // ignorar snapshots de caché: evitan pisar datos reales
+    }
+    const defaultUser: User = { /* ...empresa/ciudad/planta = UNASSIGNED_PLACEHOLDER */ };
+    setDoc(docRef, defaultUser, { merge: true }) // merge: red de seguridad
+        .then(...).catch(...);
+}
+```
+
+Resultado: un perfil con datos ya cargados **nunca más se reescribe a `N/A` por sí solo**. El aprovisionamiento por defecto solo ocurre para usuarios que realmente no tienen documento en Firestore (placeholder inicial).
+
+#### Causa raíz #2 (mitigación) — Selects de edición acoplados a `dynamic_lists`
+
+**Archivo modificado:** `src/app/(app)/admin/users/page.tsx`
+
+En el modal de edición de usuario, los `<Select>` de Empresa/Ciudad/Planta se llenaban **solo** con las opciones de `dynamic_lists`. Si el valor guardado del usuario no coincidía exactamente (mayúsculas/acentos/espacios) con un ítem de la lista, el campo se mostraba **vacío** y se podía perder al guardar.
+
+**Fix aplicado:** se inyecta el valor actual del campo como opción, de modo que siempre se muestre seleccionado:
+```tsx
+{Array.from(new Set([field.value, ...listEmpresas].filter(Boolean) as string[]))
+  .map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+```
+(idéntico para `listCiudades` y `listPlantas`).
+
+#### Mejora — Valor por defecto unificado (fuente única de verdad)
+
+**Archivos modificados:** `src/lib/role-config.ts`, `src/app/(app)/admin/users/actions.ts`, `src/hooks/use-auth.tsx`
+
+Antes existían tres placeholders distintos para campos sin asignar: `'N/A'` (provider), `'Empresa no especificada'` (`syncAuthAndFirestoreUsers`) y `''`. Se centralizó en una sola constante:
+```typescript
+// src/lib/role-config.ts
+export const UNASSIGNED_PLACEHOLDER = 'N/A';
+```
+Aplicada en `user-provider.tsx`, `syncAuthAndFirestoreUsers` y el fallback de demo de `use-auth.tsx` (este último además ahora usa `setDoc(..., { merge: true })`).
+
+#### Rutas que NO tocan empresa/planta/ciudad (verificado)
+
+- `migrateObsoleteRoles` → solo escribe `role`/`otherRoles`.
+- `updateUserStatus` → solo escribe `disabled`.
+- Editar el rol en el modal → los demás campos viajan en el formulario y ahora se muestran correctamente (no se borran).
+
+#### Nota de remediación de datos
+
+Estos cambios **previenen la recurrencia**, pero **no restauran** los perfiles que ya quedaron en `N/A`. Esos usuarios deben reasignarse desde el panel de admin (o vía un script puntual de remediación).
+
+#### Resumen de archivos modificados (Sesión 8)
+
+| Archivo | Cambios |
+|---|---|
+| `src/components/user-provider.tsx` | Guard `metadata.fromCache` + `setDoc` con `{ merge: true }` + constante unificada |
+| `src/app/(app)/admin/users/page.tsx` | Selects de Empresa/Ciudad/Planta inyectan el valor guardado como opción |
+| `src/app/(app)/admin/users/actions.ts` | `syncAuthAndFirestoreUsers` usa `UNASSIGNED_PLACEHOLDER` |
+| `src/hooks/use-auth.tsx` | Fallback demo usa la constante + `setDoc` con `{ merge: true }` |
+| `src/lib/role-config.ts` | Nueva constante `UNASSIGNED_PLACEHOLDER` |
 
 ---
 

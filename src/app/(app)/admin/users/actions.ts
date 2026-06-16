@@ -4,7 +4,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import * as z from 'zod';
 import type { User, AppModule } from '@/types';
-import { USER_ROLES } from '@/lib/role-config';
+import { USER_ROLES, UNASSIGNED_PLACEHOLDER } from '@/lib/role-config';
 import { revalidatePath } from 'next/cache';
 
 const APP_MODULES = ['permits', 'permits_create', 'hallazgos', 'contractor_verifications', 'users', 'lists', 'audit'] as const;
@@ -337,10 +337,10 @@ export async function syncAuthAndFirestoreUsers() {
         displayName: userRecord.displayName || 'Usuario sin nombre',
         photoURL: userRecord.photoURL || '',
         role: 'solicitante', // Assign a default role
-        empresa: 'Empresa no especificada',
-        ciudad: '',
-        planta: '',
-        area: '',
+        empresa: UNASSIGNED_PLACEHOLDER,
+        ciudad: UNASSIGNED_PLACEHOLDER,
+        planta: UNASSIGNED_PLACEHOLDER,
+        area: UNASSIGNED_PLACEHOLDER,
         telefono: '',
         disabled: userRecord.disabled || false,
       };

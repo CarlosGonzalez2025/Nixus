@@ -19,6 +19,7 @@ import {
 import { app, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { UNASSIGNED_PLACEHOLDER } from '@/lib/role-config';
 import type { User } from '@/types';
 
 // Demo users as provided in the UI mock
@@ -71,13 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             displayName: demoUser?.name || firebaseUser.email,
             photoURL: firebaseUser.photoURL || '',
             role: demoUser?.role || 'solicitante', // Default role
-            empresa: demoUser?.empresa || 'N/A',
-            ciudad: demoUser?.ciudad || 'N/A',
-            planta: demoUser?.planta || 'N/A',
-            area: demoUser?.area || 'N/A',
+            empresa: demoUser?.empresa || UNASSIGNED_PLACEHOLDER,
+            ciudad: demoUser?.ciudad || UNASSIGNED_PLACEHOLDER,
+            planta: demoUser?.planta || UNASSIGNED_PLACEHOLDER,
+            area: demoUser?.area || UNASSIGNED_PLACEHOLDER,
             telefono: demoUser?.telefono || '',
           };
-           await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
+           await setDoc(doc(db, 'users', firebaseUser.uid), userProfile, { merge: true });
         }
         return newUserCredential;
       }

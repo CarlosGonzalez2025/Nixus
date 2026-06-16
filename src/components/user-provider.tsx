@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { db } from '@/lib/firebase';
+import { UNASSIGNED_PLACEHOLDER } from '@/lib/role-config';
 import type { User, UserRole } from '@/types';
 
 interface UserContextType {
@@ -64,6 +65,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 });
 
             } else {
+                // El documento no existe. CRÍTICO: un snapshot servido desde la caché local
+                // (dispositivo nuevo, caché fría, primer emit offline) reporta exists()===false
+                // aunque el perfil SÍ exista en el servidor. Crear el perfil aquí pisaría
+                // (overwrite) los datos reales de empresa/planta/ciudad con valores 'N/A'.
+                // Por eso solo aprovisionamos cuando el SERVIDOR confirma que no existe.
+                if (docSnap.metadata.fromCache) {
+                    // Esperamos la confirmación del servidor antes de decidir; no tocamos nada.
+                    return;
+                }
+
                 // Handle case where user exists in Auth but not in Firestore
                 const defaultUser: User = {
                     uid: authUser.uid,
@@ -71,14 +82,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     displayName: authUser.displayName,
                     photoURL: authUser.photoURL,
                     role: 'solicitante', // Default role — consistente con syncAuthAndFirestoreUsers
-                    empresa: 'N/A',
-                    ciudad: 'N/A',
-                    planta: 'N/A',
-                    area: 'N/A',
+                    empresa: UNASSIGNED_PLACEHOLDER,
+                    ciudad: UNASSIGNED_PLACEHOLDER,
+                    planta: UNASSIGNED_PLACEHOLDER,
+                    area: UNASSIGNED_PLACEHOLDER,
                     telefono: ''
                 };
-                // Create the default user profile in Firestore
-                setDoc(docRef, defaultUser).then(() => {
+                // Create the default user profile in Firestore (merge: no destruye campos
+                // existentes si hubiera una escritura concurrente).
+                setDoc(docRef, defaultUser, { merge: true }).then(() => {
                     setUser(defaultUser);
                     setActiveRole('solicitante');
                 }).catch(err => {

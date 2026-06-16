@@ -1576,7 +1576,9 @@ export default function UsersPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {listEmpresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                        {/* Incluye el valor guardado aunque no esté en la lista dinámica,
+                            para que nunca se vea vacío ni se pierda al guardar. */}
+                        {Array.from(new Set([field.value, ...listEmpresas].filter(Boolean) as string[])).map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1597,7 +1599,7 @@ export default function UsersPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {listCiudades.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {Array.from(new Set([field.value, ...listCiudades].filter(Boolean) as string[])).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1617,7 +1619,7 @@ export default function UsersPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {listPlantas.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          {Array.from(new Set([field.value, ...listPlantas].filter(Boolean) as string[])).map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                         </SelectContent>
                       </Select>
                       <FormMessage />
