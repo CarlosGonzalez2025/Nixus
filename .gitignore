@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firebase / credenciales (NUNCA versionar)
+scripts/serviceAccountKey.json
+.firebase/
+
+# logs de servidor de desarrollo
+dev-server*.log
+dev-server*.err.log

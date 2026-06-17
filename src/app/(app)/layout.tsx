@@ -15,6 +15,11 @@ import {
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useUser } from '@/hooks/use-user';
 import { liderRegionalHasModule } from '@/lib/role-config';
 import { useAuth } from '@/hooks/use-auth';
@@ -40,6 +45,8 @@ import {
   Flame,
   Zap,
   ScanSearch,
+  CalendarRange,
+  ChevronDown,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -62,6 +69,34 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { useOfflineSync } from '@/hooks/use-offline-sync';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
+
+// Grupo de navegación colapsable. La etiqueta del grupo actúa como disparador y
+// muestra un chevron que rota según el estado. Por defecto abierto.
+function CollapsibleNavGroup({
+  label,
+  defaultOpen = false,
+  children,
+}: {
+  label: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Collapsible defaultOpen={defaultOpen} className="group/navgroup">
+      <SidebarGroup>
+        <SidebarGroupLabel asChild>
+          <CollapsibleTrigger className="w-full cursor-pointer text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 hover:text-sidebar-foreground px-3 py-2 transition-colors">
+            {label}
+            <ChevronDown className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=closed]/navgroup:-rotate-90" />
+          </CollapsibleTrigger>
+        </SidebarGroupLabel>
+        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+          {children}
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, switchRole } = useUser();
@@ -172,10 +207,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <SidebarContent className="px-2">
             <SidebarMenu>
-              <SidebarGroup>
-                <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
-                  Principal
-                </SidebarGroupLabel>
+              <CollapsibleNavGroup label="Principal">
 
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -261,14 +293,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-              </SidebarGroup>
+              </CollapsibleNavGroup>
 
               <SidebarSeparator className="my-2" />
 
-              <SidebarGroup>
-                <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
-                  Módulos
-                </SidebarGroupLabel>
+              <CollapsibleNavGroup label="Módulos">
 
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -319,14 +348,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 shrink-0">Pronto</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </SidebarGroup>
+              </CollapsibleNavGroup>
+
+              {user.role === 'admin' && (
+                <>
+                  <SidebarSeparator className="my-2" />
+                  <CollapsibleNavGroup label="Planeación SST">
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => handleNavigation('/work-plans')}
+                        isActive={pathname.startsWith('/work-plans')}
+                        tooltip="Plan de Trabajo Anual"
+                        className="min-h-[44px] py-3 md:py-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <CalendarRange className="h-5 w-5 md:h-4 md:w-4" />
+                        <span className="font-medium">Plan de Trabajo Anual</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </CollapsibleNavGroup>
+                </>
+              )}
 
               <SidebarSeparator className="my-2" />
 
-              <SidebarGroup>
-                <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
-                  Ayuda
-                </SidebarGroupLabel>
+              <CollapsibleNavGroup label="Ayuda">
 
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -339,7 +385,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span className="font-medium">Guía de Flujo</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </SidebarGroup>
+              </CollapsibleNavGroup>
 
               {(user.role === 'admin' || (user.role === 'lider_regional' && (
                 liderRegionalHasModule(user, 'users') ||
@@ -348,10 +394,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ))) && (
                 <>
                   <SidebarSeparator className="my-2" />
-                  <SidebarGroup>
-                    <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/70 px-3 py-2">
-                      Administración
-                    </SidebarGroupLabel>
+                  <CollapsibleNavGroup label="Administración">
 
                     {(user.role === 'admin' || liderRegionalHasModule(user, 'users')) && (
                     <SidebarMenuItem>
@@ -395,7 +438,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuItem>
                     )}
 
-                  </SidebarGroup>
+                  </CollapsibleNavGroup>
                 </>
               )}
             </SidebarMenu>

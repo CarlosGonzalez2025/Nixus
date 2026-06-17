@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-16 (Sesión 8)
+> **Última actualización de este documento:** 2026-06-16 (Sesión 9)
 
 ---
 
@@ -62,6 +62,81 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-16 (Sesión 9) — Feat: Módulo Plan de Trabajo Anual (SST · PHVA) + menú lateral colapsable por grupo
+
+#### Feat: nuevo módulo "Plan de Trabajo Anual" bajo el ciclo PHVA
+
+Implementación **desde cero** de un módulo de planeación SST offline-first, **exclusivo para administradores**. Es una implementación nueva y aislada: **no altera la lógica ni los datos de los demás módulos**. Reutiliza las convenciones del proyecto (Firestore SDK cliente, React Hook Form + Zod, shadcn/ui, xlsx, color de marca `nixus`).
+
+**Modelo de datos (Firestore):**
+- Colección `workPlans/{planId}` → documento del plan.
+- Subcolección `workPlans/{planId}/tasks/{taskId}` → actividades.
+- Agregados **denormalizados** en el plan: `tasksCount`, `executedCount`, `pendingCount`, `progressPercentage` (recalculados en cliente).
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/types/work-plan.ts` | Tipos del módulo: `PlanTrabajo`, `TareaPlanTrabajo`, `ProgresoMensual`, y enums (`EstadoPlanTrabajo`, `EstadoTarea`, `EtapaPHVA`, `TipoRecurso`, `FrecuenciaActividad`). Se siguió la convención del proyecto de un archivo de tipos por módulo (igual que `confinados.ts`/`alturas.ts`). |
+| `src/lib/work-plan-service.ts` | Capa de servicio. Funciones puras (`initMonthlyProgress`, `calcTaskProgress`, `calcPlanProgress`, `calcPlanStats`, `isPlanReadOnly`, `normalizeMonthlyProgress`), CRUD de plan/tareas, `importTasks` (alta masiva por `writeBatch`), borrado en cascada de subcolección (`writeBatch`, ≤490 ops/lote) y `recalcPlanAggregates`. **Sin `runTransaction`** (offline-safe). |
+| `src/hooks/use-work-plans.ts` | `useWorkPlans()` (lista) y `useWorkPlanDetail()` (doc + tareas) con `onSnapshot` en tiempo real. |
+| `src/app/(app)/work-plans/page.tsx` | Lista de planes (buscador por nombre/año/estado/creador; tabla en desktop, tarjetas en móvil; lee agregados denormalizados). |
+| `src/app/(app)/work-plans/[id]/page.tsx` | Detalle del plan: cabecera con estado, tarjeta resumen, acciones (Importar Excel, Editar, Cerrar plan con `AlertDialog`), y el `useEffect` de recálculo de agregados. |
+| `src/app/(app)/work-plans/components/constants.ts` | Meses, configs de color/label de estados/PHVA/recurso, helpers `parseDate()` y `progressColor()`. |
+| `src/app/(app)/work-plans/components/work-plan-form.tsx` | Diálogo crear/editar plan (RHF + Zod; valida `endDate >= startDate` y `year` 2020–2050; `version` inicia en 1). |
+| `src/app/(app)/work-plans/components/task-form.tsx` | Diálogo nueva/editar actividad. |
+| `src/app/(app)/work-plans/components/task-list.tsx` | Lista/CRUD de actividades con matriz por fila (tabla en desktop, tarjetas en móvil; oculta acciones y bloquea matriz si el plan está cerrado). |
+| `src/app/(app)/work-plans/components/monthly-matrix.tsx` | Matriz mensual P/E (12 meses). Reglas: "E solo se marca si P está marcado" y "desmarcar P limpia E". |
+| `src/app/(app)/work-plans/components/excel-import.tsx` | Diálogo de importación con plantilla `.xlsx` descargable, previsualización y validación por fila (columnas exactas: `Activity`, `PHVA`, `ResourceType`, `ResponsibleName`, `ResponsibleRole`, `Frequency`). |
+
+**Reglas de negocio implementadas:**
+- Al crear una tarea → 12 meses vacíos automáticos.
+- Cumplimiento de tarea = (meses planeados **y** ejecutados / total planeados) × 100, redondeado; 0 si no hay meses planeados.
+- Avance del plan = promedio aritmético simple de los cumplimientos de las tareas.
+- `executedCount`/`pendingCount` se derivan del cumplimiento (≥100% = ejecutada), **no** del campo `status`, para que nunca se desalineen del %.
+- Estado `Cerrado` → todo el plan en **solo lectura** (bloquea crear/editar/eliminar actividades y la matriz).
+
+**Decisión clave offline (sin transacciones):** los agregados se recalculan en cliente. En la página de detalle, un `useEffect` compara el valor derivado (`calcPlanStats` + `calcPlanProgress`) contra el almacenado y **solo escribe si difieren**. Como `onSnapshot` refleja esa misma escritura, el cálculo **converge sin bucles**; un `useRef` (`recalcInFlight`) evita escrituras solapadas. Esto además hace backfill automático de contadores en planes creados antes.
+
+> **Nota sobre offline:** el proyecto usa `memoryLocalCache()` + `experimentalForceLongPolling` en `src/lib/firebase.ts` (workaround del bug del SDK v11.10.0, ver Sesión 5), **no** caché IndexedDB persistente. Las escrituras siguen funcionando durante la sesión y se sincronizan al reconectar (no se usan transacciones), pero la caché no sobrevive a un recargado de la app.
+
+#### Feat: control de acceso (solo administradores · defensa en profundidad)
+
+- **Sidebar:** nuevo grupo "Planeación SST" → "Plan de Trabajo Anual" (`/work-plans`, ícono `CalendarRange`), renderizado solo si `user.role === 'admin'`.
+- **Guard de ruta:** `page.tsx` y `[id]/page.tsx` redirigen a `/dashboard` con toast destructivo si el usuario no es admin; mientras cargan o no es admin, muestran un loader (no el contenido).
+- **Firestore rules** (`firestore.rules`, raíz desplegado): nuevo bloque `workPlans` + subcolección `tasks`, con helper `canAccessWorkPlans()` que reutiliza `isAdmin()`. `create` exige `createdBy == uid`; `update` no permite reasignar `createdBy`.
+
+> ⚠️ **Pendiente de despliegue:** ejecutar `firebase deploy --only firestore:rules` para activar el acceso en producción (sin esto el módulo devuelve `PERMISSION_DENIED`).
+
+#### UX: menú lateral colapsable por grupo
+
+**Archivos modificados:** `src/app/(app)/layout.tsx`, `tailwind.config.ts`
+
+Cada grupo del menú lateral (Principal, Módulos, Planeación SST, Ayuda, Administración) ahora es **colapsable**: la etiqueta del grupo actúa como disparador con un chevron que rota según el estado.
+
+- Nuevo componente reutilizable `CollapsibleNavGroup` basado en `Collapsible`/`CollapsibleTrigger`/`CollapsibleContent` (Radix), usando `SidebarGroupLabel asChild` como trigger.
+- Por petición del cliente, **todos los grupos arrancan recogidos/cerrados** (`defaultOpen = false`); el usuario los despliega con un clic.
+- `tailwind.config.ts`: se agregaron keyframes/animaciones `collapsible-down` y `collapsible-up` (usan `--radix-collapsible-content-height`) para la transición suave; las de `accordion` no servían por usar otra variable CSS.
+
+#### Validación
+
+- `tsc --noEmit`: el módulo compila **sin errores** (los errores restantes son preexistentes en archivos no tocados: `dashboard`, `hallazgos`, `email.ts`; además `next.config` tiene `ignoreBuildErrors: true`).
+- Build de producción (`next build`): **exitoso**; ambas rutas emitidas (`/work-plans` estática, `/work-plans/[id]` dinámica).
+
+#### Resumen de archivos (Sesión 9)
+
+| Archivo | Cambios |
+|---|---|
+| `src/types/work-plan.ts` | **Nuevo** — tipos del módulo |
+| `src/lib/work-plan-service.ts` | **Nuevo** — capa de servicio (funciones puras + CRUD + agregados) |
+| `src/hooks/use-work-plans.ts` | **Nuevo** — hooks de lectura en tiempo real |
+| `src/app/(app)/work-plans/**` | **Nuevo** — páginas lista/detalle + 6 componentes |
+| `firestore.rules` | Bloque `workPlans` + subcolección `tasks` (solo admin) |
+| `src/app/(app)/layout.tsx` | Grupo "Planeación SST" (solo admin) + grupos de navegación colapsables (`CollapsibleNavGroup`) |
+| `tailwind.config.ts` | Keyframes/animaciones `collapsible-down`/`collapsible-up` |
 
 ---
 

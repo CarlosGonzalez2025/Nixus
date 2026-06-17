@@ -388,5 +388,26 @@ service cloud.firestore {
       allow delete: if isAdminOrLR();
     }
 
+    // --- Módulo Planeación SST: Plan de Trabajo Anual (workPlans) ---
+    // Acceso EXCLUSIVO para administradores (reutiliza el helper isAdmin()).
+    function canAccessWorkPlans() { return isAdmin(); }
+
+    match /workPlans/{planId} {
+      allow read, list: if canAccessWorkPlans();
+      // create permitido desde cliente para soportar offline; createdBy == uid.
+      allow create: if canAccessWorkPlans()
+                    && request.resource.data.createdBy == request.auth.uid;
+      // update incluye recálculo de agregados y cierre; no reasignar createdBy.
+      allow update: if canAccessWorkPlans()
+                    && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin();
+
+      match /tasks/{taskId} {
+        allow read, list: if canAccessWorkPlans();
+        allow create, update, delete: if canAccessWorkPlans()
+          && exists(/databases/$(database)/documents/workPlans/$(planId));
+      }
+    }
+
   }
 }
