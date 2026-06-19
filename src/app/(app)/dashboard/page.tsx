@@ -296,36 +296,45 @@ export default function Dashboard() {
     }
 
     // ── Hallazgos ────────────────────────────────────────────────────────
-    let qH;
-    if (user.role === 'admin' || user.role === 'lider_regional') {
-      qH = query(collection(db, 'hallazgos'));
-    } else if (user.role === 'lider_sst') {
-      const c: QueryConstraint[] = [];
-      if (user.empresa) c.push(where('empresaId', '==', user.empresa));
-      qH = query(collection(db, 'hallazgos'), ...c);
-    } else if (user.role === 'asesor_arl') {
-      qH = query(collection(db, 'hallazgos'), where('createdBy', '==', user.uid));
-    } else {
-      qH = query(collection(db, 'hallazgos'), where('empresaId', '==', user.empresa || 'NO_COMPANY'));
-    }
-
-    unsubscribers.push(onSnapshot(qH, (snap) => {
-      let hData = snap.docs.map(d => ({
-        id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
-      } as unknown as Hallazgo));
-      if (user.role === 'lider_regional') {
-        hData = hData.filter(h => isInLiderRegionalScope(user, {
-          empresa: h.empresa,
-          planta: h.planta,
-          ciudad: h.ciudad,
-        }));
-      } else if (user.planta && user.role !== 'admin') {
-        hData = hData.filter(h => !h.planta || h.planta.toLowerCase() === user.planta!.toLowerCase());
+    // Solo roles con acceso al módulo. solicitante y mantenimiento no tienen permiso
+    // (canAccessHallazgos en reglas exige admin/lider_regional/lider_sst/autorizante/asesor_arl).
+    const canSeeHallazgos = ['admin', 'lider_regional', 'lider_sst', 'autorizante', 'asesor_arl'].includes(user.role ?? '');
+    if (canSeeHallazgos) {
+      let qH;
+      if (user.role === 'admin' || user.role === 'lider_regional') {
+        qH = query(collection(db, 'hallazgos'));
+      } else if (user.role === 'lider_sst') {
+        const c: QueryConstraint[] = [];
+        if (user.empresa) c.push(where('empresaId', '==', user.empresa));
+        qH = query(collection(db, 'hallazgos'), ...c);
+      } else if (user.role === 'asesor_arl') {
+        qH = query(collection(db, 'hallazgos'), where('createdBy', '==', user.uid));
+      } else {
+        // autorizante: filtra por empresa del usuario
+        qH = query(collection(db, 'hallazgos'), where('empresaId', '==', user.empresa || 'NO_COMPANY'));
       }
-      setAllHallazgos(hData);
-      // Para asesor_arl el loading lo cerramos aquí
-      if (user.role === 'asesor_arl') setLoading(false);
-    }));
+
+      unsubscribers.push(onSnapshot(qH, (snap) => {
+        let hData = snap.docs.map(d => ({
+          id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
+        } as unknown as Hallazgo));
+        if (user.role === 'lider_regional') {
+          hData = hData.filter(h => isInLiderRegionalScope(user, {
+            empresa: h.empresa,
+            planta: h.planta,
+            ciudad: h.ciudad,
+          }));
+        } else if (user.planta && user.role !== 'admin') {
+          hData = hData.filter(h => !h.planta || h.planta.toLowerCase() === user.planta!.toLowerCase());
+        }
+        setAllHallazgos(hData);
+        // Para asesor_arl el loading lo cerramos aquí
+        if (user.role === 'asesor_arl') setLoading(false);
+      }, () => {
+        // Error silencioso — hallazgos es un módulo secundario; no bloquear el dashboard.
+        if (user.role === 'asesor_arl') setLoading(false);
+      }));
+    }
 
     return () => unsubscribers.forEach(u => u());
   }, [user, userLoading, router]);

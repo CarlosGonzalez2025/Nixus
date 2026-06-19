@@ -285,10 +285,9 @@ service cloud.firestore {
                    (!getPlanta() || resource.data.planta == getPlanta())));
 
       // LIST (queries): el filtro por planta/empresa lo garantiza el where() del cliente.
-      allow list: if canAccessHallazgos() &&
-                  (isAdmin() ||
-                   resource.data.empresaId == getEmpresa() ||
-                   hasRole('lider_sst'));
+      // NOTA: resource.data NO está disponible en reglas 'list' (solo en 'get'). La restricción
+      // por empresa se aplica solo mediante where() del cliente y en 'allow get' por documento.
+      allow list: if canAccessHallazgos();
 
       // Creación: empresa debe coincidir con la del usuario.
       allow create: if canAccessHallazgos() &&
