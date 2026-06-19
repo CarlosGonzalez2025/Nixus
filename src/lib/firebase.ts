@@ -22,15 +22,21 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
 // persistentLocalCache + persistentSingleTabManager: datos sobreviven recargas y
-// navegación entre páginas (IndexedDB). SingleTab es el único modo compatible con
-// experimentalForceLongPolling (MultipleTab requiere WebSocket y es incompatible).
-// experimentalForceLongPolling: workaround para bug SDK v11.10.0 (INTERNAL ASSERTION
-// FAILED: ca9 / ve:-1) — evita PersistentListenStream donde ocurre la race condition.
+// navegación entre páginas (IndexedDB).
+//
+// NOTA: el bug `ca9 / ve:-1` (INTERNAL ASSERTION FAILED — server RESET events tras
+// unsubscribe que decrementaban el target count a -1) fue corregido en firebase 12.13.0
+// (release 7-may-2026; esta app usa 12.15.0). Por eso ya NO se fuerza long-polling: el
+// transporte rápido (WebChannel/gRPC) vuelve a ser seguro y elimina la latencia de ~60s
+// que introducía experimentalForceLongPolling. Se conserva persistentSingleTabManager
+// para aislar el cambio; experimentalAutoDetectLongPolling se deja como red de seguridad:
+// usa el camino rápido por defecto y solo cae a long-polling si la red (proxies
+// corporativos en planta) lo requiere.
 let db: ReturnType<typeof getFirestore>;
 try {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
-    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
   });
 } catch {
   db = getFirestore(app);
