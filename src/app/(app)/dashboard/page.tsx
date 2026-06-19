@@ -189,7 +189,9 @@ export default function Dashboard() {
             empresa: p.generalInfo?.empresa,
             planta: p.generalInfo?.planta,
             ciudad: p.generalInfo?.ciudad,
-          }));
+          }))
+          // Igual que permits/page.tsx: excluir borradores ajenos.
+          .filter(p => p.status !== 'borrador' || p.createdBy === user.uid);
         setAllPermits(data);
         setLoading(false);
       }, () => {
@@ -198,22 +200,20 @@ export default function Dashboard() {
       }));
 
     } else if (user.role === 'lider_sst') {
-      // Un solo listener con or() reemplaza los anteriores getDocs×2 + onSnapshot×2 + fetchData().
-      const sstConstraints: QueryConstraint[] = [
-        or(
-          where('selectedWorkTypes.alturas', '==', true),
-          where('isSSTSignatureRequired', '==', true),
-        ),
-      ];
+      // CONSISTENCIA con permits/page.tsx: el líder SST analiza TODOS los permisos de su
+      // planta, no solo alturas/firma-SST. Antes el dashboard filtraba a un subconjunto
+      // (or alturas/isSSTSignatureRequired), por lo que sus tarjetas/estadísticas no
+      // coincidían con lo que veía en la tabla de permisos. Se replica la query por planta
+      // + filtro de empresa cliente-side + exclusión de borradores ajenos.
+      const sstConstraints: QueryConstraint[] = user.planta
+        ? [where('generalInfo.planta', '==', user.planta), orderBy('createdAt', 'desc')]
+        : [orderBy('createdAt', 'desc')];
 
       unsubscribers.push(onSnapshot(query(permitsCollection, ...sstConstraints), (snap) => {
         const combined = snap.docs
           .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
-          .filter(p => {
-            const matchPlanta = !user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase();
-            const matchEmpresa = !user.empresa || p.generalInfo?.empresa?.toLowerCase() === user.empresa.toLowerCase();
-            return matchPlanta && matchEmpresa;
-          })
+          .filter(p => !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase())
+          .filter(p => p.status !== 'borrador' || p.createdBy === user.uid)
           .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
         setAllPermits(combined);
         setLoading(false);
@@ -224,44 +224,33 @@ export default function Dashboard() {
 
     } else if (user.role === 'mantenimiento') {
       // Enrutar SOLO por el rol ACTIVO (user.role), igual que permits/page.tsx. NO usar
-      // otherRoles: un usuario con doble rol (ej. activo 'solicitante' + 'mantenimiento'
-      // en otros roles) debe ver el dashboard de su rol activo, respetando el selector de
-      // rol. Mirar otherRoles aquí enrutaba a la rama de mantenimiento a usuarios cuyo rol
-      // activo NO era mantenimiento, mostrándoles 0 permisos en todas las tarjetas.
-      // Dos queries independientes porque Firestore no soporta OR entre campos distintos.
-      // requiresMaintenanceSignature activa la firma por controlEnergia O selectedWorkTypes.energia.
-      const mergedMap = new Map<string, Permit>();
-
-      const applyAndSet = () => {
-        const data = Array.from(mergedMap.values())
-          .filter(p =>
-            p.status === 'pendiente_revision' &&
-            p.approvals?.mantenimiento?.status === 'pendiente' &&
-            p.approvals?.solicitante?.status === 'aprobado' &&
-            (!user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase())
-          )
-          .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
-        setAllPermits(data);
-        setLoading(false);
-      };
-
-      const onMantErr = () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
-        setLoading(false);
-      };
-
-      const qMant1 = query(permitsCollection, where('controlEnergia', '==', true));
-      const qMant2 = query(permitsCollection, where('selectedWorkTypes.energia', '==', true));
-
-      unsubscribers.push(onSnapshot(qMant1, (snap) => {
-        snap.docs.forEach(d => mergedMap.set(d.id, { id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit));
-        applyAndSet();
-      }, onMantErr));
-
-      unsubscribers.push(onSnapshot(qMant2, (snap) => {
-        snap.docs.forEach(d => mergedMap.set(d.id, { id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit));
-        applyAndSet();
-      }, onMantErr));
+      // otherRoles: un usuario con doble rol (ej. activo 'solicitante' + 'mantenimiento')
+      // debe ver el dashboard de su rol activo, respetando el selector de rol.
+      //
+      // CONSISTENCIA con permits/page.tsx: mantenimiento analiza TODOS los permisos en los
+      // que interviene — los que requieren su firma (controlEnergia O selectedWorkTypes.energia),
+      // en su planta, en CUALQUIER estado. Antes el dashboard solo contaba los pendientes de
+      // su firma (pendiente_revision + approvals), por lo que las tarjetas no reflejaban su
+      // participación real ni coincidían con la tabla de permisos.
+      unsubscribers.push(onSnapshot(
+        query(permitsCollection, or(
+          where('controlEnergia', '==', true),
+          where('selectedWorkTypes.energia', '==', true),
+        )),
+        (snap) => {
+          const data = snap.docs
+            .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
+            .filter(p => !user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase())
+            .filter(p => p.status !== 'borrador' || p.createdBy === user.uid)
+            .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
+          setAllPermits(data);
+          setLoading(false);
+        },
+        () => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
+          setLoading(false);
+        },
+      ));
 
     } else {
       const finalQuery: QueryConstraint[] = [];
@@ -281,7 +270,10 @@ export default function Dashboard() {
           } as unknown as Permit));
 
         if (user.role === 'autorizante') {
+          // Igual que permits/page.tsx: borradores solo del propio usuario; el resto por
+          // empresa/planta. Antes el dashboard no excluía borradores ajenos.
           data = data.filter(p => {
+            if (p.status === 'borrador') return p.createdBy === user.uid;
             const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
             const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
             return matchEmpresa && matchPlanta;
