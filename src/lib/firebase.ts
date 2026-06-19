@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import {
   initializeFirestore,
   persistentLocalCache,
-  persistentMultipleTabManager,
+  persistentSingleTabManager,
   getFirestore,
   type QueryConstraint,
 } from 'firebase/firestore';
@@ -21,14 +21,15 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-// persistentLocalCache: datos sobreviven recargas y navegación entre páginas (IndexedDB).
-// persistentMultipleTabManager: varias pestañas comparten una sola conexión Firestore.
+// persistentLocalCache + persistentSingleTabManager: datos sobreviven recargas y
+// navegación entre páginas (IndexedDB). SingleTab es el único modo compatible con
+// experimentalForceLongPolling (MultipleTab requiere WebSocket y es incompatible).
 // experimentalForceLongPolling: workaround para bug SDK v11.10.0 (INTERNAL ASSERTION
 // FAILED: ca9 / ve:-1) — evita PersistentListenStream donde ocurre la race condition.
 let db: ReturnType<typeof getFirestore>;
 try {
   db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
     experimentalForceLongPolling: true,
   });
 } catch {

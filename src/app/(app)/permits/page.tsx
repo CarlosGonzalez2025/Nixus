@@ -212,13 +212,16 @@ export default function PermitsPage() {
 
     if (user.role === 'lider_regional') {
       // Filtra por empresa en servidor si tiene lista acotada (≤30); planta/ciudad
-      // se siguen filtrando cliente-side porque Firestore no soporta múltiples `in` en distintos campos.
+      // se siguen filtrando cliente-side. Si se usa filtro 'in', NO se agrega orderBy
+      // para evitar requerir un índice compuesto (empresa+createdAt); se ordena cliente-side.
       const lrConstraints: QueryConstraint[] = [];
       if (user.allowedEmpresas?.length && user.allowedEmpresas.length <= 30) {
         lrConstraints.push(where('generalInfo.empresa', 'in', user.allowedEmpresas));
+        lrConstraints.push(limit(200));
+      } else {
+        lrConstraints.push(orderBy('createdAt', 'desc'));
+        lrConstraints.push(limit(200));
       }
-      lrConstraints.push(orderBy('createdAt', 'desc'));
-      lrConstraints.push(limit(200));
 
       const unsub = onSnapshot(query(permitsCollection, ...lrConstraints), (snapshot) => {
         const data = snapshot.docs
@@ -303,16 +306,10 @@ export default function PermitsPage() {
     } else {
       const finalQuery: QueryConstraint[] = [];
       if (user.role === 'solicitante') {
+        // Solo where, sin orderBy — combinar ambos requiere índice compuesto; se ordena cliente-side.
         finalQuery.push(where('createdBy', '==', user.uid));
-        finalQuery.push(orderBy('createdAt', 'desc'));
-      } else if (user.role === 'autorizante') {
-        // Filtra por empresa y planta en servidor; reduce drásticamente los documentos descargados.
-        if (user.empresa) finalQuery.push(where('generalInfo.empresa', '==', user.empresa));
-        if (user.planta) finalQuery.push(where('generalInfo.planta', '==', user.planta));
-        finalQuery.push(orderBy('createdAt', 'desc'));
-        finalQuery.push(limit(200));
       } else {
-        // admin y otros roles privilegiados
+        // admin, autorizante y otros roles privilegiados
         finalQuery.push(orderBy('createdAt', 'desc'));
         finalQuery.push(limit(200));
       }
@@ -323,9 +320,21 @@ export default function PermitsPage() {
           return { id: doc.id, ...d, createdAt: parseFirestoreDate(d.createdAt) } as unknown as Permit;
         });
 
+        if (user.role === 'solicitante') {
+          data = data.sort(
+            (a, b) =>
+              (parseFirestoreDate(b.createdAt)?.getTime() || 0) -
+              (parseFirestoreDate(a.createdAt)?.getTime() || 0),
+          );
+        }
+
         if (user.role === 'autorizante') {
-          // Solo excluir borradores ajenos; empresa/planta ya vienen filtrados del servidor.
-          data = data.filter(p => p.status !== 'borrador' || p.createdBy === user.uid);
+          data = data.filter(p => {
+            if (p.status === 'borrador') return p.createdBy === user.uid;
+            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
+            return matchEmpresa && matchPlanta;
+          });
         }
 
         setAllPermits(data);

@@ -172,12 +172,15 @@ export default function Dashboard() {
       setAllPermits([]);
 
     } else if (user.role === 'lider_regional') {
-      // Filtra por empresa en servidor si tiene lista acotada; planta/ciudad siguen cliente-side.
+      // Si tiene lista acotada, filtra por empresa en servidor. Sin orderBy junto al
+      // filtro 'in' para evitar requerir índice compuesto; se ordena cliente-side.
+      // Sin limit — el dashboard necesita datos completos para las estadísticas.
       const lrConstraints: QueryConstraint[] = [];
       if (user.allowedEmpresas?.length && user.allowedEmpresas.length <= 30) {
         lrConstraints.push(where('generalInfo.empresa', 'in', user.allowedEmpresas));
+      } else {
+        lrConstraints.push(orderBy('createdAt', 'desc'));
       }
-      lrConstraints.push(orderBy('createdAt', 'desc'));
 
       unsubscribers.push(onSnapshot(query(permitsCollection, ...lrConstraints), (snap) => {
         const data = snap.docs
@@ -260,24 +263,29 @@ export default function Dashboard() {
     } else {
       const finalQuery: QueryConstraint[] = [];
       if (user.role === 'solicitante') {
+        // Solo where, sin orderBy — combinar ambos requiere índice compuesto; se ordena cliente-side.
         finalQuery.push(where('createdBy', '==', user.uid));
-        finalQuery.push(orderBy('createdAt', 'desc'));
-      } else if (user.role === 'autorizante') {
-        // Filtra por empresa y planta en servidor para no descargar toda la colección.
-        if (user.empresa) finalQuery.push(where('generalInfo.empresa', '==', user.empresa));
-        if (user.planta) finalQuery.push(where('generalInfo.planta', '==', user.planta));
-        finalQuery.push(orderBy('createdAt', 'desc'));
       } else {
-        // admin y otros roles privilegiados — sin límite para estadísticas completas
+        // admin, autorizante y otros — empresa/planta filtrados cliente-side para evitar
+        // índice compuesto. Sin limit — dashboard necesita datos completos para estadísticas.
         finalQuery.push(orderBy('createdAt', 'desc'));
       }
 
       unsubscribers.push(onSnapshot(query(permitsCollection, ...finalQuery), (snap) => {
-        const data = snap.docs
+        let data = snap.docs
           .map(d => ({
             id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
-          } as unknown as Permit))
-          .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
+          } as unknown as Permit));
+
+        if (user.role === 'autorizante') {
+          data = data.filter(p => {
+            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
+            return matchEmpresa && matchPlanta;
+          });
+        }
+
+        data = data.sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
 
         setAllPermits(data);
         setLoading(false);
