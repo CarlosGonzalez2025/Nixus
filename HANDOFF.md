@@ -124,6 +124,41 @@ Un usuario cuyo rol **activo** era, por ejemplo, `solicitante` pero que tenía `
 
 `solicitante` y `admin` ya eran consistentes (sin cambios).
 
+#### Fix 4 — Hallazgos: error "La fecha de visita es requerida" con la fecha ya seleccionada
+
+**Archivo modificado:** `src/app/(app)/hallazgos/components/hallazgo-form.tsx`
+
+**Síntoma:** al registrar un hallazgo, el campo "Fecha de Visita" mostraba la fecha seleccionada (ej. *19 de junio de 2026*) pero la validación arrojaba "La fecha de visita es requerida" e impedía guardar.
+
+**Causa raíz (confirmada con repro de las librerías reales):** el formulario tiene autoguardado de borrador con `localStorage.setItem('draft_hallazgo', JSON.stringify(value))`. `JSON.stringify` convierte los objetos `Date` en **string ISO**. Cuando ese string llega a la validación:
+- `date-fns` 3.6 **`format()` SÍ formatea un string ISO** → el botón muestra la fecha correctamente.
+- Pero `zod` `z.date()` **rechaza el string** por no ser un objeto `Date` → error de fecha.
+
+Es decir, la UI mostraba la fecha mientras la validación la consideraba inválida — una inconsistencia de tipo (string vs Date), no un campo vacío.
+
+**Fix aplicado:**
+1. **Helper `dateField()` con `z.preprocess`** — convierte `string`/`number` → `Date` antes de validar, en `fechaVisita` (requerida) y en las fechas opcionales del plan de acción (`fechaMedidaImplementada`, `fechaSeguimiento1`, `fechaCierre`). Mantiene el mensaje de "requerida" para `undefined`.
+   ```typescript
+   const dateField = (opts?) => z.preprocess(
+     (v) => (typeof v === 'string' || typeof v === 'number') ? new Date(v) : v,
+     z.date(opts),
+   );
+   ```
+2. **Restauración de borrador robusta** — `fechaVisita` siempre queda como `Date` válido (un borrador antiguo sin el campo, o serializado como string, ya no pierde el default ni deja la fecha vacía).
+
+Build de producción limpio verificado (38/38 páginas).
+
+---
+
+#### ⏳ Tarea pendiente (backlog) — Fase 3: optimización opcional de re-suscripciones del dashboard
+
+> **Estado:** NO implementada. La lentitud y las inconsistencias del dashboard ya quedaron resueltas sin necesidad de esta fase. Se documenta como mejora futura.
+
+Pendiente de evaluar en una próxima iteración (cada ítem conlleva riesgo y por eso se pospuso):
+
+1. **Estabilizar la referencia `user`** en los `useEffect` de suscripción (`dashboard/page.tsx`, `permits/page.tsx`): depender de `user?.uid` / `user?.role` en lugar del objeto `user` completo, para evitar re-suscripciones de listeners en cada snapshot del perfil. **Riesgo:** si `empresa`/`planta` cambian a mitad de sesión, el listener no se re-suscribiría con los nuevos filtros.
+2. **Reponer `limit()` en el dashboard** y migrar los conteos globales a `getCountFromServer` para no descargar toda la colección solo para estadísticas. **Riesgo:** con `limit()` ingenuo las estadísticas quedarían inexactas si hay más de N permisos; requiere los conteos agregados.
+
 ---
 
 ### 2026-06-18 (Sesión 10) — Fix: cierre de permisos + badge Trabajo en Caliente + optimización de rendimiento Firestore + ocultar módulos Contratistas

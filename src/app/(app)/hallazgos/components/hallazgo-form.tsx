@@ -47,12 +47,24 @@ const geoSchema = z.object({
     accuracy: z.number().optional(),
 });
 
+// Campo de fecha robusto: el autoguardado de borrador serializa con JSON.stringify,
+// que convierte los Date a string ISO. Si ese string llega a validación, date-fns lo
+// formatea bien (muestra la fecha) pero z.date() lo rechaza por no ser un objeto Date,
+// produciendo el error "fecha requerida" aunque la fecha SÍ se vea seleccionada.
+// z.preprocess convierte string/number → Date antes de validar, eliminando esa
+// inconsistencia sin perder el mensaje de requerido para undefined.
+const dateField = (opts?: { required_error?: string; invalid_type_error?: string }) =>
+    z.preprocess(
+        (v) => (typeof v === 'string' || typeof v === 'number') ? new Date(v) : v,
+        z.date(opts),
+    );
+
 const hallazgoSchema = z.object({
     empresa: z.string().min(1, 'La empresa es requerida'),
     planta: z.string().min(1, 'La planta es requerida'),
     area: z.string().min(1, 'El área es requerida'),
     tipoActividad: z.enum(['Rutinario', 'No Rutinario'], { required_error: 'Selecciona el tipo de actividad' }),
-    fechaVisita: z.date({ required_error: 'La fecha de visita es requerida' }),
+    fechaVisita: dateField({ required_error: 'La fecha de visita es requerida' }),
     geolocalizacion: geoSchema.refine(v => v !== null && v !== undefined, {
         message: 'La geolocalización es requerida',
     }),
@@ -69,12 +81,12 @@ const hallazgoSchema = z.object({
     firmaReportador: z.string().optional(),
     firmaResponsable: z.string().optional(),
     // Plan de acción (opcional)
-    fechaMedidaImplementada: z.date({ invalid_type_error: 'Fecha inválida' }).optional(),
+    fechaMedidaImplementada: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     responsable: z.string().optional(),
-    fechaSeguimiento1: z.date({ invalid_type_error: 'Fecha inválida' }).optional(),
+    fechaSeguimiento1: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     porcentajeCumplimiento: z.number().min(0).max(100).optional(),
     evidenciasPlanAccion: z.array(z.string()).optional().default([]),
-    fechaCierre: z.date({ invalid_type_error: 'Fecha inválida' }).optional(),
+    fechaCierre: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     porcentajeCumplimientoTotal: z.number().min(0).max(100).optional(),
     cumplimientoEstado: z.enum(['Pendiente', 'En Progreso', 'Completado', 'Cerrado']).optional(),
     observacion: z.string().optional(),
@@ -586,7 +598,11 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
         if (draft) {
             try {
                 const parsed = JSON.parse(draft);
-                if (parsed.fechaVisita) parsed.fechaVisita = new Date(parsed.fechaVisita);
+                // fechaVisita es obligatoria: garantizar siempre un Date válido. Un borrador
+                // antiguo (campo ausente o serializado como string) no debe perder el default
+                // ni dejar la fecha vacía.
+                parsed.fechaVisita = parsed.fechaVisita ? new Date(parsed.fechaVisita) : new Date();
+                if (isNaN(parsed.fechaVisita.getTime())) parsed.fechaVisita = new Date();
                 if (parsed.fechaMedidaImplementada) parsed.fechaMedidaImplementada = new Date(parsed.fechaMedidaImplementada);
                 if (parsed.fechaSeguimiento1) parsed.fechaSeguimiento1 = new Date(parsed.fechaSeguimiento1);
                 if (parsed.fechaCierre) parsed.fechaCierre = new Date(parsed.fechaCierre);
