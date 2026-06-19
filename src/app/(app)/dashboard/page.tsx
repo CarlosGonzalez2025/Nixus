@@ -222,11 +222,14 @@ export default function Dashboard() {
         setLoading(false);
       }));
 
-    } else if (user.role !== 'admin' && (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento'))) {
+    } else if (user.role === 'mantenimiento') {
+      // Enrutar SOLO por el rol ACTIVO (user.role), igual que permits/page.tsx. NO usar
+      // otherRoles: un usuario con doble rol (ej. activo 'solicitante' + 'mantenimiento'
+      // en otros roles) debe ver el dashboard de su rol activo, respetando el selector de
+      // rol. Mirar otherRoles aquí enrutaba a la rama de mantenimiento a usuarios cuyo rol
+      // activo NO era mantenimiento, mostrándoles 0 permisos en todas las tarjetas.
       // Dos queries independientes porque Firestore no soporta OR entre campos distintos.
       // requiresMaintenanceSignature activa la firma por controlEnergia O selectedWorkTypes.energia.
-      // Guardia user.role !== 'admin': el admin siempre debe ver TODOS los permisos
-      // sin importar si tiene mantenimiento en otherRoles.
       const mergedMap = new Map<string, Permit>();
 
       const applyAndSet = () => {
