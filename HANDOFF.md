@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-18 (Sesión 10)
+> **Última actualización de este documento:** 2026-06-19 (Sesión 11)
 
 ---
 
@@ -62,6 +62,67 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-19 (Sesión 11) — Fix: lentitud de ~1 min al cargar permisos (upgrade Firebase v12) + consistencia del dashboard por rol
+
+**Resumen:** los permisos tardaban ~1 minuto en mostrarse y, para algunos usuarios (sobre todo de doble rol), el dashboard mostraba 0 permisos aunque la tabla de permisos sí los listaba. Se atacaron ambas causas raíz. Build de producción limpio verificado (38/38 páginas).
+
+#### Fix 1 — Lentitud de ~1 min: upgrade a `firebase@12.15.0` y eliminación del long-polling forzado
+
+**Archivos modificados:** `src/lib/firebase.ts`, `package.json`, `package-lock.json`
+
+**Causa raíz:** desde la Sesión 5 se mantenía `experimentalForceLongPolling: true` como *workaround* del bug del SDK v11.10.0 `INTERNAL ASSERTION FAILED: ca9 / ve:-1` (eventos RESET del servidor tras `unsubscribe` que decrementaban el *target count* a -1). Ese flag **fuerza** el transporte HTTP long-polling en lugar de WebChannel/gRPC; en muchas redes la primera respuesta no se vacía hasta el *timeout* del long-poll (~60 s), que es exactamente la espera observada.
+
+**Investigación (release notes oficiales + issue [#9267](https://github.com/firebase/firebase-js-sdk/issues/9267)):**
+- El bug `ca9` **NO** se corrigió en ninguna versión de la línea **11.x**; persistió hasta la 12.x.
+- Se corrigió en **`firebase@12.13.0`** (release 7-may-2026): *"Fixed a race condition that caused 'ca9: pendingResponses less than 0' assertions."*
+
+**Fix aplicado:**
+```typescript
+// Antes
+localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
+experimentalForceLongPolling: true,   // workaround bug ca9 v11.10.0
+
+// Después (firebase 12.15.0 — ca9 ya corregido en 12.13.0)
+localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
+experimentalAutoDetectLongPolling: true,   // usa transporte rápido; long-poll solo si la red lo exige
+```
+- `firebase`: `^11.9.1` → `^12.15.0` (`@firebase/firestore` 4.8.0 → 4.16.0).
+- Se reemplaza `experimentalForceLongPolling` por `experimentalAutoDetectLongPolling`: usa el camino rápido por defecto (elimina la latencia de ~60 s) y solo cae a long-polling si la red (proxies corporativos en planta) lo requiere.
+
+**Validaciones del upgrade:**
+- *Breaking changes* de la v12 afectan solo al módulo AI/VertexAI e import `firebase/vertexai` → **0 usos** en esta app.
+- Node 24 cumple el mínimo de la v12 (≥ 20). `firebase-admin` 13.6 (SDK servidor) no se ve afectado.
+- ⚠️ **NOTA DE DESPLIEGUE:** la actualización requiere **instalación limpia** (`npm ci` / lockfile). Un upgrade *incremental* sobre un `node_modules` de la v11 deja el árbol `@firebase/*` inconsistente y rompe el prerender estático (`PageNotFoundError`). Firebase App Hosting instala desde `package-lock.json`, por lo que el deploy es limpio por defecto; este punto solo aplica a actualizaciones manuales en local.
+
+#### Fix 2 — Dashboard mostraba 0 permisos a usuarios de doble rol
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+**Causa raíz:** el dashboard elegía la consulta de permisos mirando también `otherRoles`:
+```typescript
+} else if (user.role !== 'admin' && (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento'))) {
+```
+Un usuario cuyo rol **activo** era, por ejemplo, `solicitante` pero que tenía `mantenimiento` entre sus otros roles caía en la rama de mantenimiento (que solo trae permisos `pendiente_revision` con firma de mantenimiento pendiente) → dashboard en **0**. La tabla de permisos (`permits/page.tsx`) enruta solo por el rol **activo**, por eso ahí sí se mostraban.
+
+**Fix aplicado:** se enruta únicamente por el rol activo (`user.role === 'mantenimiento'`), respetando el selector de rol — consistente con la tabla de permisos. Era el único punto del dashboard que consultaba `otherRoles`.
+
+#### Fix 3 — Dashboard usaba subconjuntos más estrechos que la tabla de permisos
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+**Causa raíz:** dentro de cada rama de rol, el dashboard filtraba a un subconjunto más estrecho que `permits/page.tsx`, por lo que las tarjetas y estadísticas no reflejaban los permisos en los que el usuario realmente interactúa (la tabla sí los mostraba). Se alinearon las consultas con la lógica ya probada de la tabla (mismos índices Firestore):
+
+| Rol | Antes (dashboard) | Después (= tabla de permisos) |
+|---|---|---|
+| `lider_sst` | Solo `selectedWorkTypes.alturas` + `isSSTSignatureRequired` | **Todos** los permisos de su planta (`where('generalInfo.planta','==',planta)` + filtro empresa + exclusión de borradores ajenos) |
+| `mantenimiento` | Solo pendientes de su firma (`pendiente_revision` + `approvals`) | **Todos** los de energía (`or(controlEnergia, selectedWorkTypes.energia)`) de su planta, cualquier estado |
+| `autorizante` | Incluía borradores ajenos | Excluye borradores ajenos (`borrador` → solo `createdBy === uid`) |
+| `lider_regional` | Incluía borradores ajenos | Excluye borradores ajenos |
+
+`solicitante` y `admin` ya eran consistentes (sin cambios).
 
 ---
 
