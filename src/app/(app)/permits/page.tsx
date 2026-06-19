@@ -32,7 +32,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  collection, onSnapshot, query, orderBy, where, or,
+  collection, onSnapshot, query, orderBy, where, or, limit,
   QueryConstraint, Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -97,6 +97,7 @@ const getWorkTypeLabels = (permit: Permit): string[] => {
   const labels: string[] = [];
   if (types.alturas) labels.push('Alturas');
   if (types.confinado) labels.push('Confinados');
+  if (types.caliente) labels.push('Trabajo en Caliente');
   if (types.energia) labels.push('Energías');
   if (types.izaje) labels.push('Izaje');
   if (types.excavacion) labels.push('Excavaciones');
@@ -108,6 +109,7 @@ const getWorkTypeBadges = (permit: Permit): JSX.Element[] => {
   const config: { key: keyof typeof permit.selectedWorkTypes; label: string; cls: string }[] = [
     { key: 'alturas', label: 'Alturas', cls: 'bg-blue-100 text-blue-800' },
     { key: 'confinado', label: 'Confinados', cls: 'bg-purple-100 text-purple-800' },
+    { key: 'caliente', label: 'T. Caliente', cls: 'bg-red-100 text-red-800' },
     { key: 'energia', label: 'Energías', cls: 'bg-yellow-100 text-yellow-800' },
     { key: 'izaje', label: 'Izaje', cls: 'bg-green-100 text-green-800' },
     { key: 'excavacion', label: 'Excavaciones', cls: 'bg-orange-100 text-orange-800' },
@@ -209,7 +211,16 @@ export default function PermitsPage() {
     let unsubscribers: Unsubscribe[] = [];
 
     if (user.role === 'lider_regional') {
-      const unsub = onSnapshot(query(permitsCollection, orderBy('createdAt', 'desc')), (snapshot) => {
+      // Filtra por empresa en servidor si tiene lista acotada (≤30); planta/ciudad
+      // se siguen filtrando cliente-side porque Firestore no soporta múltiples `in` en distintos campos.
+      const lrConstraints: QueryConstraint[] = [];
+      if (user.allowedEmpresas?.length && user.allowedEmpresas.length <= 30) {
+        lrConstraints.push(where('generalInfo.empresa', 'in', user.allowedEmpresas));
+      }
+      lrConstraints.push(orderBy('createdAt', 'desc'));
+      lrConstraints.push(limit(200));
+
+      const unsub = onSnapshot(query(permitsCollection, ...lrConstraints), (snapshot) => {
         const data = snapshot.docs
           .map(doc => {
             const d = doc.data();
@@ -293,8 +304,17 @@ export default function PermitsPage() {
       const finalQuery: QueryConstraint[] = [];
       if (user.role === 'solicitante') {
         finalQuery.push(where('createdBy', '==', user.uid));
-      } else {
         finalQuery.push(orderBy('createdAt', 'desc'));
+      } else if (user.role === 'autorizante') {
+        // Filtra por empresa y planta en servidor; reduce drásticamente los documentos descargados.
+        if (user.empresa) finalQuery.push(where('generalInfo.empresa', '==', user.empresa));
+        if (user.planta) finalQuery.push(where('generalInfo.planta', '==', user.planta));
+        finalQuery.push(orderBy('createdAt', 'desc'));
+        finalQuery.push(limit(200));
+      } else {
+        // admin y otros roles privilegiados
+        finalQuery.push(orderBy('createdAt', 'desc'));
+        finalQuery.push(limit(200));
       }
 
       const unsub = onSnapshot(query(permitsCollection, ...finalQuery), (snapshot) => {
@@ -303,21 +323,9 @@ export default function PermitsPage() {
           return { id: doc.id, ...d, createdAt: parseFirestoreDate(d.createdAt) } as unknown as Permit;
         });
 
-        if (user.role === 'solicitante') {
-          data = data.sort(
-            (a, b) =>
-              (parseFirestoreDate(b.createdAt)?.getTime() || 0) -
-              (parseFirestoreDate(a.createdAt)?.getTime() || 0),
-          );
-        }
-
         if (user.role === 'autorizante') {
-          data = data.filter(p => {
-            if (p.status === 'borrador') return p.createdBy === user.uid;
-            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
-            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
-            return matchEmpresa && matchPlanta;
-          });
+          // Solo excluir borradores ajenos; empresa/planta ya vienen filtrados del servidor.
+          data = data.filter(p => p.status !== 'borrador' || p.createdBy === user.uid);
         }
 
         setAllPermits(data);

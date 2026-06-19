@@ -1478,7 +1478,7 @@ export default function PermitDetailPage() {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={canChangeStatus('cerrado') ? handleOpenClosureDialog : handleEmergencyClosure}
+                onClick={handleOpenClosureDialog}
               >
                 <Lock className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Cerrar Permiso</span>

@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-16 (Sesión 9)
+> **Última actualización de este documento:** 2026-06-18 (Sesión 10)
 
 ---
 
@@ -62,6 +62,143 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-18 (Sesión 10) — Fix: cierre de permisos + badge Trabajo en Caliente + optimización de rendimiento Firestore + ocultar módulos Contratistas
+
+#### Fix: autorizante veía "Cierre de Emergencia" al intentar firmar el cierre normal
+
+**Archivo modificado:** `src/app/(app)/permits/[id]/page.tsx` (línea 1481)
+
+**Causa raíz:** El botón "Cerrar Permiso" decidía entre el flujo normal y el de emergencia con esta condición:
+
+```tsx
+onClick={canChangeStatus('cerrado') ? handleOpenClosureDialog : handleEmergencyClosure}
+```
+
+`canChangeStatus('cerrado')` devuelve `true` solo para `solicitante` y `admin`. Cuando el **autorizante** hacía clic, `hasRole` era `false` → se disparaba `handleEmergencyClosure` directamente, mostrando el diálogo de "Cierre de Emergencia" con el mensaje "Falta la firma de cierre de la Autoridad del Área" — que es precisamente la firma que el autorizante quería capturar en ese momento.
+
+La función correcta ya existía: `getClosureStatus()` evalúa las 5 condiciones reales de cierre (estado del permiso, firmas de trabajadores, firma responsable, firma autoridad, validaciones diarias de anexos). Su resultado estaba en `closureStatus` pero no se usaba para esta decisión. El flujo de emergencia ya tiene acceso desde **dentro** del diálogo normal (botón "Forzar Cierre de Emergencia" en línea 2342).
+
+**Fix aplicado:**
+
+```tsx
+// Antes: solo solicitante/admin podían abrir el diálogo normal
+onClick={canChangeStatus('cerrado') ? handleOpenClosureDialog : handleEmergencyClosure}
+
+// Después: el diálogo normal siempre se abre; la emergencia es un camino secundario interno
+onClick={handleOpenClosureDialog}
+```
+
+---
+
+#### Feat: badge "T. Caliente" en la columna Tipo de Trabajo de la tabla de permisos
+
+**Archivo modificado:** `src/app/(app)/permits/page.tsx`
+
+Se añadió el tipo de trabajo `caliente` (Trabajos en Caliente) a las dos funciones que controlan la columna Tipo de Trabajo:
+
+- **`getWorkTypeLabels`** — añadido `if (types.caliente) labels.push('Trabajo en Caliente')` (usado para búsqueda/filtrado de texto).
+- **`getWorkTypeBadges`** — añadida entrada `{ key: 'caliente', label: 'T. Caliente', cls: 'bg-red-100 text-red-800' }` entre Confinados y Energías.
+
+Los permisos con el anexo de Trabajos en Caliente ahora muestran su badge rojo en la lista.
+
+---
+
+#### Perf: 4 optimizaciones de rendimiento en la carga de datos Firestore
+
+**Contexto:** todos los usuarios reportaban lentitud en el dashboard y la lista de permisos. El diagnóstico identificó 4 causas raíz tratables sin tocar el flujo de firmas ni el PDF:
+
+1. **`memoryLocalCache` sin persistencia** — cada navegación entre páginas o recarga borraba la caché y forzaba re-descarga completa de Firestore.
+2. **Sin filtros de servidor para `autorizante`, `admin` y `lider_regional`** — estos roles descargaban TODA la colección `permits` y filtraban en el cliente.
+3. **`lider_sst` en dashboard: 4 operaciones simultáneas** — `getDocs×2 + onSnapshot×2 + fetchData()` en cada actualización.
+4. **Sin `limit()` en la lista de permisos** — la lista descargaba todos los documentos aunque solo mostrara 25 por página.
+
+##### Fix 1 — `persistentLocalCache` + `persistentMultipleTabManager`
+
+**Archivo modificado:** `src/lib/firebase.ts`
+
+```typescript
+// Antes
+localCache: memoryLocalCache()
+
+// Después
+localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+```
+
+Los datos ahora sobreviven en IndexedDB del navegador. La segunda carga y la navegación entre páginas son instantáneas. Múltiples pestañas abiertas comparten una sola conexión Firestore. Se mantiene `experimentalForceLongPolling: true` (workaround del bug del SDK v11.10.0 — ver Sesión 5).
+
+##### Fix 2 — Filtros en servidor para `autorizante`, `admin` y `lider_regional`
+
+**Archivos modificados:** `src/app/(app)/permits/page.tsx`, `src/app/(app)/dashboard/page.tsx`
+
+| Rol | Antes | Después |
+|---|---|---|
+| `autorizante` | Descarga toda la colección, filtra por empresa/planta en cliente | `where('generalInfo.empresa', '==', user.empresa)` + `where('generalInfo.planta', '==', user.planta)` en servidor |
+| `lider_regional` | Descarga toda la colección, filtra por scope en cliente | `where('generalInfo.empresa', 'in', allowedEmpresas)` si tiene ≤30 empresas; planta/ciudad siguen cliente-side |
+| `admin` | Descarga toda la colección | Sin cambio en dashboard (necesita datos completos para estadísticas); `limit(200)` en lista |
+
+Los borradores ajenos se siguen excluyendo cliente-side para el `autorizante`.
+
+##### Fix 3 — Consolidación de listeners `lider_sst` en dashboard
+
+**Archivo modificado:** `src/app/(app)/dashboard/page.tsx`
+
+```typescript
+// Antes: getDocs×2 + onSnapshot×2 + fetchData() = hasta 5 operaciones por actualización
+const q1 = query(permitsCollection, where('selectedWorkTypes.alturas', '==', true));
+const q2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
+const fetchData = async () => { const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]); ... };
+onSnapshot(q1, fetchData); onSnapshot(q2, fetchData); fetchData();
+
+// Después: un solo onSnapshot con or()
+const sstConstraints = [
+  or(
+    where('selectedWorkTypes.alturas', '==', true),
+    where('isSSTSignatureRequired', '==', true),
+  ),
+];
+onSnapshot(query(permitsCollection, ...sstConstraints), (snap) => { ... });
+```
+
+Se eliminó la importación de `getDocs` del dashboard.
+
+##### Fix 4 — `limit(200)` en queries grandes de la lista de permisos
+
+**Archivo modificado:** `src/app/(app)/permits/page.tsx`
+
+Se añadió `limit(200)` a los queries de `admin`, `lider_regional` y `autorizante` en la lista de permisos. **No se aplica en el dashboard** porque las estadísticas (totales, gráficas, conteos) requieren el conjunto completo de datos.
+
+---
+
+#### UX: ocultar módulos "Verif. Contratistas" y "Plantillas Contratistas" del menú lateral
+
+**Archivo modificado:** `src/app/(app)/layout.tsx`
+
+Ambos ítems del sidebar se ocultaron para todos los roles añadiendo `{false && ...}` como condición. El código permanece intacto para reactivarlos fácilmente quitando el `false &&`.
+
+```tsx
+{/* Verif. Contratistas y Plantillas Contratistas — ocultos temporalmente */}
+{false && (user.role === 'admin' || ...) && (
+  <SidebarMenuItem>...</SidebarMenuItem>
+)}
+{false && (user.role === 'admin' || user.role === 'asesor_arl') && (
+  <SidebarMenuItem>...</SidebarMenuItem>
+)}
+```
+
+---
+
+#### Resumen de archivos modificados (Sesión 10)
+
+| Archivo | Cambios |
+|---|---|
+| `src/app/(app)/permits/[id]/page.tsx` | Fix botón "Cerrar Permiso": siempre abre diálogo normal |
+| `src/app/(app)/permits/page.tsx` | Badge "T. Caliente"; filtros servidor autorizante/admin; `limit(200)` |
+| `src/app/(app)/dashboard/page.tsx` | Filtros servidor lider_regional/autorizante; consolidación lider_sst en un solo listener |
+| `src/lib/firebase.ts` | `persistentLocalCache` + `persistentMultipleTabManager` (reemplaza `memoryLocalCache`) |
+| `src/app/(app)/layout.tsx` | Módulos Verif. Contratistas y Plantillas Contratistas ocultos (`false &&`) |
 
 ---
 

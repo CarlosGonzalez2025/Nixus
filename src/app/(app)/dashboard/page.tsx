@@ -33,8 +33,8 @@ import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
 import { isInLiderRegionalScope } from '@/lib/role-config';
 import {
-  collection, query, where, onSnapshot, orderBy,
-  Unsubscribe, QueryConstraint, getDocs,
+  collection, query, where, onSnapshot, orderBy, or,
+  Unsubscribe, QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Permit, Hallazgo } from '@/types';
@@ -172,8 +172,14 @@ export default function Dashboard() {
       setAllPermits([]);
 
     } else if (user.role === 'lider_regional') {
-      // Lider Regional — carga todos y filtra por scope asignado
-      unsubscribers.push(onSnapshot(query(permitsCollection, orderBy('createdAt', 'desc')), (snap) => {
+      // Filtra por empresa en servidor si tiene lista acotada; planta/ciudad siguen cliente-side.
+      const lrConstraints: QueryConstraint[] = [];
+      if (user.allowedEmpresas?.length && user.allowedEmpresas.length <= 30) {
+        lrConstraints.push(where('generalInfo.empresa', 'in', user.allowedEmpresas));
+      }
+      lrConstraints.push(orderBy('createdAt', 'desc'));
+
+      unsubscribers.push(onSnapshot(query(permitsCollection, ...lrConstraints), (snap) => {
         const data = snap.docs
           .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
           .filter(p => isInLiderRegionalScope(user, {
@@ -189,41 +195,29 @@ export default function Dashboard() {
       }));
 
     } else if (user.role === 'lider_sst') {
-      const q1 = query(permitsCollection, where('selectedWorkTypes.alturas', '==', true));
-      const q2 = query(permitsCollection, where('isSSTSignatureRequired', '==', true));
+      // Un solo listener con or() reemplaza los anteriores getDocs×2 + onSnapshot×2 + fetchData().
+      const sstConstraints: QueryConstraint[] = [
+        or(
+          where('selectedWorkTypes.alturas', '==', true),
+          where('isSSTSignatureRequired', '==', true),
+        ),
+      ];
 
-      const fetchData = async () => {
-        try {
-          const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-          const map = new Map<string, Permit>();
-          [snap1, snap2].forEach(snap =>
-            snap.docs.forEach(d => {
-              if (!map.has(d.id))
-                map.set(d.id, { id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit);
-            })
-          );
-          const combined = Array.from(map.values())
-            .filter(p => {
-              const matchPlanta = !user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase();
-              const matchEmpresa = !user.empresa || p.generalInfo?.empresa?.toLowerCase() === user.empresa.toLowerCase();
-              return matchPlanta && matchEmpresa;
-            })
-            .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
-          setAllPermits(combined);
-          setLoading(false);
-        } catch {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
-          setLoading(false);
-        }
-      };
-
-      unsubscribers.push(onSnapshot(q1, fetchData, (_e) => {
+      unsubscribers.push(onSnapshot(query(permitsCollection, ...sstConstraints), (snap) => {
+        const combined = snap.docs
+          .map(d => ({ id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt) } as unknown as Permit))
+          .filter(p => {
+            const matchPlanta = !user.planta || p.generalInfo?.planta?.toLowerCase() === user.planta.toLowerCase();
+            const matchEmpresa = !user.empresa || p.generalInfo?.empresa?.toLowerCase() === user.empresa.toLowerCase();
+            return matchPlanta && matchEmpresa;
+          })
+          .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
+        setAllPermits(combined);
+        setLoading(false);
+      }, () => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
+        setLoading(false);
       }));
-      unsubscribers.push(onSnapshot(q2, fetchData, (_e) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: permitsCollection.path, operation: 'list' }));
-      }));
-      fetchData();
 
     } else if (user.role !== 'admin' && (user.role === 'mantenimiento' || (user.otherRoles ?? []).includes('mantenimiento'))) {
       // Dos queries independientes porque Firestore no soporta OR entre campos distintos.
@@ -264,24 +258,26 @@ export default function Dashboard() {
       }, onMantErr));
 
     } else {
-      const finalQuery: QueryConstraint[] = user.role === 'solicitante'
-        ? [where('createdBy', '==', user.uid)]
-        : [orderBy('createdAt', 'desc')];
+      const finalQuery: QueryConstraint[] = [];
+      if (user.role === 'solicitante') {
+        finalQuery.push(where('createdBy', '==', user.uid));
+        finalQuery.push(orderBy('createdAt', 'desc'));
+      } else if (user.role === 'autorizante') {
+        // Filtra por empresa y planta en servidor para no descargar toda la colección.
+        if (user.empresa) finalQuery.push(where('generalInfo.empresa', '==', user.empresa));
+        if (user.planta) finalQuery.push(where('generalInfo.planta', '==', user.planta));
+        finalQuery.push(orderBy('createdAt', 'desc'));
+      } else {
+        // admin y otros roles privilegiados — sin límite para estadísticas completas
+        finalQuery.push(orderBy('createdAt', 'desc'));
+      }
 
       unsubscribers.push(onSnapshot(query(permitsCollection, ...finalQuery), (snap) => {
-        let data = snap.docs.map(d => ({
-          id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
-        } as unknown as Permit));
-
-        data = data.sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
-
-        if (user.role === 'autorizante') {
-          data = data.filter(p => {
-            const matchEmpresa = !user.empresa || !p.generalInfo?.empresa || p.generalInfo.empresa.toLowerCase() === user.empresa.toLowerCase();
-            const matchPlanta = !user.planta || !p.generalInfo?.planta || p.generalInfo.planta.toLowerCase() === user.planta.toLowerCase();
-            return matchEmpresa && matchPlanta;
-          });
-        }
+        const data = snap.docs
+          .map(d => ({
+            id: d.id, ...d.data(), createdAt: parseFirestoreDate(d.data().createdAt),
+          } as unknown as Permit))
+          .sort((a, b) => ((b.createdAt as any)?.getTime?.() || 0) - ((a.createdAt as any)?.getTime?.() || 0));
 
         setAllPermits(data);
         setLoading(false);
