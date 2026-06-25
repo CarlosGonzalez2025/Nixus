@@ -178,9 +178,26 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="bg-gray-50 py-3 sm:py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500 rounded-b-lg">
-          <p className="w-full">
-            © 2025 Axa Colpatria & Nixus Capital - Todos los derechos reservados
+        <CardFooter className="bg-gray-50 py-3 sm:py-4 px-4 sm:px-6 lg:px-8 rounded-b-lg flex-col gap-2">
+          <nav className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
+            <Link href="/legal/privacidad" className="hover:text-primary hover:underline">
+              Privacidad
+            </Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/legal/terminos" className="hover:text-primary hover:underline">
+              Términos y Condiciones
+            </Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/legal/cookies" className="hover:text-primary hover:underline">
+              Cookies
+            </Link>
+            <span className="text-gray-300">·</span>
+            <Link href="/legal/seguridad" className="hover:text-primary hover:underline">
+              Seguridad
+            </Link>
+          </nav>
+          <p className="w-full text-center text-xs text-gray-500">
+            © 2025 Axa Colpatria &amp; Nixus Capital - Todos los derechos reservados
           </p>
         </CardFooter>
       </Card>

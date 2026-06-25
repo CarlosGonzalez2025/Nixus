@@ -96,6 +96,10 @@ service cloud.firestore {
       // LECTURA: Permite leer a los involucrados directamente.
       allow read: if isSignedIn() &&
                     (isAdmin() ||
+                     // Líder Regional: puede leer permisos dentro de su scope.
+                     // El scope (empresa/planta/ciudad) se valida en el cliente,
+                     // igual que en la regla `allow list` de abajo.
+                     isLiderRegional() ||
                      isCreator(resource.data) ||
                      // Autorizante: puede leer permisos de su empresa y planta
                      (hasRole('autorizante') &&

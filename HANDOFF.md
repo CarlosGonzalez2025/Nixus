@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-19 (Sesión 11)
+> **Última actualización de este documento:** 2026-06-25 (Sesión 12)
 
 ---
 
@@ -62,6 +62,71 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-06-25 (Sesión 12) — Fix: `lider_regional` no podía abrir permisos + Centro Legal público (políticas en el login)
+
+**Resumen:** dos entregas. (1) Corrección de un bug de reglas de Firestore que impedía al rol `lider_regional` abrir el detalle de cualquier permiso. (2) Creación del conjunto completo de políticas legales públicas (privacidad/datos, términos, cookies, seguridad), accesibles desde el login, con **Nixus Capital Humano S.A.S.** como operador. `tsc --noEmit`: los archivos nuevos compilan sin errores (los errores restantes son preexistentes en `dashboard`, `(app)/layout.tsx`, `email.ts`, `firebase.ts`).
+
+#### Fix 1 — `lider_regional` recibía "No tiene permisos para ver este documento" al abrir un permiso
+
+**Archivo modificado:** `firestore.rules` (raíz, desplegado)
+
+**Síntoma:** un usuario con rol `lider_regional` (ej. Líder Regional de Girón) veía los permisos en el dashboard y en la lista, pero al abrir cualquiera obtenía la pantalla de error *"Error al Cargar el Permiso — No tiene permisos para ver este documento o ha ocurrido un error."*
+
+**Causa raíz:** inconsistencia en las reglas de la colección `permits`. La regla `allow list` **sí** incluía `isLiderRegional()`, pero la regla `allow read` (lectura de documento individual, `get`) **no**. Por eso la lista cargaba, pero el `onSnapshot` sobre el documento individual en `permits/[id]/page.tsx` fallaba con `PERMISSION_DENIED` → el callback de error mostraba ese mensaje. Los roles autorizados en `allow read` eran solo `admin`, creador, `autorizante`, `lider_sst` y `mantenimiento`.
+
+**Fix aplicado:** se añadió `isLiderRegional()` a la cláusula `allow read` de `/permits/{permitId}`, alineándola con `allow list`. El scope (empresa/planta/ciudad) se sigue validando en el cliente con `isInLiderRegionalScope()` (`src/lib/role-config.ts`), mismo patrón ya documentado para `list`.
+
+```
+allow read: if isSignedIn() &&
+              (isAdmin() ||
+               isLiderRegional() ||      // ← agregado (espeja allow list)
+               isCreator(resource.data) ||
+               ...
+```
+
+> ⚠️ **Pendiente de despliegue:** ejecutar `firebase deploy --only firestore:rules` para activar el fix en producción (sin esto el `lider_regional` sigue viendo el error).
+
+#### Fix 2 — Centro Legal público: políticas accesibles desde el login
+
+Se creó el conjunto de documentos legales que toda aplicación debe publicar, conforme a la normativa colombiana de protección de datos (Ley 1581 de 2012, Decreto 1074 de 2015, Ley 1273 de 2009). Son **rutas públicas** (fuera del grupo `(app)`, sin autenticación) y quedan enlazadas desde el footer del login.
+
+**Roles de tratamiento de datos reflejados en los documentos:**
+- **Nixus Capital Humano S.A.S.** (NIT 900.490.623-4) → Encargado del Tratamiento / operador (gestión de almacenamiento y licenciamiento).
+- **Italcol** → Responsable del Tratamiento.
+- **Google Firebase / GCP** → subencargado (infraestructura, transferencia internacional de datos).
+
+**Archivos creados:**
+
+| Archivo | Descripción |
+|---|---|
+| `src/lib/legal-config.ts` | Fuente única de datos del operador (razón social, NIT, dirección, contacto, marco normativo, fecha de actualización). ⚠️ El correo/teléfono de contacto son placeholders pendientes de confirmar. |
+| `src/components/legal/legal-shell.tsx` | Contenedor visual compartido (header con logo, navegación entre documentos, footer con datos de Nixus). |
+| `src/app/legal/page.tsx` | Centro Legal (índice de las 4 políticas). |
+| `src/app/legal/privacidad/page.tsx` | Política de Privacidad y Tratamiento de Datos Personales — incluye datos sensibles tratados (EPS/ARL/pensiones, firma digitalizada, geolocalización), finalidades, derechos Habeas Data, transferencia internacional y autorización. |
+| `src/app/legal/terminos/page.tsx` | Términos y Condiciones de Uso. |
+| `src/app/legal/cookies/page.tsx` | Política de Cookies y Almacenamiento Local (PWA: sesión, IndexedDB, offline; sin cookies de marketing). |
+| `src/app/legal/seguridad/page.tsx` | Política de Seguridad de la Información (control de acceso por rol/scope, cifrado, infraestructura, gestión de incidentes). |
+
+**Archivo modificado:**
+
+| Archivo | Cambios |
+|---|---|
+| `src/app/login/page.tsx` | Footer con enlaces públicos a las 4 políticas (Privacidad · Términos · Cookies · Seguridad). |
+
+> **Regla de marca:** los documentos presentan exclusivamente a Nixus Capital Humano como operador; no se menciona ningún otro proveedor de desarrollo.
+
+#### Resumen de archivos (Sesión 12)
+
+| Archivo | Cambios |
+|---|---|
+| `firestore.rules` | `allow read` de `permits` ahora incluye `isLiderRegional()` |
+| `src/lib/legal-config.ts` | **Nuevo** — datos legales del operador |
+| `src/components/legal/legal-shell.tsx` | **Nuevo** — shell compartido de páginas legales |
+| `src/app/legal/**` | **Nuevo** — índice + 4 páginas de políticas |
+| `src/app/login/page.tsx` | Enlaces a las políticas en el footer |
 
 ---
 
