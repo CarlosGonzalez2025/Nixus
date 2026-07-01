@@ -717,6 +717,12 @@ const renderPermitContent = (doc: jsPDF, permit: any) => {
       ['Evidencia de Partículas:', getStatusSymbol(permit.closure.evidenciaParticulas)],
       ['Continúa Labor:', getStatusSymbol(permit.closure.continuaLabor)],
       ['Dispositivos Retirados:', getStatusSymbol(permit.closure.dispositivosRetirados)],
+      ['Verificó Estado del Área:', getStatusSymbol(permit.closure.verificoEstadoArea)],
+      ['Seguimiento (30 min / 60 min / 2 h):', [
+        permit.closure.seguimientoCaliente?.hora1,
+        permit.closure.seguimientoCaliente?.hora2,
+        permit.closure.seguimientoCaliente?.hora3,
+      ].filter(Boolean).join(' / ') || 'N/A'],
       ['Fecha de Cierre:', (() => {
         try {
           const dateObj = parseFirestoreDate(permit.closure.fechaCierre);

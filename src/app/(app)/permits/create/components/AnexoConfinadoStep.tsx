@@ -691,23 +691,21 @@ export function AnexoConfinadoStep() {
               ))}
             </TableBody>
           </Table>
-          {(anexoConfinado?.pruebasGasesPeriodicas?.pruebas?.length || 0) < 4 && (
-            <Button 
-              size="sm" 
-              onClick={() => addToList('pruebasGasesPeriodicas', 'pruebas', { 
-                id: `prueba-${Date.now()}`, 
-                hora: '', 
-                lel: '', 
-                o2: '', 
-                h2s: '', 
-                co: '', 
-                firma: '' 
-              })} 
-              className="mt-2"
-            >
-              <Plus className="mr-2 h-4 w-4"/>Agregar Prueba
-            </Button>
-          )}
+          <Button
+            size="sm"
+            onClick={() => addToList('pruebasGasesPeriodicas', 'pruebas', {
+              id: `prueba-${Date.now()}`,
+              hora: '',
+              lel: '',
+              o2: '',
+              h2s: '',
+              co: '',
+              firma: ''
+            })}
+            className="mt-2"
+          >
+            <Plus className="mr-2 h-4 w-4"/>Agregar Prueba
+          </Button>
       </SectionWrapper>
     </div>
     <Dialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen}>

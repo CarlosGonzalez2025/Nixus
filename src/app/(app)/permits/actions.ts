@@ -3,13 +3,14 @@
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import { SIGNATURE_ROLE_LABELS } from '@/lib/role-config';
 import { revalidatePath } from 'next/cache';
-import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, User, Notification } from '@/types';
+import type { Permit, ExternalWorker, PermitStatus, PermitClosure, Approval, UserRole, AnexoAltura, AnexoConfinado, AnexoEnergias, AnexoExcavaciones, AnexoIzaje, AnexoATS, PermitGeneralInfo, JustificacionATS, ValidacionDiaria, PruebaGasesPeriodica, User, Notification } from '@/types';
 import { FieldValue, UpdateData, Timestamp } from 'firebase-admin/firestore';
 import { sendWhatsAppNotification } from '@/lib/notifications';
 import { sendGroupEmail } from '@/lib/email';
 import { buildPermitEmailHtml } from '@/lib/permit-email-template';
 import { sendPushToUser } from '@/lib/push-notifications';
 import { config } from 'dotenv';
+import { getHotWorkClosureBlockingReasons } from '@/lib/permit-closure-rules';
 config();
 
 // ─── Helpers de notificación ──────────────────────────────────────────────────
@@ -1044,6 +1045,14 @@ export async function updatePermitStatus(
                 return { success: false, error: `No se puede cerrar el permiso: faltan firmas de cierre de ${workersWithoutCierre.length} trabajador(es).` };
             }
 
+            // Checklist de cierre obligatorio para trabajo en caliente (no confiar solo en la validación del cliente).
+            if (permitData.selectedWorkTypes?.caliente) {
+                const closureBlockingReasons = getHotWorkClosureBlockingReasons(permitData.closure);
+                if (closureBlockingReasons.length > 0) {
+                    return { success: false, error: `No se puede cerrar el permiso: ${closureBlockingReasons[0]}` };
+                }
+            }
+
             updateData['closure.fechaCierre'] = FieldValue.serverTimestamp();
             updateData['closure.terminado'] = 'si';
         }
@@ -1490,6 +1499,120 @@ export async function addWorkerSignature(permitId: string, workerIndex: number, 
         console.error("Error al guardar la firma del trabajador:", error);
         return { success: false, error: 'No se pudo guardar la firma.' };
     }
+}
+
+export async function updatePermitClosureChecklist(
+  permitId: string,
+  checklist: Partial<PermitClosure>,
+  user: User
+) {
+  if (!permitId || !checklist || !user) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
+  const docRef = adminDb.collection('permits').doc(permitId);
+  try {
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
+      return { success: false, error: 'Solo se puede editar el checklist de cierre en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
+    }
+    if (permitData.closure?.responsable?.firma) {
+      return { success: false, error: 'No se puede editar el checklist: el Responsable del Trabajo ya firmó el cierre.' };
+    }
+
+    await docRef.update({
+      closure: { ...(permitData.closure || {}), ...checklist },
+    });
+
+    revalidatePath(`/permits/${permitId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error al guardar el checklist de cierre:', error);
+    return { success: false, error: 'No se pudo guardar el checklist de cierre.' };
+  }
+}
+
+export async function updatePermitAnexoATS(
+  permitId: string,
+  anexoATS: Partial<AnexoATS>,
+  user: User
+) {
+  if (!permitId || !anexoATS || !user) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
+  const docRef = adminDb.collection('permits').doc(permitId);
+  try {
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
+      return { success: false, error: 'Solo se puede actualizar la identificación de peligros y EPP en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
+    }
+
+    await docRef.update({ anexoATS });
+
+    revalidatePath(`/permits/${permitId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error al actualizar peligros/EPP del permiso:', error);
+    return { success: false, error: 'No se pudo actualizar la identificación de peligros y EPP.' };
+  }
+}
+
+export async function addPruebaGasesPeriodica(
+  permitId: string,
+  prueba: PruebaGasesPeriodica,
+  user: User
+) {
+  if (!permitId || !prueba || !user) {
+    return { success: false, error: 'Parámetros inválidos.' };
+  }
+  if (!isAdminReady()) {
+    return { success: false, error: 'Credenciales de administrador de Firebase no configuradas en el servidor.' };
+  }
+
+  const docRef = adminDb.collection('permits').doc(permitId);
+  try {
+    const permitSnap = await docRef.get();
+    if (!permitSnap.exists) {
+      return { success: false, error: 'El permiso no existe.' };
+    }
+    const permitData = permitSnap.data() as Permit;
+
+    if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
+      return { success: false, error: 'Solo se pueden registrar mediciones periódicas en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
+    }
+    if (!permitData.selectedWorkTypes?.confinado) {
+      return { success: false, error: 'Este permiso no incluye trabajo en espacios confinados.' };
+    }
+
+    const pruebasActuales = permitData.anexoConfinado?.pruebasGasesPeriodicas?.pruebas || [];
+
+    await docRef.update({
+      'anexoConfinado.pruebasGasesPeriodicas.pruebas': [...pruebasActuales, prueba],
+    });
+
+    revalidatePath(`/permits/${permitId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error al registrar la medición periódica:', error);
+    return { success: false, error: 'No se pudo registrar la medición periódica.' };
+  }
 }
 
 // ─── Sincronización offline ────────────────────────────────────────────────────

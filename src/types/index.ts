@@ -89,6 +89,7 @@ export type PermitClosure = {
     hora3: string;
   };
   dispositivosRetirados: 'si' | 'no' | 'na';
+  verificoEstadoArea?: 'si' | 'no' | 'na';
   validezDesde: string;
   validezHasta: string;
   fechaCierre: string;
@@ -127,6 +128,7 @@ export type ValidacionDiaria = {
   firmaCierre?: string;
   fechaCierre?: string;
   observacionesCierre?: string;
+  actividadSigueIgual?: 'si' | 'no';
 };
 
 export type AutorizacionPersona = {

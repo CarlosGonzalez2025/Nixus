@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-06-25 (Sesión 12)
+> **Última actualización de este documento:** 2026-07-01 (Sesión 13)
 
 ---
 
@@ -62,6 +62,76 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-07-01 (Sesión 13) — Feat: Checklist de cierre Trabajo en Caliente + revalidación diaria "¿sigue igual?" + mediciones periódicas en Espacios Confinados
+
+**Resumen:** tres ajustes solicitados por el cliente sobre los formatos físicos vigentes (Anexo "Emisión, Revalidación y Cierre" de Trabajo en Caliente y Anexo 2 de Espacios Confinados), implementados sin alterar la estructura ni la lógica existente. `tsc --noEmit`: 0 errores nuevos en los archivos tocados (los 13 errores preexistentes están en `dashboard`, `hallazgos`, `layout.tsx`, `email.ts`, `firebase.ts`, sin relación con este cambio). `next build`: exitoso, 43/43 páginas generadas.
+
+#### Feat 1 — Checklist de cierre para Trabajo en Caliente (con bloqueo de cierre)
+
+**Hallazgo previo a implementar:** el tipo `PermitClosure` ya tenía los campos `informeCulminacion`, `areaDespejada`, `evidenciaParticulas`, `continuaLabor`, `dispositivosRetirados` y `seguimientoCaliente.hora1/2/3` desde antes, y se leían en el PDF y en la exportación Excel — pero **ningún formulario los capturaba**: el diálogo "Módulo de Cierre de Permiso" solo manejaba las firmas de Responsable/Autoridad. Había que construir el checklist, no solo agregarle preguntas.
+
+**Campos nuevos:** `PermitClosure.verificoEstadoArea` ("Seguimiento trabajo en caliente: se verificó el estado del área posterior a la culminación") y `ValidacionDiaria.actividadSigueIgual` (ver Feat 2).
+
+**Reglas de bloqueo de cierre** (solo aplican si `selectedWorkTypes.caliente === true`; `N/A` nunca bloquea, confirmado con el cliente):
+
+| Pregunta | Bloquea el cierre si la respuesta es |
+|---|---|
+| Se informó al responsable del área sobre la culminación | `NO` |
+| Área despejada, ordenada, demarcación retirada | `NO` |
+| Se evidencia partículas o material encendido | `SI` |
+| Se continúa con la labor de manera normal | `NO` |
+| Se retiraron todos los dispositivos de bloqueo (candados y tarjetas) | `NO` |
+| Se verificó el estado del área posterior a la culminación | `NO` |
+
+**Archivo nuevo:** `src/lib/permit-closure-rules.ts` — fuente única de verdad de la tabla anterior (`HOT_WORK_CLOSURE_RULES` + `getHotWorkClosureBlockingReasons()`), importada tanto por el cliente (UX) como por el servidor (seguridad), para que ambos evalúen exactamente la misma regla y no se desincronicen.
+
+**Archivos modificados:**
+- `src/types/index.ts` — nuevo campo `verificoEstadoArea` en `PermitClosure`.
+- `src/app/(app)/permits/[id]/page.tsx` — nueva sección "Checklist de Cierre — Trabajo en Caliente" dentro del diálogo de cierre (visible solo si `selectedWorkTypes.caliente`), con las 6 preguntas SI/NO/N/A (reutilizando el componente `RadioCheck` ya existente en modo editable) + 3 campos de hora (30 min / 60 min / 2 h) + botón "Guardar Checklist". Se bloquea la edición tras la firma de cierre del Responsable. `getClosureStatus()` extendido con la Condición 6 usando `getHotWorkClosureBlockingReasons()`.
+- `src/app/(app)/permits/actions.ts` — nueva acción `updatePermitClosureChecklist()` (guarda el checklist, exige `en_ejecucion`/`suspendido` y bloquea edición si ya hay firma de cierre); `updatePermitStatus()` ahora valida las mismas reglas de bloqueo **en servidor** dentro del bloque `status === 'cerrado'`, para que la restricción no dependa solo de un botón deshabilitado en el cliente.
+- `src/lib/pdf-generators.ts` — el PDF de cierre ahora incluye `Verificó Estado del Área` y las 3 horas de seguimiento.
+
+**Nota Firestore Rules:** no requirió cambios en `firestore.rules`. Las tres acciones nuevas de esta sesión (`updatePermitClosureChecklist`, `updatePermitAnexoATS`, `addPruebaGasesPeriodica`) escriben vía Admin SDK (`adminDb`) en Server Actions, que **bypasea** las Security Rules (estas solo aplican a escrituras desde el SDK de cliente/navegador). Pendiente menor documentado: `anexoATS` no está en la lista `affectedKeys().hasAny([...])` de la regla `allow update` de `permits` (línea ~149) — no bloquea nada hoy, pero si en el futuro se agrega un flujo **offline** para peligros/EPP (como el que ya existe para firmas en `offline-permits.ts`), habría que añadir `'anexoATS'` a esa lista.
+
+#### Feat 2 — Revalidación diaria: "¿La actividad sigue igual?" con reapertura de peligros/EPP
+
+Desde el día 2 en adelante (el día 1 ya recoge peligros/EPP en la creación del permiso), al abrir la firma de apertura diaria del Responsable se pregunta primero si la actividad sigue igual a la identificada inicialmente:
+- **Sí** → continúa directo al flujo existente de nombre/fecha/firma, sin cambios.
+- **No** → se abre el mismo componente `AtsStep` (`src/app/(app)/permits/create/components/AtsStep.tsx`, ya controlado por props `{ anexoATS, onUpdateATS }` y por eso 100% reutilizable fuera del wizard de creación) precargado con los valores vigentes; al guardar, actualiza `permit.anexoATS` (la misma fuente que usan el PDF y la aprobación inicial) y continúa a la firma.
+
+**Archivos modificados:**
+- `src/types/index.ts` — nuevo campo opcional `actividadSigueIgual` en `ValidacionDiaria` (registro auditable de qué día cambiaron los peligros).
+- `src/app/(app)/permits/[id]/page.tsx` — `openDailyValidationSignatureDialog()` intercepta día 2+ del Responsable con el nuevo diálogo "Apertura de Nuevo Día"; nuevo diálogo "Actualizar Identificación de Peligros y EPP" que embebe `AtsStep`; `handleSaveDailyValidationSignature()` incluye `actividadSigueIgual` en el payload.
+- `src/app/(app)/permits/actions.ts` — nueva acción `updatePermitAnexoATS()` (mismo guard `en_ejecucion`/`suspendido` que `addDailyValidationSignature`).
+
+#### Feat 3 — Mediciones periódicas de gases en Espacios Confinados durante la ejecución
+
+La tabla "Pruebas de Gases Periódicas" (LEL/O2/H2S/CO + Hora + Firma) ya existía en el wizard de creación, pero con tope de 4 filas y **solo de lectura** en la vista de ejecución del permiso.
+
+**Archivos modificados:**
+- `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx` — se quitó el tope de 4 filas (tabla dinámica, sin límite).
+- `src/app/(app)/permits/[id]/page.tsx` — la sección "Pruebas Periódicas" del Anexo Confinado ahora permite agregar mediciones también durante `en_ejecucion`/`suspendido` (botón "Agregar Medición" + diálogo con Hora/LEL/O2/H2S/CO + `SignaturePad`), visible para el creador del permiso, `admin`, `solicitante` o `autorizante`.
+- `src/app/(app)/permits/actions.ts` — nueva acción `addPruebaGasesPeriodica()` (exige `en_ejecucion`/`suspendido` y `selectedWorkTypes.confinado`; hace push al arreglo existente sin reemplazarlo).
+
+No se requirió cambio de tipos para este punto: `PruebaGasesPeriodica` ya tenía exactamente las columnas del formato Excel.
+
+#### Compatibilidad
+
+Todos los campos nuevos son opcionales (`?:`) y las reglas de bloqueo/acciones nuevas solo se activan para `selectedWorkTypes.caliente` / `.confinado` — permisos de otros tipos de trabajo (alturas, izaje, excavación, general) y permisos ya cerrados/en ejecución no se ven afectados.
+
+#### Resumen de archivos (Sesión 13)
+
+| Archivo | Cambios |
+|---|---|
+| `src/lib/permit-closure-rules.ts` | **Nuevo** — reglas de bloqueo del checklist de cierre (compartidas cliente/servidor) |
+| `src/types/index.ts` | `PermitClosure.verificoEstadoArea`, `ValidacionDiaria.actividadSigueIgual` |
+| `src/app/(app)/permits/[id]/page.tsx` | Checklist de cierre en el diálogo de cierre; paso "¿Sigue igual?" + `AtsStep` en validación diaria; tabla editable de mediciones periódicas |
+| `src/app/(app)/permits/actions.ts` | Nuevas acciones `updatePermitClosureChecklist`, `updatePermitAnexoATS`, `addPruebaGasesPeriodica`; validación server-side de bloqueo de cierre en `updatePermitStatus` |
+| `src/app/(app)/permits/create/components/AnexoConfinadoStep.tsx` | Se quitó el tope de 4 filas en pruebas periódicas |
+| `src/lib/pdf-generators.ts` | PDF de cierre incluye `verificoEstadoArea` y horas de seguimiento |
 
 ---
 

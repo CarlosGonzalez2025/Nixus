@@ -40,6 +40,7 @@ import {
   FileX,
   Ban,
   CalendarX,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +69,9 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import Image from 'next/image';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature, addDailyValidationClosureSignature, closePermitByAnyUser } from '../actions';
+import { updatePermitStatus, addSignatureAndNotify, addDailyValidationSignature, addWorkerSignature, addDailyValidationClosureSignature, closePermitByAnyUser, updatePermitClosureChecklist, updatePermitAnexoATS, addPruebaGasesPeriodica } from '../actions';
+import { getHotWorkClosureBlockingReasons } from '@/lib/permit-closure-rules';
+import { AtsStep } from '../create/components/AtsStep';
 import { addSignatureOffline } from '@/lib/offline-permits';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { handleStaleServerActionError } from '@/lib/server-action-error';
@@ -235,6 +238,36 @@ export default function PermitDetailPage() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancellationDateTime, setCancellationDateTime] = useState("");
 
+  // ✨ NUEVO: Checklist de cierre para trabajo en caliente
+  const [closureChecklistForm, setClosureChecklistForm] = useState<{
+    informeCulminacion: 'si' | 'no' | 'na';
+    areaDespejada: 'si' | 'no' | 'na';
+    evidenciaParticulas: 'si' | 'no' | 'na';
+    continuaLabor: 'si' | 'no' | 'na';
+    dispositivosRetirados: 'si' | 'no' | 'na';
+    verificoEstadoArea: 'si' | 'no' | 'na';
+    hora1: string;
+    hora2: string;
+    hora3: string;
+  }>({
+    informeCulminacion: 'na', areaDespejada: 'na', evidenciaParticulas: 'na',
+    continuaLabor: 'na', dispositivosRetirados: 'na', verificoEstadoArea: 'na',
+    hora1: '', hora2: '', hora3: '',
+  });
+  const [isSavingClosureChecklist, setIsSavingClosureChecklist] = useState(false);
+
+  // ✨ NUEVO: Paso "¿La actividad sigue igual?" antes de firmar la apertura diaria (día 2+)
+  const [isActividadSigueIgualOpen, setIsActividadSigueIgualOpen] = useState(false);
+  const [isUpdateAnexoAtsOpen, setIsUpdateAnexoAtsOpen] = useState(false);
+  const [draftAnexoATS, setDraftAnexoATS] = useState<Partial<AnexoATS>>({});
+  const [isSavingAnexoATS, setIsSavingAnexoATS] = useState(false);
+  const [pendingActividadSigueIgual, setPendingActividadSigueIgual] = useState<'si' | 'no' | null>(null);
+
+  // ✨ NUEVO: Registrar medición periódica de gases (espacios confinados) durante la ejecución
+  const [isAddMedicionDialogOpen, setIsAddMedicionDialogOpen] = useState(false);
+  const [medicionForm, setMedicionForm] = useState({ hora: '', lel: '', o2: '', h2s: '', co: '' });
+  const [isSavingMedicion, setIsSavingMedicion] = useState(false);
+
   const [isSuspensionDialogOpen, setIsSuspensionDialogOpen] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
   const [isReactivationAlertOpen, setIsReactivationAlertOpen] = useState(false);
@@ -371,7 +404,27 @@ export default function PermitDetailPage() {
     const name = type === 'responsable' ? permit?.user?.displayName : permit?.approvals?.autorizante?.userName;
     setDailyValidationName(name || currentUser.displayName || '');
     setDailyValidationDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+
+    // ✨ NUEVO: Desde el día 2 en adelante, el Responsable debe confirmar primero si la
+    // actividad sigue igual antes de firmar la apertura diaria (el día 1 ya recoge
+    // peligros/EPP en la creación del permiso).
+    if (type === 'responsable' && index > 0) {
+      setPendingActividadSigueIgual(null);
+      setIsActividadSigueIgualOpen(true);
+      return;
+    }
     setIsDailyValidationSignatureOpen(true);
+  };
+
+  const handleActividadSigueIgualChoice = (sigueIgual: 'si' | 'no') => {
+    setPendingActividadSigueIgual(sigueIgual);
+    setIsActividadSigueIgualOpen(false);
+    if (sigueIgual === 'no') {
+      setDraftAnexoATS(permit?.anexoATS ?? {});
+      setIsUpdateAnexoAtsOpen(true);
+    } else {
+      setIsDailyValidationSignatureOpen(true);
+    }
   };
 
   // ✨ NUEVO: Función para abrir diálogo de firma de cierre diario
@@ -681,6 +734,11 @@ export default function PermitDetailPage() {
     if (permit.selectedWorkTypes?.izaje) checkDailyValidations(permit.anexoIzaje, 'Anexo Izaje');
     if (permit.selectedWorkTypes?.excavacion) checkDailyValidations(permit.anexoExcavaciones, 'Anexo Excavaciones');
 
+    // Condición 6: Checklist de cierre de trabajo en caliente (ver src/lib/permit-closure-rules.ts)
+    if (permit.selectedWorkTypes?.caliente) {
+      reasons.push(...getHotWorkClosureBlockingReasons(permit.closure));
+    }
+
     return {
       can: reasons.length === 0,
       reasons: reasons,
@@ -759,7 +817,61 @@ export default function PermitDetailPage() {
       setPermit(prev => prev ? ({ ...prev, closure: { ...prev.closure, ...updates } }) : null);
     }
 
+    setClosureChecklistForm({
+      informeCulminacion: permit.closure?.informeCulminacion || 'na',
+      areaDespejada: permit.closure?.areaDespejada || 'na',
+      evidenciaParticulas: permit.closure?.evidenciaParticulas || 'na',
+      continuaLabor: permit.closure?.continuaLabor || 'na',
+      dispositivosRetirados: permit.closure?.dispositivosRetirados || 'na',
+      verificoEstadoArea: permit.closure?.verificoEstadoArea || 'na',
+      hora1: permit.closure?.seguimientoCaliente?.hora1 || '',
+      hora2: permit.closure?.seguimientoCaliente?.hora2 || '',
+      hora3: permit.closure?.seguimientoCaliente?.hora3 || '',
+    });
+
     setIsClosureDialogOpen(true);
+  };
+
+  const handleSaveClosureChecklist = async () => {
+    if (!permit || !currentUser) return;
+    setIsSavingClosureChecklist(true);
+    try {
+      const result = await updatePermitClosureChecklist(
+        permit.id,
+        {
+          informeCulminacion: closureChecklistForm.informeCulminacion,
+          areaDespejada: closureChecklistForm.areaDespejada,
+          evidenciaParticulas: closureChecklistForm.evidenciaParticulas,
+          continuaLabor: closureChecklistForm.continuaLabor,
+          dispositivosRetirados: closureChecklistForm.dispositivosRetirados,
+          verificoEstadoArea: closureChecklistForm.verificoEstadoArea,
+          seguimientoCaliente: {
+            hora1: closureChecklistForm.hora1,
+            hora2: closureChecklistForm.hora2,
+            hora3: closureChecklistForm.hora3,
+          },
+        },
+        currentUser as User
+      );
+      if (result.success) {
+        toast({ title: 'Checklist de cierre guardado' });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
+      toast({ variant: 'destructive', title: 'Error al guardar checklist', description: e.message });
+    } finally {
+      setIsSavingClosureChecklist(false);
+    }
   };
 
   const handleOpenCancellationDialog = () => {
@@ -865,6 +977,9 @@ export default function PermitDetailPage() {
           nombre: dailyValidationName,
           fecha: dailyValidationDate,
           firma: signature,
+          ...(dailyValidationTarget.type === 'responsable' && pendingActividadSigueIgual
+            ? { actividadSigueIgual: pendingActividadSigueIgual }
+            : {}),
         },
         currentUser as User
       );
@@ -891,6 +1006,85 @@ export default function PermitDetailPage() {
       setDailyValidationTarget(null);
       setDailyValidationName('');
       setDailyValidationDate('');
+      setPendingActividadSigueIgual(null);
+    }
+  };
+
+  // ✨ NUEVO: Registrar medición periódica de gases (espacios confinados) durante la ejecución
+  const openAddMedicionDialog = () => {
+    setMedicionForm({ hora: format(new Date(), 'HH:mm'), lel: '', o2: '', h2s: '', co: '' });
+    setIsAddMedicionDialogOpen(true);
+  };
+
+  const handleSaveMedicionPeriodica = async (signature: string) => {
+    if (!permit || !currentUser) return;
+    setIsSavingMedicion(true);
+    try {
+      const result = await addPruebaGasesPeriodica(
+        permit.id,
+        {
+          id: `prueba-${Date.now()}`,
+          hora: medicionForm.hora,
+          lel: medicionForm.lel,
+          o2: medicionForm.o2,
+          h2s: medicionForm.h2s,
+          co: medicionForm.co,
+          firma: signature,
+        },
+        currentUser as User
+      );
+      if (result.success) {
+        toast({ title: 'Medición registrada' });
+        setIsAddMedicionDialogOpen(false);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
+      toast({ variant: 'destructive', title: 'Error al guardar medición', description: e.message });
+    } finally {
+      setIsSavingMedicion(false);
+    }
+  };
+
+  // ✨ NUEVO: Guardar la identificación de peligros/EPP actualizada al abrir un nuevo día
+  const handleSaveDraftAnexoATS = async () => {
+    if (!permit || !currentUser) return;
+    setIsSavingAnexoATS(true);
+    try {
+      const result = await updatePermitAnexoATS(permit.id, draftAnexoATS, currentUser as User);
+      if (result.success) {
+        toast({ title: 'Peligros y EPP actualizados' });
+        setIsUpdateAnexoAtsOpen(false);
+        if (dailyValidationTarget) {
+          setDailyValidationName(permit?.user?.displayName || currentUser.displayName || '');
+          setDailyValidationDate(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+          setIsDailyValidationSignatureOpen(true);
+        }
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (e: any) {
+      if (handleStaleServerActionError(e)) {
+        toast({
+          title: 'Actualizando la aplicación…',
+          description: 'Se detectó una nueva versión. La página se recargará en unos segundos.',
+          className: 'bg-blue-50 border-blue-300',
+          duration: 5000,
+        });
+        return;
+      }
+      toast({ variant: 'destructive', title: 'Error al actualizar peligros/EPP', description: e.message });
+    } finally {
+      setIsSavingAnexoATS(false);
     }
   };
 
@@ -1800,6 +1994,17 @@ export default function PermitDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  {/* ✨ NUEVO: Registrar mediciones periódicas durante la ejecución del permiso */}
+                  {(permit.status === 'en_ejecucion' || permit.status === 'suspendido') && (
+                    currentUser?.uid === permit.createdBy ||
+                    currentUser?.role === 'admin' ||
+                    currentUser?.role === 'solicitante' ||
+                    currentUser?.role === 'autorizante'
+                  ) && (
+                    <Button size="sm" variant="outline" className="mt-2" onClick={openAddMedicionDialog}>
+                      <Plus className="mr-2 h-4 w-4" /> Agregar Medición
+                    </Button>
+                  )}
                 </Section>
                 <DailyValidationTable anexoName="anexoConfinado" validationData={permit.anexoConfinado.validacion} />
               </CollapsibleContent>
@@ -2126,6 +2331,40 @@ export default function PermitDetailPage() {
         </DialogContent>
       </Dialog>
 
+      {/* ✨ NUEVO: Registrar medición periódica de gases (espacios confinados) */}
+      <Dialog open={isAddMedicionDialogOpen} onOpenChange={setIsAddMedicionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Medición Periódica</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="medicion-hora">Hora</Label>
+              <Input id="medicion-hora" type="time" value={medicionForm.hora} onChange={e => setMedicionForm(f => ({ ...f, hora: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="medicion-lel">LEL</Label>
+                <Input id="medicion-lel" value={medicionForm.lel} onChange={e => setMedicionForm(f => ({ ...f, lel: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="medicion-o2">O2</Label>
+                <Input id="medicion-o2" value={medicionForm.o2} onChange={e => setMedicionForm(f => ({ ...f, o2: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="medicion-h2s">H2S</Label>
+                <Input id="medicion-h2s" value={medicionForm.h2s} onChange={e => setMedicionForm(f => ({ ...f, h2s: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="medicion-co">CO</Label>
+                <Input id="medicion-co" value={medicionForm.co} onChange={e => setMedicionForm(f => ({ ...f, co: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <SignaturePad onSave={handleSaveMedicionPeriodica} isSaving={isSavingMedicion} />
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isSolicitanteSignAlertOpen} onOpenChange={setIsSolicitanteSignAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -2142,6 +2381,47 @@ export default function PermitDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ✨ NUEVO: ¿La actividad sigue igual a la identificada inicialmente? (día 2 en adelante) */}
+      <Dialog open={isActividadSigueIgualOpen} onOpenChange={setIsActividadSigueIgualOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apertura de Nuevo Día</DialogTitle>
+            <DialogDescription>
+              ¿La actividad sigue igual a la identificación de peligros y EPP registrada inicialmente?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => handleActividadSigueIgualChoice('no')}>
+              No, actualizar peligros y EPP
+            </Button>
+            <Button onClick={() => handleActividadSigueIgualChoice('si')}>
+              Sí, sigue igual
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✨ NUEVO: Actualizar identificación de peligros y EPP antes de firmar el nuevo día */}
+      <Dialog open={isUpdateAnexoAtsOpen} onOpenChange={setIsUpdateAnexoAtsOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Actualizar Identificación de Peligros y EPP</DialogTitle>
+            <DialogDescription>Registre los peligros y EPP requeridos vigentes para hoy.</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 pr-1">
+            <AtsStep
+              anexoATS={draftAnexoATS as AnexoATS}
+              onUpdateATS={(updates) => setDraftAnexoATS(prev => ({ ...prev, ...updates }))}
+            />
+          </div>
+          <DialogFooter className="flex-shrink-0 pt-2 border-t">
+            <Button onClick={handleSaveDraftAnexoATS} disabled={isSavingAnexoATS}>
+              {isSavingAnexoATS ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Guardar y Continuar a Firma
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDailyValidationSignatureOpen} onOpenChange={setIsDailyValidationSignatureOpen}>
         <DialogContent>
@@ -2202,6 +2482,72 @@ export default function PermitDetailPage() {
             <DialogDescription>Complete las firmas requeridas para finalizar el permiso de trabajo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+
+            {/* ✨ NUEVO: Checklist de cierre — Trabajo en Caliente */}
+            {permit.selectedWorkTypes?.caliente && (() => {
+              const checklistLocked = !!permit.closure?.responsable?.firma;
+              const canEditChecklist = !checklistLocked && (currentUser?.uid === permit.createdBy || currentUser?.role === 'admin');
+              return (
+                <div className="border rounded-md p-3 space-y-2 bg-orange-50/50">
+                  <p className="text-sm font-semibold text-orange-800 flex items-center gap-2">
+                    <AlertTriangle size={14} /> Checklist de Cierre — Trabajo en Caliente
+                  </p>
+                  <div className="border rounded-md overflow-hidden bg-white">
+                    <RadioCheck
+                      label="Se informó al responsable del área sobre la culminación de las actividades"
+                      value={closureChecklistForm.informeCulminacion}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, informeCulminacion: v })) : undefined}
+                    />
+                    <RadioCheck
+                      label="Área se encuentra despejada, ordenada, demarcación retirada"
+                      value={closureChecklistForm.areaDespejada}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, areaDespejada: v })) : undefined}
+                    />
+                    <RadioCheck
+                      label="Se evidencia partículas o material encendido que pueda generar riesgo de fuego incipiente"
+                      value={closureChecklistForm.evidenciaParticulas}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, evidenciaParticulas: v })) : undefined}
+                    />
+                    <RadioCheck
+                      label="Se continúa con la labor de manera normal"
+                      value={closureChecklistForm.continuaLabor}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, continuaLabor: v })) : undefined}
+                    />
+                    <RadioCheck
+                      label="Se retiraron todos los dispositivos de bloqueo (candados y tarjetas)"
+                      value={closureChecklistForm.dispositivosRetirados}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, dispositivosRetirados: v })) : undefined}
+                    />
+                    <RadioCheck
+                      label="Seguimiento trabajo en caliente: se verificó el estado del área posterior a la culminación de la actividad"
+                      value={closureChecklistForm.verificoEstadoArea}
+                      onValueChange={canEditChecklist ? (v: any) => setClosureChecklistForm(f => ({ ...f, verificoEstadoArea: v })) : undefined}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div>
+                      <Label className="text-[11px] text-gray-500">Hora verif. 30 min</Label>
+                      <Input type="time" className="h-8" disabled={!canEditChecklist} value={closureChecklistForm.hora1} onChange={e => setClosureChecklistForm(f => ({ ...f, hora1: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-gray-500">Hora verif. 60 min</Label>
+                      <Input type="time" className="h-8" disabled={!canEditChecklist} value={closureChecklistForm.hora2} onChange={e => setClosureChecklistForm(f => ({ ...f, hora2: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] text-gray-500">Hora verif. 2 horas</Label>
+                      <Input type="time" className="h-8" disabled={!canEditChecklist} value={closureChecklistForm.hora3} onChange={e => setClosureChecklistForm(f => ({ ...f, hora3: e.target.value }))} />
+                    </div>
+                  </div>
+                  {canEditChecklist ? (
+                    <Button type="button" size="sm" variant="outline" className="w-full" onClick={handleSaveClosureChecklist} disabled={isSavingClosureChecklist}>
+                      {isSavingClosureChecklist ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Guardar Checklist
+                    </Button>
+                  ) : checklistLocked ? (
+                    <p className="text-xs text-muted-foreground">El checklist quedó bloqueado tras la firma de cierre del Responsable.</p>
+                  ) : null}
+                </div>
+              );
+            })()}
 
             {/* Flujo del cierre */}
             <div className="bg-gray-50 border rounded-md p-3">
