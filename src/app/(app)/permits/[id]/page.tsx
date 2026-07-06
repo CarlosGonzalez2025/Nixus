@@ -172,10 +172,16 @@ const RadioCheck: React.FC<{ label: string, value?: string | boolean, spec?: str
       <div className="flex items-center gap-2">
         {spec && <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded">{spec}</span>}
         {onValueChange ? (
-          <RadioGroup value={status} onValueChange={onValueChange} className="flex gap-2">
-            <RadioGroupItem value="si" /> <Label>Sí</Label>
-            <RadioGroupItem value="no" /> <Label>No</Label>
-            <RadioGroupItem value="na" /> <Label>N/A</Label>
+          <RadioGroup value={status} onValueChange={onValueChange} className="flex gap-3">
+            <Label className="flex items-center gap-1 cursor-pointer text-xs font-normal">
+              <RadioGroupItem value="si" /> Sí
+            </Label>
+            <Label className="flex items-center gap-1 cursor-pointer text-xs font-normal">
+              <RadioGroupItem value="no" /> No
+            </Label>
+            <Label className="flex items-center gap-1 cursor-pointer text-xs font-normal">
+              <RadioGroupItem value="na" /> N/A
+            </Label>
           </RadioGroup>
         ) : (
           iconMap[status]
@@ -2476,21 +2482,76 @@ export default function PermitDetailPage() {
       </Dialog>
 
       <Dialog open={isClosureDialogOpen} onOpenChange={setIsClosureDialogOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogContent className="w-[95vw] sm:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Módulo de Cierre de Permiso</DialogTitle>
             <DialogDescription>Complete las firmas requeridas para finalizar el permiso de trabajo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto flex-1 pr-1">
 
-            {/* ✨ NUEVO: Checklist de cierre — Trabajo en Caliente */}
+            {/* Flujo del cierre */}
+            <div className="bg-gray-50 border rounded-md p-3">
+              <p className="text-xs font-semibold text-gray-600 mb-2">Flujo de cierre del permiso:</p>
+              <div className="flex items-center gap-1 text-xs flex-wrap">
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma ? 'text-green-600' : 'text-blue-600'}`}>
+                  {permit.closure?.responsable?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center font-bold text-[10px]">1</span>}
+                  Ejecutante firma cierre
+                </span>
+                <span className="text-gray-400 mx-1">→</span>
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma && !permit.closure?.autoridad?.firma ? 'text-blue-600' : permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
+                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">2</span>}
+                  Autorizante recibe aviso
+                </span>
+                <span className="text-gray-400 mx-1">→</span>
+                <span className={`flex items-center gap-1 font-medium ${permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
+                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">3</span>}
+                  Autorizante firma y cierra
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
+              <p className="font-bold flex items-center gap-2"><Info size={16} />Condiciones para el Cierre</p>
+              <ul className="list-none space-y-1 text-sm mt-2">
+                {closureStatus.reasons.length > 0 ? (
+                  closureStatus.reasons.map((reason, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <XCircle size={14} className="inline mr-1 text-red-500 mt-1 flex-shrink-0" />
+                      <span>{reason}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="flex items-start gap-2">
+                    <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1 flex-shrink-0" />
+                    <span>Todas las condiciones para el cierre están completas.</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {/* Checklist de cierre — Trabajo en Caliente. Va JUNTO a la firma del Responsable
+                (Ejecutante) porque es la constancia que él atestigua al firmar: se diligencia
+                aquí y, al registrar su firma de cierre (paso ①), queda bloqueado (Sesión 13). */}
             {permit.selectedWorkTypes?.caliente && (() => {
               const checklistLocked = !!permit.closure?.responsable?.firma;
-              const canEditChecklist = !checklistLocked && (currentUser?.uid === permit.createdBy || currentUser?.role === 'admin');
+              const canEditChecklist =
+                !checklistLocked &&
+                ['en_ejecucion', 'suspendido'].includes(permit.status) &&
+                (currentUser?.uid === permit.createdBy || currentUser?.role === 'admin');
               return (
                 <div className="border rounded-md p-3 space-y-2 bg-orange-50/50">
                   <p className="text-sm font-semibold text-orange-800 flex items-center gap-2">
                     <AlertTriangle size={14} /> Checklist de Cierre — Trabajo en Caliente
+                  </p>
+                  <p className="text-xs text-orange-700/90 bg-orange-100/70 border border-orange-200 rounded px-2 py-1.5 flex items-start gap-1.5">
+                    <Info size={13} className="mt-0.5 flex-shrink-0" />
+                    <span>
+                      {canEditChecklist
+                        ? 'Obligatorio: diligencie y guarde este checklist para poder registrar la firma de cierre del Responsable del Trabajo (paso ① abajo). Al firmar, quedará bloqueado como constancia de lo verificado.'
+                        : checklistLocked
+                          ? 'Bloqueado: el Responsable del Trabajo ya firmó el cierre. El checklist se conserva como constancia de lo verificado al momento de la firma.'
+                          : 'Checklist de solo lectura.'}
+                    </span>
                   </p>
                   <div className="border rounded-md overflow-hidden bg-white">
                     <RadioCheck
@@ -2538,64 +2599,30 @@ export default function PermitDetailPage() {
                       <Input type="time" className="h-8" disabled={!canEditChecklist} value={closureChecklistForm.hora3} onChange={e => setClosureChecklistForm(f => ({ ...f, hora3: e.target.value }))} />
                     </div>
                   </div>
-                  {canEditChecklist ? (
+                  {canEditChecklist && (
                     <Button type="button" size="sm" variant="outline" className="w-full" onClick={handleSaveClosureChecklist} disabled={isSavingClosureChecklist}>
                       {isSavingClosureChecklist ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Guardar Checklist
                     </Button>
-                  ) : checklistLocked ? (
-                    <p className="text-xs text-muted-foreground">El checklist quedó bloqueado tras la firma de cierre del Responsable.</p>
-                  ) : null}
+                  )}
                 </div>
               );
             })()}
-
-            {/* Flujo del cierre */}
-            <div className="bg-gray-50 border rounded-md p-3">
-              <p className="text-xs font-semibold text-gray-600 mb-2">Flujo de cierre del permiso:</p>
-              <div className="flex items-center gap-1 text-xs flex-wrap">
-                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma ? 'text-green-600' : 'text-blue-600'}`}>
-                  {permit.closure?.responsable?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center font-bold text-[10px]">1</span>}
-                  Ejecutante firma cierre
-                </span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className={`flex items-center gap-1 font-medium ${permit.closure?.responsable?.firma && !permit.closure?.autoridad?.firma ? 'text-blue-600' : permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
-                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">2</span>}
-                  Autorizante recibe aviso
-                </span>
-                <span className="text-gray-400 mx-1">→</span>
-                <span className={`flex items-center gap-1 font-medium ${permit.closure?.autoridad?.firma ? 'text-green-600' : 'text-gray-400'}`}>
-                  {permit.closure?.autoridad?.firma ? <CheckCircle size={13} /> : <span className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center font-bold text-[10px]">3</span>}
-                  Autorizante firma y cierra
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded" role="alert">
-              <p className="font-bold flex items-center gap-2"><Info size={16} />Condiciones para el Cierre</p>
-              <ul className="list-none space-y-1 text-sm mt-2">
-                {closureStatus.reasons.length > 0 ? (
-                  closureStatus.reasons.map((reason, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <XCircle size={14} className="inline mr-1 text-red-500 mt-1 flex-shrink-0" />
-                      <span>{reason}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="flex items-start gap-2">
-                    <CheckCircle size={14} className="inline mr-1 text-green-500 mt-1 flex-shrink-0" />
-                    <span>Todas las condiciones para el cierre están completas.</span>
-                  </li>
-                )}
-              </ul>
-            </div>
 
             <div className="space-y-4">
               {/* Firma del Responsable — solo el ejecutante (creador) */}
               {(() => {
                 const isCreator = currentUser?.uid === permit.createdBy;
                 const isAdmin = currentUser?.role === 'admin';
-                const canSign = (isCreator || isAdmin) && !permit.closure?.responsable?.firma;
                 const alreadySigned = !!permit.closure?.responsable?.firma;
+                // En Trabajo en Caliente el checklist es la constancia que el Ejecutante atestigua:
+                // debe estar completo y aprobado ANTES de que pueda firmar su cierre. Así se evita
+                // que firme un checklist vacío y el permiso quede bloqueado (checklist requerido
+                // para cerrar, pero congelado tras la firma).
+                const checklistBlockers = permit.selectedWorkTypes?.caliente
+                  ? getHotWorkClosureBlockingReasons(permit.closure)
+                  : [];
+                const checklistIncompleto = checklistBlockers.length > 0;
+                const canSign = (isCreator || isAdmin) && !alreadySigned && !checklistIncompleto;
                 const noPermission = !isCreator && !isAdmin;
                 return (
                   <div className="p-3 border rounded-md space-y-3">
@@ -2604,6 +2631,11 @@ export default function PermitDetailPage() {
                       ? <p className="text-xs text-muted-foreground">{permit.closure?.responsable?.nombre}</p>
                       : <p className="text-xs text-muted-foreground">Debe firmar desde la sesión del ejecutante del trabajo.</p>
                     }
+                    {!alreadySigned && checklistIncompleto && (
+                      <p className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-1.5">
+                        Complete y guarde el checklist de cierre de Trabajo en Caliente (arriba) antes de firmar.
+                      </p>
+                    )}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -2614,6 +2646,14 @@ export default function PermitDetailPage() {
                           </div>
                         </TooltipTrigger>
                         {noPermission && !alreadySigned && <TooltipContent><p>Solo el ejecutante del trabajo puede firmar aquí.</p></TooltipContent>}
+                        {!noPermission && !alreadySigned && checklistIncompleto && (
+                          <TooltipContent className="max-w-xs">
+                            <p className="font-semibold">Complete el checklist de cierre antes de firmar:</p>
+                            <ul className="list-disc list-inside text-xs mt-1">
+                              {checklistBlockers.map((r, i) => <li key={i}>{r}</li>)}
+                            </ul>
+                          </TooltipContent>
+                        )}
                       </Tooltip>
                     </TooltipProvider>
                     {alreadySigned && <Image src={permit.closure!.responsable!.firma!} alt="Firma Cierre Responsable" width={100} height={50} className="border rounded mt-2" />}

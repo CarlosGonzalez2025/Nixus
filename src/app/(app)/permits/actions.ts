@@ -661,6 +661,15 @@ export async function addSignatureAndNotify(
                 if (permitBeforeData.createdBy !== user.uid && user.role !== 'admin') {
                     return { success: false, error: 'Solo el ejecutante del trabajo puede registrar la firma de cierre como Responsable.' };
                 }
+                // Trabajo en Caliente: el checklist de cierre es la constancia que el Responsable
+                // atestigua; debe estar completo y aprobado antes de que pueda firmar. Evita que
+                // firme un checklist vacío y el permiso quede bloqueado para cerrar.
+                if (permitBeforeData.selectedWorkTypes?.caliente) {
+                    const checklistBlockers = getHotWorkClosureBlockingReasons(permitBeforeData.closure);
+                    if (checklistBlockers.length > 0) {
+                        return { success: false, error: `Debe completar el checklist de cierre de Trabajo en Caliente antes de firmar. ${checklistBlockers[0]}` };
+                    }
+                }
             }
             if (role === 'cierre_autoridad') {
                 if (user.role !== 'autorizante' && user.role !== 'admin') {
@@ -1524,6 +1533,8 @@ export async function updatePermitClosureChecklist(
     if (!['en_ejecucion', 'suspendido'].includes(permitData.status)) {
       return { success: false, error: 'Solo se puede editar el checklist de cierre en permisos EN EJECUCIÓN o SUSPENDIDOS.' };
     }
+    // El checklist se diligencia ANTES de la firma de cierre del Responsable y queda bloqueado
+    // una vez firmado, como constancia de lo verificado (comportamiento definido en Sesión 13).
     if (permitData.closure?.responsable?.firma) {
       return { success: false, error: 'No se puede editar el checklist: el Responsable del Trabajo ya firmó el cierre.' };
     }

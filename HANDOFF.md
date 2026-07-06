@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-07-06 (Sesión 14)
+> **Última actualización de este documento:** 2026-07-06 (Sesión 15)
 
 ---
 
@@ -62,6 +62,32 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-07-06 (Sesión 15) — Fix/UX: Modal de Cierre de Permiso — responsive, checklist de Trabajo en Caliente reubicado y obligatorio antes de la firma del Ejecutante (elimina deadlock)
+
+**Contexto:** el "Módulo de Cierre de Permiso" tenía dos problemas: (1) se veía muy angosto en escritorio y (2) el checklist de Trabajo en Caliente se mostraba solo con "N/A" sin opciones editables. Al diagnosticarlo aparecieron dos temas de fondo.
+
+**Aclaración de roles en el cierre** (confirmado en el código del modal): **"Responsable del Trabajo" = el Ejecutante** (creador del permiso), firma `closure.responsable` (paso ①). **"Autoridad del Área" = el Autorizante**, firma `closure.autoridad` (paso ②). Orden: ① Ejecutante → ② Autorizante.
+
+**El deadlock detectado:** el checklist de Trabajo en Caliente es **requisito para cerrar** (`getHotWorkClosureBlockingReasons` bloquea el cierre si un ítem está sin responder o tiene valor inseguro, ver [permit-closure-rules.ts](src/lib/permit-closure-rules.ts)), pero la lógica de Sesión 13 lo **congelaba en cuanto el Ejecutante firmaba su cierre** (paso ①, la primera firma). Si el Ejecutante firmaba sin diligenciar el checklist, el permiso quedaba imposible de cerrar por el flujo normal (checklist requerido pero bloqueado) → solo cerrable con "Forzar Cierre de Emergencia". Además, `RadioCheck` pinta los valores `undefined` como "N/A", por lo que un checklist **sin responder** se veía como "N/A" y el modal aparecía en modo solo-lectura ("bloqueado tras la firma").
+
+**Solución elegida (estricta, preserva la constancia y evita el deadlock a futuro):** se **impide que el Ejecutante firme su cierre hasta que el checklist esté completo y aprobado** (solo permisos de Trabajo en Caliente). Se mantiene el bloqueo de Sesión 13 (el checklist se congela tras la firma como constancia). Flujo resultante sin deadlock: diligenciar + guardar checklist → habilita firma ① → firma Ejecutante (se congela) → firma Autoridad ② → `cerrado`.
+
+**Archivos modificados:**
+- `src/app/(app)/permits/[id]/page.tsx`:
+  - Modal responsive: `DialogContent` pasó de `sm:max-w-md` a `w-[95vw] sm:max-w-2xl lg:max-w-3xl`.
+  - `RadioCheck`: las opciones editables `Sí/No/N/A` ahora son labels clickeables (antes solo el punto del radio).
+  - El checklist de Trabajo en Caliente se **reubicó** desde el inicio del modal a **justo encima del bloque "① Responsable del Trabajo (Ejecutante)"**, para dejar claro que es su constancia. Nota contextual reforzada (obligatorio antes de firmar / bloqueado tras firmar).
+  - Gate de firma: el botón "Firmar Cierre" del ① Responsable se **deshabilita** si `getHotWorkClosureBlockingReasons(permit.closure)` devuelve bloqueadores, con aviso inline + tooltip que lista lo que falta. Editabilidad del checklist sin cambios respecto a Sesión 13 (`!checklistLocked && en_ejecucion/suspendido && (creador||admin)`).
+- `src/app/(app)/permits/actions.ts`:
+  - `addSignature`, branch `cierre_responsable`: rechaza la firma en servidor si el permiso es de Trabajo en Caliente y el checklist tiene bloqueadores (la restricción no depende solo del botón deshabilitado).
+  - `updatePermitClosureChecklist`: sin cambio neto (se mantuvo el guard de Sesión 13 que bloquea edición tras la firma del Responsable).
+
+**Script operativo (solo lectura + destrabe puntual):** `scripts/destrabar-permiso-caliente.ts` — diligencia el checklist con los valores que aprueban el cierre (informó=SÍ, área despejada=SÍ, partículas=NO, continúa labor=SÍ, dispositivos retirados=SÍ, verificó estado=SÍ) manteniendo la firma del Responsable, para destrabar un permiso ya atascado (configurable en `TARGET_NUMBER`). Se ejecutó una vez sobre `PT-1783353111365-NK1U0K` (checklist estaba sin responder → diligenciado; firma del Ejecutante conservada; sin bloqueadores). Para cerrarlo solo falta la firma de la Autoridad (②). También quedó de Sesión 14 `scripts/diag-permisos-herzon.ts` (diagnóstico read-only).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos en los archivos tocados.
 
 ---
 
