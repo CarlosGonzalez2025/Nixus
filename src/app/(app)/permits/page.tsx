@@ -32,7 +32,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  collection, onSnapshot, query, orderBy, where, or, limit,
+  collection, onSnapshot, query, orderBy, where, or,
   QueryConstraint, Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -53,6 +53,11 @@ import {
 import { useUser } from '@/hooks/use-user';
 import { isInLiderRegionalScope } from '@/lib/role-config';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import {
+  matchesUnifiedStatus,
+  PERMIT_TABS,
+  type UnifiedPermitStatus,
+} from '@/lib/permit-status';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -157,21 +162,10 @@ function getApprovalStatusText(permit: Permit, role: ApprovalRole): string {
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
+// UnifiedPermitStatus y la lista de pestañas viven en @/lib/permit-status para que
+// el Dashboard cuente por las mismas categorías (fuente única de verdad).
 
-type UnifiedPermitStatus =
-  | 'borrador'
-  | 'pendiente_revision'
-  | 'activos'
-  | 'cerrado'
-  | 'cancelado';
-
-const permitStatuses: { key: UnifiedPermitStatus; label: string }[] = [
-  { key: 'borrador', label: 'Borrador' },
-  { key: 'pendiente_revision', label: 'Pendiente' },
-  { key: 'activos', label: 'Activos' },
-  { key: 'cerrado', label: 'Cerrado' },
-  { key: 'cancelado', label: 'Cancelado' },
-];
+const permitStatuses = PERMIT_TABS;
 
 type SortDir = 'asc' | 'desc';
 
@@ -202,6 +196,15 @@ export default function PermitsPage() {
     setCurrentPage(1);
   }, [activeTab, workTypeFilter, searchTerm, empresaFilter, plantaFilter, ciudadFilter]);
 
+  // ── Abrir la pestaña indicada por ?status= (deep-link desde las tarjetas del
+  // dashboard). Solo cliente; si el valor no es una pestaña válida se ignora.
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get('status');
+    if (status && PERMIT_TABS.some(t => t.key === status)) {
+      setActiveTab(status as UnifiedPermitStatus);
+    }
+  }, []);
+
   // ── Firestore subscription ───────────────────────────────────────────────
   useEffect(() => {
     if (userLoading) { setLoading(true); return; }
@@ -214,13 +217,16 @@ export default function PermitsPage() {
       // Filtra por empresa en servidor si tiene lista acotada (≤30); planta/ciudad
       // se siguen filtrando cliente-side. Si se usa filtro 'in', NO se agrega orderBy
       // para evitar requerir un índice compuesto (empresa+createdAt); se ordena cliente-side.
+      //
+      // SIN limit: el filtro fino por empresa/planta/ciudad se aplica cliente-side DESPUÉS
+      // de la query, así que un limit recortaría el universo ANTES de filtrar y ocultaría
+      // permisos válidos del alcance del usuario (los que no caen en los N más recientes
+      // globales). Igual que dashboard/page.tsx, se carga el conjunto completo.
       const lrConstraints: QueryConstraint[] = [];
       if (user.allowedEmpresas?.length && user.allowedEmpresas.length <= 30) {
         lrConstraints.push(where('generalInfo.empresa', 'in', user.allowedEmpresas));
-        lrConstraints.push(limit(200));
       } else {
         lrConstraints.push(orderBy('createdAt', 'desc'));
-        lrConstraints.push(limit(200));
       }
 
       const unsub = onSnapshot(query(permitsCollection, ...lrConstraints), (snapshot) => {
@@ -309,9 +315,11 @@ export default function PermitsPage() {
         // Solo where, sin orderBy — combinar ambos requiere índice compuesto; se ordena cliente-side.
         finalQuery.push(where('createdBy', '==', user.uid));
       } else {
-        // admin, autorizante y otros roles privilegiados
+        // admin, autorizante y otros roles privilegiados.
+        // SIN limit: autorizante filtra por empresa/planta cliente-side DESPUÉS de la query;
+        // un limit(200) recortaba el universo global ANTES del filtro y ocultaba permisos
+        // válidos de su alcance (bug: mostraba 9 de 34). Consistente con dashboard/page.tsx.
         finalQuery.push(orderBy('createdAt', 'desc'));
-        finalQuery.push(limit(200));
       }
 
       const unsub = onSnapshot(query(permitsCollection, ...finalQuery), (snapshot) => {
@@ -372,13 +380,7 @@ export default function PermitsPage() {
   // ── Filtered data ────────────────────────────────────────────────────────
   const filteredPermits = useMemo(() => {
     return allPermits.filter(permit => {
-      let matchesStatus =
-        activeTab === 'activos'
-          ? ['aprobado', 'en_ejecucion', 'suspendido'].includes(permit.status)
-          : activeTab === 'cancelado'
-            ? permit.status === 'cancelado' || permit.status === 'rechazado'
-            : permit.status === activeTab;
-      if (!matchesStatus) return false;
+      if (!matchesUnifiedStatus(permit.status, activeTab)) return false;
 
       // Para el rol mantenimiento en la tab "Pendiente": mostrar solo los permisos
       // que requieren su firma (solicitante ya firmó, mantenimiento aún no).

@@ -27,11 +27,12 @@ import {
 import {
   FileText, CheckCircle, Clock, PlusCircle, Activity,
   TrendingUp, Download, Loader2, Sparkles, ChevronRight,
-  AlertTriangle, CheckSquare, MapPin, Building2, Factory, Filter, X, CalendarDays,
+  AlertTriangle, CheckSquare, MapPin, Building2, Factory, Filter, X, XCircle, CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/hooks/use-user';
 import { isInLiderRegionalScope } from '@/lib/role-config';
+import { matchesUnifiedStatus } from '@/lib/permit-status';
 import {
   collection, query, where, onSnapshot, orderBy, or,
   Unsubscribe, QueryConstraint,
@@ -380,12 +381,26 @@ export default function Dashboard() {
   // Últimos 10 permisos para la tabla
   const permits = useMemo(() => filteredPermits.slice(0, 10), [filteredPermits]);
 
-  const stats = useMemo(() => ({
-    total: filteredPermits.length,
-    pendiente: filteredPermits.filter(p => p.status === 'pendiente_revision').length,
-    enEjecucion: filteredPermits.filter(p => p.status === 'en_ejecucion').length,
-    cerrado: filteredPermits.filter(p => p.status === 'cerrado').length,
-  }), [filteredPermits]);
+  // Conteos alineados 1:1 con las pestañas del módulo de Permisos (mismo helper).
+  const stats = useMemo(() => {
+    // Pendiente: para 'mantenimiento' el módulo solo cuenta los que esperan su firma
+    // (solicitante ya aprobó y mantenimiento aún no), igual que permits/page.tsx.
+    const pendiente = user?.role === 'mantenimiento'
+      ? filteredPermits.filter(p =>
+          p.status === 'pendiente_revision' &&
+          p.approvals?.solicitante?.status === 'aprobado' &&
+          p.approvals?.mantenimiento?.status !== 'aprobado',
+        ).length
+      : filteredPermits.filter(p => matchesUnifiedStatus(p.status, 'pendiente_revision')).length;
+
+    return {
+      total: filteredPermits.length,
+      pendiente,
+      activos: filteredPermits.filter(p => matchesUnifiedStatus(p.status, 'activos')).length,
+      cerrado: filteredPermits.filter(p => matchesUnifiedStatus(p.status, 'cerrado')).length,
+      cancelado: filteredPermits.filter(p => matchesUnifiedStatus(p.status, 'cancelado')).length,
+    };
+  }, [filteredPermits, user?.role]);
 
   const chartData = useMemo(() => generateChartData(filteredPermits), [filteredPermits]);
 
@@ -450,10 +465,11 @@ export default function Dashboard() {
   }, [filteredPermits, filteredHallazgos]);
 
   const statsCards = [
-    { title: 'Permisos Totales', value: stats.total, icon: FileText, gradient: 'from-blue-600 to-cyan-500', href: '/permits?status=activos', description: 'Todos los registros activos' },
+    { title: 'Permisos Totales', value: stats.total, icon: FileText, gradient: 'from-blue-600 to-cyan-500', href: '/permits', description: 'Todos los registros' },
     { title: 'Pendientes', value: stats.pendiente, icon: Clock, gradient: 'from-amber-500 to-orange-400', href: '/permits?status=pendiente_revision', description: 'Requieren aprobación' },
-    { title: 'En Ejecución', value: stats.enEjecucion, icon: Activity, gradient: 'from-violet-600 to-purple-500', href: '/permits?status=en_ejecucion', description: 'Trabajos en curso' },
+    { title: 'Activos', value: stats.activos, icon: Activity, gradient: 'from-violet-600 to-purple-500', href: '/permits?status=activos', description: 'Aprobados / En ejecución / Suspendidos' },
     { title: 'Cerrados', value: stats.cerrado, icon: CheckSquare, gradient: 'from-slate-600 to-gray-500', href: '/permits?status=cerrado', description: 'Completados / Cerrados' },
+    { title: 'Cancelados', value: stats.cancelado, icon: XCircle, gradient: 'from-rose-600 to-red-500', href: '/permits?status=cancelado', description: 'Cancelados / Rechazados' },
   ];
 
   const activeFilterCount = [empresaFilter, plantaFilter, ciudadFilter, dateFilter].filter(f => f !== 'all').length;

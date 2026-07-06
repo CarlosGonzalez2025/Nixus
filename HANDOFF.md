@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-07-01 (Sesión 13)
+> **Última actualización de este documento:** 2026-07-06 (Sesión 14)
 
 ---
 
@@ -62,6 +62,28 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-07-06 (Sesión 14) — Fix: el módulo de Permisos subcontaba permisos (limit antes del filtro) + tarjetas del dashboard alineadas 1:1 con las pestañas
+
+**Problema reportado:** para algunos usuarios el Dashboard y el módulo de Permisos de Trabajo mostraban cantidades distintas de permisos por estado (Activos, Pendientes, Cerrado, Cancelado). Caso concreto validado: el autorizante **Herzon Villamizar** (empresa `VGR-ITALCOL DEL NORTE S.A.S`, planta `LOS PATIOS`) veía en el Dashboard 34 permisos totales / 18 en ejecución / 14 cerrados, pero en el módulo solo 5 Activos / 4 Cerrados / 0 Cancelados.
+
+**Causa raíz (verificada contra la BD con un script read-only):** la colección `permits` tiene **1178 documentos**. El módulo (`permits/page.tsx`) hacía `orderBy('createdAt','desc') + limit(200)` y **recién después** filtraba por empresa/planta en el cliente. Como los 200 más recientes globales están dominados por otras plantas (642 de ITALCOL S.A., 268 de GIRARDOTA…), **solo 9 de los 34 permisos de Herzon caían dentro de esa ventana de 200**. El `limit(200)` recortaba el universo **antes** del filtro fino. El Dashboard ya cargaba el conjunto completo (sin `limit`), por eso mostraba los 34 correctos → **el Dashboard estaba bien; el módulo era el que subcontaba**.
+
+**Diagnóstico:** `scripts/diag-permisos-herzon.ts` (solo lectura, vía Admin SDK) confirmó los valores reales de la BD (Total 34 / Activos 18 / Cerrado 14 / Cancelado 2 / Pendiente 0) y simuló la query del módulo, reproduciendo exactamente el 5/4/0 de las capturas.
+
+**El fix (bajo riesgo, sin tocar reglas ni queries de otros roles):**
+- `src/app/(app)/permits/page.tsx` — **eliminados los tres `limit(200)`** de las ramas `lider_regional` (ambas), `admin` y `autorizante`, dejándolo igual que `dashboard/page.tsx` (que ya cargaba el universo completo justamente por esto). El filtro por empresa/planta/ciudad se aplica ahora sobre TODOS los permisos, no sobre una ventana recortada. Import `limit` retirado.
+
+**Alineación de definiciones (fuente única de verdad para que Dashboard y módulo no se vuelvan a desincronizar):**
+- `src/lib/permit-status.ts` (**nuevo**) — `UnifiedPermitStatus`, `PERMIT_TABS` y `matchesUnifiedStatus()`. Define las 5 categorías/pestañas (`borrador`, `pendiente_revision`, `activos` = aprobado+en_ejecucion+suspendido, `cerrado`, `cancelado` = cancelado+rechazado) en un solo lugar.
+- `src/app/(app)/dashboard/page.tsx` — las tarjetas ahora son 1:1 con las pestañas del módulo: se reemplazó **"En Ejecución"** (que contaba solo `en_ejecucion`) por **"Activos"** (aprobado+en_ejecucion+suspendido) y se agregó la tarjeta **"Cancelados"** (cancelado+rechazado). El grid ya era `lg:grid-cols-5`. Para `mantenimiento`, la tarjeta "Pendientes" replica el criterio del módulo (solo los que esperan su firma). Usa `matchesUnifiedStatus()`.
+- `src/app/(app)/permits/page.tsx` — reemplazada la lógica de estado inline por `matchesUnifiedStatus()` (comportamiento idéntico) + `permitStatuses` ahora es `PERMIT_TABS`. Agregado deep-link `?status=` (client-only) para que al hacer clic en una tarjeta del Dashboard se abra la pestaña correspondiente.
+
+**Verificación:** `tsc --noEmit` sin errores nuevos en los archivos tocados (persiste el preexistente `Hallazgo.ciudad` en `dashboard/page.tsx:321`, ajeno a este cambio). Revisados `use-sidebar-badges.ts` (filtra por `status` en servidor, sin el bug) y el resto del repo: no hay otro `limit` que recorte vistas filtradas. Confirmado por el cliente que el módulo ahora muestra los valores correctos.
+
+**Nota de escalabilidad (futuro, opcional):** el módulo ahora carga todos los permisos (~1178) como ya hacía el Dashboard. Funciona bien a este volumen. Si la colección crece a decenas de miles, el siguiente paso sería filtrar por empresa/planta en servidor con índices compuestos, en vez de cargar todo y filtrar en cliente.
 
 ---
 
