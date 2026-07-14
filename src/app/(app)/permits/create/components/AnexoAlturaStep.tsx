@@ -62,6 +62,16 @@ const tareasTrabajoAltura = [
     descripcion: 'Abrir compuertas superiores de graneleros y realizar cargue'
   },
   {
+    id: 'cargue-descargue-liquidos',
+    nombre: 'Cargue y descargue de líquidos',
+    descripcion: 'Realizar el cargue y descargue de líquidos en tanques, vehículos o recipientes de almacenamiento'
+  },
+  {
+    id: 'correccion-fugas',
+    nombre: 'Corrección de fugas',
+    descripcion: 'Identificar y corregir fugas en tuberías, conexiones, válvulas o equipos'
+  },
+  {
     id: 'desnidacion-palomas',
     nombre: 'Des nidación de palomas',
     descripcion: 'Retiro de nidos generados con palomas'
