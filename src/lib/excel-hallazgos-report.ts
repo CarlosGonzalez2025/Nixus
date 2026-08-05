@@ -5,7 +5,7 @@
 import ExcelJS from 'exceljs';
 import {
   XL, CLASE_COLOR, ESTADO_COLOR, solid, thinBorder, bar,
-  drawBanner, drawSectionTitle, drawKpiRow, drawTable, drawNote,
+  drawBanner, drawSectionTitle, drawSectionTitleRange, drawKpiRow, drawTable, drawNote,
 } from './excel-theme';
 
 // ─── Contrato de entrada ─────────────────────────────────────────────────────
@@ -179,21 +179,21 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
   const PCT = '0%';
 
   // Clase (col 1)
-  let r1 = drawSectionTitleRango(ws, filaDistribuciones, 'Por clase de riesgo', 1, 4, XL.red);
+  let r1 = drawSectionTitleRange(ws, filaDistribuciones, 'Por clase de riesgo', 1, 4, XL.red);
   r1 = drawTable(ws, r1, ['Clase', 'N°', '%', ''], filasDistribucion(
     (['A', 'B', 'C'] as const).map(c => [`Clase ${c}`, rows.filter(h => h.clase === c).length] as [string, number]),
     total,
   ), { startCol: 1, headerColor: XL.red, align: ['left', 'center', 'center', 'left'], numFmt: [undefined, undefined, PCT, undefined], widths: [30, 8, 8, 22] });
 
   // Estado (col 6)
-  let r2 = drawSectionTitleRango(ws, filaDistribuciones, 'Por estado de cumplimiento', 6, 9, XL.blue);
+  let r2 = drawSectionTitleRange(ws, filaDistribuciones, 'Por estado de cumplimiento', 6, 9, XL.blue);
   r2 = drawTable(ws, r2, ['Estado', 'N°', '%', ''], filasDistribucion(
     ESTADOS.map(e => [e, rows.filter(h => estadoDe(h) === e).length] as [string, number]),
     total,
   ), { startCol: 6, headerColor: XL.blue, align: ['left', 'center', 'center', 'left'], numFmt: [undefined, undefined, PCT, undefined], widths: [22, 8, 8, 22] });
 
   // Tipo y responsabilidad (col 11)
-  let r3 = drawSectionTitleRango(ws, filaDistribuciones, 'Tipo y responsabilidad', 11, 14, XL.violet);
+  let r3 = drawSectionTitleRange(ws, filaDistribuciones, 'Tipo y responsabilidad', 11, 14, XL.violet);
   r3 = drawTable(ws, r3, ['Categoría', 'N°', '%', ''], [
     ...filasDistribucion(
       ['Positivo', 'Seguimiento'].map(t => [t, rows.filter(h => h.tipoHallazgo === t).length] as [string, number]),
@@ -216,12 +216,12 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
     (h.personalExpuesto || '').split('\n').map(p => p.trim()).filter(Boolean));
 
   const filaPeligros = row;
-  let r4 = drawSectionTitleRango(ws, filaPeligros, 'Peligros más frecuentes', 1, 4, XL.navySoft);
+  let r4 = drawSectionTitleRange(ws, filaPeligros, 'Peligros más frecuentes', 1, 4, XL.navySoft);
   r4 = drawTable(ws, r4, ['Peligro', 'N°', '% del total', ''],
     filasDistribucion(contar(peligros), total, 10),
     { startCol: 1, align: ['left', 'center', 'center', 'left'], numFmt: [undefined, undefined, PCT, undefined], widths: [30, 8, 10, 22] });
 
-  let r5 = drawSectionTitleRango(ws, filaPeligros, 'Personal expuesto', 6, 9, XL.navySoft);
+  let r5 = drawSectionTitleRange(ws, filaPeligros, 'Personal expuesto', 6, 9, XL.navySoft);
   r5 = drawTable(ws, r5, ['Personal', 'N°', '% del total', ''],
     filasDistribucion(contar(personal), total),
     { startCol: 6, align: ['left', 'center', 'center', 'left'], numFmt: [undefined, undefined, PCT, undefined], widths: [22, 8, 10, 22] });
@@ -246,7 +246,7 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
   });
   const maxMes = Math.max(...tendencia.map(t => t.total), 0);
 
-  let r6 = drawSectionTitleRango(ws, filaPeligros, 'Tendencia últimos 12 meses', 11, 15, XL.green);
+  let r6 = drawSectionTitleRange(ws, filaPeligros, 'Tendencia últimos 12 meses', 11, 15, XL.green);
   r6 = drawTable(ws, r6, ['Mes', 'Nuevos', 'Cerrados', '% cierre', ''],
     tendencia.map(t => [
       t.etiqueta,
@@ -283,14 +283,14 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
 
   const filaRanking = row;
   const empresas = ranking('empresa');
-  let r7 = drawSectionTitleRango(ws, filaRanking, 'Top 10 empresas', 1, 7, XL.navy);
+  let r7 = drawSectionTitleRange(ws, filaRanking, 'Top 10 empresas', 1, 7, XL.navy);
   r7 = drawTable(ws, r7,
     ['Empresa', 'Total', 'Abiertos', 'Cerrados', '% cierre', 'Clase A abiertos', ''],
     empresas.slice(0, 10).map(e => [e.nombre, e.total, e.abiertos, e.cerrados, e.tasa, e.criticos, bar(e.total, empresas[0]?.total ?? 0, 12)]),
     { startCol: 1, align: ['left', 'center', 'center', 'center', 'center', 'center', 'left'], numFmt: [undefined, undefined, undefined, undefined, PCT, undefined, undefined], widths: [30, 9, 10, 10, 10, 12, 16] });
 
   const plantas = ranking('planta');
-  let r8 = drawSectionTitleRango(ws, filaRanking, 'Top 10 plantas', 9, 15, XL.navy);
+  let r8 = drawSectionTitleRange(ws, filaRanking, 'Top 10 plantas', 9, 15, XL.navy);
   r8 = drawTable(ws, r8,
     ['Planta', 'Total', 'Abiertos', 'Cerrados', '% cierre', 'Clase A abiertos', ''],
     plantas.slice(0, 10).map(p => [p.nombre, p.total, p.abiertos, p.cerrados, p.tasa, p.criticos, bar(p.total, plantas[0]?.total ?? 0, 12)]),
@@ -303,25 +303,6 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
     LAST);
 
   return ws;
-}
-
-/** Título de sección acotado a un rango de columnas (para bloques lado a lado). */
-function drawSectionTitleRango(
-  ws: ExcelJS.Worksheet,
-  row: number,
-  text: string,
-  colInicio: number,
-  colFin: number,
-  color: string,
-): number {
-  ws.mergeCells(row, colInicio, row, colFin);
-  const c = ws.getCell(row, colInicio);
-  c.value = text.toUpperCase();
-  c.fill = solid(color);
-  c.font = { bold: true, size: 9, color: { argb: XL.white } };
-  c.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(row).height = 18;
-  return row + 1;
 }
 
 // ─── Hoja 2: Base de datos ───────────────────────────────────────────────────

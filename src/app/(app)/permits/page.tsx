@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import * as XLSX from 'xlsx';
 import {
   Table,
   TableBody,
@@ -155,6 +154,16 @@ const APPROVAL_STATUS_LABELS: Record<string, string> = {
   pendiente: 'Pendiente',
 };
 
+/** Nombre legible de cada rol firmante (usado en la exportación a Excel). */
+const APPROVAL_ROLE_LABELS: Record<ApprovalRole, string> = {
+  solicitante: 'Solicitante / Ejecutante',
+  autorizante: 'Autorizante',
+  lider_sst: 'Líder SST',
+  mantenimiento: 'Mantenimiento / Aislador',
+  coordinador_alturas: 'Coordinador de Alturas',
+  supervisor_confinado: 'Supervisor de Confinados',
+};
+
 function getApprovalStatusText(permit: Permit, role: ApprovalRole): string {
   if (!isApprovalRequired(permit, role)) return 'No Aplica';
   const status = permit.approvals?.[role]?.status;
@@ -190,6 +199,7 @@ export default function PermitsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [exporting, setExporting] = useState(false);
 
   // ── Reset page on filter change ──────────────────────────────────────────
   useEffect(() => {
@@ -473,221 +483,136 @@ export default function PermitsPage() {
   };
 
   // ── Excel export ─────────────────────────────────────────────────────────
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (sortedPermits.length === 0) {
       toast({ variant: 'destructive', title: 'Sin datos', description: 'No hay permisos para exportar.' });
       return;
     }
 
-    // Cell types: string, number, or hyperlink object
-    type XLCell = string | number | { v: string; t: 's'; l: { Target: string } };
+    setExporting(true);
+    try {
+      const httpOnly = (url: string | null | undefined) =>
+        url && /^https?:\/\//i.test(url) ? url : undefined;
 
-    const link = (url: string | null | undefined, label = 'Ver Firma'): XLCell => {
-      if (!url || !url.startsWith('http')) return '—';
-      return { v: label, t: 's', l: { Target: url } };
-    };
+      // Qué anexos trae diligenciados el permiso
+      const anexosDe = (p: Permit): string[] => {
+        const candidatos: [string, unknown][] = [
+          ['ATS', p.anexoATS],
+          ['Alturas', p.anexoAltura],
+          ['Espacios Confinados', p.anexoConfinado],
+          ['Energías Peligrosas', p.anexoEnergias],
+          ['Trabajo en Caliente', p.anexoCaliente],
+          ['Izaje de Cargas', p.anexoIzaje],
+          ['Excavaciones', p.anexoExcavaciones],
+          ['Verificación de Peligros', p.verificacionPeligros],
+          ['EPP y Emergencias', p.eppEmergencias],
+        ];
+        return candidatos
+          .filter(([, v]) => v && typeof v === 'object' && Object.keys(v as object).length > 0)
+          .map(([nombre]) => nombre);
+      };
 
-    const apprCols = (p: Permit, role: ApprovalRole): XLCell[] => {
-      if (!isApprovalRequired(p, role)) return ['No Aplica', '—', '—', '—', '—'];
-      const a = p.approvals?.[role] ?? {};
-      return [
-        APPROVAL_STATUS_LABELS[a.status ?? ''] ?? 'Pendiente',
-        a.userName || '—',
-        a.signedAt || '—',
-        link(a.firmaApertura, 'Ver Apertura'),
-        link(a.firmaCierre, 'Ver Cierre'),
+      const rows = sortedPermits.map(p => {
+        const categoria = PERMIT_TABS.find(t => matchesUnifiedStatus(p.status, t.key))?.label ?? '—';
+        const creado = parseFirestoreDate(p.createdAt);
+        const suspendidoEl = parseFirestoreDate(p.suspension?.suspendedAt);
+        const numTrabajadores = Number(p.generalInfo?.numTrabajadores);
+
+        return {
+          numero: p.number || `Borrador ${p.id.substring(0, 8)}`,
+          estado: getStatusText(p.status),
+          estadoRaw: p.status,
+          categoria,
+          fechaCreacion: creado ? creado.toISOString() : null,
+          validFrom: p.generalInfo?.validFrom || '',
+          validUntil: p.generalInfo?.validUntil || '',
+          tiposTrabajo: getWorkTypeLabels(p),
+          empresa: p.generalInfo?.empresa || '',
+          planta: p.generalInfo?.planta || '',
+          ciudad: p.generalInfo?.ciudad || '',
+          areaEspecifica: p.generalInfo?.areaEspecifica || '',
+          proceso: p.generalInfo?.proceso || '',
+          contrato: p.generalInfo?.contrato || '',
+          descripcion: p.generalInfo?.workDescription || '',
+          numTrabajadores: Number.isFinite(numTrabajadores) ? numTrabajadores : undefined,
+          trabajadoresRegistrados: (p.workers || []).length,
+          solicitanteNombre: p.user?.displayName || p.generalInfo?.nombreSolicitante || '',
+          solicitanteEmail: p.user?.email || '',
+          aprobaciones: (Object.keys(APPROVAL_ROLE_LABELS) as ApprovalRole[]).map(rol => {
+            const requerido = isApprovalRequired(p, rol);
+            const a = p.approvals?.[rol] ?? {};
+            return {
+              rol: APPROVAL_ROLE_LABELS[rol],
+              requerido,
+              estado: requerido
+                ? (APPROVAL_STATUS_LABELS[a.status ?? ''] ?? 'Pendiente')
+                : 'No Aplica',
+              firmante: a.userName || '',
+              fechaFirma: a.signedAt || '',
+              firmaApertura: httpOnly(a.firmaApertura),
+              firmaCierre: httpOnly(a.firmaCierre),
+            };
+          }),
+          anexos: anexosDe(p),
+          cierreFecha: p.closure?.fechaCierre || '',
+          cierreHora: p.closure?.horaCierre || '',
+          cierreObservaciones: p.closure?.observacionesCierre || '',
+          areaDespejada: p.closure?.areaDespejada || '',
+          continuaLabor: p.closure?.continuaLabor || '',
+          suspendidoPor: p.suspension?.suspendedBy?.displayName || '',
+          suspendidoEl: suspendidoEl ? suspendidoEl.toISOString() : null,
+          motivoSuspension: p.suspension?.reason || '',
+          rechazoMotivo: p.rejectionReason || '',
+        };
+      });
+
+      const filtros: string[] = [
+        `Pestaña: ${PERMIT_TABS.find(t => t.key === activeTab)?.label ?? activeTab}`,
+        ...(workTypeFilter !== 'all' ? [`Tipo de trabajo: ${workTypeFilter}`] : []),
+        ...(empresaFilter !== 'all' ? [`Empresa: ${empresaFilter}`] : []),
+        ...(plantaFilter !== 'all' ? [`Planta: ${plantaFilter}`] : []),
+        ...(ciudadFilter !== 'all' ? [`Ciudad: ${ciudadFilter}`] : []),
+        ...(searchTerm.trim() ? [`Búsqueda: "${searchTerm.trim()}"`] : []),
       ];
-    };
 
-    // ── Sheet 1: Permisos ───────────────────────────────────────────────
-    const HEADERS: string[] = [
-      // Identificación (A-F)
-      'N° Permiso', 'Estado', 'Fecha Creación', 'Vigencia Desde', 'Vigencia Hasta', 'Tipos de Trabajo',
-      // Ubicación (G-L)
-      'Empresa', 'Planta', 'Ciudad', 'Área Específica', 'Proceso', 'Contrato',
-      // Trabajo (M-P)
-      'Descripción del Trabajo', 'N° Trabajadores', 'Solicitante', 'Email Solicitante',
-      // Solicitante aprobación (Q-U)
-      'Est. Solicitante', 'Firmante Solicitante', 'Fecha Firma Sol.', 'Firma Apertura Sol.', 'Firma Cierre Sol.',
-      // Autorizante (V-Z)
-      'Est. Autorizante', 'Firmante Autorizante', 'Fecha Firma Aut.', 'Firma Apertura Aut.', 'Firma Cierre Aut.',
-      // Líder SST (AA-AE)
-      'Est. Líder SST', 'Firmante Líder SST', 'Fecha Firma SST', 'Firma Apertura SST', 'Firma Cierre SST',
-      // Mantenimiento (AF-AJ)
-      'Est. Mantenimiento', 'Firmante Mantenimiento', 'Fecha Firma Mant.', 'Firma Apertura Mant.', 'Firma Cierre Mant.',
-      // Coord. Alturas (AK-AO)
-      'Est. Coord. Alturas', 'Firmante Coord. Alturas', 'Fecha Firma C.Alt.', 'Firma Apertura C.Alt.', 'Firma Cierre C.Alt.',
-      // Sup. Confinado (AP-AT)
-      'Est. Sup. Confinado', 'Firmante Sup. Confinado', 'Fecha Firma S.Con.', 'Firma Apertura S.Con.', 'Firma Cierre S.Con.',
-      // Cierre (AU-AY)
-      'Fecha Cierre', 'Hora Cierre', 'Observaciones Cierre', 'Área Despejada', 'Continua Labor',
-    ];
-
-    const COL_WIDTHS = [
-      18, 22, 18, 14, 14, 38,   // Identificación
-      30, 25, 20, 32, 25, 20,   // Ubicación
-      50, 14, 30, 35,           // Trabajo
-      18, 28, 18, 20, 20,       // Solicitante
-      18, 28, 18, 20, 20,       // Autorizante
-      18, 28, 18, 20, 20,       // Líder SST
-      18, 28, 18, 20, 20,       // Mantenimiento
-      18, 28, 18, 20, 20,       // Coord. Alturas
-      18, 28, 18, 20, 20,       // Sup. Confinado
-      14, 12, 50, 15, 15,       // Cierre
-    ];
-
-    const dataRows: XLCell[][] = sortedPermits.map(p => [
-      p.number || `Borrador:${p.id.substring(0, 8)}`,
-      getStatusText(p.status),
-      p.createdAt ? format(parseFirestoreDate(p.createdAt) || new Date(0), 'dd/MM/yyyy HH:mm', { locale: es }) : '—',
-      p.generalInfo?.validFrom || '—',
-      p.generalInfo?.validUntil || '—',
-      getWorkTypeLabels(p).join(' | ') || '—',
-      p.generalInfo?.empresa || '—',
-      p.generalInfo?.planta || '—',
-      p.generalInfo?.ciudad || '—',
-      p.generalInfo?.areaEspecifica || '—',
-      p.generalInfo?.proceso || '—',
-      p.generalInfo?.contrato || '—',
-      p.generalInfo?.workDescription || '—',
-      p.generalInfo?.numTrabajadores || '—',
-      p.user?.displayName || '—',
-      p.user?.email || '—',
-      ...apprCols(p, 'solicitante'),
-      ...apprCols(p, 'autorizante'),
-      ...apprCols(p, 'lider_sst'),
-      ...apprCols(p, 'mantenimiento'),
-      ...apprCols(p, 'coordinador_alturas'),
-      ...apprCols(p, 'supervisor_confinado'),
-      p.closure?.fechaCierre || '—',
-      p.closure?.horaCierre || '—',
-      p.closure?.observacionesCierre || '—',
-      p.closure?.areaDespejada || '—',
-      p.closure?.continuaLabor || '—',
-    ]);
-
-    // Build worksheet cell by cell (needed for hyperlink support)
-    const permisosWs: XLSX.WorkSheet = {};
-    HEADERS.forEach((h, c) => {
-      permisosWs[XLSX.utils.encode_cell({ r: 0, c })] = { v: h, t: 's' };
-    });
-    dataRows.forEach((row, r) => {
-      row.forEach((val, c) => {
-        const addr = XLSX.utils.encode_cell({ r: r + 1, c });
-        if (typeof val === 'object' && val !== null && 'l' in val) {
-          permisosWs[addr] = val;
-        } else if (typeof val === 'number') {
-          permisosWs[addr] = { v: val, t: 'n' };
-        } else {
-          permisosWs[addr] = { v: String(val ?? '—'), t: 's' };
-        }
+      const res = await fetch('/api/export/permisos-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rows,
+          meta: { generadoPor: user?.displayName || user?.email || 'Usuario del sistema', filtros },
+        }),
       });
-    });
-    permisosWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: dataRows.length, c: HEADERS.length - 1 } });
-    permisosWs['!cols'] = COL_WIDTHS.map(wch => ({ wch }));
-    permisosWs['!views'] = [{ state: 'frozen', ySplit: 1 }] as any;
 
-    // ── Sheet 2: Análisis ───────────────────────────────────────────────
-    type AnalysisRow = (string | number)[];
-    const aRows: AnalysisRow[] = [];
+      if (!res.ok) {
+        const info = await res.json().catch(() => ({}));
+        throw new Error(info.error || 'El servidor no pudo generar el reporte.');
+      }
 
-    const aTitle = (t: string) => aRows.push([t]);
-    const aHead = (...cols: string[]) => aRows.push(cols);
-    const aData = (...cols: (string | number)[]) => aRows.push(cols);
-    const aSep = () => aRows.push(['']);
-    const pct = (n: number) => `${((n / sortedPermits.length) * 100).toFixed(1)}%`;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Reporte_Permisos_SGTC_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
 
-    aTitle('REPORTE DE PERMISOS DE TRABAJO — ANÁLISIS ESTADÍSTICO');
-    aData(`Generado: ${format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es })}`);
-    aData(`Total de permisos en el reporte: ${sortedPermits.length}`);
-    if (empresaFilter !== 'all') aData(`Filtro empresa: ${empresaFilter}`);
-    if (plantaFilter !== 'all') aData(`Filtro planta: ${plantaFilter}`);
-    if (ciudadFilter !== 'all') aData(`Filtro ciudad: ${ciudadFilter}`);
-    aSep();
-
-    // Status
-    aTitle('RESUMEN POR ESTADO');
-    aHead('Estado', 'Cantidad', '% del Total');
-    const statusMap = new Map<string, number>();
-    sortedPermits.forEach(p => { const s = getStatusText(p.status); statusMap.set(s, (statusMap.get(s) || 0) + 1); });
-    Array.from(statusMap.entries()).sort((a, b) => b[1] - a[1])
-      .forEach(([s, n]) => aData(s, n, pct(n)));
-    aSep();
-
-    // Work types
-    aTitle('RESUMEN POR TIPO DE TRABAJO');
-    aHead('Tipo de Trabajo', 'Cantidad', '% del Total');
-    const wt: [string, number][] = [
-      ['Trabajo en Alturas', sortedPermits.filter(p => p.selectedWorkTypes?.alturas).length],
-      ['Espacios Confinados', sortedPermits.filter(p => p.selectedWorkTypes?.confinado).length],
-      ['Control de Energías', sortedPermits.filter(p => p.selectedWorkTypes?.energia).length],
-      ['Izaje de Cargas', sortedPermits.filter(p => p.selectedWorkTypes?.izaje).length],
-      ['Excavaciones', sortedPermits.filter(p => p.selectedWorkTypes?.excavacion).length],
-      ['Trabajo General', sortedPermits.filter(p => p.selectedWorkTypes?.general).length],
-    ];
-    wt.filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
-      .forEach(([t, n]) => aData(t, n, pct(n)));
-    aSep();
-
-    // Empresa
-    aTitle('RESUMEN POR EMPRESA');
-    aHead('Empresa', 'Cantidad', '% del Total');
-    const empMap = new Map<string, number>();
-    sortedPermits.forEach(p => { const e = p.generalInfo?.empresa || 'Sin empresa'; empMap.set(e, (empMap.get(e) || 0) + 1); });
-    Array.from(empMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([e, n]) => aData(e, n, pct(n)));
-    aSep();
-
-    // Planta
-    aTitle('RESUMEN POR PLANTA');
-    aHead('Planta', 'Cantidad', '% del Total');
-    const pltMap = new Map<string, number>();
-    sortedPermits.forEach(p => { const pl = p.generalInfo?.planta || 'Sin planta'; pltMap.set(pl, (pltMap.get(pl) || 0) + 1); });
-    Array.from(pltMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([pl, n]) => aData(pl, n, pct(n)));
-    aSep();
-
-    // Ciudad (only if any)
-    const cidMap = new Map<string, number>();
-    sortedPermits.forEach(p => { if (p.generalInfo?.ciudad) cidMap.set(p.generalInfo.ciudad, (cidMap.get(p.generalInfo.ciudad) || 0) + 1); });
-    if (cidMap.size > 0) {
-      aTitle('RESUMEN POR CIUDAD');
-      aHead('Ciudad', 'Cantidad', '% del Total');
-      Array.from(cidMap.entries()).sort((a, b) => b[1] - a[1]).forEach(([c, n]) => aData(c, n, pct(n)));
-      aSep();
-    }
-
-    // Approval completeness
-    aTitle('ESTADO DE APROBACIÓN');
-    aHead('Categoría', 'Cantidad', '% del Total');
-    const approved = sortedPermits.filter(p => ['aprobado', 'en_ejecucion', 'cerrado'].includes(p.status)).length;
-    const cancelled = sortedPermits.filter(p => p.status === 'cancelado' || p.status === 'rechazado').length;
-    const pending = sortedPermits.length - approved - cancelled;
-    aData('Completamente aprobados / activos / cerrados', approved, pct(approved));
-    aData('En proceso de aprobación', pending, pct(pending));
-    aData('Cancelados', cancelled, pct(cancelled));
-
-    // Build analysis worksheet
-    const analysisWs: XLSX.WorkSheet = {};
-    aRows.forEach((row, r) => {
-      row.forEach((val, c) => {
-        const addr = XLSX.utils.encode_cell({ r, c });
-        analysisWs[addr] = typeof val === 'number' ? { v: val, t: 'n' } : { v: String(val), t: 's' };
+      toast({
+        title: '✅ Reporte generado',
+        description: `${sortedPermits.length} permiso${sortedPermits.length !== 1 ? 's' : ''} con resumen ejecutivo, firmas y análisis por planta.`,
       });
-    });
-    if (aRows.length > 0) {
-      analysisWs['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: aRows.length - 1, c: 2 } });
+    } catch (err) {
+      console.error('Error exportando permisos:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error al exportar',
+        description: err instanceof Error ? err.message : 'No se pudo generar el reporte.',
+      });
+    } finally {
+      setExporting(false);
     }
-    analysisWs['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }];
-
-    // ── Workbook ────────────────────────────────────────────────────────
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, permisosWs, 'Permisos');
-    XLSX.utils.book_append_sheet(wb, analysisWs, 'Análisis');
-    XLSX.writeFile(wb, `permisos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.xlsx`);
-
-    toast({
-      title: '✅ Exportación exitosa',
-      description: `${sortedPermits.length} permiso${sortedPermits.length !== 1 ? 's' : ''} exportado${sortedPermits.length !== 1 ? 's' : ''} con hoja de análisis.`,
-    });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -884,9 +809,11 @@ export default function PermitsPage() {
           <p className="text-muted-foreground">Gestione todos sus permisos de trabajo aquí.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar Excel
+          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+            {exporting
+              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generando...</>
+              : <><Download className="mr-2 h-4 w-4" />Exportar Excel</>
+            }
           </Button>
           {(user?.role === 'solicitante' || user?.role === 'admin') && (
             <Button asChild>

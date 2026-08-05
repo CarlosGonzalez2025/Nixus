@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-04 (Sesión 17)
+> **Última actualización de este documento:** 2026-08-05 (Sesión 18)
 
 ---
 
@@ -64,6 +64,27 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-05 (Sesión 18) — Reporte gerencial de Permisos de Trabajo en Excel
+
+Se llevó al módulo de **Permisos de Trabajo** el mismo tratamiento aplicado a Hallazgos en la Sesión 17. El export anterior generaba dos hojas con `xlsx`: "Permisos" (con hipervínculos a las firmas) y "Análisis" (un volcado de texto plano con conteos). Como en el resto del proyecto, **el formato no llegaba al archivo** porque SheetJS community no escribe estilos.
+
+**Nuevo generador** `src/lib/excel-permisos-report.ts` + `POST /api/export/permisos-report`. Cuatro hojas:
+
+1. **Resumen Ejecutivo** — 10 KPIs en tarjetas: total, activos, pendientes, cerrados, cancelados, tasa de cierre, suspendidos, alto riesgo, trabajadores y **firmas pendientes sobre requeridas**. Distribuciones por categoría, por estado detallado y por tipo de trabajo; **avance de firmas por rol** (requeridas / firmadas / % / faltantes), anexos diligenciados, tendencia de 12 meses y Top 10 de empresas y plantas.
+2. **Permisos** — 31 columnas con paneles congelados, autofiltro, semáforo por categoría y las firmas pendientes resaltadas en rojo.
+3. **Firmas y Aprobaciones** — **una fila por permiso × rol**, con si la firma era exigida, su estado, el firmante, la fecha y enlaces a las firmas de apertura y cierre. Es la vista que permite ver dónde se atascan las autorizaciones; antes esa información estaba aplanada en 30 columnas de la hoja de datos.
+4. **Análisis por Planta** — matriz empresa/planta/ciudad con volumen, desglose por categoría, % de cierre, alto riesgo, firmas pendientes y % firmado.
+
+**Criterios de negocio aplicados** (documentados en la nota al pie de cada hoja): la **tasa de cierre excluye borradores**, que no son permisos ejecutables; "alto riesgo" es todo permiso con al menos una tarea de alturas, espacios confinados, trabajo en caliente, energías, izaje o excavaciones; y "firmas pendientes" cuenta **solo las aprobaciones exigidas** a cada permiso según sus tipos de trabajo (reutiliza `isApprovalRequired` del módulo, que ya resolvía esa regla).
+
+La decisión de qué firma exige cada permiso y las etiquetas de estado se resuelven **en el cliente** y viajan ya resueltas al endpoint: esa lógica pertenece al módulo, no al generador de Excel.
+
+**Archivos:** `src/lib/excel-permisos-report.ts` (nuevo), `src/app/api/export/permisos-report/route.ts` (nuevo), `src/app/(app)/permits/page.tsx` (exportación vía API con estado de carga; nuevo `APPROVAL_ROLE_LABELS`; se retiró el import de `xlsx` y las ~215 líneas del export anterior), `src/lib/excel-theme.ts` (`drawSectionTitleRange` promovido desde el reporte de hallazgos para compartirlo).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos. Reporte generado con 150 permisos de prueba cubriendo los 8 estados: 4 hojas, 74 KB, KPIs correctos (150 total / 56 activos / 19 pendientes / 18 cerrados / 38 cancelados / 14 % de cierre / 101 firmas pendientes de 358 requeridas), 900 filas en la hoja de firmas y 257 hipervínculos válidos. **Validación de integridad** (la misma introducida en 17.5): las 14 partes XML están bien formadas y sin los patrones que hacen que Excel pida reparar. **Pendiente:** abrirlo en Excel de escritorio.
 
 ---
 
@@ -3227,7 +3248,7 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 16 — confirmar con el cliente** si `responsabilidad` y `tipoHallazgo` deben seguir siendo obligatorios: al editar hallazgos históricos el formulario exige seleccionarlos. Para hacerlos opcionales basta con `.optional()` en cada `z.enum` de `hallazgo-form.tsx`
 - [ ] **Sesión 16 — prueba manual pendiente:** crear/editar un hallazgo con 2–3 seguimientos (con evidencias) y descargar el PDF, para validar la escritura del arreglo `seguimientos[]` en Firestore de extremo a extremo. Incluir una importación masiva de prueba (`executeImport` no se ejecutó contra Firestore)
 - [x] ~~**Sesión 16 — deuda detectada:** existen dos plantillas de hallazgos en paralelo~~ — resuelto en Sesión 17: la página de importación descarga la plantilla oficial del endpoint; se eliminó la generación local
-- [ ] **Sesión 17 — verificación visual pendiente:** abrir la plantilla y el reporte en Excel de escritorio para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
+- [ ] **Sesión 17/18 — verificación visual pendiente:** abrir en Excel de escritorio la plantilla de importación y los reportes de Hallazgos y Permisos, para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
 - [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
 

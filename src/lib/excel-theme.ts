@@ -125,6 +125,25 @@ export function drawSectionTitle(
   return row + 1;
 }
 
+/** Título de sección acotado a un rango de columnas (para bloques lado a lado). */
+export function drawSectionTitleRange(
+  ws: Worksheet,
+  row: number,
+  text: string,
+  colInicio: number,
+  colFin: number,
+  color: string = XL.navy,
+): number {
+  ws.mergeCells(row, colInicio, row, colFin);
+  const c = ws.getCell(row, colInicio);
+  c.value = text.toUpperCase();
+  c.fill = solid(color);
+  c.font = { bold: true, size: 9, color: { argb: XL.white } };
+  c.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+  ws.getRow(row).height = 18;
+  return row + 1;
+}
+
 /**
  * Fila de tarjetas KPI. Cada tarjeta ocupa `span` columnas y dos filas
  * (valor grande arriba, etiqueta abajo). Devuelve la siguiente fila libre.
