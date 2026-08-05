@@ -95,6 +95,18 @@ function normalizeClase(raw: string): string {
 }
 
 const VALID_ESTADOS = ['Pendiente', 'En Progreso', 'Completado', 'Cerrado'] as const;
+const VALID_RESPONSABILIDAD = ['Directa', 'Corporativa'] as const;
+const VALID_TIPO_HALLAZGO = ['Positivo', 'Seguimiento'] as const;
+
+/** Normaliza un valor de lista cerrada respetando mayúsculas/minúsculas del catálogo. */
+function normalizeOption<T extends string>(
+  raw: string | undefined | null,
+  options: readonly T[],
+): T | undefined {
+  const s = raw?.trim();
+  if (!s) return undefined;
+  return options.find(o => o.toLowerCase() === s.toLowerCase());
+}
 
 // ─── Server Action: validateImportRows ────────────────────────────────────────
 
@@ -152,6 +164,14 @@ export async function validateImportRows(rows: RawImportRow[]): Promise<Validati
     const estado = normalized.cumplimientoEstado;
     if (estado && !(VALID_ESTADOS as readonly string[]).includes(estado)) {
       errors.push('Estado Cumplimiento debe ser: Pendiente, En Progreso, Completado o Cerrado');
+    }
+
+    // Listas cerradas opcionales
+    if (raw.responsabilidad?.trim() && !normalizeOption(raw.responsabilidad, VALID_RESPONSABILIDAD)) {
+      errors.push('Responsabilidad debe ser: Directa o Corporativa');
+    }
+    if (raw.tipoHallazgo?.trim() && !normalizeOption(raw.tipoHallazgo, VALID_TIPO_HALLAZGO)) {
+      errors.push('Tipo de Hallazgo debe ser: Positivo o Seguimiento');
     }
 
     return {
@@ -260,6 +280,12 @@ export async function executeImport(
       };
 
       // Campos opcionales — solo se agregan si tienen valor
+      const responsabilidad = normalizeOption(raw.responsabilidad, VALID_RESPONSABILIDAD);
+      if (responsabilidad) docData.responsabilidad = responsabilidad;
+
+      const tipoHallazgo = normalizeOption(raw.tipoHallazgo, VALID_TIPO_HALLAZGO);
+      if (tipoHallazgo) docData.tipoHallazgo = tipoHallazgo;
+
       if (raw.accionInmediata?.trim()) docData.accionInmediata = raw.accionInmediata.trim();
       if (raw.responsable?.trim()) docData.responsable = raw.responsable.trim();
       if (raw.observacion?.trim()) docData.observacion = raw.observacion.trim();
@@ -280,7 +306,15 @@ export async function executeImport(
       if (fechaMedida) docData.fechaMedidaImplementada = Timestamp.fromDate(fechaMedida);
 
       const fechaSeg = parseDate(raw.fechaSeguimiento1);
-      if (fechaSeg) docData.fechaSeguimiento1 = Timestamp.fromDate(fechaSeg);
+      if (fechaSeg) {
+        docData.fechaSeguimiento1 = Timestamp.fromDate(fechaSeg);
+        // La app maneja varios seguimientos: la plantilla solo trae el primero.
+        docData.seguimientos = [{
+          fecha: Timestamp.fromDate(fechaSeg),
+          ...(pct !== undefined ? { porcentaje: pct } : {}),
+          evidencias: [],
+        }];
+      }
 
       const fechaCierreVal = parseDate(raw.fechaCierre);
       if (fechaCierreVal) docData.fechaCierre = Timestamp.fromDate(fechaCierreVal);

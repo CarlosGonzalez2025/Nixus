@@ -532,7 +532,7 @@ function buildInstruccionesSheet(): XLSX.WorkSheet {
   };
 
   // ── Título principal ────────────────────────────────────────────────────────
-  title(`INSTRUCCIONES — Plantilla de Diagnóstico para Espacios Confinados (${TEMPLATE_COLS.length} columnas)`);
+  title(`INSTRUCCIONES — Plantilla de Inventario para Espacios Confinados (${TEMPLATE_COLS.length} columnas)`);
   blank();
 
   // ── Pasos generales ─────────────────────────────────────────────────────────
@@ -687,7 +687,7 @@ function downloadTemplate() {
   XLSX.utils.book_append_sheet(wb, buildInstruccionesSheet(), 'Instrucciones');
   XLSX.utils.book_append_sheet(wb, buildListasSheet(),        'Listas de valores');
 
-  XLSX.writeFile(wb, 'plantilla_diagnostico_confinados.xlsx');
+  XLSX.writeFile(wb, 'plantilla_inventario_confinados.xlsx');
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -788,11 +788,11 @@ export default function ImportarDiagnosticoPage() {
             onClick={() => router.push('/confinados/diagnostico')}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Diagnóstico
+            <ArrowLeft className="h-3 w-3" /> Inventario
           </button>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-violet-600" />
-            Importar Diagnósticos
+            Importar Inventarios
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Cargue masiva usando una plantilla Excel (.xlsx).
@@ -1018,7 +1018,7 @@ export default function ImportarDiagnosticoPage() {
                 Importar más
               </Button>
               <Button onClick={() => router.push('/confinados/diagnostico')}>
-                Ver diagnósticos
+                Ver inventarios
               </Button>
             </div>
           </CardContent>

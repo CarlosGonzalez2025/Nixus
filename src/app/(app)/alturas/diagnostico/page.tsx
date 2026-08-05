@@ -92,16 +92,16 @@ export default function DiagnosticoAlturasListPage() {
         <PageHeader router={router} />
         <div className="flex flex-col items-center justify-center h-60 gap-4">
           <FileX className="h-12 w-12 text-muted-foreground" />
-          <p className="font-semibold text-center">No hay diagnósticos de alturas registrados</p>
+          <p className="font-semibold text-center">No hay inventarios de alturas registrados</p>
           <p className="text-sm text-muted-foreground text-center">
-            Crea el primer diagnóstico o importa registros desde Excel.
+            Crea el primer inventario o importa registros desde Excel.
           </p>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={() => router.push('/alturas/diagnostico/importar')}>
               <Upload className="mr-2 h-4 w-4" /> Importar
             </Button>
             <Button size="sm" onClick={() => router.push('/alturas/diagnostico/nuevo')}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo diagnóstico
+              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo inventario
             </Button>
           </div>
         </div>
@@ -273,7 +273,7 @@ function PageHeader({ router }: { router: ReturnType<typeof useRouter> }) {
         </button>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
           <ArrowUpToLine className="h-6 w-6 text-sky-600" />
-          Diagnóstico – Trabajo en Alturas
+          Inventario – Trabajo en Alturas
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Checklist de evaluación de riesgos, equipos y EPP para trabajo en alturas.
@@ -286,7 +286,7 @@ function PageHeader({ router }: { router: ReturnType<typeof useRouter> }) {
         </Button>
         <Button size="sm"
           onClick={() => router.push('/alturas/diagnostico/nuevo')}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Nuevo diagnóstico
+          <PlusCircle className="mr-2 h-4 w-4" /> Nuevo inventario
         </Button>
       </div>
     </div>

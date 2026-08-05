@@ -99,16 +99,16 @@ export default function DiagnosticoListPage() {
         <PageHeader router={router} />
         <div className="flex flex-col items-center justify-center h-60 gap-4">
           <FileX className="h-12 w-12 text-muted-foreground" />
-          <p className="font-semibold text-center">No hay diagnósticos registrados</p>
+          <p className="font-semibold text-center">No hay inventarios registrados</p>
           <p className="text-sm text-muted-foreground text-center">
-            Crea el primer diagnóstico o importa registros desde Excel.
+            Crea el primer inventario o importa registros desde Excel.
           </p>
           <div className="flex gap-3">
             <Button variant="outline" size="sm" onClick={() => router.push('/confinados/diagnostico/importar')}>
               <Upload className="mr-2 h-4 w-4" /> Importar
             </Button>
             <Button size="sm" onClick={() => router.push('/confinados/diagnostico/nuevo')}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo diagnóstico
+              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo inventario
             </Button>
           </div>
         </div>
@@ -289,7 +289,7 @@ function PageHeader({ router }: { router: ReturnType<typeof useRouter> }) {
         </button>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-violet-600" />
-          Diagnóstico – Espacios Confinados
+          Inventario – Espacios Confinados
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Checklist de evaluación de riesgos, facilidades, equipos y EPP.
@@ -302,7 +302,7 @@ function PageHeader({ router }: { router: ReturnType<typeof useRouter> }) {
         </Button>
         <Button size="sm"
           onClick={() => router.push('/confinados/diagnostico/nuevo')}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Nuevo diagnóstico
+          <PlusCircle className="mr-2 h-4 w-4" /> Nuevo inventario
         </Button>
       </div>
     </div>

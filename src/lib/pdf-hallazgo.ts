@@ -76,6 +76,10 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
   const eviDespuesBase64 = hallazgo.evidenciasPlanAccion?.length
       ? await Promise.all(hallazgo.evidenciasPlanAccion.map(fetchImageAsBase64))
       : [];
+  const urlsSeguimientos = (hallazgo.seguimientos || []).flatMap(s => s?.evidencias || []);
+  const eviSeguimientosBase64 = urlsSeguimientos.length
+      ? await Promise.all(urlsSeguimientos.map(fetchImageAsBase64))
+      : [];
 
   const pdf = new jsPDF('p', 'mm', 'letter');
   const PW = pdf.internal.pageSize.width;
@@ -201,6 +205,12 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
         { content: safe(hallazgo.tipoActividad) },
       ],
       [
+        { content: 'Tipo de Hallazgo', styles: { fontStyle: 'bold' as const, textColor: [120, 120, 120], fontSize: 6.5 } },
+        { content: safe(hallazgo.tipoHallazgo) },
+        { content: 'Responsabilidad', styles: { fontStyle: 'bold' as const, textColor: [120, 120, 120], fontSize: 6.5 } },
+        { content: safe(hallazgo.responsabilidad) },
+      ],
+      [
         { content: 'Fecha de Visita', styles: { fontStyle: 'bold' as const, textColor: [120, 120, 120], fontSize: 6.5 } },
         { content: fmt(hallazgo.fechaVisita || hallazgo.fechaIdentificacion) },
         { content: 'Geolocalización', styles: { fontStyle: 'bold' as const, textColor: [120, 120, 120], fontSize: 6.5 } },
@@ -285,8 +295,10 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
   y = (pdf as any).lastAutoTable.finalY + 5;
 
   // ── PLAN DE ACCIÓN (si existe) ────────────────────────────────────────────
+  const seguimientos = (hallazgo.seguimientos || []).filter(s => s && s.fecha);
   const hasPlan = hallazgo.responsable || hallazgo.fechaMedidaImplementada ||
-    hallazgo.porcentajeCumplimiento !== undefined || hallazgo.observacion;
+    hallazgo.porcentajeCumplimiento !== undefined || hallazgo.observacion ||
+    seguimientos.length > 0;
 
   if (hasPlan) {
     pageBreakIfNeeded(40);
@@ -305,8 +317,8 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
           { content: fmt(hallazgo.fechaMedidaImplementada) },
         ],
         [
-          { content: 'Fecha de Seguimiento', styles: lbStyle },
-          { content: fmt(hallazgo.fechaSeguimiento1) },
+          { content: 'Seguimientos Registrados', styles: lbStyle },
+          { content: seguimientos.length > 0 ? String(seguimientos.length) : '—' },
           { content: 'Fecha de Cierre', styles: lbStyle },
           { content: fmt(hallazgo.fechaCierre) },
         ],
@@ -357,6 +369,31 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
       y += 9;
     }
 
+    // Detalle de seguimientos
+    if (seguimientos.length > 0) {
+      pageBreakIfNeeded(25);
+      autoTable(pdf, {
+        startY: y,
+        head: [['#', 'FECHA', '% CUMPL.', 'OBSERVACIÓN']],
+        body: seguimientos.map((s, i) => [
+          String(i + 1),
+          fmt(s.fecha),
+          s.porcentaje !== undefined ? `${s.porcentaje}%` : '—',
+          safe(s.observacion),
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: LIGHT_GRAY, textColor: [80, 80, 80], fontSize: 7 },
+        styles: { fontSize: 8, cellPadding: 2.5, textColor: DARK },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 26 },
+          2: { cellWidth: 22, halign: 'center' },
+        },
+        margin: { left: ML, right: MR },
+      });
+      y = (pdf as any).lastAutoTable.finalY + 5;
+    }
+
     // Observaciones
     if (hallazgo.observacion) {
       pageBreakIfNeeded(20);
@@ -376,8 +413,9 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
   // ── FOTOGRAFÍAS ────────────────────────────────────────────────────────
   const validAntes = eviAntesBase64.filter(b => b) as string[];
   const validDespues = eviDespuesBase64.filter(b => b) as string[];
+  const validSeguimientos = eviSeguimientosBase64.filter(b => b) as string[];
 
-  if (validAntes.length > 0 || validDespues.length > 0) {
+  if (validAntes.length > 0 || validDespues.length > 0 || validSeguimientos.length > 0) {
     pageBreakIfNeeded(40);
     drawSectionHeader('Evidencias Fotográficas', BLUE);
     
@@ -411,6 +449,7 @@ export async function generateHallazgoPDF(hallazgo: Hallazgo): Promise<void> {
     }
     
     drawImages(validAntes, 'Evidencias del Hallazgo (Antes)');
+    drawImages(validSeguimientos, 'Evidencias de los Seguimientos');
     drawImages(validDespues, 'Evidencias del Plan de Acción (Cierre / Después)');
   }
 

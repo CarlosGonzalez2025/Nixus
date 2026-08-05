@@ -682,11 +682,21 @@ export interface ActionPlan {
 export type HallazgoClase = 'A' | 'B' | 'C';
 export type HallazgoIntervencion = 'Inmediata' | 'Pronta' | 'Posterior';
 export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado';
+export type HallazgoResponsabilidad = 'Directa' | 'Corporativa';
+export type HallazgoTipo = 'Positivo' | 'Seguimiento';
 
 export interface HallazgoGeolocalizacion {
   lat: number;
   lng: number;
   accuracy?: number;
+}
+
+/** Seguimiento individual dentro del plan de acción (pueden registrarse varios). */
+export interface HallazgoSeguimiento {
+  fecha: Timestamp;
+  porcentaje?: number;
+  observacion?: string;
+  evidencias?: string[];
 }
 
 export interface Hallazgo {
@@ -697,6 +707,10 @@ export interface Hallazgo {
   planta: string;
   area: string;
   tipoActividad: 'Rutinario' | 'No Rutinario';
+  /** Responsabilidad sobre la corrección del hallazgo. */
+  responsabilidad?: HallazgoResponsabilidad;
+  /** Naturaleza del reporte: observación positiva o hallazgo con seguimiento. */
+  tipoHallazgo?: HallazgoTipo;
   fechaVisita: Timestamp;
   geolocalizacion?: HallazgoGeolocalizacion;
   peligroInspeccionado: string;
@@ -717,7 +731,11 @@ export interface Hallazgo {
   // Plan de acción (opcional)
   fechaMedidaImplementada?: Timestamp;
   responsable?: string;
+  /** Seguimientos registrados (fuente de verdad desde 08/2026). */
+  seguimientos?: HallazgoSeguimiento[];
+  /** Legacy / compatibilidad: primera fecha de seguimiento (derivada de `seguimientos`). */
   fechaSeguimiento1?: Timestamp;
+  /** Legacy / compatibilidad: último % reportado (derivado de `seguimientos`). */
   porcentajeCumplimiento?: number;
   evidenciasPlanAccion?: string[];        // URLs de fotos "después / cierre"
   fechaCierre?: Timestamp;

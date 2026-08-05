@@ -85,7 +85,7 @@ function ScoreSection({ resultados }: { resultados: DiagnosticoResultados }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-violet-600" />
-          Resultados del Diagnóstico
+          Resultados del Inventario
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -184,7 +184,7 @@ export default function DiagnosticoDetailPage() {
     setDeleting(true);
     try {
       await deleteDiagnostico(id);
-      toast({ title: 'Diagnóstico eliminado' });
+      toast({ title: 'Inventario eliminado' });
       router.push('/confinados/diagnostico');
     } catch (err: any) {
       toast({ title: 'Error al eliminar', variant: 'destructive' });
@@ -203,7 +203,7 @@ export default function DiagnosticoDetailPage() {
   if (!diagnostico) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-6 items-center justify-center">
-        <p className="text-muted-foreground">Diagnóstico no encontrado.</p>
+        <p className="text-muted-foreground">Inventario no encontrado.</p>
         <Button variant="outline" onClick={() => router.push('/confinados/diagnostico')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Volver
         </Button>
@@ -227,11 +227,11 @@ export default function DiagnosticoDetailPage() {
             onClick={() => router.push('/confinados/diagnostico')}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Diagnóstico
+            <ArrowLeft className="h-3 w-3" /> Inventario
           </button>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-violet-600" />
-            Diagnóstico – {diagnostico.empresa}
+            Inventario – {diagnostico.empresa}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge className={cn('text-xs', STATUS_COLOR)}>{STATUS_LABEL}</Badge>
@@ -254,9 +254,9 @@ export default function DiagnosticoDetailPage() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿Eliminar diagnóstico?</AlertDialogTitle>
+                <AlertDialogTitle>¿Eliminar inventario?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acción no se puede deshacer. El diagnóstico será eliminado permanentemente.
+                  Esta acción no se puede deshacer. El inventario será eliminado permanentemente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
