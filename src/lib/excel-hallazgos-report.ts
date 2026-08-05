@@ -402,21 +402,27 @@ function buildDatos(wb: ExcelJS.Workbook, rows: HallazgoExportRow[]) {
 
   ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columnas.length } };
 
-  // Barras de datos nativas de Excel sobre la columna "% cumplimiento" (W)
+  // Semáforo sobre la columna "% cumplimiento" (W): rojo → ámbar → verde.
+  //
+  // Se usa `colorScale` y NO `dataBar`: ExcelJS genera el dataBar sin el elemento
+  // <color> (obligatorio en el esquema) y con un <x14:id/> vacío que apunta a una
+  // definición inexistente, lo que hace que Excel pida reparar el archivo.
   if (rows.length > 0) {
     ws.addConditionalFormatting({
       ref: `W2:W${rows.length + 1}`,
       rules: [{
-        type: 'dataBar',
+        type: 'colorScale',
         priority: 1,
-        gradient: true,
-        minLength: 0,
-        maxLength: 100,
-        showValue: true,
-        border: false,
-        axisPosition: 'auto',
-        direction: 'leftToRight',
-        cfvo: [{ type: 'num', value: 0 }, { type: 'num', value: 1 }],
+        cfvo: [
+          { type: 'num', value: 0 },
+          { type: 'num', value: 0.5 },
+          { type: 'num', value: 1 },
+        ],
+        color: [
+          { argb: 'FFF8C9C4' },
+          { argb: 'FFFFE7A0' },
+          { argb: 'FFB7E1B9' },
+        ],
       }],
     });
   }

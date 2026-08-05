@@ -100,7 +100,7 @@ Con la plantilla multi-hoja, el parser de importación **habría dejado de funci
 `src/lib/excel-hallazgos-report.ts`. El botón "Exportar Excel" del módulo envía los hallazgos **ya filtrados y ordenados** (exactamente lo que el usuario ve, con los filtros aplicados anotados en la portada) y recibe un libro de cuatro hojas:
 
 1. **Resumen Ejecutivo** — banner con autor, fecha y filtros; **10 KPIs** en tarjetas (total, abiertos, cerrados, tasa de cierre, Clase A abiertos, cumplimiento promedio, días promedio de cierre, antigüedad promedio de los abiertos, hallazgos con plan de acción, seguimientos totales); distribuciones por clase, estado, tipo de hallazgo y responsabilidad; peligros más frecuentes; personal expuesto; **tendencia de 12 meses** con nuevos/cerrados/% de cierre; y rankings Top 10 de empresas y plantas con % de cierre y Clase A abiertos. Las proporciones se ven con barras de bloques calculadas en JS (se ven igual en Excel, LibreOffice y Google Sheets, sin depender del recálculo).
-2. **Hallazgos** — los 31 campos como tabla filtrable, con paneles congelados, semáforo de color por clase y estado, y **barras de datos nativas** de Excel sobre el % de cumplimiento.
+2. **Hallazgos** — los 31 campos como tabla filtrable, con paneles congelados, semáforo de color por clase y estado, y **escala de color** (rojo → ámbar → verde) sobre el % de cumplimiento.
 3. **Seguimientos** — una fila por seguimiento (hallazgo, empresa, planta, clase, estado, n.º, fecha, %, observación), que es la vista que faltaba para analizar el avance del plan de acción.
 4. **Análisis por Planta** — matriz empresa/planta con total, desglose por clase, abiertos, cerrados, % de cierre, cumplimiento promedio y Clase A abiertos.
 
@@ -108,7 +108,26 @@ Las firmas ya no se exportan como data URL en base64 (inflaban el archivo sin ap
 
 **Archivos:** `src/lib/excel-theme.ts` (paleta y helpers: banner, títulos de sección, tarjetas KPI, tablas, barras), `src/lib/excel-hallazgos-template.ts`, `src/lib/excel-hallazgos-report.ts`, `src/app/api/export/hallazgos-template/route.ts` (reescrito), `src/app/api/export/hallazgos-report/route.ts` (nuevo), `src/app/(app)/hallazgos/page.tsx` (exportación vía API, con estado de carga; se retiró el import de `xlsx`), `src/app/(app)/hallazgos/importar/page.tsx` (descarga la plantilla oficial, selección de hoja, descarte de filas guía).
 
-**Verificación:** `tsc --noEmit` sin errores nuevos (persiste el preexistente `Hallazgo.ciudad`). Plantilla generada y releída: 3 hojas, 28 columnas, estilos presentes (`A1` sí sale rojo) y 4.200 celdas validadas. Reporte generado con 120 hallazgos de prueba: 4 hojas, 39 KB, KPIs correctos (120 total / 60 abiertos / 60 cerrados / 73 % de cumplimiento / 182 días promedio), 180 filas de seguimientos. **Prueba de ida y vuelta completa:** plantilla generada → diligenciada como lo haría un usuario → parseada con la lógica real de la página → validada con la server action real: 2/2 filas OK, incluyendo peligros con coma, valores sin tildes y seguimientos múltiples. **Pendiente:** abrir ambos archivos en Excel de escritorio para confirmar visualmente el render y el comportamiento de los desplegables.
+#### 17.5 Fix — Excel pedía reparar el reporte (`dataBar` de ExcelJS genera XML inválido)
+
+Al abrir el primer reporte en Excel de escritorio apareció *"Encontramos un problema con contenido de Reporte_Hallazgos_SGTC…"* y, al reparar, *"Parte reparada: /xl/worksheets/sheet2.xml parte con error de XML"*. `sheet2` es la hoja **Hallazgos**, la única con formato condicional.
+
+**Causa (verificada descomprimiendo el .xlsx y leyendo el XML):** ExcelJS escribió
+
+```xml
+<dataBar><cfvo type="num" val="0"/><cfvo type="num" val="1"/></dataBar>
+<extLst><ext uri="{B025F937-…}"><x14:id/></ext></extLst>
+```
+
+con **dos defectos**: falta el elemento `<color>`, que el esquema OOXML exige dentro de `dataBar`, y el `<x14:id/>` va **vacío**, apuntando a una definición x14 que nunca se escribe. Es una limitación conocida de ExcelJS con las barras de datos.
+
+**Solución:** se reemplazó la regla `dataBar` por una `colorScale` de tres puntos (rojo → ámbar → verde), que ExcelJS sí serializa completa y válida. Comunica lo mismo (avance del cumplimiento de un vistazo) sin XML inválido.
+
+Se añadió al proceso una verificación reutilizable del `.xlsx` generado: descomprimir, comprobar que **todas** las partes XML estén bien formadas y buscar los patrones que disparan la reparación de Excel (`<x14:id/>` vacío, `dataBar` sin `color`, `rgb="undefined"`, valores `NaN`, fórmulas y validaciones vacías). Ambos libros pasan sin observaciones.
+
+---
+
+**Verificación:** `tsc --noEmit` sin errores nuevos (persiste el preexistente `Hallazgo.ciudad`). Plantilla generada y releída: 3 hojas, 28 columnas, estilos presentes (`A1` sí sale rojo) y 4.200 celdas validadas; el circuito de notas está completo (`comments2.xml` + `vmlDrawing2.vml` + rels + `<legacyDrawing>` + declaraciones en `[Content_Types].xml`). Reporte generado con 120 hallazgos de prueba: 4 hojas, 39 KB, KPIs correctos (120 total / 60 abiertos / 60 cerrados / 73 % de cumplimiento / 182 días promedio), 180 filas de seguimientos. **Prueba de ida y vuelta completa:** plantilla generada → diligenciada como lo haría un usuario → parseada con la lógica real de la página → validada con la server action real: 2/2 filas OK, incluyendo peligros con coma, valores sin tildes y seguimientos múltiples. **Pendiente:** confirmar en Excel de escritorio que el reporte ya abre sin el aviso de reparación y revisar el render de la plantilla.
 
 ---
 
@@ -3208,7 +3227,8 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 16 — confirmar con el cliente** si `responsabilidad` y `tipoHallazgo` deben seguir siendo obligatorios: al editar hallazgos históricos el formulario exige seleccionarlos. Para hacerlos opcionales basta con `.optional()` en cada `z.enum` de `hallazgo-form.tsx`
 - [ ] **Sesión 16 — prueba manual pendiente:** crear/editar un hallazgo con 2–3 seguimientos (con evidencias) y descargar el PDF, para validar la escritura del arreglo `seguimientos[]` en Firestore de extremo a extremo. Incluir una importación masiva de prueba (`executeImport` no se ejecutó contra Firestore)
 - [x] ~~**Sesión 16 — deuda detectada:** existen dos plantillas de hallazgos en paralelo~~ — resuelto en Sesión 17: la página de importación descarga la plantilla oficial del endpoint; se eliminó la generación local
-- [ ] **Sesión 17 — verificación visual pendiente:** abrir la plantilla y el reporte en Excel de escritorio para confirmar el render y que los desplegables se comporten como se espera (se validó releyendo los archivos con ExcelJS, no abriéndolos en Excel)
+- [ ] **Sesión 17 — verificación visual pendiente:** abrir la plantilla y el reporte en Excel de escritorio para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
+- [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
 
 ---
