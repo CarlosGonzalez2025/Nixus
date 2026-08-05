@@ -52,7 +52,7 @@ export default function AlturasPage() {
           Alturas
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Gestión integral de trabajo en alturas: diagnóstico, inspección de equipos, permisos y análisis de riesgo.
+          Gestión integral de trabajo en alturas: inventario, inspección de equipos, permisos y análisis de riesgo.
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export default function AlturasPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
           <SubmoduloCard
-            title="Diagnóstico"
+            title="Inventario"
             description="Checklist de evaluación de riesgos, escaleras, andamios, arneses, sistemas de protección contra caídas y EPP para trabajo en alturas."
             href="/alturas/diagnostico"
             icon={ClipboardList}
@@ -73,7 +73,7 @@ export default function AlturasPage() {
 
           <SubmoduloCard
             title="Análisis & Métricas"
-            description="Estadística descriptiva, clustering K-Means, tendencias y detección de anomalías sobre los diagnósticos de alturas registrados."
+            description="Estadística descriptiva, clustering K-Means, tendencias y detección de anomalías sobre los inventarios de alturas registrados."
             href="/alturas/analisis"
             icon={Brain}
             color="bg-blue-600"
@@ -81,7 +81,7 @@ export default function AlturasPage() {
 
           <SubmoduloCard
             title="Historial & Seguimiento"
-            description="Seguimiento de diagnósticos completados, tendencias y alertas por planta."
+            description="Seguimiento de inventarios completados, tendencias y alertas por planta."
             href="/alturas/diagnostico"
             icon={Clock}
             color="bg-cyan-500"

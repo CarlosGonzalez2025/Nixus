@@ -304,7 +304,7 @@ function buildInstruccionesSheet(): XLSX.WorkSheet {
   };
   const blank = () => r++;
 
-  title(`INSTRUCCIONES — Plantilla de Diagnóstico para Trabajo en Alturas (${TEMPLATE_COLS.length} columnas)`);
+  title(`INSTRUCCIONES — Plantilla de Inventario para Trabajo en Alturas (${TEMPLATE_COLS.length} columnas)`);
   blank();
   note('CÓMO USAR ESTA PLANTILLA', C.azulOscuro, C.blanco);
   [
@@ -414,7 +414,7 @@ function downloadTemplate() {
   XLSX.utils.book_append_sheet(wb, buildDatosSheet(),         'Datos');
   XLSX.utils.book_append_sheet(wb, buildInstruccionesSheet(), 'Instrucciones');
   XLSX.utils.book_append_sheet(wb, buildListasSheet(),        'Listas de valores');
-  XLSX.writeFile(wb, 'plantilla_diagnostico_alturas.xlsx');
+  XLSX.writeFile(wb, 'plantilla_inventario_alturas.xlsx');
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -506,11 +506,11 @@ export default function ImportarAlturaPage() {
             onClick={() => router.push('/alturas/diagnostico')}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Diagnóstico
+            <ArrowLeft className="h-3 w-3" /> Inventario
           </button>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
             <ArrowUpToLine className="h-6 w-6 text-sky-600" />
-            Importar Diagnósticos – Alturas
+            Importar Inventarios – Alturas
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Cargue masivo usando la plantilla Excel (.xlsx) de alturas.
@@ -720,7 +720,7 @@ export default function ImportarAlturaPage() {
                 Importar más
               </Button>
               <Button onClick={() => router.push('/alturas/diagnostico')}>
-                Ver diagnósticos
+                Ver inventarios
               </Button>
             </div>
           </CardContent>

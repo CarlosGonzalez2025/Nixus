@@ -64,6 +64,11 @@ export default async function PublicHallazgoPage(
   const estadoBadge = ESTADO_STYLES[estado] ?? ESTADO_STYLES['Pendiente'];
   const isClosed = estado === 'Completado' || estado === 'Cerrado';
 
+  // Seguimientos del plan de acción (varios por hallazgo)
+  const seguimientos: any[] = Array.isArray(h.seguimientos)
+    ? h.seguimientos.filter((s: any) => s && s.fecha)
+    : [];
+
   // Photos: field is evidenciasFotograficas (string[]) or fotos ({url:string}[])
   const fotos: string[] = Array.isArray(h.evidenciasFotograficas)
     ? h.evidenciasFotograficas
@@ -114,6 +119,15 @@ export default async function PublicHallazgoPage(
           <div className="grid grid-cols-2 gap-4">
             <Field label="Planta" value={h.planta || 'Global'} />
             <Field label="Área" value={h.area || '—'} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Tipo de Hallazgo" value={h.tipoHallazgo || '—'} />
+            <Field label="Responsabilidad" value={h.responsabilidad || '—'} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Personal Expuesto" value={(h.personalExpuesto || '').split('\n').filter(Boolean).join(', ') || '—'} />
+            <Field label="Seguimientos" value={String(seguimientos.length || 0)} />
           </div>
 
           <div className="col-span-1 md:col-span-2 pt-4 border-t border-gray-200 mt-2">
@@ -184,6 +198,40 @@ export default async function PublicHallazgoPage(
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Seguimientos ───────────────────────────────────────── */}
+        {seguimientos.length > 0 && (
+          <div className="mb-12 print:break-inside-avoid">
+            <h3 className="text-sm font-bold uppercase text-[#3062C8] mb-4 tracking-wide border-b pb-1 flex justify-between items-end">
+              <span>Seguimientos del Plan de Acción</span>
+              <span className="text-xs text-gray-500 font-normal">{seguimientos.length} registrados</span>
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                    <th className="text-left px-3 py-2 border-b border-gray-200 w-10">#</th>
+                    <th className="text-left px-3 py-2 border-b border-gray-200 w-32">Fecha</th>
+                    <th className="text-left px-3 py-2 border-b border-gray-200 w-28">% Cumpl.</th>
+                    <th className="text-left px-3 py-2 border-b border-gray-200">Observación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {seguimientos.map((s: any, idx: number) => (
+                    <tr key={idx} className="align-top">
+                      <td className="px-3 py-2 border-b border-gray-100 tabular-nums text-gray-500">{idx + 1}</td>
+                      <td className="px-3 py-2 border-b border-gray-100 tabular-nums">{fmt(s.fecha)}</td>
+                      <td className="px-3 py-2 border-b border-gray-100 tabular-nums">
+                        {s.porcentaje !== undefined && s.porcentaje !== null ? `${s.porcentaje}%` : '—'}
+                      </td>
+                      <td className="px-3 py-2 border-b border-gray-100 text-gray-700">{s.observacion || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

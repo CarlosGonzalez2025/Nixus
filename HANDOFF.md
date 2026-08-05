@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-07-06 (Sesión 15)
+> **Última actualización de este documento:** 2026-08-04 (Sesión 16)
 
 ---
 
@@ -62,6 +62,64 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-04 (Sesión 16) — Hallazgos: campos Responsabilidad y Tipo de Hallazgo, seguimientos múltiples, fix de Peligros/Personal Expuesto que "no guardaban" + renombre de "Diagnóstico" a "Inventario" en Alturas y Confinados
+
+**Solicitud del cliente (5 puntos):** (1) renombrar la etiqueta "Diagnóstico" a "Inventario" en Alturas —y luego en Confinados y demás módulos—, (2) agregar en el formulario de hallazgos un campo de selección de responsabilidad **Directa / Corporativa**, (3) revisar el ítem de **peligros** porque "no guarda" (aplica igual a **personal expuesto**), (4) permitir registrar **varios seguimientos** en el plan de acción y (5) agregar en Información General otro campo con las opciones **Positivo / Seguimiento**.
+
+---
+
+#### 4.1 Fix — Peligro Inspeccionado y Personal Expuesto "no guardaban" (bug real de sincronización, no de escritura)
+
+**Causa raíz:** `PeligroSelector` y `PersonalExpuestoSelector` (en [hallazgo-form.tsx](src/app/(app)/hallazgos/components/hallazgo-form.tsx)) copiaban el prop `value` a `useState` **solo en el montaje**. El `form.reset()` que carga un hallazgo existente (o recupera un borrador de `localStorage`) ocurre en un `useEffect` **posterior**, así que el estado interno del selector quedaba con el valor inicial vacío y nunca se resincronizaba. Consecuencias: (a) al abrir un hallazgo guardado los chips se veían **sin seleccionar** aunque el dato sí estaba en Firestore — de ahí el reporte de "no guarda"; y (b) peor, al tocar cualquier chip, `buildValue()` partía de ese `Set` vacío y **sobrescribía los peligros ya guardados** con la selección nueva → pérdida real de datos al editar.
+
+**Solución:** ambos selectores pasaron a ser **100% controlados** — el estado se deriva del prop `value` en cada render (`parseValue(value)`), sin copias en `useState`. En `PeligroSelector` solo queda `showCustomManual` (para desplegar el textarea de "Otros" cuando aún no hay texto); su visibilidad efectiva es `showCustomManual || customText.length > 0`, de modo que un valor cargado con peligros libres abre el textarea automáticamente. Se descartaron las reglas de Firestore como causa: `match /hallazgos/{id}` no restringe campos en `update`.
+
+#### 4.2 Campos nuevos en Información General — Responsabilidad y Tipo de Hallazgo
+
+- `responsabilidad: 'Directa' | 'Corporativa'` (tipo `HallazgoResponsabilidad`) — sobre quién recae la corrección del hallazgo.
+- `tipoHallazgo: 'Positivo' | 'Seguimiento'` (tipo `HallazgoTipo`) — naturaleza del reporte.
+
+Ambos se renderizan con un componente nuevo y reutilizable `OptionToggle` (grupo de 2 botones con ícono y color propio, mismo lenguaje visual que "Tipo de Actividad"), acompañado del `<select className="sr-only">` registrado que ya usaba el formulario para que la validación pueda enfocar el campo con error.
+
+**Decisión pendiente de confirmación del cliente:** ambos quedaron **obligatorios** (`z.enum` con `required_error`) y **sin preselección**, para no inventar datos. Los registros históricos se leen sin problema, pero al **editar** un hallazgo anterior el sistema exige seleccionarlos antes de actualizar. Si se prefiere no generar esa fricción sobre el histórico, basta con hacer `.optional()` cada `z.enum`.
+
+#### 4.3 Plan de Acción — varios seguimientos
+
+Se reemplazó el par de campos sueltos `fechaSeguimiento1` / `porcentajeCumplimiento` por un arreglo `seguimientos[]` manejado con `useFieldArray`. Cada seguimiento tiene **fecha** (requerida), **% de cumplimiento** (con barra de progreso individual), **observación** y sus **propias evidencias fotográficas** (`FileUpload` → carpeta `hallazgos/seguimientos`, máx. 5). Se agregan/eliminan libremente con "Agregar seguimiento" / botón de papelera; en modo lectura se muestran sin controles de edición.
+
+**Compatibilidad hacia atrás (en ambos sentidos), que es lo delicado de este cambio:**
+- **Al cargar:** `seguimientosFromHallazgo()` usa `seguimientos[]` si existe; si no, migra el par legacy (`fechaSeguimiento1` + `porcentajeCumplimiento`) al primer elemento de la lista, para que los hallazgos antiguos se vean y se editen igual.
+- **Al guardar:** los campos legacy se **re-derivan** del arreglo (`fechaSeguimiento1` = fecha del primer seguimiento cronológico; `porcentajeCumplimiento` = último % informado), porque los consumen el PDF, la exportación a Excel y los reportes existentes. Los seguimientos se ordenan por fecha y se limpian de claves `undefined` (Firestore las rechaza incluso dentro de objetos anidados).
+- **Al vaciar la lista:** se borra `fechaSeguimiento1` con `deleteField()`. El `%` legacy **solo** se borra si provenía de un seguimiento (`hallazgo.seguimientos?.length` o `fechaSeguimiento1` presentes al cargar); un registro antiguo que tenía `%` **sin** fecha de seguimiento conserva su valor intacto.
+- La recuperación de borradores (`draft_hallazgo` en `localStorage`) rehidrata las fechas de cada seguimiento (JSON las serializa como string ISO).
+
+#### 4.4 Renombre "Diagnóstico" → "Inventario" (Alturas y Confinados)
+
+Cambio **solo de etiquetas visibles**: tarjetas de submódulo, encabezados, breadcrumbs, botones ("Nuevo inventario", "Ver inventarios"), estados vacíos, diálogos de eliminación, toasts, la pregunta "¿El cliente acepta todo lo relacionado en el inventario?", los títulos de instrucciones de las plantillas Excel y sus nombres de archivo (`plantilla_inventario_alturas.xlsx`, `plantilla_inventario_confinados.xlsx`).
+
+**No se tocaron** las rutas (`/alturas/diagnostico`, `/confinados/diagnostico`), las colecciones de Firestore ni los identificadores de código (`DiagnosticoAltura`, `useDiagnosticosAlturas`, `calcDiagnosticoAlturaScore`…), para no romper enlaces guardados ni datos existentes. Barrido case-insensitive sobre `src/`: Calderas, Energías Peligrosas, dashboard, guía y componentes compartidos no tenían la etiqueta. Se dejó **a propósito** la frase normativa de [AnexoEnergiaStep.tsx](src/app/(app)/permits/create/components/AnexoEnergiaStep.tsx) ("…cumpliendo las etapas de diagnóstico, planeación y ejecución de trabajos"), que no es la etiqueta del módulo.
+
+---
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/types/index.ts` | Nuevos tipos `HallazgoResponsabilidad`, `HallazgoTipo`, `HallazgoSeguimiento`. En `Hallazgo`: `responsabilidad?`, `tipoHallazgo?`, `seguimientos?`. `fechaSeguimiento1` y `porcentajeCumplimiento` quedan documentados como legacy/derivados. |
+| `src/app/(app)/hallazgos/components/hallazgo-form.tsx` | Selectores controlados (fix 4.1); `OptionToggle` + los dos campos nuevos; `seguimientoSchema` + `useFieldArray`; helpers `toDate()` y `seguimientosFromHallazgo()`; `onSubmit` deriva los campos legacy y usa `deleteField()` para limpiarlos. |
+| `src/lib/pdf-hallazgo.ts` | "Tipo de Hallazgo" y "Responsabilidad" en Información General; contador de seguimientos + tabla de detalle (#, fecha, %, observación) en Plan de Acción; nueva galería "Evidencias de los Seguimientos". |
+| `src/app/public/hallazgo/[id]/page.tsx` | Metadatos con Tipo de Hallazgo, Responsabilidad, Personal Expuesto y N.º de seguimientos; nueva tabla "Seguimientos del Plan de Acción". |
+| `src/app/(app)/hallazgos/page.tsx` | Exportación Excel: columnas `Tipo de Hallazgo`, `Responsabilidad`, `Personal Expuesto`, `N° Seguimientos` y `Detalle Seguimientos`. |
+| `src/app/api/export/hallazgos-template/route.ts` | Plantilla oficial: columnas `Tipo de Hallazgo` y `Responsabilidad` (opcionales) + filas en la hoja de Instrucciones. |
+| `src/app/(app)/hallazgos/importar/page.tsx` | `COLUMN_TO_FIELD` y `TEMPLATE_COLS` con las dos columnas nuevas (+ alias `Fecha de Visita`). |
+| `src/app/(app)/hallazgos/importar/actions.ts` | `normalizeOption()` (tolerante a mayúsculas) para validar y escribir `responsabilidad`/`tipoHallazgo`; si la fila trae fecha de seguimiento se crea además el `seguimientos[]` correspondiente. |
+| `src/app/(app)/alturas/{page,diagnostico/page,diagnostico/[id]/page,diagnostico/nuevo/page,diagnostico/importar/page,analisis/page}.tsx` | Renombre de etiquetas a "Inventario". |
+| `src/app/(app)/confinados/{page,diagnostico/page,diagnostico/[id]/page,diagnostico/nuevo/page,diagnostico/importar/page,analisis/page}.tsx` | Renombre de etiquetas a "Inventario". |
+
+**Verificación:** `tsc --noEmit` sin errores nuevos (persisten los preexistentes ajenos a este cambio: `Hallazgo.ciudad` en `dashboard/page.tsx:321` y `hallazgos/page.tsx:137`, `user` posiblemente `null` en `layout.tsx`, `email.ts` y `firebase.ts`). Smoke test contra el dev server en `:9003`: `/alturas`, `/alturas/diagnostico`, `/hallazgos`, `/hallazgos/crear`, `/hallazgos/importar`, `/confinados`, `/confinados/diagnostico`, `/confinados/analisis`, `/confinados/diagnostico/{importar,nuevo}` compilan y responden 200; `/api/export/hallazgos-template` genera el `.xlsx` (200, ~69 KB). **Pendiente de prueba manual con datos reales:** crear/editar un hallazgo con 2–3 seguimientos y descargar su PDF, para validar la escritura en Firestore de extremo a extremo.
 
 ---
 
@@ -3088,7 +3146,9 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] Migrar a Firestore Rules v2 con `request.query.filters` para filtros empresa/planta en el servidor
 - [x] ~~Validar comportamiento del flujo de cierre normal con firmas reales en dispositivos móviles~~ — Implementado en Sesión 6: el cierre ahora requiere sesión del ejecutante y del autorizante por separado
 - [ ] Documentar el proceso de creación de usuarios en producción (actualmente se hace desde el panel de admin)
+- [ ] **Sesión 16 — confirmar con el cliente** si `responsabilidad` y `tipoHallazgo` deben seguir siendo obligatorios: al editar hallazgos históricos el formulario exige seleccionarlos. Para hacerlos opcionales basta con `.optional()` en cada `z.enum` de `hallazgo-form.tsx`
+- [ ] **Sesión 16 — prueba manual pendiente:** crear/editar un hallazgo con 2–3 seguimientos (con evidencias) y descargar el PDF, para validar la escritura del arreglo `seguimientos[]` en Firestore de extremo a extremo
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-06-04. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-08-04. Mantener actualizado con cada sesión de desarrollo.*

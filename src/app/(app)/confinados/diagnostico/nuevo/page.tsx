@@ -491,7 +491,7 @@ export default function DiagnosticoNuevoPage() {
     setIsSaving(true);
     try {
       const id = await createDiagnostico(buildPayload(formData, 'completado'));
-      toast({ title: 'Diagnóstico guardado' });
+      toast({ title: 'Inventario guardado' });
       router.push(`/confinados/diagnostico/${id}`);
     } catch (err: any) {
       toast({ title: 'Error', description: err?.message ?? 'No se pudo guardar.', variant: 'destructive' });
@@ -528,11 +528,11 @@ export default function DiagnosticoNuevoPage() {
             onClick={() => router.push('/confinados/diagnostico')}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Diagnóstico
+            <ArrowLeft className="h-3 w-3" /> Inventario
           </button>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-violet-600" />
-            Nuevo Diagnóstico
+            Nuevo Inventario
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Complete el checklist de evaluación para el espacio confinado.
@@ -887,7 +887,7 @@ export default function DiagnosticoNuevoPage() {
                   />
                 </FieldRow>
 
-                <FieldRow label="¿El cliente acepta todo lo relacionado en el diagnóstico?">
+                <FieldRow label="¿El cliente acepta todo lo relacionado en el inventario?">
                   <SelectField
                     value={watchedValues.clienteAceptaInfo ?? ''}
                     onChange={v => setValue('clienteAceptaInfo', v)}
@@ -970,7 +970,7 @@ export default function DiagnosticoNuevoPage() {
             {isSaving
               ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               : <Save className="mr-2 h-4 w-4" />}
-            Guardar diagnóstico
+            Guardar inventario
           </Button>
         </div>
       </form>

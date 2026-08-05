@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -20,7 +20,7 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import {
-    collection, addDoc, updateDoc, doc, serverTimestamp,
+    collection, addDoc, updateDoc, doc, serverTimestamp, deleteField,
     query, orderBy, limit, getDocs, onSnapshot,
 } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -33,6 +33,7 @@ import {
     AlertTriangle, Timer, Shield, Hash, Camera, CheckSquare,
     Plus, X, MapPin, Building2, Factory, Layers,
     Navigation, WifiOff, PenLine, CheckCircle, Check,
+    ThumbsUp, Repeat, Network, UserCog, Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
@@ -59,11 +60,21 @@ const dateField = (opts?: { required_error?: string; invalid_type_error?: string
         z.date(opts),
     );
 
+// Un seguimiento del plan de acción. Se pueden registrar varios por hallazgo.
+const seguimientoSchema = z.object({
+    fecha: dateField({ required_error: 'La fecha del seguimiento es requerida' }),
+    porcentaje: z.number().min(0).max(100).optional(),
+    observacion: z.string().optional(),
+    evidencias: z.array(z.string()).optional().default([]),
+});
+
 const hallazgoSchema = z.object({
     empresa: z.string().min(1, 'La empresa es requerida'),
     planta: z.string().min(1, 'La planta es requerida'),
     area: z.string().min(1, 'El área es requerida'),
     tipoActividad: z.enum(['Rutinario', 'No Rutinario'], { required_error: 'Selecciona el tipo de actividad' }),
+    responsabilidad: z.enum(['Directa', 'Corporativa'], { required_error: 'Selecciona la responsabilidad' }),
+    tipoHallazgo: z.enum(['Positivo', 'Seguimiento'], { required_error: 'Selecciona el tipo de hallazgo' }),
     fechaVisita: dateField({ required_error: 'La fecha de visita es requerida' }),
     geolocalizacion: geoSchema.refine(v => v !== null && v !== undefined, {
         message: 'La geolocalización es requerida',
@@ -83,8 +94,9 @@ const hallazgoSchema = z.object({
     // Plan de acción (opcional)
     fechaMedidaImplementada: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     responsable: z.string().optional(),
-    fechaSeguimiento1: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
-    porcentajeCumplimiento: z.number().min(0).max(100).optional(),
+    // Varios seguimientos. Los campos legacy fechaSeguimiento1 / porcentajeCumplimiento
+    // se derivan de este arreglo al guardar (ver onSubmit).
+    seguimientos: z.array(seguimientoSchema).optional().default([]),
     evidenciasPlanAccion: z.array(z.string()).optional().default([]),
     fechaCierre: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     porcentajeCumplimientoTotal: z.number().min(0).max(100).optional(),
@@ -93,6 +105,7 @@ const hallazgoSchema = z.object({
 });
 
 type FormValues = z.infer<typeof hallazgoSchema>;
+type SeguimientoValues = z.infer<typeof seguimientoSchema>;
 
 interface HallazgoFormProps {
     hallazgo?: Hallazgo;
@@ -116,6 +129,40 @@ const CLASE_CONFIG = {
 const Req = ({ children }: { children: React.ReactNode }) => (
     <>{children}<span className="text-red-500 ml-0.5">*</span></>
 );
+
+/** Timestamp | Date | string → Date (o undefined si no es una fecha usable). */
+const toDate = (v: any): Date | undefined => {
+    if (!v) return undefined;
+    if (typeof v?.toDate === 'function') return v.toDate();
+    const d = v instanceof Date ? v : new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+};
+
+/**
+ * Seguimientos listos para el formulario. Los hallazgos anteriores a la versión
+ * multi-seguimiento solo tienen `fechaSeguimiento1` / `porcentajeCumplimiento`:
+ * se migran a la lista para que sigan siendo visibles y editables.
+ */
+function seguimientosFromHallazgo(h: Hallazgo): SeguimientoValues[] {
+    if (h.seguimientos?.length) {
+        return h.seguimientos
+            .map(s => ({
+                fecha: toDate(s.fecha) as Date,
+                porcentaje: s.porcentaje,
+                observacion: s.observacion || '',
+                evidencias: s.evidencias || [],
+            }))
+            .filter(s => s.fecha instanceof Date);
+    }
+    const legacy = toDate(h.fechaSeguimiento1);
+    if (!legacy) return [];
+    return [{
+        fecha: legacy,
+        porcentaje: h.porcentajeCumplimiento,
+        observacion: '',
+        evidencias: [],
+    }];
+}
 
 const labelClass = 'text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block';
 
@@ -154,6 +201,60 @@ function DateField({
         </FormItem>
     );
 }
+
+// ─── Grupo de opciones (2 botones) ─────────────────────────────────────────────
+interface ToggleOption<T extends string> {
+    value: T;
+    label: string;
+    icon?: React.ElementType;
+    /** Clases del estado seleccionado. Por defecto usa el color primario. */
+    activeClass?: string;
+}
+
+function OptionToggle<T extends string>({
+    options, value, onChange, disabled,
+}: {
+    options: ToggleOption<T>[];
+    value?: T;
+    onChange: (v: T) => void;
+    disabled?: boolean;
+}) {
+    return (
+        <div className="grid grid-cols-2 gap-2">
+            {options.map(opt => {
+                const OIcon = opt.icon;
+                const isSelected = value === opt.value;
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => onChange(opt.value)}
+                        className={cn(
+                            'h-10 rounded-lg border text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5',
+                            isSelected
+                                ? opt.activeClass || 'border-primary/40 bg-primary/10 text-primary'
+                                : 'border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/50'
+                        )}
+                    >
+                        {OIcon && <OIcon className="w-3.5 h-3.5 shrink-0" />}
+                        {opt.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+const RESPONSABILIDAD_OPTIONS: ToggleOption<'Directa' | 'Corporativa'>[] = [
+    { value: 'Directa', label: 'Directa', icon: UserCog, activeClass: 'border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+    { value: 'Corporativa', label: 'Corporativa', icon: Network, activeClass: 'border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400' },
+];
+
+const TIPO_HALLAZGO_OPTIONS: ToggleOption<'Positivo' | 'Seguimiento'>[] = [
+    { value: 'Positivo', label: 'Positivo', icon: ThumbsUp, activeClass: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+    { value: 'Seguimiento', label: 'Seguimiento', icon: Repeat, activeClass: 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+];
 
 // ─── Combo Select + Add New ────────────────────────────────────────────────────
 type DynListName = 'empresas' | 'plantas' | 'areas';
@@ -274,10 +375,13 @@ function PeligroSelector({
         return { selected: sel, custom: customParts.join('\n') };
     };
 
-    const { selected: initSelected, custom: initCustom } = parseValue(value || '');
-    const [selected, setSelected] = useState<Set<string>>(initSelected);
-    const [customText, setCustomText] = useState(initCustom);
-    const [showCustom, setShowCustom] = useState(initCustom.length > 0);
+    // El componente es 100% controlado: el estado se deriva del prop `value` en cada
+    // render. Mantener copias en useState hacía que el form.reset() posterior al montaje
+    // (edición de un hallazgo existente o recuperación de borrador) no se reflejara, y al
+    // tocar un chip se sobrescribían los peligros ya guardados con la selección vacía.
+    const { selected, custom: customText } = parseValue(value || '');
+    const [showCustomManual, setShowCustomManual] = useState(false);
+    const showCustom = showCustomManual || customText.length > 0;
 
     const buildValue = (sel: Set<string>, custom: string) => {
         const parts = [...sel];
@@ -288,17 +392,13 @@ function PeligroSelector({
 
     const toggle = (label: string) => {
         if (disabled) return;
-        setSelected(prev => {
-            const next = new Set(prev);
-            if (next.has(label)) next.delete(label);
-            else next.add(label);
-            onChange(buildValue(next, customText));
-            return next;
-        });
+        const next = new Set(selected);
+        if (next.has(label)) next.delete(label);
+        else next.add(label);
+        onChange(buildValue(next, customText));
     };
 
     const handleCustomChange = (text: string) => {
-        setCustomText(text);
         onChange(buildValue(selected, text));
     };
 
@@ -331,7 +431,7 @@ function PeligroSelector({
                 {!showCustom && !disabled && (
                     <button
                         type="button"
-                        onClick={() => setShowCustom(true)}
+                        onClick={() => setShowCustomManual(true)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                     >
                         <Plus className="h-3 w-3 shrink-0" />
@@ -353,7 +453,7 @@ function PeligroSelector({
                         {!disabled && (
                             <button
                                 type="button"
-                                onClick={() => { setShowCustom(false); handleCustomChange(''); }}
+                                onClick={() => { setShowCustomManual(false); handleCustomChange(''); }}
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 <X className="h-3.5 w-3.5" />
@@ -391,17 +491,16 @@ function PersonalExpuestoSelector({
         return new Set(parts.filter(p => PERSONAL_OPTIONS.includes(p as any)));
     };
 
-    const [selected, setSelected] = useState<Set<string>>(parse(value || ''));
+    // Igual que PeligroSelector: estado derivado del prop para que el form.reset()
+    // posterior al montaje se refleje y no se pierda lo ya guardado al tocar un chip.
+    const selected = parse(value || '');
 
     const toggle = (label: string) => {
         if (disabled) return;
-        setSelected(prev => {
-            const next = new Set(prev);
-            if (next.has(label)) next.delete(label);
-            else next.add(label);
-            onChange([...next].join('\n'));
-            return next;
-        });
+        const next = new Set(selected);
+        if (next.has(label)) next.delete(label);
+        else next.add(label);
+        onChange([...next].join('\n'));
     };
 
     return (
@@ -486,6 +585,8 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
             planta: '',
             area: '',
             tipoActividad: 'Rutinario',
+            responsabilidad: undefined,
+            tipoHallazgo: undefined,
             fechaVisita: new Date(),
             geolocalizacion: undefined as any,
             peligroInspeccionado: '',
@@ -500,6 +601,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
             reportadoPorCargo: '',
             firmaReportador: '',
             firmaResponsable: '',
+            seguimientos: [],
             evidenciasPlanAccion: [],
             cumplimientoEstado: 'Pendiente',
         },
@@ -563,6 +665,8 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 planta: plantaVal,
                 area: hallazgo.area,
                 tipoActividad: hallazgo.tipoActividad,
+                responsabilidad: hallazgo.responsabilidad,
+                tipoHallazgo: hallazgo.tipoHallazgo,
                 fechaVisita: fechaVal,
                 geolocalizacion: hallazgo.geolocalizacion as any,
                 peligroInspeccionado: hallazgo.peligroInspeccionado,
@@ -579,8 +683,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 firmaResponsable: hallazgo.firmaResponsable || '',
                 fechaMedidaImplementada: hallazgo.fechaMedidaImplementada?.toDate(),
                 responsable: hallazgo.responsable,
-                fechaSeguimiento1: hallazgo.fechaSeguimiento1?.toDate(),
-                porcentajeCumplimiento: hallazgo.porcentajeCumplimiento,
+                seguimientos: seguimientosFromHallazgo(hallazgo),
                 evidenciasPlanAccion: hallazgo.evidenciasPlanAccion || [],
                 fechaCierre: hallazgo.fechaCierre?.toDate(),
                 porcentajeCumplimientoTotal: hallazgo.porcentajeCumplimientoTotal,
@@ -604,8 +707,12 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 parsed.fechaVisita = parsed.fechaVisita ? new Date(parsed.fechaVisita) : new Date();
                 if (isNaN(parsed.fechaVisita.getTime())) parsed.fechaVisita = new Date();
                 if (parsed.fechaMedidaImplementada) parsed.fechaMedidaImplementada = new Date(parsed.fechaMedidaImplementada);
-                if (parsed.fechaSeguimiento1) parsed.fechaSeguimiento1 = new Date(parsed.fechaSeguimiento1);
                 if (parsed.fechaCierre) parsed.fechaCierre = new Date(parsed.fechaCierre);
+                parsed.seguimientos = Array.isArray(parsed.seguimientos)
+                    ? parsed.seguimientos
+                        .map((s: any) => ({ ...s, fecha: toDate(s?.fecha) }))
+                        .filter((s: any) => s.fecha)
+                    : [];
                 if (!Array.isArray(parsed.evidenciasFotograficas)) parsed.evidenciasFotograficas = [];
                 if (!Array.isArray(parsed.evidenciasPlanAccion)) parsed.evidenciasPlanAccion = [];
                 form.reset(parsed);
@@ -624,9 +731,11 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
     }, [hallazgo, isViewMode, form]);
 
     const watchedClase = form.watch('clase');
-    const watchedPct = form.watch('porcentajeCumplimiento') ?? 0;
     const watchedPctTotal = form.watch('porcentajeCumplimientoTotal') ?? 0;
     const watchedGeo = form.watch('geolocalizacion');
+
+    const seguimientosArray = useFieldArray({ control: form.control, name: 'seguimientos' });
+    const watchedSeguimientos = form.watch('seguimientos') ?? [];
 
     const onSubmit = async (data: FormValues) => {
         if (!db || !user) {
@@ -635,15 +744,48 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
         }
         setLoading(true);
 
+        // Seguimientos ordenados cronológicamente y sin claves undefined
+        // (Firestore rechaza undefined incluso dentro de objetos anidados).
+        const seguimientos = [...(data.seguimientos ?? [])]
+            .filter(s => s.fecha instanceof Date)
+            .sort((a, b) => a.fecha.getTime() - b.fecha.getTime())
+            .map(s => ({
+                fecha: s.fecha,
+                ...(s.porcentaje !== undefined ? { porcentaje: s.porcentaje } : {}),
+                ...(s.observacion?.trim() ? { observacion: s.observacion.trim() } : {}),
+                evidencias: s.evidencias ?? [],
+            }));
+
+        // Campos legacy derivados: los consumen el PDF, la exportación y los reportes.
+        const primeraFecha = seguimientos[0]?.fecha;
+        const ultimoPct = [...seguimientos].reverse()
+            .find(s => s.porcentaje !== undefined)?.porcentaje;
+
         // Firestore no acepta undefined — eliminar campos opcionales sin valor
-        const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([, v]) => v !== undefined && v !== '')
-        );
+        const cleanData = {
+            ...Object.fromEntries(
+                Object.entries(data).filter(([, v]) => v !== undefined && v !== '')
+            ),
+            seguimientos,
+            ...(primeraFecha ? { fechaSeguimiento1: primeraFecha } : {}),
+            ...(ultimoPct !== undefined ? { porcentajeCumplimiento: ultimoPct } : {}),
+        };
+
+        // El % legacy solo se limpia si provenía de un seguimiento que ya no existe.
+        // Un hallazgo antiguo con % pero sin fecha de seguimiento conserva su valor.
+        const pctVeniaDeSeguimiento =
+            (hallazgo?.seguimientos?.length ?? 0) > 0 || !!hallazgo?.fechaSeguimiento1;
 
         try {
             if (hallazgo) {
                 await updateDoc(doc(db, 'hallazgos', hallazgo.id), {
-                    ...cleanData, updatedAt: serverTimestamp(),
+                    ...cleanData,
+                    // Si se eliminaron todos los seguimientos, limpiar los campos legacy
+                    ...(primeraFecha ? {} : { fechaSeguimiento1: deleteField() }),
+                    ...(ultimoPct === undefined && pctVeniaDeSeguimiento
+                        ? { porcentajeCumplimiento: deleteField() }
+                        : {}),
+                    updatedAt: serverTimestamp(),
                 });
                 toast({ title: 'Hallazgo actualizado', description: 'Los cambios se guardaron correctamente.' });
                 router.push('/hallazgos');
@@ -832,6 +974,48 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                         <select {...form.register('tipoActividad')} className="sr-only" tabIndex={-1} aria-hidden>
                                             <option value="Rutinario">Rutinario</option>
                                             <option value="No Rutinario">No Rutinario</option>
+                                        </select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Tipo de Hallazgo */}
+                                <FormField control={form.control} name="tipoHallazgo" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}><Req>Tipo de Hallazgo</Req></FormLabel>
+                                        <FormControl>
+                                            <OptionToggle
+                                                options={TIPO_HALLAZGO_OPTIONS}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                disabled={loading || isViewMode}
+                                            />
+                                        </FormControl>
+                                        <select {...form.register('tipoHallazgo')} className="sr-only" tabIndex={-1} aria-hidden>
+                                            <option value="">Sin seleccionar</option>
+                                            <option value="Positivo">Positivo</option>
+                                            <option value="Seguimiento">Seguimiento</option>
+                                        </select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                {/* Responsabilidad */}
+                                <FormField control={form.control} name="responsabilidad" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={labelClass}><Req>Responsabilidad</Req></FormLabel>
+                                        <FormControl>
+                                            <OptionToggle
+                                                options={RESPONSABILIDAD_OPTIONS}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                disabled={loading || isViewMode}
+                                            />
+                                        </FormControl>
+                                        <select {...form.register('responsabilidad')} className="sr-only" tabIndex={-1} aria-hidden>
+                                            <option value="">Sin seleccionar</option>
+                                            <option value="Directa">Directa</option>
+                                            <option value="Corporativa">Corporativa</option>
                                         </select>
                                         <FormMessage />
                                     </FormItem>
@@ -1200,31 +1384,131 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     </FormItem>
                                 )} />
 
-                                <FormField control={form.control} name="fechaSeguimiento1" render={({ field }) => (
-                                    <DateField label="Fecha de Seguimiento" field={field} loading={loading} disabled={isViewMode} />
-                                )} />
+                            </div>
 
-                                <FormField control={form.control} name="porcentajeCumplimiento" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={labelClass}>% de Cumplimiento</FormLabel>
-                                        <FormControl>
-                                            <div className="space-y-2">
-                                                <div className="relative">
-                                                    <Input type="number" min="0" max="100" {...field}
-                                                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                                                        disabled={loading || isViewMode} placeholder="0"
-                                                        className="pr-9 h-10 border-border/60 tabular-nums" />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/60">%</span>
+                            {/* Seguimientos — se pueden registrar varios */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <span className={cn(labelClass, 'mb-0 flex items-center gap-1.5')}>
+                                        <CalendarCheck className="w-3.5 h-3.5 text-blue-500" />
+                                        Seguimientos
+                                        {seguimientosArray.fields.length > 0 && (
+                                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                                                {seguimientosArray.fields.length}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {!isViewMode && (
+                                        <Button type="button" variant="outline" size="sm" className="h-8 border-border/60"
+                                            disabled={loading}
+                                            onClick={() => seguimientosArray.append({
+                                                fecha: new Date(),
+                                                porcentaje: undefined,
+                                                observacion: '',
+                                                evidencias: [],
+                                            })}>
+                                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                            Agregar seguimiento
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {seguimientosArray.fields.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground border border-dashed border-border/60 rounded-lg px-3 py-4 text-center">
+                                        {isViewMode
+                                            ? 'Sin seguimientos registrados.'
+                                            : 'Aún no hay seguimientos. Agrega uno para registrar el avance del plan de acción.'}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {seguimientosArray.fields.map((item, index) => {
+                                            const pct = watchedSeguimientos[index]?.porcentaje ?? 0;
+                                            return (
+                                                <div key={item.id}
+                                                    className="rounded-xl border border-border/50 bg-muted/10 p-3 sm:p-4 space-y-3">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">
+                                                            <span className="flex items-center justify-center w-5 h-5 rounded-md bg-blue-500/10 tabular-nums">
+                                                                {index + 1}
+                                                            </span>
+                                                            Seguimiento
+                                                        </span>
+                                                        {!isViewMode && (
+                                                            <button type="button"
+                                                                disabled={loading}
+                                                                onClick={() => seguimientosArray.remove(index)}
+                                                                className="text-muted-foreground hover:text-destructive transition-colors"
+                                                                title="Eliminar seguimiento">
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <FormField control={form.control} name={`seguimientos.${index}.fecha`} render={({ field }) => (
+                                                            <DateField label="Fecha de Seguimiento *" field={field} loading={loading} disabled={isViewMode} />
+                                                        )} />
+
+                                                        <FormField control={form.control} name={`seguimientos.${index}.porcentaje`} render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className={labelClass}>% de Cumplimiento</FormLabel>
+                                                                <FormControl>
+                                                                    <div className="space-y-2">
+                                                                        <div className="relative">
+                                                                            <Input type="number" min="0" max="100"
+                                                                                value={field.value ?? ''}
+                                                                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                                                onBlur={field.onBlur}
+                                                                                name={field.name}
+                                                                                ref={field.ref}
+                                                                                disabled={loading || isViewMode} placeholder="0"
+                                                                                className="pr-9 h-10 border-border/60 tabular-nums" />
+                                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground/60">%</span>
+                                                                        </div>
+                                                                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                                                            <div className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                                                                                style={{ width: `${Math.min(pct, 100)}%` }} />
+                                                                        </div>
+                                                                    </div>
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )} />
+                                                    </div>
+
+                                                    <FormField control={form.control} name={`seguimientos.${index}.observacion`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className={labelClass}>Observación del Seguimiento</FormLabel>
+                                                            <FormControl>
+                                                                <Textarea {...field} value={field.value || ''} disabled={loading || isViewMode}
+                                                                    placeholder="Avance verificado, pendientes, compromisos..."
+                                                                    rows={2} className="resize-none border-border/60 text-sm" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )} />
+
+                                                    <FormField control={form.control} name={`seguimientos.${index}.evidencias`} render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className={labelClass}>Evidencias del Seguimiento</FormLabel>
+                                                            <FormControl>
+                                                                <FileUpload
+                                                                    folder="hallazgos/seguimientos"
+                                                                    value={field.value || []}
+                                                                    onChange={field.onChange}
+                                                                    disabled={loading || isViewMode}
+                                                                    label="Subir fotos del seguimiento"
+                                                                    maxFiles={5}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )} />
                                                 </div>
-                                                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                                    <div className="h-full rounded-full bg-blue-500 transition-all duration-300"
-                                                        style={{ width: `${Math.min(watchedPct, 100)}%` }} />
-                                                </div>
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Evidencias del plan de acción — fotos "después" */}

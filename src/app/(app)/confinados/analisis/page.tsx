@@ -292,7 +292,7 @@ export default function ConfinadosAnalisisPage() {
               <p className="text-sm text-muted-foreground/70 mt-1">
                 {hasFilters
                   ? 'No hay registros que coincidan con los filtros aplicados.'
-                  : 'Crea diagnósticos en el módulo de Diagnóstico para ver el análisis aquí.'}
+                  : 'Crea registros en el módulo de Inventario para ver el análisis aquí.'}
               </p>
             </div>
             {hasFilters && (

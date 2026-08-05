@@ -261,7 +261,10 @@ export default function HallazgosPage() {
                 'Área': h.area || 'N/A',
                 'Frente de Trabajo': h.frenteTrabajo || 'N/A',
                 'Tipo de Actividad': h.tipoActividad || 'N/A',
+                'Tipo de Hallazgo': h.tipoHallazgo || 'N/A',
+                'Responsabilidad': h.responsabilidad || 'N/A',
                 'Peligro Inspeccionado': h.peligroInspeccionado || 'N/A',
+                'Personal Expuesto': (h.personalExpuesto || '').split('\n').filter(Boolean).join(', ') || 'N/A',
                 'Geolocalización (Lat)': h.geolocalizacion?.lat || 'N/A',
                 'Geolocalización (Lng)': h.geolocalizacion?.lng || 'N/A',
 
@@ -274,6 +277,15 @@ export default function HallazgosPage() {
                 'Fecha Visita/Identificación': fecha ? format(fecha, 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
                 'Fecha Medida Implementada': fechaMedida ? format(fechaMedida, 'dd/MM/yyyy', { locale: es }) : 'N/A',
                 'Fecha Seguimiento': fechaSeguimiento ? format(fechaSeguimiento, 'dd/MM/yyyy', { locale: es }) : 'N/A',
+                'N° Seguimientos': h.seguimientos?.length ?? 0,
+                'Detalle Seguimientos': (h.seguimientos || [])
+                    .map((s, i) => {
+                        const f = parseDate(s.fecha);
+                        return `${i + 1}. ${f ? format(f, 'dd/MM/yyyy', { locale: es }) : 'N/A'}`
+                            + `${s.porcentaje !== undefined ? ` — ${s.porcentaje}%` : ''}`
+                            + `${s.observacion ? ` — ${s.observacion}` : ''}`;
+                    })
+                    .join('\n') || 'N/A',
                 'Fecha Cierre': fechaCierre ? format(fechaCierre, 'dd/MM/yyyy', { locale: es }) : 'N/A',
                 'Última Actualización': h.updatedAt ? format(parseDate(h.updatedAt) || new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
 

@@ -64,7 +64,7 @@ export default function ConfinadosPage() {
           Confinados
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Gestión integral de espacios confinados: diagnóstico, permisos, monitoreo y rescate.
+          Gestión integral de espacios confinados: inventario, permisos, monitoreo y rescate.
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function ConfinadosPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
           <SubmoduloCard
-            title="Diagnóstico"
+            title="Inventario"
             description="Checklist de evaluación de riesgos, facilidades, equipos y EPP para espacios confinados."
             href="/confinados/diagnostico"
             icon={ClipboardList}
@@ -85,7 +85,7 @@ export default function ConfinadosPage() {
 
           <SubmoduloCard
             title="Análisis & Métricas"
-            description="Estadística descriptiva, clustering K-Means, tendencias y detección de anomalías sobre los diagnósticos registrados."
+            description="Estadística descriptiva, clustering K-Means, tendencias y detección de anomalías sobre los inventarios registrados."
             href="/confinados/analisis"
             icon={Brain}
             color="bg-indigo-600"
@@ -93,7 +93,7 @@ export default function ConfinadosPage() {
 
           <SubmoduloCard
             title="Historial & Seguimiento"
-            description="Seguimiento de diagnósticos completados, tendencias y alertas por planta."
+            description="Seguimiento de inventarios completados, tendencias y alertas por planta."
             comingSoon
             icon={Clock}
             color="bg-sky-500"
