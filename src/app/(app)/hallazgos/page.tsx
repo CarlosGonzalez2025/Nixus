@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import * as XLSX from 'xlsx';
 import { collection, onSnapshot, query, orderBy, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
@@ -85,6 +84,7 @@ export default function HallazgosPage() {
     const [sortDir, setSortDir] = useState<SortDir>('asc');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
+    const [exporting, setExporting] = useState(false);
 
     // Reset page on filter/tab change
     useEffect(() => {
@@ -232,86 +232,100 @@ export default function HallazgosPage() {
     };
 
     // ── Excel export ──────────────────────────────────────────────────────────
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (sorted.length === 0) {
             toast({ variant: 'destructive', title: 'Sin datos', description: 'No hay hallazgos para exportar.' });
             return;
         }
 
-        const rows = sorted.map(h => {
-            const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
-            const fechaCierre = parseDate(h.fechaCierre);
-            const fechaMedida = parseDate(h.fechaMedidaImplementada);
-            const fechaSeguimiento = parseDate(h.fechaSeguimiento1);
+        setExporting(true);
+        try {
+            // Se envía lo que el usuario ve (ya filtrado y ordenado). Las firmas se
+            // omiten: son data URLs en base64 que inflarían el payload sin aportar
+            // al reporte, basta con saber si existen.
+            const rows = sorted.map(h => ({
+                numero: h.numero,
+                empresa: h.empresa || h.frenteTrabajo || '',
+                planta: h.planta || '',
+                area: h.area || '',
+                tipoActividad: h.tipoActividad,
+                tipoHallazgo: h.tipoHallazgo,
+                responsabilidad: h.responsabilidad,
+                fechaVisita: parseDate(h.fechaVisita || h.fechaIdentificacion)?.toISOString() ?? null,
+                fechaMedidaImplementada: parseDate(h.fechaMedidaImplementada)?.toISOString() ?? null,
+                fechaCierre: parseDate(h.fechaCierre)?.toISOString() ?? null,
+                peligroInspeccionado: h.peligroInspeccionado || '',
+                personalExpuesto: h.personalExpuesto || '',
+                hallazgo: h.hallazgo || '',
+                descripcion: h.descripcion || '',
+                accionInmediata: h.accionInmediata || '',
+                observacion: h.observacion || '',
+                clase: h.clase,
+                intervencion: h.intervencion,
+                cumplimientoEstado: h.cumplimientoEstado,
+                porcentajeCumplimiento: h.porcentajeCumplimiento,
+                porcentajeCumplimientoTotal: h.porcentajeCumplimientoTotal,
+                reportadoPorNombre: h.reportadoPorNombre || '',
+                reportadoPorCargo: h.reportadoPorCargo || '',
+                responsable: h.responsable || '',
+                lat: h.geolocalizacion?.lat,
+                lng: h.geolocalizacion?.lng,
+                evidenciasAntes: (h.evidenciasFotograficas || []).length,
+                evidenciasCierre: (h.evidenciasPlanAccion || []).length,
+                firmaReportador: Boolean(h.firmaReportador),
+                firmaResponsable: Boolean(h.firmaResponsable),
+                seguimientos: (h.seguimientos || []).map(s => ({
+                    fecha: parseDate(s.fecha)?.toISOString() ?? null,
+                    porcentaje: s.porcentaje,
+                    observacion: s.observacion,
+                })),
+                createdAt: parseDate(h.createdAt)?.toISOString() ?? null,
+            }));
 
-            return {
-                'ID Sistema': h.id,
-                'Número': h.numero,
-                'Hallazgo': h.hallazgo || 'N/A',
-                'Descripción': h.descripcion || 'N/A',
-                'Acción Inmediata': h.accionInmediata || 'N/A',
-                'Clase': `Clase ${h.clase}`,
-                'Intervención': h.intervencion || 'N/A',
-                'Estado': h.cumplimientoEstado || 'Pendiente',
-                '% Cumplimiento': h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento ?? 0,
-                
-                // Ubicación
-                'Empresa': h.empresa || h.frenteTrabajo || 'N/A',
-                'Planta': h.planta || 'N/A',
-                'Área': h.area || 'N/A',
-                'Frente de Trabajo': h.frenteTrabajo || 'N/A',
-                'Tipo de Actividad': h.tipoActividad || 'N/A',
-                'Tipo de Hallazgo': h.tipoHallazgo || 'N/A',
-                'Responsabilidad': h.responsabilidad || 'N/A',
-                'Peligro Inspeccionado': h.peligroInspeccionado || 'N/A',
-                'Personal Expuesto': (h.personalExpuesto || '').split('\n').filter(Boolean).join(', ') || 'N/A',
-                'Geolocalización (Lat)': h.geolocalizacion?.lat || 'N/A',
-                'Geolocalización (Lng)': h.geolocalizacion?.lng || 'N/A',
+            const filtros: string[] = [
+                `Pestaña: ${activeTab === 'todos' ? 'Todos' : activeTab}`,
+                ...(filterClase !== 'all' ? [`Clase: ${filterClase}`] : []),
+                ...(search.trim() ? [`Búsqueda: "${search.trim()}"`] : []),
+            ];
 
-                // Personas
-                'Reportado Por': h.reportadoPorNombre || 'N/A',
-                'Cargo Reportador': h.reportadoPorCargo || 'N/A',
-                'Responsable Plan de Acción': h.responsable || 'N/A',
-                
-                // Fechas
-                'Fecha Visita/Identificación': fecha ? format(fecha, 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
-                'Fecha Medida Implementada': fechaMedida ? format(fechaMedida, 'dd/MM/yyyy', { locale: es }) : 'N/A',
-                'Fecha Seguimiento': fechaSeguimiento ? format(fechaSeguimiento, 'dd/MM/yyyy', { locale: es }) : 'N/A',
-                'N° Seguimientos': h.seguimientos?.length ?? 0,
-                'Detalle Seguimientos': (h.seguimientos || [])
-                    .map((s, i) => {
-                        const f = parseDate(s.fecha);
-                        return `${i + 1}. ${f ? format(f, 'dd/MM/yyyy', { locale: es }) : 'N/A'}`
-                            + `${s.porcentaje !== undefined ? ` — ${s.porcentaje}%` : ''}`
-                            + `${s.observacion ? ` — ${s.observacion}` : ''}`;
-                    })
-                    .join('\n') || 'N/A',
-                'Fecha Cierre': fechaCierre ? format(fechaCierre, 'dd/MM/yyyy', { locale: es }) : 'N/A',
-                'Última Actualización': h.updatedAt ? format(parseDate(h.updatedAt) || new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: es }) : 'N/A',
+            const res = await fetch('/api/export/hallazgos-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rows,
+                    meta: { generadoPor: user?.displayName || user?.email || 'Usuario del sistema', filtros },
+                }),
+            });
 
-                'Observación': h.observacion || 'N/A',
-                
-                // Evidencias
-                'Evidencias Antes (URLs)': (h.evidenciasFotograficas || []).join('\n') || 'N/A',
-                'Evidencias Después/Cierre (URLs)': (h.evidenciasPlanAccion || []).join('\n') || 'N/A',
-                
-                // Firmas URLs (si existen)
-                'Firma Reportador URL': h.firmaReportador || 'N/A',
-                'Firma Responsable URL': h.firmaResponsable || 'N/A',
-            };
-        });
+            if (!res.ok) {
+                const info = await res.json().catch(() => ({}));
+                throw new Error(info.error || 'El servidor no pudo generar el reporte.');
+            }
 
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const colWidths = Object.keys(rows[0] ?? {}).map(key => ({
-            wch: Math.max(key.length, ...rows.map(r => String((r as any)[key] ?? '').length)) + 2,
-        }));
-        ws['!cols'] = colWidths;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Reporte_Hallazgos_SGTC_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Hallazgos');
-        XLSX.writeFile(wb, `hallazgos_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-        toast({ title: '✅ Exportación exitosa', description: `${sorted.length} hallazgos exportados.` });
+            toast({
+                title: '✅ Reporte generado',
+                description: `${sorted.length} hallazgos con resumen ejecutivo, seguimientos y análisis por planta.`,
+            });
+        } catch (err) {
+            console.error('Error exportando hallazgos:', err);
+            toast({
+                variant: 'destructive',
+                title: 'Error al exportar',
+                description: err instanceof Error ? err.message : 'No se pudo generar el reporte.',
+            });
+        } finally {
+            setExporting(false);
+        }
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -564,9 +578,11 @@ export default function HallazgosPage() {
                     <p className="text-muted-foreground text-sm">Registro y seguimiento de hallazgos de seguridad.</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Exportar Excel
+                    <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+                        {exporting
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generando...</>
+                            : <><Download className="mr-2 h-4 w-4" />Exportar Excel</>
+                        }
                     </Button>
                     {user?.role === 'admin' && (
                         <Button variant="outline" size="sm" onClick={() => router.push('/hallazgos/importar')}>

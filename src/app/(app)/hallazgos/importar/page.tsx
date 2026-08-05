@@ -108,51 +108,15 @@ function resolveField(header: string): string | undefined {
   return COLUMN_TO_FIELD[header] ?? FOLDED_COLUMN_TO_FIELD[foldHeader(header)];
 }
 
-// ─── Definición de la plantilla ───────────────────────────────────────────────
-const TEMPLATE_COLS = [
-  { header: 'Empresa',                     req: true,  example: 'Italcol S.A.',                                 note: 'Nombre de la empresa' },
-  { header: 'Planta',                      req: true,  example: 'Planta Principal',                             note: 'Nombre de la planta' },
-  { header: 'Área',                        req: true,  example: 'Producción',                                   note: 'Área del hallazgo' },
-  { header: 'Tipo de Actividad',           req: true,  example: 'Rutinario',                                    note: 'Rutinario o No Rutinario' },
-  { header: 'Tipo de Hallazgo',            req: false, example: 'Seguimiento',                                  note: 'Positivo o Seguimiento — opcional' },
-  { header: 'Responsabilidad',             req: false, example: 'Directa',                                      note: 'Directa o Corporativa — opcional' },
-  { header: 'Fecha Visita',                req: true,  example: '15/06/2024',                                   note: 'Formato dd/mm/yyyy' },
-  { header: 'Latitud',                     req: false, example: '4.710989',                                     note: 'Decimal (ej: 4.710989) — opcional' },
-  { header: 'Longitud',                    req: false, example: '-74.072092',                                   note: 'Decimal (ej: -74.072092) — opcional' },
-  { header: 'Peligro Inspeccionado',       req: true,  example: 'Alturas, Energías Peligrosas',                 note: 'Alturas / Espacios Confinados / Energías Peligrosas / Izaje de Cargas / Excavaciones — varios separados por coma; cualquier otro texto se guarda como "Otros"' },
-  { header: 'Personal Expuesto',           req: false, example: 'Propio, Contratistas',                         note: 'Solo Propio y/o Contratistas, separados por coma — opcional' },
-  { header: 'Hallazgo',                    req: true,  example: 'Trabajador sin arnés en plataforma elevada',   note: 'Descripción del hallazgo' },
-  { header: 'Clase',                       req: true,  example: 'A',                                            note: 'A, B o C' },
-  { header: 'Intervención',               req: true,  example: 'Inmediata',                                    note: 'Inmediata, Pronta o Posterior' },
-  { header: 'Descripción (Recomendaciones)', req: true, example: 'Usar arnés tipo X en toda labor en altura',  note: 'Recomendaciones / acciones correctivas' },
-  { header: 'Acción Inmediata',           req: false, example: 'Detener labor hasta colocar EPP',             note: 'Opcional' },
-  { header: 'Reportado Por (Nombre)',      req: true,  example: 'Juan Pérez',                                   note: 'Nombre completo del reportador' },
-  { header: 'Cargo Reportador',            req: true,  example: 'Inspector SST',                               note: 'Cargo del reportador' },
-  { header: 'Responsable Plan de Acción', req: false, example: 'Carlos Rodríguez',                            note: 'Nombre del responsable — opcional' },
-  { header: 'Fecha Medida Implementada',   req: false, example: '20/06/2024',                                   note: 'dd/mm/yyyy — opcional' },
-  { header: 'Seguimientos',                req: false, example: '30/06/2024 | 50 | Se instaló señalización; 15/07/2024 | 100 | Verificado en sitio', note: 'Varios seguimientos en una celda: fecha | % | observación, separados por ";" — opcional' },
-  { header: 'Fecha Seguimiento',           req: false, example: '30/06/2024',                                   note: 'Solo si NO usa la columna Seguimientos — dd/mm/yyyy — opcional' },
-  { header: 'Fecha Cierre',               req: false, example: '15/07/2024',                                   note: 'dd/mm/yyyy — opcional' },
-  { header: '% Cumplimiento',             req: false, example: '50',                                            note: '0-100 — opcional' },
-  { header: '% Cumplimiento Total',       req: false, example: '100',                                           note: '0-100 — opcional' },
-  { header: 'Estado Cumplimiento',        req: false, example: 'Pendiente',                                    note: 'Pendiente / En Progreso / Completado / Cerrado' },
-  { header: 'Observación',               req: false, example: '',                                              note: 'Texto libre — opcional' },
-] as const;
-
 // ─── Helpers cliente ──────────────────────────────────────────────────────────
 
+/**
+ * Descarga la plantilla oficial. Se genera en el servidor con ExcelJS
+ * (`/api/export/hallazgos-template`) porque incluye listas desplegables,
+ * validaciones y formato, que la librería `xlsx` del cliente no sabe escribir.
+ */
 function downloadTemplate() {
-  const headers = TEMPLATE_COLS.map(c => c.header);
-  const notes   = TEMPLATE_COLS.map(c => (c.req ? '★ REQUERIDO — ' : 'Opcional — ') + c.note);
-  const example = TEMPLATE_COLS.map(c => c.example);
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([headers, notes, example]);
-  ws['!cols'] = TEMPLATE_COLS.map(c => ({
-    wch: Math.max(c.header.length + 4, (c.example as string).length + 2, 18),
-  }));
-  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla Hallazgos');
-  XLSX.writeFile(wb, 'plantilla_importacion_hallazgos.xlsx');
+  window.location.href = '/api/export/hallazgos-template';
 }
 
 async function parseExcelFile(
@@ -165,27 +129,45 @@ async function parseExcelFile(
       try {
         const data = new Uint8Array(e.target!.result as ArrayBuffer);
         const wb = XLSX.read(data, { type: 'array', raw: false, dateNF: 'dd/mm/yyyy' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
 
-        const jsonRows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, {
-          raw: false,
-          dateNF: 'dd/mm/yyyy',
-          defval: '',
-        });
+        // La plantilla oficial trae varias hojas ("Instrucciones" va primera),
+        // así que no se puede asumir la hoja 0: se elige la que más encabezados
+        // reconocidos tenga. Así funcionan tanto la plantilla nueva como los
+        // archivos de una sola hoja de versiones anteriores.
+        const leerHoja = (nombre: string): Record<string, string>[] =>
+          XLSX.utils.sheet_to_json(wb.Sheets[nombre], {
+            raw: false,
+            dateNF: 'dd/mm/yyyy',
+            defval: '',
+          });
+
+        let jsonRows: Record<string, string>[] = [];
+        let mejorPuntaje = 0;
+        for (const nombre of wb.SheetNames) {
+          const filas = leerHoja(nombre);
+          if (filas.length === 0) continue;
+          const puntaje = Object.keys(filas[0]).filter(k => resolveField(k)).length;
+          if (puntaje > mejorPuntaje) {
+            mejorPuntaje = puntaje;
+            jsonRows = filas;
+          }
+        }
 
         if (jsonRows.length === 0) {
           resolve({ rows: [], error: 'El archivo está vacío o no tiene datos.' });
           return;
         }
 
-        // Detectar y saltar la fila de notas generada por la plantilla
-        let startIndex = 0;
-        const firstVal = String(Object.values(jsonRows[0])[0] ?? '');
-        if (firstVal.startsWith('★') || firstVal.startsWith('Opcional')) {
-          startIndex = 1;
-        }
+        // Descartar las filas guía de la plantilla (notas de versiones anteriores
+        // y la fila amarilla de EJEMPLO), estén o no al inicio del archivo.
+        const esFilaGuia = (row: Record<string, string>) => {
+          const primera = String(Object.values(row)[0] ?? '').trim().toUpperCase();
+          return primera.startsWith('★')
+            || primera.startsWith('OPCIONAL')
+            || primera.startsWith('EJEMPLO');
+        };
 
-        const dataRows = jsonRows.slice(startIndex);
+        const dataRows = jsonRows.filter(row => !esFilaGuia(row));
 
         // Verificar que al menos una columna sea reconocida
         const sampleRow = dataRows[0] ?? {};
