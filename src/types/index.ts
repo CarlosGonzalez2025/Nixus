@@ -685,6 +685,22 @@ export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerra
 export type HallazgoResponsabilidad = 'Directa' | 'Corporativa';
 export type HallazgoTipo = 'Positivo' | 'Seguimiento';
 
+/**
+ * Catálogos de selección múltiple del formulario de hallazgos.
+ * Viven aquí (y no en el formulario) porque la importación masiva desde Excel
+ * debe normalizar contra exactamente las mismas opciones.
+ * Ambos campos se almacenan como texto con una opción por línea (`\n`).
+ */
+export const HALLAZGO_PELIGRO_OPTIONS = [
+  'Alturas',
+  'Espacios Confinados',
+  'Energías Peligrosas',
+  'Izaje de Cargas',
+  'Excavaciones',
+] as const;
+
+export const HALLAZGO_PERSONAL_EXPUESTO_OPTIONS = ['Propio', 'Contratistas'] as const;
+
 export interface HallazgoGeolocalizacion {
   lat: number;
   lng: number;

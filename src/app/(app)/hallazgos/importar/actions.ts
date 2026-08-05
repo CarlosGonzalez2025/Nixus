@@ -3,6 +3,10 @@
 import { adminDb, isAdminReady } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as z from 'zod';
+import {
+  HALLAZGO_PELIGRO_OPTIONS,
+  HALLAZGO_PERSONAL_EXPUESTO_OPTIONS,
+} from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,18 +69,27 @@ function parseDate(raw: string | undefined | null): Date | null {
   const s = raw.trim();
   if (!s || s === 'N/A' || s === '-' || s === '—') return null;
 
+  // `new Date(2026, 12, 32)` no falla: JS desborda al mes/día siguiente. Sin esta
+  // comprobación un "32/13/2026" se importaba en silencio como 01/02/2027.
+  const build = (year: number, month: number, day: number): Date | null => {
+    const d = new Date(year, month - 1, day);
+    if (isNaN(d.getTime())) return null;
+    const exacto = d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
+    return exacto ? d : null;
+  };
+
   // dd/mm/yyyy (con soporte a dd/mm/yyyy hh:mm:ss del export)
   const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (m1) {
-    const d = new Date(+m1[3], +m1[2] - 1, +m1[1]);
-    if (!isNaN(d.getTime())) return d;
+    const d = build(+m1[3], +m1[2], +m1[1]);
+    if (d) return d;
   }
 
   // yyyy-mm-dd
   const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m2) {
-    const d = new Date(+m2[1], +m2[2] - 1, +m2[3]);
-    if (!isNaN(d.getTime())) return d;
+    const d = build(+m2[1], +m2[2], +m2[3]);
+    if (d) return d;
   }
 
   const d = new Date(s);
@@ -98,6 +111,12 @@ const VALID_ESTADOS = ['Pendiente', 'En Progreso', 'Completado', 'Cerrado'] as c
 const VALID_RESPONSABILIDAD = ['Directa', 'Corporativa'] as const;
 const VALID_TIPO_HALLAZGO = ['Positivo', 'Seguimiento'] as const;
 
+/** Minúsculas sin tildes, para comparar contra los catálogos con tolerancia. */
+function fold(s: string): string {
+  // ̀-ͯ = marcas diacríticas combinantes (target ES2017: sin \p{...}).
+  return s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 /** Normaliza un valor de lista cerrada respetando mayúsculas/minúsculas del catálogo. */
 function normalizeOption<T extends string>(
   raw: string | undefined | null,
@@ -105,7 +124,95 @@ function normalizeOption<T extends string>(
 ): T | undefined {
   const s = raw?.trim();
   if (!s) return undefined;
-  return options.find(o => o.toLowerCase() === s.toLowerCase());
+  return options.find(o => fold(o) === fold(s));
+}
+
+/**
+ * Normaliza un campo de selección múltiple del formulario de hallazgos.
+ *
+ * En el Excel las opciones se escriben separadas por coma (o `;` / salto de línea),
+ * pero la app las almacena **una por línea**: los selectores de Peligro Inspeccionado
+ * y Personal Expuesto parten el valor por `\n`. Sin esta normalización, un
+ * "Propio, Contratistas" importado no coincidía con ninguna opción y el campo se
+ * veía vacío en el formulario (y se perdía al tocar un chip).
+ *
+ * @param keepUnknown  true en Peligros (el selector admite texto libre en "Otros");
+ *                     false en Personal Expuesto (solo acepta las opciones del catálogo).
+ */
+function normalizeMultiOption<T extends string>(
+  raw: string | undefined | null,
+  options: readonly T[],
+  keepUnknown: boolean,
+): { value: string; unknown: string[] } {
+  const parts = (raw ?? '')
+    .split(/[,;\n]/)
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  const matched: string[] = [];
+  const unknown: string[] = [];
+
+  for (const part of parts) {
+    const opt = options.find(o => fold(o) === fold(part));
+    if (opt) {
+      if (!matched.includes(opt)) matched.push(opt);
+    } else {
+      unknown.push(part);
+    }
+  }
+
+  const value = keepUnknown ? [...matched, ...unknown].join('\n') : matched.join('\n');
+  return { value, unknown };
+}
+
+/**
+ * Parsea la columna "Seguimientos", que admite varios registros en una sola celda.
+ * Formato por seguimiento: `fecha | % | observación`; varios separados por `;`.
+ * Ej: `05/06/2026 | 50 | Se instaló señalización; 20/06/2026 | 100 | Cerrado en sitio`
+ * El `%` y la observación son opcionales: `05/06/2026` o `05/06/2026 | 50` son válidos.
+ */
+interface ParsedSeguimiento {
+  fecha: Date;
+  porcentaje?: number;
+  observacion?: string;
+}
+
+function parseSeguimientos(
+  raw: string | undefined | null,
+): { seguimientos: ParsedSeguimiento[]; errors: string[] } {
+  const errors: string[] = [];
+  const seguimientos: ParsedSeguimiento[] = [];
+
+  const bloques = (raw ?? '').split(/[;\n]/).map(b => b.trim()).filter(Boolean);
+
+  bloques.forEach((bloque, i) => {
+    const [fechaRaw, pctRaw, ...obsParts] = bloque.split('|').map(p => p.trim());
+    const fecha = parseDate(fechaRaw);
+    if (!fecha) {
+      errors.push(`Seguimiento ${i + 1}: fecha inválida ("${fechaRaw}") — usar dd/mm/aaaa`);
+      return;
+    }
+
+    const porcentaje = parseNum(pctRaw);
+    if (pctRaw && porcentaje === undefined) {
+      errors.push(`Seguimiento ${i + 1}: el % debe ser un número`);
+      return;
+    }
+    if (porcentaje !== undefined && (porcentaje < 0 || porcentaje > 100)) {
+      errors.push(`Seguimiento ${i + 1}: el % debe estar entre 0 y 100`);
+      return;
+    }
+
+    const observacion = obsParts.join('|').trim();
+    seguimientos.push({
+      fecha,
+      ...(porcentaje !== undefined ? { porcentaje } : {}),
+      ...(observacion ? { observacion } : {}),
+    });
+  });
+
+  seguimientos.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+  return { seguimientos, errors };
 }
 
 // ─── Server Action: validateImportRows ────────────────────────────────────────
@@ -172,6 +279,24 @@ export async function validateImportRows(rows: RawImportRow[]): Promise<Validati
     }
     if (raw.tipoHallazgo?.trim() && !normalizeOption(raw.tipoHallazgo, VALID_TIPO_HALLAZGO)) {
       errors.push('Tipo de Hallazgo debe ser: Positivo o Seguimiento');
+    }
+
+    // Personal Expuesto: solo admite las opciones del catálogo (el formulario no
+    // tiene texto libre en este campo, así que un valor no reconocido se perdería).
+    if (raw.personalExpuesto?.trim()) {
+      const { value, unknown } = normalizeMultiOption(
+        raw.personalExpuesto, HALLAZGO_PERSONAL_EXPUESTO_OPTIONS, false,
+      );
+      if (unknown.length > 0) {
+        errors.push(`Personal Expuesto no reconocido: ${unknown.join(', ')} (usar Propio y/o Contratistas)`);
+      } else if (!value) {
+        errors.push('Personal Expuesto debe ser: Propio, Contratistas o ambos separados por coma');
+      }
+    }
+
+    // Seguimientos múltiples
+    if (raw.seguimientos?.trim()) {
+      parseSeguimientos(raw.seguimientos).errors.forEach(e => errors.push(e));
     }
 
     return {
@@ -261,8 +386,14 @@ export async function executeImport(
         area: raw.area?.trim() || '',
         tipoActividad,
         fechaVisita: fechaVisita ? Timestamp.fromDate(fechaVisita) : now,
-        peligroInspeccionado: raw.peligroInspeccionado?.trim() || '',
-        personalExpuesto: raw.personalExpuesto?.trim() || '',
+        // Normalizados a "una opción por línea": es el formato que leen los
+        // selectores de chips del formulario (el Excel los trae separados por coma).
+        peligroInspeccionado: normalizeMultiOption(
+          raw.peligroInspeccionado, HALLAZGO_PELIGRO_OPTIONS, true,
+        ).value,
+        personalExpuesto: normalizeMultiOption(
+          raw.personalExpuesto, HALLAZGO_PERSONAL_EXPUESTO_OPTIONS, false,
+        ).value,
         hallazgo: raw.hallazgo?.trim() || '',
         evidenciasFotograficas: [],
         clase,
@@ -297,7 +428,6 @@ export async function executeImport(
       }
 
       const pct = parseNum(raw.porcentajeCumplimiento);
-      if (pct !== undefined) docData.porcentajeCumplimiento = pct;
 
       const pctT = parseNum(raw.porcentajeCumplimientoTotal);
       if (pctT !== undefined) docData.porcentajeCumplimientoTotal = pctT;
@@ -305,16 +435,42 @@ export async function executeImport(
       const fechaMedida = parseDate(raw.fechaMedidaImplementada);
       if (fechaMedida) docData.fechaMedidaImplementada = Timestamp.fromDate(fechaMedida);
 
-      const fechaSeg = parseDate(raw.fechaSeguimiento1);
-      if (fechaSeg) {
-        docData.fechaSeguimiento1 = Timestamp.fromDate(fechaSeg);
-        // La app maneja varios seguimientos: la plantilla solo trae el primero.
-        docData.seguimientos = [{
-          fecha: Timestamp.fromDate(fechaSeg),
-          ...(pct !== undefined ? { porcentaje: pct } : {}),
-          evidencias: [],
-        }];
+      // Seguimientos: se prefiere la columna multi-registro; si viene vacía se usan
+      // las columnas sueltas (plantillas antiguas ya en circulación).
+      const { seguimientos } = parseSeguimientos(raw.seguimientos);
+      if (seguimientos.length === 0) {
+        const fechaSeg = parseDate(raw.fechaSeguimiento1);
+        if (fechaSeg) {
+          seguimientos.push({
+            fecha: fechaSeg,
+            ...(pct !== undefined ? { porcentaje: pct } : {}),
+          });
+        }
       }
+
+      if (seguimientos.length > 0) {
+        docData.seguimientos = seguimientos.map(s => ({
+          fecha: Timestamp.fromDate(s.fecha),
+          ...(s.porcentaje !== undefined ? { porcentaje: s.porcentaje } : {}),
+          ...(s.observacion ? { observacion: s.observacion } : {}),
+          evidencias: [],
+        }));
+        // Campos legacy derivados, igual que en el formulario (los usan PDF y export).
+        docData.fechaSeguimiento1 = Timestamp.fromDate(seguimientos[0].fecha);
+        const ultimoPct = [...seguimientos].reverse()
+          .find(s => s.porcentaje !== undefined)?.porcentaje;
+        if (ultimoPct !== undefined) docData.porcentajeCumplimiento = ultimoPct;
+      } else if (pct !== undefined) {
+        // % sin ningún seguimiento asociado: se conserva tal cual.
+        docData.porcentajeCumplimiento = pct;
+      }
+
+      // Evidencias del plan de acción: URLs ya existentes en Storage, separadas por coma.
+      const evidencias = (raw.evidenciasPlanAccion ?? '')
+        .split(/[,;\n]/)
+        .map(u => u.trim())
+        .filter(u => /^https?:\/\//i.test(u));
+      if (evidencias.length > 0) docData.evidenciasPlanAccion = evidencias;
 
       const fechaCierreVal = parseDate(raw.fechaCierre);
       if (fechaCierreVal) docData.fechaCierre = Timestamp.fromDate(fechaCierreVal);
