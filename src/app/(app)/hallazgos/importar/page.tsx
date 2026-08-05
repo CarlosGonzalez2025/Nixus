@@ -26,8 +26,9 @@ import {
 import { cn } from '@/lib/utils';
 
 // ─── Mapeo columna Excel → campo interno ─────────────────────────────────────
-// Las claves deben coincidir exactamente con los encabezados de la plantilla.
-// Se incluyen variantes sin tilde para mayor tolerancia.
+// El reconocimiento es tolerante (ver `resolveField`): ignora mayúsculas, tildes,
+// espacios repetidos y el sufijo " *" con el que la plantilla marca lo obligatorio.
+// Aun así se listan variantes explícitas para los encabezados alternativos.
 const COLUMN_TO_FIELD: Record<string, string> = {
   'Empresa': 'empresa',
   'Planta': 'planta',
@@ -40,10 +41,27 @@ const COLUMN_TO_FIELD: Record<string, string> = {
   'Fecha de Visita': 'fechaVisita',
   'Latitud': 'lat',
   'Longitud': 'lng',
+  'Latitud (Geo)': 'lat',
+  'Longitud (Geo)': 'lng',
   'Peligro Inspeccionado': 'peligroInspeccionado',
+  'Peligro(s) Inspeccionado(s)': 'peligroInspeccionado',
   'Personal Expuesto': 'personalExpuesto',
   'Hallazgo': 'hallazgo',
+  'Descripción del Hallazgo': 'hallazgo',
   'Clase': 'clase',
+  'Clase del Hallazgo': 'clase',
+  'Tipo de Intervención': 'intervencion',
+  'Detalle de Recomendaciones': 'descripcion',
+  'Nombre del Reportador': 'reportadoPorNombre',
+  'Cargo del Reportador': 'reportadoPorCargo',
+  'Responsable (Plan de Acción)': 'responsable',
+  'Fecha de Seguimiento': 'fechaSeguimiento1',
+  'Fecha de Cierre': 'fechaCierre',
+  'Evidencias Plan de Acción (URLs)': 'evidenciasPlanAccion',
+  'Evidencias Plan de Accion (URLs)': 'evidenciasPlanAccion',
+  '% de Cumplimiento': 'porcentajeCumplimiento',
+  '% de Cumplimiento Total': 'porcentajeCumplimientoTotal',
+  'Estado del Cumplimiento': 'cumplimientoEstado',
   'Intervención': 'intervencion',
   'Intervencion': 'intervencion',
   'Descripción (Recomendaciones)': 'descripcion',
@@ -57,6 +75,7 @@ const COLUMN_TO_FIELD: Record<string, string> = {
   'Responsable Plan de Acción': 'responsable',
   'Responsable Plan de Accion': 'responsable',
   'Fecha Medida Implementada': 'fechaMedidaImplementada',
+  'Seguimientos': 'seguimientos',
   'Fecha Seguimiento': 'fechaSeguimiento1',
   'Fecha Cierre': 'fechaCierre',
   '% Cumplimiento': 'porcentajeCumplimiento',
@@ -65,6 +84,29 @@ const COLUMN_TO_FIELD: Record<string, string> = {
   'Observación': 'observacion',
   'Observacion': 'observacion',
 };
+
+/**
+ * Encabezado de Excel → campo interno, tolerante a diferencias cosméticas:
+ * mayúsculas, tildes, espacios repetidos y el sufijo " *" que la plantilla usa
+ * para marcar las columnas obligatorias. Devuelve `undefined` si no se reconoce.
+ */
+const foldHeader = (h: string) =>
+  h.replace(/\*+$/, '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ');
+
+const FOLDED_COLUMN_TO_FIELD: Record<string, string> = Object.entries(COLUMN_TO_FIELD)
+  .reduce((acc, [header, field]) => {
+    acc[foldHeader(header)] = field;
+    return acc;
+  }, {} as Record<string, string>);
+
+function resolveField(header: string): string | undefined {
+  return COLUMN_TO_FIELD[header] ?? FOLDED_COLUMN_TO_FIELD[foldHeader(header)];
+}
 
 // ─── Definición de la plantilla ───────────────────────────────────────────────
 const TEMPLATE_COLS = [
@@ -77,8 +119,8 @@ const TEMPLATE_COLS = [
   { header: 'Fecha Visita',                req: true,  example: '15/06/2024',                                   note: 'Formato dd/mm/yyyy' },
   { header: 'Latitud',                     req: false, example: '4.710989',                                     note: 'Decimal (ej: 4.710989) — opcional' },
   { header: 'Longitud',                    req: false, example: '-74.072092',                                   note: 'Decimal (ej: -74.072092) — opcional' },
-  { header: 'Peligro Inspeccionado',       req: true,  example: 'Alturas',                                      note: 'Alturas / Espacios Confinados / etc.' },
-  { header: 'Personal Expuesto',           req: false, example: 'Propio',                                       note: 'Propio, Contratistas o ambos — opcional' },
+  { header: 'Peligro Inspeccionado',       req: true,  example: 'Alturas, Energías Peligrosas',                 note: 'Alturas / Espacios Confinados / Energías Peligrosas / Izaje de Cargas / Excavaciones — varios separados por coma; cualquier otro texto se guarda como "Otros"' },
+  { header: 'Personal Expuesto',           req: false, example: 'Propio, Contratistas',                         note: 'Solo Propio y/o Contratistas, separados por coma — opcional' },
   { header: 'Hallazgo',                    req: true,  example: 'Trabajador sin arnés en plataforma elevada',   note: 'Descripción del hallazgo' },
   { header: 'Clase',                       req: true,  example: 'A',                                            note: 'A, B o C' },
   { header: 'Intervención',               req: true,  example: 'Inmediata',                                    note: 'Inmediata, Pronta o Posterior' },
@@ -88,7 +130,8 @@ const TEMPLATE_COLS = [
   { header: 'Cargo Reportador',            req: true,  example: 'Inspector SST',                               note: 'Cargo del reportador' },
   { header: 'Responsable Plan de Acción', req: false, example: 'Carlos Rodríguez',                            note: 'Nombre del responsable — opcional' },
   { header: 'Fecha Medida Implementada',   req: false, example: '20/06/2024',                                   note: 'dd/mm/yyyy — opcional' },
-  { header: 'Fecha Seguimiento',           req: false, example: '30/06/2024',                                   note: 'dd/mm/yyyy — opcional' },
+  { header: 'Seguimientos',                req: false, example: '30/06/2024 | 50 | Se instaló señalización; 15/07/2024 | 100 | Verificado en sitio', note: 'Varios seguimientos en una celda: fecha | % | observación, separados por ";" — opcional' },
+  { header: 'Fecha Seguimiento',           req: false, example: '30/06/2024',                                   note: 'Solo si NO usa la columna Seguimientos — dd/mm/yyyy — opcional' },
   { header: 'Fecha Cierre',               req: false, example: '15/07/2024',                                   note: 'dd/mm/yyyy — opcional' },
   { header: '% Cumplimiento',             req: false, example: '50',                                            note: '0-100 — opcional' },
   { header: '% Cumplimiento Total',       req: false, example: '100',                                           note: '0-100 — opcional' },
@@ -146,7 +189,7 @@ async function parseExcelFile(
 
         // Verificar que al menos una columna sea reconocida
         const sampleRow = dataRows[0] ?? {};
-        const recognized = Object.keys(sampleRow).filter(k => COLUMN_TO_FIELD[k]).length;
+        const recognized = Object.keys(sampleRow).filter(k => resolveField(k)).length;
         if (recognized === 0) {
           resolve({
             rows: [],
@@ -162,7 +205,7 @@ async function parseExcelFile(
           .map(row => {
             const mapped: RawImportRow = {};
             for (const [key, val] of Object.entries(row)) {
-              const field = COLUMN_TO_FIELD[key];
+              const field = resolveField(key);
               if (field) mapped[field] = String(val ?? '').trim();
             }
             return mapped;

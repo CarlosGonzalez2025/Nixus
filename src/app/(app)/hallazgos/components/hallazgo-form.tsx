@@ -38,6 +38,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
 import type { Hallazgo } from '@/types';
+import { HALLAZGO_PELIGRO_OPTIONS, HALLAZGO_PERSONAL_EXPUESTO_OPTIONS } from '@/types';
 import { addListItem } from '@/app/(app)/admin/lists/actions';
 import { notifyHallazgoCreated } from '../actions';
 
@@ -347,13 +348,9 @@ function ComboListField({
 }
 
 // ─── Peligro Selector ──────────────────────────────────────────────────────────
-const PELIGRO_OPTIONS = [
-    'Alturas',
-    'Espacios Confinados',
-    'Energías Peligrosas',
-    'Izaje de Cargas',
-    'Excavaciones',
-];
+// Catálogo compartido con la importación masiva (src/types) para que ambos
+// caminos guarden exactamente los mismos valores.
+const PELIGRO_OPTIONS: readonly string[] = HALLAZGO_PELIGRO_OPTIONS;
 
 function PeligroSelector({
     value,
@@ -475,7 +472,7 @@ function PeligroSelector({
 }
 
 // ─── Personal Expuesto Selector ───────────────────────────────────────────────
-const PERSONAL_OPTIONS = ['Propio', 'Contratistas'] as const;
+const PERSONAL_OPTIONS = HALLAZGO_PERSONAL_EXPUESTO_OPTIONS;
 
 function PersonalExpuestoSelector({
     value,
