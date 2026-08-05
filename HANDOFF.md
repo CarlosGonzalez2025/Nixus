@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-04 (Sesión 16)
+> **Última actualización de este documento:** 2026-08-04 (Sesión 17)
 
 ---
 
@@ -40,6 +40,8 @@ Next.js 15 (App Router)
 ├── Twilio                 → notificaciones por WhatsApp
 ├── Web Push (VAPID)       → notificaciones push nativas en navegador
 ├── jsPDF + html2canvas    → generación de PDFs de permisos y hallazgos
+├── ExcelJS                → escritura de Excel con formato, desplegables y KPIs
+├── SheetJS (xlsx)         → lectura de los Excel importados (no escribe estilos)
 ├── Google Genkit          → flujos de IA
 ├── React Hook Form + Zod  → formularios y validación
 └── next-pwa               → Progressive Web App (modo offline)
@@ -62,6 +64,51 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-04 (Sesión 17) — Excel profesional: plantilla de importación con listas desplegables e instrucciones + reporte gerencial con resumen ejecutivo (nueva dependencia: ExcelJS)
+
+**Solicitud:** que la plantilla de importación sea "inteligente" (listas desplegables automáticas, pestaña de instrucciones, apariencia profesional) y que la exportación a Excel deje de ser un volcado plano de la base de datos para convertirse en un reporte gerencial con análisis.
+
+#### 17.1 Hallazgo de fondo: `xlsx` (SheetJS community) no puede hacerlo
+
+El código anterior de la plantilla **definía estilos** (`fill`, `font`, `border` por celda) que **nunca llegaban al archivo**: la build community de SheetJS que se instala desde npm ignora el atributo `s` al escribir, y tampoco soporta validación de datos. Verificado releyendo el archivo generado: la celda `A1`, que el código pintaba de rojo, volvía con `patternType: "none"`. Es decir, la plantilla "con formato" llevaba tiempo saliendo como una cuadrícula plana y sin desplegables.
+
+**Decisión: se agregó `exceljs` (^4.4.0)** como dependencia. Soporta estilos, validación de datos, formato condicional, paneles congelados, autofiltros y notas. `xlsx` se mantiene para la **lectura** de los archivos importados (donde funciona bien y ya está integrado).
+
+Ambos libros se generan **en el servidor** (route handlers, `runtime = 'nodejs'`): ExcelJS es pesado para el bundle del cliente y la generación no necesita estar en el navegador.
+
+#### 17.2 Plantilla de importación inteligente — `GET /api/export/hallazgos-template`
+
+Reescrita en `src/lib/excel-hallazgos-template.ts`. Tres hojas:
+
+1. **Instrucciones** — banner, pasos numerados de uso, leyenda de convenciones (rojo = obligatorio, azul = opcional, amarillo = ejemplo, celda con flecha = lista), explicación aparte de las tres columnas multivalor y un diccionario completo de los 28 campos (campo / obligatorio / valores permitidos / ejemplo).
+2. **Plantilla Hallazgos** — encabezados de color según obligatoriedad, con **nota emergente** por columna; fila de EJEMPLO en amarillo marcada como desechable; 300 filas listas para capturar; paneles congelados y autofiltro.
+3. **Listas** (oculta) — catálogos que alimentan los desplegables.
+
+**4.200 celdas con validación** (verificado releyendo el archivo): 2.400 listas desplegables (Tipo de Actividad, Tipo de Hallazgo, Responsabilidad, Clase, Intervención, Estado, Peligros, Personal Expuesto), 1.200 validaciones de fecha y 600 de porcentaje 0–100. Cada una con mensaje de ayuda al seleccionar la celda y mensaje de error al escribir un valor inválido. Las dos columnas multivalor (Peligros, Personal Expuesto) usan desplegable **no estricto**, para que el desplegable ayude pero se pueda escribir `"Alturas, Excavaciones"`.
+
+**Se eliminó la plantilla duplicada** (la deuda anotada en la Sesión 16): la página de importación ya no genera su propio archivo con `xlsx`, ahora descarga esta plantilla oficial. Fuente única.
+
+#### 17.3 Bug crítico detectado por la prueba de ida y vuelta
+
+Con la plantilla multi-hoja, el parser de importación **habría dejado de funcionar**: leía `wb.SheetNames[0]`, que pasó a ser "Instrucciones", y habría respondido "No se reconocieron columnas válidas" ante un archivo perfectamente válido. Ahora recorre todas las hojas y elige **la que más encabezados reconoce** — compatible tanto con la plantilla nueva como con los archivos de una sola hoja ya en circulación.
+
+#### 17.4 Reporte gerencial — `POST /api/export/hallazgos-report`
+
+`src/lib/excel-hallazgos-report.ts`. El botón "Exportar Excel" del módulo envía los hallazgos **ya filtrados y ordenados** (exactamente lo que el usuario ve, con los filtros aplicados anotados en la portada) y recibe un libro de cuatro hojas:
+
+1. **Resumen Ejecutivo** — banner con autor, fecha y filtros; **10 KPIs** en tarjetas (total, abiertos, cerrados, tasa de cierre, Clase A abiertos, cumplimiento promedio, días promedio de cierre, antigüedad promedio de los abiertos, hallazgos con plan de acción, seguimientos totales); distribuciones por clase, estado, tipo de hallazgo y responsabilidad; peligros más frecuentes; personal expuesto; **tendencia de 12 meses** con nuevos/cerrados/% de cierre; y rankings Top 10 de empresas y plantas con % de cierre y Clase A abiertos. Las proporciones se ven con barras de bloques calculadas en JS (se ven igual en Excel, LibreOffice y Google Sheets, sin depender del recálculo).
+2. **Hallazgos** — los 31 campos como tabla filtrable, con paneles congelados, semáforo de color por clase y estado, y **barras de datos nativas** de Excel sobre el % de cumplimiento.
+3. **Seguimientos** — una fila por seguimiento (hallazgo, empresa, planta, clase, estado, n.º, fecha, %, observación), que es la vista que faltaba para analizar el avance del plan de acción.
+4. **Análisis por Planta** — matriz empresa/planta con total, desglose por clase, abiertos, cerrados, % de cierre, cumplimiento promedio y Clase A abiertos.
+
+Las firmas ya no se exportan como data URL en base64 (inflaban el archivo sin aportar); se exporta si existen o no.
+
+**Archivos:** `src/lib/excel-theme.ts` (paleta y helpers: banner, títulos de sección, tarjetas KPI, tablas, barras), `src/lib/excel-hallazgos-template.ts`, `src/lib/excel-hallazgos-report.ts`, `src/app/api/export/hallazgos-template/route.ts` (reescrito), `src/app/api/export/hallazgos-report/route.ts` (nuevo), `src/app/(app)/hallazgos/page.tsx` (exportación vía API, con estado de carga; se retiró el import de `xlsx`), `src/app/(app)/hallazgos/importar/page.tsx` (descarga la plantilla oficial, selección de hoja, descarte de filas guía).
+
+**Verificación:** `tsc --noEmit` sin errores nuevos (persiste el preexistente `Hallazgo.ciudad`). Plantilla generada y releída: 3 hojas, 28 columnas, estilos presentes (`A1` sí sale rojo) y 4.200 celdas validadas. Reporte generado con 120 hallazgos de prueba: 4 hojas, 39 KB, KPIs correctos (120 total / 60 abiertos / 60 cerrados / 73 % de cumplimiento / 182 días promedio), 180 filas de seguimientos. **Prueba de ida y vuelta completa:** plantilla generada → diligenciada como lo haría un usuario → parseada con la lógica real de la página → validada con la server action real: 2/2 filas OK, incluyendo peligros con coma, valores sin tildes y seguimientos múltiples. **Pendiente:** abrir ambos archivos en Excel de escritorio para confirmar visualmente el render y el comportamiento de los desplegables.
 
 ---
 
@@ -3160,7 +3207,9 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] Documentar el proceso de creación de usuarios en producción (actualmente se hace desde el panel de admin)
 - [ ] **Sesión 16 — confirmar con el cliente** si `responsabilidad` y `tipoHallazgo` deben seguir siendo obligatorios: al editar hallazgos históricos el formulario exige seleccionarlos. Para hacerlos opcionales basta con `.optional()` en cada `z.enum` de `hallazgo-form.tsx`
 - [ ] **Sesión 16 — prueba manual pendiente:** crear/editar un hallazgo con 2–3 seguimientos (con evidencias) y descargar el PDF, para validar la escritura del arreglo `seguimientos[]` en Firestore de extremo a extremo. Incluir una importación masiva de prueba (`executeImport` no se ejecutó contra Firestore)
-- [ ] **Sesión 16 — deuda detectada:** existen dos plantillas de hallazgos en paralelo con encabezados distintos — la que descarga la página de importación (`TEMPLATE_COLS`) y la del endpoint `/api/export/hallazgos-template`, que **ningún componente enlaza**. Desde esta sesión ambas son importables, pero conviene decidir cuál es la oficial y eliminar la otra
+- [x] ~~**Sesión 16 — deuda detectada:** existen dos plantillas de hallazgos en paralelo~~ — resuelto en Sesión 17: la página de importación descarga la plantilla oficial del endpoint; se eliminó la generación local
+- [ ] **Sesión 17 — verificación visual pendiente:** abrir la plantilla y el reporte en Excel de escritorio para confirmar el render y que los desplegables se comporten como se espera (se validó releyendo los archivos con ExcelJS, no abriéndolos en Excel)
+- [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
 
 ---
 
