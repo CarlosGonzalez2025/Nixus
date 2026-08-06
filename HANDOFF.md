@@ -101,6 +101,21 @@ De paso, la condición del rol `mantenimiento` pasó de evaluar `activeTab === '
 
 El botón quedó rotulado **"Exportar Excel (todos)"**, con un tooltip que indica cuántos permisos se descargarán y qué filtros se aplican; y la portada del reporte muestra "Estados: todos" en la línea de filtros.
 
+#### 18.2 Fix — las categorías no sumaban el total (faltaba la columna Borradores)
+
+El cliente detectó que en la matriz "Empresa / Planta / Ciudad" la suma de Activos + Pendientes + Cerrados + Cancelados **no daba el Total** de cada fila.
+
+**Causa:** las categorías del sistema son **cinco** (Borrador, Pendiente, Activos, Cerrado, Cancelado) y la matriz solo mostraba cuatro: **faltaba Borradores**. La diferencia de cada fila era exactamente su número de borradores. Verificado sobre el archivo generado: en un grupo con total 38 la suma daba 19, y el faltante coincidía con los 19 borradores.
+
+El mismo hueco estaba en las **tarjetas KPI** del resumen ejecutivo, que mostraban Total / Activos / Pendientes / Cerrados / Cancelados: 150 contra 131.
+
+**Corrección:**
+- Matriz por planta: se agregó la columna **Borradores** y se reordenaron las categorías en el orden del ciclo de vida (Borradores → Pendientes → Activos → Cerrados → Cancelados). Ahora **cada fila cuadra con su total**.
+- Resumen ejecutivo: la primera fila de KPIs pasó a **seis tarjetas** con las cinco categorías más el total (la hoja pasó de 15 a 18 columnas, que son exactamente 6 tarjetas de 3). La segunda fila incorporó "Firmas requeridas", que antes solo aparecía como pista dentro de otra tarjeta.
+- Las notas al pie de ambas hojas ahora explican qué suma y qué no: las cinco categorías son excluyentes y cubren los 8 estados del sistema, mientras que "Alto riesgo" y "Firmas pendientes" son **indicadores transversales** que no forman parte del total (un permiso puede ser a la vez activo, de alto riesgo y tener firmas pendientes). Esa confusión era el otro riesgo de lectura del tablero.
+
+**Verificación:** se comprobó fila por fila sobre el archivo generado que Borradores + Pendientes + Activos + Cerrados + Cancelados = Total en **todas** las filas de la matriz (0 descuadres) y que las tarjetas KPI suman el total (150 = 19 + 19 + 56 + 18 + 38). Integridad XML sin observaciones.
+
 ---
 
 ### 2026-08-04 (Sesión 17) — Excel profesional: plantilla de importación con listas desplegables e instrucciones + reporte gerencial con resumen ejecutivo (nueva dependencia: ExcelJS)
