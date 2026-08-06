@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -387,47 +387,72 @@ export default function PermitsPage() {
     return Array.from(set).sort();
   }, [allPermits]);
 
+  // ── Filtros ──────────────────────────────────────────────────────────────
+  //
+  // Todo lo que NO depende de la pestaña de estado vive aquí, para que la vista
+  // y la exportación no puedan divergir: la pestaña filtra por estado, la
+  // exportación se lleva todos los estados, y ambas comparten estos criterios.
+  const matchesFilters = useCallback((permit: Permit) => {
+    // Para el rol mantenimiento: de los permisos pendientes solo ve los que
+    // requieren su firma (solicitante ya firmó, mantenimiento aún no).
+    if (
+      user?.role === 'mantenimiento' &&
+      permit.status === 'pendiente_revision' &&
+      !(
+        permit.approvals?.solicitante?.status === 'aprobado' &&
+        permit.approvals?.mantenimiento?.status !== 'aprobado'
+      )
+    ) {
+      return false;
+    }
+
+    if (workTypeFilter !== 'all') {
+      const types = permit.selectedWorkTypes || {};
+      const map: Record<string, keyof typeof types> = {
+        alturas: 'alturas', confinados: 'confinado', energia: 'energia',
+        izaje: 'izaje', excavaciones: 'excavacion', general: 'general',
+      };
+      if (!types[map[workTypeFilter] ?? workTypeFilter]) return false;
+    }
+
+    if (empresaFilter !== 'all' && permit.generalInfo?.empresa !== empresaFilter) return false;
+    if (plantaFilter !== 'all' && permit.generalInfo?.planta !== plantaFilter) return false;
+    if (ciudadFilter !== 'all' && permit.generalInfo?.ciudad !== ciudadFilter) return false;
+
+    const s = searchTerm.toLowerCase();
+    if (!s) return true;
+    return (
+      (permit.number || permit.id).toLowerCase().includes(s) ||
+      (permit.user?.displayName || '').toLowerCase().includes(s) ||
+      (permit.generalInfo?.areaEspecifica || '').toLowerCase().includes(s) ||
+      (permit.generalInfo?.planta || '').toLowerCase().includes(s)
+    );
+  }, [user, searchTerm, workTypeFilter, empresaFilter, plantaFilter, ciudadFilter]);
+
   // ── Filtered data ────────────────────────────────────────────────────────
-  const filteredPermits = useMemo(() => {
-    return allPermits.filter(permit => {
-      if (!matchesUnifiedStatus(permit.status, activeTab)) return false;
+  const filteredPermits = useMemo(
+    () => allPermits.filter(p => matchesUnifiedStatus(p.status, activeTab) && matchesFilters(p)),
+    [allPermits, activeTab, matchesFilters],
+  );
 
-      // Para el rol mantenimiento en la tab "Pendiente": mostrar solo los permisos
-      // que requieren su firma (solicitante ya firmó, mantenimiento aún no).
-      if (
-        user?.role === 'mantenimiento' &&
-        activeTab === 'pendiente_revision' &&
-        !(
-          permit.approvals?.solicitante?.status === 'aprobado' &&
-          permit.approvals?.mantenimiento?.status !== 'aprobado'
-        )
-      ) {
-        return false;
-      }
-
-      if (workTypeFilter !== 'all') {
-        const types = permit.selectedWorkTypes || {};
-        const map: Record<string, keyof typeof types> = {
-          alturas: 'alturas', confinados: 'confinado', energia: 'energia',
-          izaje: 'izaje', excavaciones: 'excavacion', general: 'general',
-        };
-        if (!types[map[workTypeFilter] ?? workTypeFilter]) return false;
-      }
-
-      if (empresaFilter !== 'all' && permit.generalInfo?.empresa !== empresaFilter) return false;
-      if (plantaFilter !== 'all' && permit.generalInfo?.planta !== plantaFilter) return false;
-      if (ciudadFilter !== 'all' && permit.generalInfo?.ciudad !== ciudadFilter) return false;
-
-      const s = searchTerm.toLowerCase();
-      if (!s) return true;
-      return (
-        (permit.number || permit.id).toLowerCase().includes(s) ||
-        (permit.user?.displayName || '').toLowerCase().includes(s) ||
-        (permit.generalInfo?.areaEspecifica || '').toLowerCase().includes(s) ||
-        (permit.generalInfo?.planta || '').toLowerCase().includes(s)
-      );
-    });
-  }, [allPermits, activeTab, searchTerm, workTypeFilter, empresaFilter, plantaFilter, ciudadFilter]);
+  /**
+   * Universo de la exportación: TODOS los estados en un solo archivo.
+   * Se ignora la pestaña activa (es navegación, no un filtro del usuario) pero se
+   * respetan los filtros explícitos de empresa, planta, ciudad, tipo de trabajo y
+   * búsqueda — y, por venir de `allPermits`, el alcance por rol.
+   * Se ordena por fecha de creación descendente para que el archivo sea
+   * determinista, sin depender del ordenamiento de columnas de la pantalla.
+   */
+  const exportPermits = useMemo(
+    () => allPermits
+      .filter(matchesFilters)
+      .sort((a, b) => {
+        const fa = parseFirestoreDate(a.createdAt)?.getTime() ?? 0;
+        const fb = parseFirestoreDate(b.createdAt)?.getTime() ?? 0;
+        return fb - fa;
+      }),
+    [allPermits, matchesFilters],
+  );
 
   // ── Sorted data ──────────────────────────────────────────────────────────
   const sortedPermits = useMemo(() => {
@@ -484,7 +509,8 @@ export default function PermitsPage() {
 
   // ── Excel export ─────────────────────────────────────────────────────────
   const handleExportExcel = async () => {
-    if (sortedPermits.length === 0) {
+    // Exporta TODOS los estados, no solo la pestaña visible (ver `exportPermits`).
+    if (exportPermits.length === 0) {
       toast({ variant: 'destructive', title: 'Sin datos', description: 'No hay permisos para exportar.' });
       return;
     }
@@ -512,7 +538,7 @@ export default function PermitsPage() {
           .map(([nombre]) => nombre);
       };
 
-      const rows = sortedPermits.map(p => {
+      const rows = exportPermits.map(p => {
         const categoria = PERMIT_TABS.find(t => matchesUnifiedStatus(p.status, t.key))?.label ?? '—';
         const creado = parseFirestoreDate(p.createdAt);
         const suspendidoEl = parseFirestoreDate(p.suspension?.suspendedAt);
@@ -567,7 +593,7 @@ export default function PermitsPage() {
       });
 
       const filtros: string[] = [
-        `Pestaña: ${PERMIT_TABS.find(t => t.key === activeTab)?.label ?? activeTab}`,
+        'Estados: todos',
         ...(workTypeFilter !== 'all' ? [`Tipo de trabajo: ${workTypeFilter}`] : []),
         ...(empresaFilter !== 'all' ? [`Empresa: ${empresaFilter}`] : []),
         ...(plantaFilter !== 'all' ? [`Planta: ${plantaFilter}`] : []),
@@ -601,7 +627,7 @@ export default function PermitsPage() {
 
       toast({
         title: '✅ Reporte generado',
-        description: `${sortedPermits.length} permiso${sortedPermits.length !== 1 ? 's' : ''} con resumen ejecutivo, firmas y análisis por planta.`,
+        description: `${exportPermits.length} permiso${exportPermits.length !== 1 ? 's' : ''} de todos los estados, con resumen ejecutivo, firmas y análisis por planta.`,
       });
     } catch (err) {
       console.error('Error exportando permisos:', err);
@@ -809,10 +835,16 @@ export default function PermitsPage() {
           <p className="text-muted-foreground">Gestione todos sus permisos de trabajo aquí.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            disabled={exporting}
+            title={`Descarga un solo archivo con TODOS los estados (${exportPermits.length} permiso${exportPermits.length !== 1 ? 's' : ''}). Respeta los filtros de empresa, planta, ciudad, tipo de trabajo y búsqueda; ignora la pestaña seleccionada.`}
+          >
             {exporting
               ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generando...</>
-              : <><Download className="mr-2 h-4 w-4" />Exportar Excel</>
+              : <><Download className="mr-2 h-4 w-4" />Exportar Excel (todos)</>
             }
           </Button>
           {(user?.role === 'solicitante' || user?.role === 'admin') && (

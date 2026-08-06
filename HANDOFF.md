@@ -86,6 +86,21 @@ La decisión de qué firma exige cada permiso y las etiquetas de estado se resue
 
 **Verificación:** `tsc --noEmit` sin errores nuevos. Reporte generado con 150 permisos de prueba cubriendo los 8 estados: 4 hojas, 74 KB, KPIs correctos (150 total / 56 activos / 19 pendientes / 18 cerrados / 38 cancelados / 14 % de cierre / 101 firmas pendientes de 358 requeridas), 900 filas en la hoja de firmas y 257 hipervínculos válidos. **Validación de integridad** (la misma introducida en 17.5): las 14 partes XML están bien formadas y sin los patrones que hacen que Excel pida reparar. **Pendiente:** abrirlo en Excel de escritorio.
 
+#### 18.1 La exportación se lleva TODOS los estados en un solo archivo
+
+A pedido del cliente, el botón "Exportar Excel" dejó de exportar únicamente la pestaña visible: ahora descarga **un solo archivo con los permisos de todos los estados**, que es como se consume el reporte a nivel gerencial (antes había que exportar pestaña por pestaña y unir los archivos a mano). Además, el resumen ejecutivo solo tiene sentido sobre el universo completo: la tasa de cierre o el reparto por categoría calculados sobre una sola pestaña no dicen nada.
+
+**Qué se respeta y qué se ignora**, decidido así porque la pestaña es *navegación* mientras que los selectores son elecciones explícitas del usuario:
+- **Se ignora** la pestaña de estado (Borrador / Pendiente / Activos / Cerrado / Cancelado).
+- **Se respetan** los filtros de empresa, planta, ciudad, tipo de trabajo y búsqueda.
+- **Se respeta siempre el alcance por rol**, porque el universo se toma de `allPermits`, que ya viene acotado por la suscripción de Firestore según el rol (un `lider_regional` sigue exportando solo lo suyo). La regla del rol `mantenimiento` —que de los pendientes solo ve los que esperan su firma— también se conserva.
+
+**Refactor para que la vista y la exportación no diverjan** (misma lección que `permit-status.ts` en la Sesión 14): los criterios que **no** dependen del estado se extrajeron a un único predicado `matchesFilters`. `filteredPermits` (la tabla) = pestaña + `matchesFilters`; `exportPermits` (el Excel) = `matchesFilters` sobre todos los estados, ordenado por fecha de creación descendente para que el archivo sea determinista sin depender del ordenamiento de columnas de la pantalla.
+
+De paso, la condición del rol `mantenimiento` pasó de evaluar `activeTab === 'pendiente_revision'` a evaluar el **estado del permiso**: es equivalente dentro de la pestaña y es lo correcto para la exportación.
+
+El botón quedó rotulado **"Exportar Excel (todos)"**, con un tooltip que indica cuántos permisos se descargarán y qué filtros se aplican; y la portada del reporte muestra "Estados: todos" en la línea de filtros.
+
 ---
 
 ### 2026-08-04 (Sesión 17) — Excel profesional: plantilla de importación con listas desplegables e instrucciones + reporte gerencial con resumen ejecutivo (nueva dependencia: ExcelJS)
