@@ -133,7 +133,8 @@ function buildResumen(
     pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
   });
 
-  const LAST = 15;
+  // 18 columnas = 6 tarjetas KPI de 3 columnas cada una.
+  const LAST = 18;
   ws.getColumn(1).width = 32;
   for (let c = 2; c <= LAST; c++) ws.getColumn(c).width = 11;
 
@@ -164,11 +165,15 @@ function buildResumen(
   });
 
   // ── KPIs ──
+  // Las cinco categorías (borrador, pendiente, activos, cerrado, cancelado) son
+  // excluyentes y exhaustivas: deben sumar exactamente el total. Se muestran las
+  // cinco juntas para que el lector pueda cuadrar la cifra.
   row = drawSectionTitle(ws, row, 'Indicadores clave', LAST);
   row = drawKpiRow(ws, row, [
-    { label: 'TOTAL PERMISOS', value: total, color: XL.navy },
-    { label: 'ACTIVOS', value: activos, color: XL.blue, hint: 'Aprobado + En ejecución + Suspendido' },
+    { label: 'TOTAL PERMISOS', value: total, color: XL.navy, hint: 'Suma de las 5 categorías' },
+    { label: 'BORRADORES', value: borradores, color: XL.gray, hint: 'Sin enviar a revisión' },
     { label: 'PENDIENTES', value: pendientes, color: XL.amber, hint: 'Esperando revisión' },
+    { label: 'ACTIVOS', value: activos, color: XL.blue, hint: 'Aprobado + En ejecución + Suspendido' },
     { label: 'CERRADOS', value: cerrados, color: XL.green },
     { label: 'CANCELADOS', value: cancelados, color: XL.red, hint: 'Cancelado + Rechazado' },
   ], 3);
@@ -180,9 +185,10 @@ function buildResumen(
       color: XL.navySoft,
       hint: 'Cerrados sobre permisos no borrador',
     },
-    { label: 'SUSPENDIDOS', value: suspendidos, color: XL.amber, hint: 'Actualmente detenidos' },
+    { label: 'SUSPENDIDOS', value: suspendidos, color: XL.amber, hint: 'Incluidos en Activos' },
     { label: 'ALTO RIESGO', value: altoRiesgo, color: XL.violet, hint: 'Con al menos una tarea crítica' },
     { label: 'TRABAJADORES', value: trabajadores, color: XL.gray, hint: 'Suma declarada en los permisos' },
+    { label: 'FIRMAS REQUERIDAS', value: firmasRequeridas, color: XL.navySoft, hint: 'Aprobaciones exigidas' },
     {
       label: 'FIRMAS PENDIENTES',
       value: firmasPendientes,
@@ -320,7 +326,7 @@ function buildResumen(
   row = Math.max(r7, r8);
 
   drawNote(ws, row,
-    'La tasa de cierre excluye los borradores, que no son permisos ejecutables. "Alto riesgo" son los permisos con al menos una tarea de alturas, espacios confinados, trabajo en caliente, energías peligrosas, izaje o excavaciones. "Firmas pendientes" cuenta únicamente las aprobaciones exigidas a cada permiso según sus tipos de trabajo.',
+    'Borradores + Pendientes + Activos + Cerrados + Cancelados = Total: son categorías excluyentes que cubren los 8 estados del sistema (Activos agrupa Aprobado, En ejecución y Suspendido; Cancelados agrupa Cancelado y Rechazado). Los demás indicadores son transversales y NO suman el total: un permiso puede ser a la vez activo, de alto riesgo y tener firmas pendientes. La tasa de cierre excluye los borradores, que no son permisos ejecutables. "Alto riesgo" son los permisos con al menos una tarea de alturas, espacios confinados, trabajo en caliente, energías peligrosas, izaje o excavaciones. "Firmas pendientes" cuenta únicamente las aprobaciones exigidas a cada permiso según sus tipos de trabajo.',
     LAST);
 
   return ws;
@@ -491,7 +497,7 @@ function buildAnalisisPlanta(wb: ExcelJS.Workbook, rows: PermisoExportRow[]) {
     pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
   });
 
-  const LAST = 13;
+  const LAST = 14;
   ws.getColumn(1).width = 30;
   ws.getColumn(2).width = 24;
   ws.getColumn(3).width = 18;
@@ -523,11 +529,14 @@ function buildAnalisisPlanta(wb: ExcelJS.Workbook, rows: PermisoExportRow[]) {
       const req = items.reduce((s, p) => s + p.aprobaciones.filter(a => a.requerido).length, 0);
       const pend = items.reduce(
         (s, p) => s + p.aprobaciones.filter(a => a.requerido && a.estado === 'Pendiente').length, 0);
+      // Borrador + Pendiente + Activos + Cerrado + Cancelado = Total.
+      // Faltaba la columna de borradores y por eso las filas no cuadraban.
       return [
         empresa, planta, ciudad,
         items.length,
-        items.filter(p => p.categoria === 'Activos').length,
+        items.filter(p => p.categoria === 'Borrador').length,
         items.filter(p => p.categoria === 'Pendiente').length,
+        items.filter(p => p.categoria === 'Activos').length,
         cerrados,
         items.filter(p => p.categoria === 'Cancelado').length,
         gestionables > 0 ? cerrados / gestionables : 0,
@@ -541,16 +550,16 @@ function buildAnalisisPlanta(wb: ExcelJS.Workbook, rows: PermisoExportRow[]) {
 
   row = drawSectionTitle(ws, row, 'Matriz empresa / planta / ciudad', LAST, XL.violet);
   row = drawTable(ws, row,
-    ['Empresa', 'Planta', 'Ciudad', 'Total', 'Activos', 'Pendientes', 'Cerrados', 'Cancelados', '% cierre', 'Alto riesgo', 'Firmas pend.', '% firmado', ''],
+    ['Empresa', 'Planta', 'Ciudad', 'Total', 'Borradores', 'Pendientes', 'Activos', 'Cerrados', 'Cancelados', '% cierre', 'Alto riesgo', 'Firmas pend.', '% firmado', ''],
     filas,
     {
       headerColor: XL.violet,
-      align: ['left', 'left', 'left', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'left'],
-      numFmt: [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, '0%', undefined, undefined, '0%', undefined],
+      align: ['left', 'left', 'left', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'center', 'left'],
+      numFmt: [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, '0%', undefined, undefined, '0%', undefined],
     });
 
   drawNote(ws, row,
-    'Ordenado por volumen de permisos. "% cierre" excluye borradores. "Firmas pend." son aprobaciones exigidas que siguen sin resolverse: es el indicador de cuellos de botella en la autorización.',
+    'Ordenado por volumen de permisos. Borradores + Pendientes + Activos + Cerrados + Cancelados = Total (son categorías excluyentes que cubren todos los estados). "% cierre" excluye los borradores, que no son permisos ejecutables. "Alto riesgo" y "Firmas pend." son indicadores transversales: NO son categorías del total. "Firmas pend." son aprobaciones exigidas que siguen sin resolverse, el indicador de cuellos de botella en la autorización.',
     LAST);
 
   return ws;

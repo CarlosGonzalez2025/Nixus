@@ -86,6 +86,36 @@ La decisión de qué firma exige cada permiso y las etiquetas de estado se resue
 
 **Verificación:** `tsc --noEmit` sin errores nuevos. Reporte generado con 150 permisos de prueba cubriendo los 8 estados: 4 hojas, 74 KB, KPIs correctos (150 total / 56 activos / 19 pendientes / 18 cerrados / 38 cancelados / 14 % de cierre / 101 firmas pendientes de 358 requeridas), 900 filas en la hoja de firmas y 257 hipervínculos válidos. **Validación de integridad** (la misma introducida en 17.5): las 14 partes XML están bien formadas y sin los patrones que hacen que Excel pida reparar. **Pendiente:** abrirlo en Excel de escritorio.
 
+#### 18.1 La exportación se lleva TODOS los estados en un solo archivo
+
+A pedido del cliente, el botón "Exportar Excel" dejó de exportar únicamente la pestaña visible: ahora descarga **un solo archivo con los permisos de todos los estados**, que es como se consume el reporte a nivel gerencial (antes había que exportar pestaña por pestaña y unir los archivos a mano). Además, el resumen ejecutivo solo tiene sentido sobre el universo completo: la tasa de cierre o el reparto por categoría calculados sobre una sola pestaña no dicen nada.
+
+**Qué se respeta y qué se ignora**, decidido así porque la pestaña es *navegación* mientras que los selectores son elecciones explícitas del usuario:
+- **Se ignora** la pestaña de estado (Borrador / Pendiente / Activos / Cerrado / Cancelado).
+- **Se respetan** los filtros de empresa, planta, ciudad, tipo de trabajo y búsqueda.
+- **Se respeta siempre el alcance por rol**, porque el universo se toma de `allPermits`, que ya viene acotado por la suscripción de Firestore según el rol (un `lider_regional` sigue exportando solo lo suyo). La regla del rol `mantenimiento` —que de los pendientes solo ve los que esperan su firma— también se conserva.
+
+**Refactor para que la vista y la exportación no diverjan** (misma lección que `permit-status.ts` en la Sesión 14): los criterios que **no** dependen del estado se extrajeron a un único predicado `matchesFilters`. `filteredPermits` (la tabla) = pestaña + `matchesFilters`; `exportPermits` (el Excel) = `matchesFilters` sobre todos los estados, ordenado por fecha de creación descendente para que el archivo sea determinista sin depender del ordenamiento de columnas de la pantalla.
+
+De paso, la condición del rol `mantenimiento` pasó de evaluar `activeTab === 'pendiente_revision'` a evaluar el **estado del permiso**: es equivalente dentro de la pestaña y es lo correcto para la exportación.
+
+El botón quedó rotulado **"Exportar Excel (todos)"**, con un tooltip que indica cuántos permisos se descargarán y qué filtros se aplican; y la portada del reporte muestra "Estados: todos" en la línea de filtros.
+
+#### 18.2 Fix — las categorías no sumaban el total (faltaba la columna Borradores)
+
+El cliente detectó que en la matriz "Empresa / Planta / Ciudad" la suma de Activos + Pendientes + Cerrados + Cancelados **no daba el Total** de cada fila.
+
+**Causa:** las categorías del sistema son **cinco** (Borrador, Pendiente, Activos, Cerrado, Cancelado) y la matriz solo mostraba cuatro: **faltaba Borradores**. La diferencia de cada fila era exactamente su número de borradores. Verificado sobre el archivo generado: en un grupo con total 38 la suma daba 19, y el faltante coincidía con los 19 borradores.
+
+El mismo hueco estaba en las **tarjetas KPI** del resumen ejecutivo, que mostraban Total / Activos / Pendientes / Cerrados / Cancelados: 150 contra 131.
+
+**Corrección:**
+- Matriz por planta: se agregó la columna **Borradores** y se reordenaron las categorías en el orden del ciclo de vida (Borradores → Pendientes → Activos → Cerrados → Cancelados). Ahora **cada fila cuadra con su total**.
+- Resumen ejecutivo: la primera fila de KPIs pasó a **seis tarjetas** con las cinco categorías más el total (la hoja pasó de 15 a 18 columnas, que son exactamente 6 tarjetas de 3). La segunda fila incorporó "Firmas requeridas", que antes solo aparecía como pista dentro de otra tarjeta.
+- Las notas al pie de ambas hojas ahora explican qué suma y qué no: las cinco categorías son excluyentes y cubren los 8 estados del sistema, mientras que "Alto riesgo" y "Firmas pendientes" son **indicadores transversales** que no forman parte del total (un permiso puede ser a la vez activo, de alto riesgo y tener firmas pendientes). Esa confusión era el otro riesgo de lectura del tablero.
+
+**Verificación:** se comprobó fila por fila sobre el archivo generado que Borradores + Pendientes + Activos + Cerrados + Cancelados = Total en **todas** las filas de la matriz (0 descuadres) y que las tarjetas KPI suman el total (150 = 19 + 19 + 56 + 18 + 38). Integridad XML sin observaciones.
+
 ---
 
 ### 2026-08-04 (Sesión 17) — Excel profesional: plantilla de importación con listas desplegables e instrucciones + reporte gerencial con resumen ejecutivo (nueva dependencia: ExcelJS)
