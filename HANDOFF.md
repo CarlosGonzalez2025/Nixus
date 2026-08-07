@@ -237,6 +237,14 @@ La corrección en las alertas: cuando el permiso **ya tiene firmante identificad
 
 **El represamiento que quedó al descubierto.** De 1.463 permisos vigilados, **1.301 ya habían vencido**: 449 hacía menos de 15 días, 359 entre 15 y 30, **493 entre 30 y 90**, 49 de más de 90, y el más antiguo hacía **253 días**. Es un problema operativo real que el sistema de alertas iba a destapar de golpe. Se decidió no descargarlo sobre los usuarios: se agregó el modo **`?seed=1`**, que escribe el registro anti-duplicados de todo lo pendiente **sin enviar nada**. Se ejecuta una sola vez antes de registrar el cron; a partir de ahí solo se avisa de lo que ocurra en adelante. El represamiento histórico se atiende aparte, con un reporte.
 
+**Ejecutado en producción el 2026-08-06 a las 20:49 (Bogotá).** Verificación sobre el despliegue real, que confirmó las tres correcciones:
+
+| Medición | Permisos | Alertas | Personas | Entregas | Máx/permiso | Alerta más antigua |
+|---|---|---|---|---|---|---|
+| Antes de corregir | 1.117 | 4.944 | 219 | 44.067 | 299 | 2025-11 |
+| Después de corregir | 550 | 2.870 | 153 | 6.947 | 68 | 2026-07-20 |
+| Tras el `seed` | **0** | **0** | **0** | **0** | — | — |
+
 #### 19.12 Al desplegar
 
 1. **Reemplazar `CRON_SECRET`** por un valor aleatorio real (ver 19.14) y usar exactamente el mismo al registrar los jobs.
@@ -3513,7 +3521,8 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 17/18 — verificación visual pendiente:** abrir en Excel de escritorio la plantilla de importación y los reportes de Hallazgos y Permisos, para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
 - [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
-- [ ] **Sesión 19 — BLOQUEANTE:** ejecutar `?seed=1` **antes** de registrar los crons, y luego `bash scripts/setup-cron-scheduler.sh`. Hasta que se registren, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13 y 19.15)
+- [x] ~~**Sesión 19 — ejecutar `?seed=1` antes de registrar los crons**~~ — hecho el 2026-08-06 a las 20:49 (Bogotá): 2.870 alertas marcadas sin notificar, verificado con un `?dryRun=1` posterior que devolvió `alertasNuevas: 0`. El sistema arranca en cero
+- [ ] **Sesión 19 — BLOQUEANTE:** registrar los jobs con `bash scripts/setup-cron-scheduler.sh` (requiere `gcloud auth login`). Hasta que se haga, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13)
 - [ ] **Sesión 19 — DEUDA ANTERIOR, sigue viva:** `getInvolvedUsers()` en `permits/actions.ts` no filtra por alcance cuando el permiso no tiene `generalInfo.planta`, así que **hoy cada firma sobre un permiso sin planta notifica a más de 250 personas**. Las alertas nuevas se blindaron; el camino reactivo no (ver 19.15)
 - [ ] **Sesión 19 — hallazgo operativo para el cliente:** 1.301 de 1.463 permisos vigilados ya vencieron sin cerrarse; 493 llevan entre 30 y 90 días y el más antiguo 253. Conviene un reporte de depuración, separado del sistema de alertas
 - [x] ~~**Sesión 19 — SEGURIDAD:** reemplazar `CRON_SECRET`, que tenía como valor la expresión `0 0 * * *`~~ — corregido por el cliente con un secreto aleatorio
