@@ -73,7 +73,7 @@ Next.js 15 (App Router)
 
 #### 19.1 Validación previa: qué existía y qué faltaba
 
-El sistema ya tenía **toda la infraestructura de entrega**, lo que redujo el trabajo a construir el disparador: `notifyUsers()` en `permits/actions.ts` (fan-out in-app + push + email), `sendPushToUser()` con VAPID, `sendGroupEmail()` con Resend, la colección `notifications` con sus reglas de seguridad, la campanita `AlertsBell` en tiempo real y un cron ya funcionando en Vercel (`hallazgos-daily-summary`).
+El sistema ya tenía **toda la infraestructura de entrega**, lo que redujo el trabajo a construir el disparador: `notifyUsers()` en `permits/actions.ts` (fan-out in-app + push + email), `sendPushToUser()` con VAPID, `sendGroupEmail()` con Resend, la colección `notifications` con sus reglas de seguridad, la campanita `AlertsBell` en tiempo real y un endpoint de cron ya escrito (`hallazgos-daily-summary`).
 
 Lo que **no** existía: ninguna lógica proactiva. Todas las notificaciones del sistema eran reactivas (alguien firma → se notifica). Estas son las primeras alertas que dispara el sistema por sí solo.
 
@@ -166,7 +166,7 @@ El helper de zona horaria quedó centralizado en `permit-alerts.ts` (`toZonedWal
 
 #### 19.9 Manejo de fechas sin zona
 
-`validFrom` / `validUntil` se guardan como cadenas `datetime-local` (`"yyyy-MM-ddTHH:mm"`) en hora local de Colombia, **sin zona horaria**. Todas las comparaciones se hacen contra un "ahora" expresado también como hora de pared de Bogotá (`nowInTimeZone()`), nunca convirtiendo a UTC. Esto evita que el servidor (UTC en Vercel) desplace los cálculos de día.
+`validFrom` / `validUntil` se guardan como cadenas `datetime-local` (`"yyyy-MM-ddTHH:mm"`) en hora local de Colombia, **sin zona horaria**. Todas las comparaciones se hacen contra un "ahora" expresado también como hora de pared de Bogotá (`nowInTimeZone()`), nunca convirtiendo a UTC. Esto evita que el servidor —que corre en UTC— desplace los cálculos de día.
 
 #### 19.10 Archivos
 
@@ -180,7 +180,10 @@ El helper de zona horaria quedó centralizado en `permit-alerts.ts` (`toZonedWal
 - `src/app/api/cron/hallazgos-daily-summary/route.ts` — zona horaria a Bogotá (19.8)
 - `src/types/index.ts` — `Notification['type']` suma `'reminder' | 'overdue'`; `Permit` suma `alertas?`
 - `src/components/AlertsBell.tsx` — iconos para los dos tipos nuevos
-- `vercel.json` — nuevo cron `0 11 * * *` (06:00 Colombia)
+- `vercel.json` — se agregó el cron, pero **este archivo es inerte** en este proyecto (ver 19.13)
+
+**Nuevo (19.13):**
+- `scripts/setup-cron-scheduler.sh` — registra ambos crons en Cloud Scheduler
 
 #### 19.11 Verificación
 
@@ -193,11 +196,32 @@ El helper de zona horaria quedó centralizado en `permit-alerts.ts` (`toZonedWal
 
 **No probado en vivo:** el canal push (requiere una suscripción real de navegador) y la escritura de notificaciones in-app en Firestore. Ambos se validan al desplegar con `?dryRun=1` y luego una corrida real.
 
+#### 19.13 Hallazgo crítico: los crons nunca se han ejecutado
+
+Al revisar las variables de entorno del proyecto salió a la luz un problema que invalidaba el despliegue del punto anterior: **`vercel.json` no ejecuta nada aquí.** El proyecto está en **Firebase App Hosting** (`apphosting.yaml`, sin `.vercel`, `NEXT_PUBLIC_BASE_URL` apuntando a un dominio `hosted.app`), y las definiciones de `crons` de ese archivo **solo las lee Vercel**.
+
+Consecuencia: el endpoint `hallazgos-daily-summary` existe desde hace sesiones, responde correctamente… y **nunca ha sido llamado por nadie**. El resumen diario de hallazgos jamás se ha enviado. Firebase App Hosting no tiene crons propios.
+
+**Solución:** `scripts/setup-cron-scheduler.sh` registra ambos jobs en **Google Cloud Scheduler**, que resulta ser mejor herramienta para el caso:
+- Acepta **zona horaria nativa** (`America/Bogota`), así que se programa en hora local sin convertir a UTC ni compensar horarios de verano. Esto habría evitado por sí solo el defecto corregido en 19.8.
+- **Sin el límite** de 2 jobs diarios del plan Hobby de Vercel, así que el barrido de alertas corre **cada hora** — y con eso `jornada_por_terminar` sí cae dentro de su ventana de 4 h, que con cron diario era prácticamente inalcanzable.
+- Nivel gratuito: 3 jobs por cuenta de facturación; se usan 2.
+
+`vercel.json` se dejó en el repositorio (es correcto *si* algún día se despliega en Vercel) pero **es inerte**. La documentación de la sección 6 lo advierte de forma explícita para que nadie vuelva a asumir que los crons están corriendo.
+
+#### 19.14 Otros hallazgos del panel de variables
+
+- **`CRON_SECRET` tenía como valor `0 0 * * *`** — la expresión del horario pegada dentro del secreto. Al ser una cadena trivialmente adivinable, los endpoints `/api/cron/*` quedaban **efectivamente sin protección**: cualquiera podía disparar el barrido y provocar un envío masivo de correos. Debe reemplazarse por un secreto aleatorio real.
+- **`NEXT_PUBLIC_BASE_URL` apuntaba a la URL de preview** (`studio--…`) en vez de al dominio de producción. Como esa variable arma los enlaces de todos los correos y notificaciones push, un operario que tocara "Abrir el permiso" no habría llegado a producción.
+- **Twilio en placeholders** (`YOUR_TWILIO_ACCOUNT_SID`): WhatsApp está desactivado y falla en silencio. Anterior a esta sesión y ajeno a los crons nuevos, que no usan Twilio.
+- **Las variables `NEXT_PUBLIC_FIREBASE_*` no se leen**: la configuración de Firebase está hardcodeada en `src/lib/firebase.ts`. La sección 6 de este documento las listaba por error; ya se corrigió.
+
 #### 19.12 Al desplegar
 
-1. **Confirmar `CRON_SECRET` en las variables de Vercel.** Si la variable no existe, el endpoint queda **sin autenticación** — se mantuvo el mismo patrón del cron de hallazgos por consistencia.
-2. **Lanzar `GET /api/cron/permit-alerts?dryRun=1` primero.** Calcula y reporta sin escribir ni enviar nada. La primera corrida real destapará los permisos que ya arrastran pendientes, incluidos los que llevan tiempo esperando firma de aprobación.
-3. **Frecuencia:** quedó en `0 11 * * *` (06:00 Colombia). En plan Hobby de Vercel ese es el techo (máximo 2 crons, solo frecuencia diaria) y ya van 2. Con plan Pro se puede pasar a `0 * * * *`, con lo que `jornada_por_terminar` empieza a ser realmente útil; con cron diario ese aviso rara vez cae dentro de su ventana y su función la cubre `ultimo_dia`.
+1. **Reemplazar `CRON_SECRET`** por un valor aleatorio real (ver 19.14) y usar exactamente el mismo al registrar los jobs.
+2. **Corregir `NEXT_PUBLIC_BASE_URL`** para que apunte al dominio de producción.
+3. **Registrar los crons en Cloud Scheduler:** `bash scripts/setup-cron-scheduler.sh`. Sin este paso nada se ejecuta (ver 19.13).
+4. **Lanzar el ensayo en seco antes de la primera corrida real:** `GET /api/cron/permit-alerts?dryRun=1` calcula y reporta sin escribir ni enviar nada. La primera corrida real destapará todos los permisos que ya arrastran pendientes, incluidos los que llevan tiempo esperando firma de aprobación.
 
 ---
 
@@ -3286,9 +3310,9 @@ src/
 │   └── api/
 │       ├── push/          → API route para suscripciones push
 │       ├── export/        → Generación de Excel (plantilla y reportes)
-│       └── cron/          → Tareas programadas (ver vercel.json)
-│           ├── hallazgos-daily-summary/  → Resumen diario a admins (00:00 UTC)
-│           └── permit-alerts/            → Alertas tempranas de permisos (11:00 UTC)
+│       └── cron/          → Tareas programadas (disparadas por Cloud Scheduler)
+│           ├── hallazgos-daily-summary/  → Resumen diario a admins (19:00 Colombia)
+│           └── permit-alerts/            → Alertas tempranas de permisos (cada hora)
 ├── components/
 │   ├── ui/               → shadcn/ui components
 │   ├── logo.tsx
@@ -3341,14 +3365,6 @@ public/
 ## 6. Variables de Entorno Requeridas (`.env`)
 
 ```
-# Firebase (cliente)
-NEXT_PUBLIC_FIREBASE_API_KEY
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-NEXT_PUBLIC_FIREBASE_PROJECT_ID
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-NEXT_PUBLIC_FIREBASE_APP_ID
-
 # Firebase Admin (servidor)
 FIREBASE_PROJECT_ID
 FIREBASE_CLIENT_EMAIL
@@ -3372,18 +3388,50 @@ VAPID_SUBJECT                 # mailto:... — por defecto mailto:nixus@sistedig
 # Aplicación
 NEXT_PUBLIC_BASE_URL          # URL pública; se usa en los enlaces de correos y push
 
-# Tareas programadas (Vercel Cron)
+# Tareas programadas (Cloud Scheduler)
 CRON_SECRET                   # Sin esta variable los endpoints /api/cron/* quedan SIN autenticación
 ```
 
-**Crons registrados en `vercel.json`:**
+> **La configuración de Firebase NO se lee del entorno.** `apiKey`, `authDomain`, `projectId`,
+> `storageBucket`, `messagingSenderId` y `appId` están hardcodeados en `src/lib/firebase.ts`.
+> El código no lee ninguna variable `NEXT_PUBLIC_FIREBASE_*`; si existe alguna en el panel de
+> variables, es decorativa. Para cambiar de proyecto Firebase hay que editar ese archivo.
 
-| Ruta | Horario (UTC) | Hora Colombia | Qué hace |
-|---|---|---|---|
-| `/api/cron/hallazgos-daily-summary` | `0 0 * * *` | 19:00 | Resumen diario de hallazgos a administradores |
-| `/api/cron/permit-alerts` | `0 11 * * *` | 06:00 | Alertas tempranas de permisos (Sesión 19) |
+### Tareas programadas (crons)
 
-> Plan Hobby de Vercel: máximo 2 crons y solo frecuencia diaria. Ya están los 2.
+> ⚠️ **`vercel.json` NO ejecuta nada en este proyecto.** El despliegue es **Firebase App
+> Hosting**, y las definiciones de `crons` de ese archivo solo las lee Vercel. Los endpoints
+> `/api/cron/*` existen y responden, pero sin un disparador externo nadie los llama.
+> El disparador real es **Google Cloud Scheduler**.
+
+Se registran con `scripts/setup-cron-scheduler.sh` (idempotente: crea o actualiza):
+
+```bash
+gcloud auth login                     # las credenciales caducan seguido
+export CRON_SECRET='<el mismo valor del backend>'
+bash scripts/setup-cron-scheduler.sh
+```
+
+| Job | Horario (America/Bogota) | Qué hace |
+|---|---|---|
+| `permit-alerts` | `0 * * * *` (cada hora) | Alertas tempranas de permisos (Sesión 19) |
+| `hallazgos-daily-summary` | `0 19 * * *` | Resumen diario de hallazgos a administradores |
+
+**Por qué Cloud Scheduler y no Vercel Cron:** acepta zona horaria nativa (se programa en hora
+de Colombia, sin convertir a UTC ni compensar horarios de verano) y no tiene el límite de
+2 jobs diarios del plan Hobby de Vercel. Por eso el barrido de alertas puede correr **cada
+hora**, que es lo que necesita la regla `jornada_por_terminar` para caer dentro de su ventana
+de 4 h. Las demás reglas son de granularidad diaria y se disparan en la primera corrida del
+día; el registro anti-duplicados (`permit.alertas`) impide que las 24 corridas repitan avisos.
+Nivel gratuito de Cloud Scheduler: 3 jobs por cuenta de facturación; aquí se usan 2.
+
+Verificación y prueba manual:
+
+```bash
+gcloud scheduler jobs list --project=studio-7636781267-6dc02 --location=us-central1
+gcloud scheduler jobs run permit-alerts --project=studio-7636781267-6dc02 --location=us-central1
+curl -H "Authorization: Bearer $CRON_SECRET" "$BASE_URL/api/cron/permit-alerts?dryRun=1"
+```
 
 ---
 
@@ -3442,11 +3490,14 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 17/18 — verificación visual pendiente:** abrir en Excel de escritorio la plantilla de importación y los reportes de Hallazgos y Permisos, para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
 - [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
-- [ ] **Sesión 19 — verificar al desplegar:** confirmar que `CRON_SECRET` existe en las variables de Vercel. Sin ella los endpoints `/api/cron/*` quedan sin autenticación
+- [ ] **Sesión 19 — BLOQUEANTE:** registrar los crons en Cloud Scheduler con `bash scripts/setup-cron-scheduler.sh`. Hasta que se haga, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13)
+- [ ] **Sesión 19 — SEGURIDAD:** reemplazar `CRON_SECRET`, que tiene como valor la expresión `0 0 * * *`. Es adivinable, así que los endpoints `/api/cron/*` están sin protección real y cualquiera puede provocar un envío masivo de correos (ver 19.14)
+- [ ] **Sesión 19 — corregir `NEXT_PUBLIC_BASE_URL`:** apunta a la URL de preview (`studio--…`) en vez de al dominio de producción. Es la variable que arma los enlaces de todos los correos y notificaciones push
 - [ ] **Sesión 19 — primera corrida:** lanzar `GET /api/cron/permit-alerts?dryRun=1` antes de la corrida real, para medir cuántas alertas acumuladas saldrían. Los permisos que llevan tiempo esperando firma de aprobación se destaparán todos juntos
 - [ ] **Sesión 19 — pendiente de validar en vivo:** el canal Web Push y la escritura de notificaciones in-app en Firestore no se probaron de extremo a extremo (el correo sí, con entrega confirmada por Resend)
-- [ ] **Sesión 19 — decisión del cliente:** pasar el cron de alertas a frecuencia horaria (`0 * * * *`) requiere plan Pro de Vercel, y solo entonces `jornada_por_terminar` cae dentro de su ventana. Con cron diario esa función la cubre `ultimo_dia`
-- [ ] **Sesión 19 — decisión del cliente:** los hallazgos creados entre las 19:00 y la medianoche no entran en ningún resumen diario, porque el cron corre a las 19:00 Colombia. Se cierra moviéndolo a `0 5 * * *` (medianoche local, resumiendo el día completo), pero cambia la hora de llegada del correo a los admins
+- [ ] **Sesión 19 — decisión del cliente:** los hallazgos creados entre las 19:00 y la medianoche no entran en ningún resumen diario, porque el job corre a las 19:00. Se cierra cambiando su horario a `55 23 * * *` en `setup-cron-scheduler.sh` (resumiendo el día completo), pero mueve la hora de llegada del correo a los admins
+- [ ] **Sesión 19 — limpieza opcional:** `vercel.json` quedó en el repositorio pero es inerte en App Hosting. Si se confirma que nunca se desplegará en Vercel, conviene eliminarlo para que nadie vuelva a asumir que sus crons están activos
+- [ ] **Sesión 19 — anterior a esta sesión:** Twilio está en placeholders (`YOUR_TWILIO_ACCOUNT_SID`), así que las notificaciones de WhatsApp fallan en silencio
 - [ ] **Sesión 19 — política a confirmar:** hoy el Líder SST recibe también los reclamos de firmas diarias de toda su planta. Si resulta ruidoso, basta con retirar `'lider_sst'` de las audiencias de `firma_apertura_pendiente` y `firma_cierre_diario_pendiente` en `permit-alerts.ts`; seguiría recibiendo el escalamiento de vencidos a partir del día 3
 
 ---
