@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/hallazgos-daily-summary",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/permit-alerts",
+      "schedule": "0 11 * * *"
     }
   ]
 }
