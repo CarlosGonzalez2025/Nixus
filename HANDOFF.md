@@ -256,6 +256,50 @@ La corrección en las alertas: cuando el permiso **ya tiene firmante identificad
 
 ---
 
+### 2026-08-06 (Sesión 19b) — Saneamiento de deuda técnica: 11 errores de tipos y un bug real de correo
+
+Con las alertas ya en producción se atacó la deuda acumulada. El proyecto arrastraba **11 errores de TypeScript** que nunca rompían el build porque `next.config.ts` tenía `typescript.ignoreBuildErrors: true`. Uno de ellos escondía un fallo real en producción.
+
+#### 19b.1 Bug real: `sendGroupEmail` siempre reportaba fallo
+
+`src/lib/email.ts` hacía `data?.map(d => d.id)` sobre la respuesta de `resend.batch.send()`. Esa respuesta **no es un arreglo**: su forma real es `{ data: [{ id }] }`, verificado empíricamente contra la API.
+
+`data?.map` no es una guarda válida aquí: el encadenamiento opcional protege de `null`/`undefined`, no de un objeto sin ese método. La llamada lanzaba `TypeError: data?.map is not a function` **dentro de la rama de éxito**, la excepción saltaba al `catch` externo y la función terminaba registrando `❌ Error crítico en envío grupal` y devolviendo `{ success: false }` **aunque Resend ya hubiera enviado el correo**.
+
+Consecuencias, todas silenciosas porque ningún llamador revisa el valor de retorno:
+- Cada notificación grupal de permisos (`notifyUsers`) y cada resumen de hallazgos registraba un error crítico falso.
+- El log de resumen `📧 [Email] Resumen: N enviados` nunca se imprimía.
+- Con más de 1.000 destinatarios, la excepción abortaba el bucle y **los lotes siguientes no se enviaban**.
+
+Corregido a `data?.data?.map(...)`.
+
+#### 19b.2 Latente: el filtro por ciudad deja sin hallazgos al `lider_regional`
+
+`dashboard/page.tsx` y `hallazgos/page.tsx` leen `h.ciudad`, un campo que **no existe en el tipo `Hallazgo` ni en los datos**: verificado en producción, 0 de 269 hallazgos lo tienen. Como `isInLiderRegionalScope()` exige `!!record.ciudad` para dar por buena la coincidencia, un `lider_regional` con `allowedCiudades` configurado **no vería ningún hallazgo**.
+
+Hoy no afecta a nadie: **no existe ningún usuario con ese rol**. Se agregó `ciudad?: string` al tipo con la advertencia documentada; el día que se cree un `lider_regional` hay que capturar la ciudad en el formulario de hallazgos o retirar esa dimensión del filtro.
+
+#### 19b.3 El resto de los errores
+
+- **`firebase.ts`** — `persistentSingleTabManager()` sin argumentos; la firma de firebase v10+ exige `settings`. Se pasa `undefined` explícito, que es el valor que ya se usaba de hecho.
+- **`layout.tsx`** — dos accesos a `user` dentro de ramas `false && (...)`. El detalle interesante: TypeScript **no propaga el estrechamiento de tipos a una rama probadamente inalcanzable**, así que ahí `user` vuelve a verse como `User | null` pese al early return que sí protege al resto del componente (por eso las líneas 224–255 usan `user.role` sin error). Se resolvió con `user!` y la explicación anotada.
+
+#### 19b.4 La causa raíz: `ignoreBuildErrors`
+
+Se puso **`typescript.ignoreBuildErrors: false`**. Con el proyecto en cero errores, un tipo roto ahora detiene el despliegue en vez de llegar a producción — que es exactamente lo que no ocurrió con el bug de `sendGroupEmail`. Si alguna vez urge desplegar con un error conocido, ponerlo en `true` es la válvula de escape, pero debe volver a `false` enseguida.
+
+`eslint.ignoreDuringBuilds` se dejó como estaba: el ruido de lint es otra discusión y no se verificó en esta sesión.
+
+#### 19b.5 Medición del alcance de la difusión de notificaciones
+
+Se cuantificó la deuda anotada en 19.15 sobre `getInvolvedUsers()`: de **2.243 permisos, solo 16 (0,7%) no tienen planta** y **ninguno carece de empresa**. De esos 16, hay 2 en ejecución y 8 pendientes de revisión. Es decir, el problema es mucho más acotado de lo estimado, pero cada firma sobre uno de esos permisos sí alcanza a ~250 personas porque el filtro de alcance no aplica.
+
+**No se modificó `getInvolvedUsers()`**: cambiar la lógica de notificación reactiva de un sistema de seguridad tiene el riesgo de que alguien deje de enterarse de un permiso que debe firmar, y el arreglo correcto es de datos —esos 16 permisos deberían tener planta— no de código. Queda como pendiente con el diagnóstico completo.
+
+**Verificación:** `tsc --noEmit` en **0 errores** (antes 11), build de producción correcto ya con la verificación estricta activa, y las 4 suites de las alertas sin regresiones.
+
+---
+
 ### 2026-08-05 (Sesión 18) — Reporte gerencial de Permisos de Trabajo en Excel
 
 Se llevó al módulo de **Permisos de Trabajo** el mismo tratamiento aplicado a Hallazgos en la Sesión 17. El export anterior generaba dos hojas con `xlsx`: "Permisos" (con hipervínculos a las firmas) y "Análisis" (un volcado de texto plano con conteos). Como en el resto del proyecto, **el formato no llegaba al archivo** porque SheetJS community no escribe estilos.
@@ -3523,7 +3567,9 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
 - [x] ~~**Sesión 19 — ejecutar `?seed=1` antes de registrar los crons**~~ — hecho el 2026-08-06 a las 20:49 (Bogotá): 2.870 alertas marcadas sin notificar, verificado con un `?dryRun=1` posterior que devolvió `alertasNuevas: 0`. El sistema arranca en cero
 - [ ] **Sesión 19 — BLOQUEANTE:** registrar los jobs con `bash scripts/setup-cron-scheduler.sh` (requiere `gcloud auth login`). Hasta que se haga, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13)
-- [ ] **Sesión 19 — DEUDA ANTERIOR, sigue viva:** `getInvolvedUsers()` en `permits/actions.ts` no filtra por alcance cuando el permiso no tiene `generalInfo.planta`, así que **hoy cada firma sobre un permiso sin planta notifica a más de 250 personas**. Las alertas nuevas se blindaron; el camino reactivo no (ver 19.15)
+- [ ] **Sesión 19b — arreglo de DATOS, no de código:** 16 de 2.243 permisos (0,7%) no tienen `generalInfo.planta`; 2 están en ejecución y 8 pendientes de revisión. Sobre esos, `getInvolvedUsers()` no filtra por alcance y cada firma notifica a ~250 personas. Lo correcto es completarles la planta, no cambiar la lógica de notificación de un sistema de seguridad (ver 19b.5)
+- [ ] **Sesión 19b — latente:** el filtro por ciudad del `lider_regional` sobre hallazgos nunca coincide, porque los hallazgos no guardan `ciudad` (0 de 269). Hoy no afecta a nadie —no existe ningún usuario con ese rol— pero al crear el primero hay que capturar la ciudad en el formulario o retirar esa dimensión del filtro (ver 19b.2)
+- [x] ~~**Sesión 19b — 11 errores de TypeScript enmascarados por `ignoreBuildErrors: true`**~~ — corregidos todos; el proyecto quedó en 0 errores y la verificación estricta activa (ver 19b.1 a 19b.4)
 - [ ] **Sesión 19 — hallazgo operativo para el cliente:** 1.301 de 1.463 permisos vigilados ya vencieron sin cerrarse; 493 llevan entre 30 y 90 días y el más antiguo 253. Conviene un reporte de depuración, separado del sistema de alertas
 - [x] ~~**Sesión 19 — SEGURIDAD:** reemplazar `CRON_SECRET`, que tenía como valor la expresión `0 0 * * *`~~ — corregido por el cliente con un secreto aleatorio
 - [ ] **Sesión 19 — confirmar la rama de despliegue:** App Hosting se despliega desde una rama concreta (normalmente `main`). El trabajo de esta sesión está en `agent/agregar-actividades-alturas`; si el backend sigue `main`, los endpoints `/api/cron/*` todavía no existen en producción y hay que hacer merge antes de registrar los jobs

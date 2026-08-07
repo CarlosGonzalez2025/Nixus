@@ -267,7 +267,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 )}
 
                 {/* Verif. Contratistas y Plantillas Contratistas — ocultos temporalmente */}
-                {false && (user.role === 'admin' || user.role === 'lider_sst' || user.role === 'asesor_arl' || liderRegionalHasModule(user, 'contractor_verifications')) && (
+                {/* Rama desactivada (`false &&`): se conserva por si se reactiva el módulo.
+                    Se necesita `user!` porque TypeScript no propaga el estrechamiento de
+                    tipos a una rama inalcanzable: aquí `user` vuelve a verse como
+                    `User | null` pese al early return de arriba, que sí protege al resto
+                    del componente (ver los usos sin `!` en el mismo archivo). */}
+                {false && (user!.role === 'admin' || user!.role === 'lider_sst' || user!.role === 'asesor_arl' || liderRegionalHasModule(user!, 'contractor_verifications')) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/contractor-verifications')}
@@ -281,7 +286,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>
                 )}
 
-                {false && (user.role === 'admin' || user.role === 'asesor_arl') && (
+                {/* Misma rama desactivada; ver la nota de arriba sobre `user!`. */}
+                {false && (user!.role === 'admin' || user!.role === 'asesor_arl') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => handleNavigation('/contractor-verifications/templates')}
