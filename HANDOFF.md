@@ -216,12 +216,35 @@ Consecuencia: el endpoint `hallazgos-daily-summary` existe desde hace sesiones, 
 - **Twilio en placeholders** (`YOUR_TWILIO_ACCOUNT_SID`): WhatsApp está desactivado y falla en silencio. Anterior a esta sesión y ajeno a los crons nuevos, que no usan Twilio.
 - **Las variables `NEXT_PUBLIC_FIREBASE_*` no se leen**: la configuración de Firebase está hardcodeada en `src/lib/firebase.ts`. La sección 6 de este documento las listaba por error; ya se corrigió.
 
+#### 19.15 El ensayo en seco contra producción evitó un desastre
+
+Con el código ya desplegado y `CRON_SECRET` configurado —pero **antes** de registrar los jobs en Cloud Scheduler, así que el sistema seguía inerte— se lanzó `?dryRun=1` contra producción. El resultado obligó a rehacer tres decisiones:
+
+| | Alertas | Personas | **Entregas** | Máx/permiso |
+|---|---|---|---|---|
+| Primera medición | 4.944 | 219 | **44.067** | 299 |
+| Tras las correcciones | 2.870 | 153 | **6.947** | 68 |
+
+**Causa 1 — las reglas de firmas diarias no tenían tope de antigüedad.** Solo `permiso_vencido_sin_cerrar` tenía el límite de 15 días. Las tres reglas de firmas diarias reclamaban cualquier día del permiso sin importar cuándo fue: se emitieron alertas con fecha de **noviembre de 2025**. Se agregó una **ventana de relevancia global**: si el permiso venció hace más de `MAX_DIAS_ALERTA_VENCIDO`, no se emite ninguna alerta. Reclamar "la firma del día 3" de un trabajo de hace tres meses no provoca una acción, solo hace que se ignoren los avisos útiles.
+
+**Causa 2 — el filtro de alcance no filtra cuando el permiso no tiene planta.** `enAlcanceDelPermiso` solo compara *si el permiso tiene* `generalInfo.planta` / `empresa`; si vienen vacíos, no filtra nada y la alerta alcanza a **los 188 autorizantes y 66 líderes SST** de la empresa. De ahí el permiso con 299 destinatarios.
+
+> ⚠️ **Este defecto es anterior y sigue vivo en las notificaciones reactivas.** `getInvolvedUsers()` en `permits/actions.ts` usa exactamente el mismo criterio, así que **hoy, cada firma sobre un permiso sin planta ya está notificando a más de 250 personas**. Las alertas nuevas se blindaron; el camino reactivo no se tocó porque excede el alcance de esta sesión, pero conviene atenderlo.
+
+La corrección en las alertas: cuando el permiso **ya tiene firmante identificado** (`approvals.autorizante.userId` o `approvals.lider_sst.userId`), el recordatorio es **suyo** y no se difunde al rol completo. Solo se difunde cuando nadie ha firmado todavía, que es cuando la acción aún no tiene dueño. Esta sola corrección bajó las entregas de 29.000 a 8.392.
+
+**Causa 3 — el Líder SST recibía los reclamos de firmas diarias de toda su planta.** Es una acción del responsable; difundirla a la supervisión genera ruido sin habilitar ninguna acción. Se retiró de `firma_apertura_pendiente` y `firma_cierre_diario_pendiente`; el SST sigue recibiendo el escalamiento de permisos vencidos desde el día 3.
+
+**El represamiento que quedó al descubierto.** De 1.463 permisos vigilados, **1.301 ya habían vencido**: 449 hacía menos de 15 días, 359 entre 15 y 30, **493 entre 30 y 90**, 49 de más de 90, y el más antiguo hacía **253 días**. Es un problema operativo real que el sistema de alertas iba a destapar de golpe. Se decidió no descargarlo sobre los usuarios: se agregó el modo **`?seed=1`**, que escribe el registro anti-duplicados de todo lo pendiente **sin enviar nada**. Se ejecuta una sola vez antes de registrar el cron; a partir de ahí solo se avisa de lo que ocurra en adelante. El represamiento histórico se atiende aparte, con un reporte.
+
 #### 19.12 Al desplegar
 
 1. **Reemplazar `CRON_SECRET`** por un valor aleatorio real (ver 19.14) y usar exactamente el mismo al registrar los jobs.
 2. **Corregir `NEXT_PUBLIC_BASE_URL`** para que apunte al dominio de producción.
-3. **Registrar los crons en Cloud Scheduler:** `bash scripts/setup-cron-scheduler.sh`. Sin este paso nada se ejecuta (ver 19.13).
-4. **Lanzar el ensayo en seco antes de la primera corrida real:** `GET /api/cron/permit-alerts?dryRun=1` calcula y reporta sin escribir ni enviar nada. La primera corrida real destapará todos los permisos que ya arrastran pendientes, incluidos los que llevan tiempo esperando firma de aprobación.
+3. **Ensayo en seco:** `GET /api/cron/permit-alerts?dryRun=1` calcula y reporta sin escribir ni enviar nada. Revisar el volumen antes de continuar (ver 19.15).
+4. **Arranque en limpio:** `GET /api/cron/permit-alerts?seed=1`, **una sola vez**. Marca el represamiento histórico como ya notificado sin enviar nada, de modo que el sistema estrene en cero.
+5. **Verificar que quedó sembrado:** repetir el `?dryRun=1`; debe devolver `alertasNuevas: 0` o un número muy bajo.
+6. **Registrar los crons en Cloud Scheduler:** `bash scripts/setup-cron-scheduler.sh`. Sin este paso nada se ejecuta (ver 19.13).
 
 ---
 
@@ -3490,7 +3513,9 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 17/18 — verificación visual pendiente:** abrir en Excel de escritorio la plantilla de importación y los reportes de Hallazgos y Permisos, para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
 - [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
-- [ ] **Sesión 19 — BLOQUEANTE:** registrar los crons en Cloud Scheduler con `bash scripts/setup-cron-scheduler.sh`. Hasta que se haga, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13)
+- [ ] **Sesión 19 — BLOQUEANTE:** ejecutar `?seed=1` **antes** de registrar los crons, y luego `bash scripts/setup-cron-scheduler.sh`. Hasta que se registren, **ningún cron se ejecuta** — ni el de alertas ni el resumen de hallazgos, que lleva sesiones sin dispararse (ver 19.13 y 19.15)
+- [ ] **Sesión 19 — DEUDA ANTERIOR, sigue viva:** `getInvolvedUsers()` en `permits/actions.ts` no filtra por alcance cuando el permiso no tiene `generalInfo.planta`, así que **hoy cada firma sobre un permiso sin planta notifica a más de 250 personas**. Las alertas nuevas se blindaron; el camino reactivo no (ver 19.15)
+- [ ] **Sesión 19 — hallazgo operativo para el cliente:** 1.301 de 1.463 permisos vigilados ya vencieron sin cerrarse; 493 llevan entre 30 y 90 días y el más antiguo 253. Conviene un reporte de depuración, separado del sistema de alertas
 - [x] ~~**Sesión 19 — SEGURIDAD:** reemplazar `CRON_SECRET`, que tenía como valor la expresión `0 0 * * *`~~ — corregido por el cliente con un secreto aleatorio
 - [ ] **Sesión 19 — confirmar la rama de despliegue:** App Hosting se despliega desde una rama concreta (normalmente `main`). El trabajo de esta sesión está en `agent/agregar-actividades-alturas`; si el backend sigue `main`, los endpoints `/api/cron/*` todavía no existen en producción y hay que hacer merge antes de registrar los jobs
 - [ ] **Sesión 19 — primera corrida:** lanzar `GET /api/cron/permit-alerts?dryRun=1` antes de la corrida real, para medir cuántas alertas acumuladas saldrían. Los permisos que llevan tiempo esperando firma de aprobación se destaparán todos juntos

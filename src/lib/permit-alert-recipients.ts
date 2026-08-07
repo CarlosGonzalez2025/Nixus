@@ -108,20 +108,27 @@ export function resolveAudienceUids(
         addIfActive(permit.approvals?.solicitante?.userId);
         break;
 
-      // Autorizante que ya firmó + todos los autorizantes del alcance del permiso.
+      // Autorizante y Líder SST: si el permiso YA tiene firmante identificado,
+      // el recordatorio es suyo y no se difunde al rol completo. Solo cuando
+      // nadie ha firmado todavía se avisa a todos los del alcance, porque en
+      // ese momento la acción aún no tiene dueño.
+      //
+      // Sin esta distinción, un permiso al que le falte `generalInfo.planta`
+      // no filtra por alcance y alcanza a TODOS los autorizantes y líderes SST
+      // de la empresa. Medido en producción: un solo permiso llegaba a 299
+      // destinatarios, y el total del barrido a 44.067 entregas.
       case 'autorizante':
-        addIfActive(permit.approvals?.autorizante?.userId);
+      case 'lider_sst': {
+        const firmante = permit.approvals?.[audience]?.userId;
+        if (firmante && activos.has(firmante)) {
+          uids.add(firmante);
+          break;
+        }
         directory
-          .filter(u => tieneRol(u, 'autorizante') && enAlcanceDelPermiso(u, permit))
+          .filter(u => tieneRol(u, audience) && enAlcanceDelPermiso(u, permit))
           .forEach(u => uids.add(u.uid));
         break;
-
-      case 'lider_sst':
-        addIfActive(permit.approvals?.lider_sst?.userId);
-        directory
-          .filter(u => tieneRol(u, 'lider_sst') && enAlcanceDelPermiso(u, permit))
-          .forEach(u => uids.add(u.uid));
-        break;
+      }
 
       case 'admin':
         directory
