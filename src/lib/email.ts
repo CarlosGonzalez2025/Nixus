@@ -106,7 +106,12 @@ export async function sendGroupEmail({
       } else {
         const enviados = batchGroups.reduce((s, g) => s + g.length, 0);
         totalSent += enviados;
-        console.log(`✅ [Email] Batch grupal: ${batchGroups.length} grupo(s), ${enviados} destinatario(s). IDs: ${data?.map(d => d.id).join(', ')}`);
+        // La respuesta de resend.batch.send() es { data: { data: [{id}] } }, no un
+        // arreglo. Llamar a data.map() lanzaba un TypeError DENTRO de la rama de
+        // éxito: la excepción saltaba al catch de abajo y esta función reportaba
+        // fallo aunque el correo sí se hubiera enviado. Verificado contra la API.
+        const ids = data?.data?.map(d => d.id).join(', ') ?? '—';
+        console.log(`✅ [Email] Batch grupal: ${batchGroups.length} grupo(s), ${enviados} destinatario(s). IDs: ${ids}`);
       }
     }
 

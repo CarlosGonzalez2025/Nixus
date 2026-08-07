@@ -35,7 +35,9 @@ const auth = getAuth(app);
 let db: ReturnType<typeof getFirestore>;
 try {
   db = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() }),
+    // El parámetro `settings` es obligatorio en la firma de firebase v10+;
+    // `undefined` es el valor que ya se venía usando de hecho.
+    localCache: persistentLocalCache({ tabManager: persistentSingleTabManager(undefined) }),
     experimentalAutoDetectLongPolling: true,
   });
 } catch {

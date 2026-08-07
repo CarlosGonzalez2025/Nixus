@@ -31,7 +31,15 @@ const nextConfig: NextConfig = {
     },
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // En false a partir de la Sesión 19. Estaba en true y eso permitió que se
+    // acumularan 11 errores de tipos sin que nadie se enterara, entre ellos un
+    // bug real de producción en sendGroupEmail (una llamada a .map() sobre un
+    // objeto que lanzaba dentro de la rama de éxito). Con el proyecto en cero
+    // errores, dejarlo en false hace que un tipo roto detenga el despliegue en
+    // vez de llegar a producción.
+    // Si urge desplegar con un error de tipos conocido, ponerlo en true es la
+    // válvula de escape — pero debe volver a false enseguida.
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,

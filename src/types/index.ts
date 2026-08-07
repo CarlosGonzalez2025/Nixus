@@ -730,6 +730,17 @@ export interface Hallazgo {
   // Información general
   empresa: string;
   planta: string;
+  /**
+   * Ciudad del hallazgo. Opcional porque el formulario todavía no la captura:
+   * verificado en producción, 0 de 269 hallazgos la tienen.
+   *
+   * OJO: `isInLiderRegionalScope()` exige `!!record.ciudad` para dar por buena la
+   * coincidencia, así que un `lider_regional` con `allowedCiudades` configurado
+   * no vería ningún hallazgo. Hoy no afecta a nadie (no existe ningún usuario con
+   * ese rol), pero el día que se cree uno hay que capturar la ciudad en el
+   * formulario de hallazgos o retirar esa dimensión del filtro.
+   */
+  ciudad?: string;
   area: string;
   tipoActividad: 'Rutinario' | 'No Rutinario';
   /** Responsabilidad sobre la corrección del hallazgo. */
