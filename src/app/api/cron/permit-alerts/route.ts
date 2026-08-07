@@ -55,7 +55,10 @@ import {
 import type { Notification, Permit } from '@/types';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+// `maxDuration` es una directiva de Vercel; en Firebase App Hosting (Cloud Run)
+// se ignora y manda el timeout del servicio. Se declara igual por si el proyecto
+// se despliega alguna vez en Vercel.
+export const maxDuration = 300;
 
 /** Autor sintético de las notificaciones automáticas. */
 const SISTEMA = { uid: 'system', displayName: 'Sistema SGTC' } as const;
@@ -67,8 +70,19 @@ const FIRESTORE_BATCH_SIZE = 400;
 const EMAIL_CONCURRENCY = 3;
 const EMAIL_DELAY_MS = 1_000;
 
-/** Margen de seguridad frente a `maxDuration` para la fase de correos. */
-const TIME_BUDGET_MS = 45_000;
+/**
+ * Presupuesto de tiempo para la fase de correos.
+ *
+ * Si se agota, los correos restantes se omiten (se reportan en la respuesta)
+ * pero las alertas ya quedaron entregadas in-app y marcadas en el registro, así
+ * que NO se reintentan. Por eso conviene que el presupuesto sea holgado: el
+ * riesgo real es la primera corrida, que destapa de golpe todos los permisos
+ * con pendientes acumulados.
+ *
+ * 240 s deja margen frente al timeout de Cloud Run en App Hosting y frente al
+ * `--attempt-deadline=540s` con el que Cloud Scheduler invoca el endpoint.
+ */
+const TIME_BUDGET_MS = 240_000;
 
 /**
  * Tope de notificaciones in-app por persona y ejecución.
