@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-05 (Sesión 18)
+> **Última actualización de este documento:** 2026-08-06 (Sesión 19)
 
 ---
 
@@ -64,6 +64,140 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-06 (Sesión 19) — Alertas tempranas de permisos: recordatorios automáticos de firmas, jornadas y cierres
+
+**Solicitud:** avisar a los usuarios antes de que se complete la jornada de ejecución para que recuerden cerrar el permiso; avisar cuando inició un día de ejecución y no se registró la firma de apertura o de cierre; avisar cuando el autorizante no registró su validación diaria; y avisar cuando llegó el último día y el permiso sigue sin cerrarse (*"si el permiso iba hasta hoy y no se cerró, que mañana envíe una notificación"*).
+
+#### 19.1 Validación previa: qué existía y qué faltaba
+
+El sistema ya tenía **toda la infraestructura de entrega**, lo que redujo el trabajo a construir el disparador: `notifyUsers()` en `permits/actions.ts` (fan-out in-app + push + email), `sendPushToUser()` con VAPID, `sendGroupEmail()` con Resend, la colección `notifications` con sus reglas de seguridad, la campanita `AlertsBell` en tiempo real y un cron ya funcionando en Vercel (`hallazgos-daily-summary`).
+
+Lo que **no** existía: ninguna lógica proactiva. Todas las notificaciones del sistema eran reactivas (alguien firma → se notifica). Estas son las primeras alertas que dispara el sistema por sí solo.
+
+**Dato clave del modelo:** los permisos se ejecutan en un **rango continuo** de días (`generalInfo.validFrom` → `validUntil`, máximo 7). No existe un arreglo de días escogidos uno a uno. El día N es `validFrom + (N-1) días`, y el índice del arreglo `validacion.responsable[i]` / `validacion.autoridad[i]` **es** el día. Confirmado con el cliente que el rango continuo es correcto, lo que evitó un cambio de esquema. Ninguna alerta requirió campos nuevos salvo el registro anti-duplicados.
+
+#### 19.2 Motor de reglas — `src/lib/permit-alerts.ts`
+
+Módulo **puro**: no toca Firestore, no envía nada, no depende del entorno servidor. Recibe un permiso y un instante, devuelve qué alertas corresponden. Esto lo hace determinista, testeable de forma aislada y garantiza que el cron **no pueda alterar la lógica de negocio existente** — solo lee.
+
+**11 reglas en cuatro grupos:**
+
+| Grupo | Regla | Se le reclama a |
+|---|---|---|
+| Vigencia | `ultimo_dia` — hoy vence el permiso | Ejecutante + autorizante |
+| Vigencia | `jornada_por_terminar` — faltan ≤ 4 h para `validUntil` | Ejecutante + autorizante |
+| Vigencia | `permiso_vencido_sin_cerrar` — venció y sigue abierto | Escalado (ver 19.5) |
+| Firmas diarias | `firma_apertura_pendiente` | Ejecutante + SST |
+| Firmas diarias | `validacion_autoridad_pendiente` | Autorizante + ejecutante |
+| Firmas diarias | `firma_cierre_diario_pendiente` | Ejecutante + SST |
+| Bloqueos de cierre | `cierre_trabajadores_pendiente` | Ejecutante |
+| Bloqueos de cierre | `cierre_responsable_pendiente` | Ejecutante |
+| Bloqueos de cierre | `cierre_autoridad_pendiente` | **Autorizante** |
+| Bloqueos de cierre | `checklist_caliente_pendiente` | Ejecutante |
+| Aprobación | `aprobacion_pendiente` — una por rol que falte | Cada rol dueño de su firma |
+
+**Alcance por tipo de permiso:** las firmas diarias solo existen en los anexos de Alturas, Confinados, Izaje y Excavaciones. Un permiso que sea únicamente General, Caliente o Energías **no genera** esas tres alertas; a pedido del cliente sí recibe las de vigencia y la de vencimiento sin cerrar, que es lo que aplica a su ciclo.
+
+**Margen de cortesía:** la firma de apertura del día solo se reclama 2 h después de la hora de inicio de esa jornada, para no avisar a las 06:00 por un trabajo que arranca a las 08:00. La firma de cierre diario solo se reclama sobre días **ya terminados** y que sí tuvieron apertura: un día sin apertura ya se reportó con su propia alerta y no se duplica el aviso.
+
+**Fallo en silencio:** un permiso sin fechas, con fechas invertidas o corruptas no genera ninguna alerta. Se prefiere el silencio a un aviso incorrecto.
+
+#### 19.3 Atribución por rol — el hallazgo de fondo
+
+La primera versión solo cubría las firmas **diarias**. El cliente señaló que el correo debía llegar *"a los roles que interactúan con el permiso y que por causa de un proceso que este usuario no ha realizado no se ha completado el ciclo"*. Revisando `getClosureStatus()` en `permits/[id]/page.tsx` y `checkAllRequiredSignaturesComplete()` en `permits/actions.ts` aparecieron **cinco bloqueos del ciclo que no se estaban alertando**: las firmas de cierre de los trabajadores, la firma de cierre del responsable, la de la autoridad del área, el checklist de trabajo en caliente y **todas las firmas de aprobación** (Coordinador de Alturas, Supervisor de Confinados, Mantenimiento, Líder SST, Autorizante).
+
+Cada uno se reclama **exclusivamente a su dueño**. Verificado sobre un mismo permiso vencido de alturas + caliente que genera 10 alertas: el ejecutante recibe 9, el autorizante 4 y el líder SST 3, y ninguno ve el ruido del otro (el autorizante no recibe el checklist en caliente ni las firmas de trabajadores, que no le competen).
+
+Las condiciones de estas reglas son **réplica exacta** de las del botón de cierre y de `checkAllRequiredSignaturesComplete()`, para que la alerta y el bloqueo real no puedan discrepar.
+
+Esto obligó a ampliar los estados vigilados con `pendiente_revision` — un permiso programado para hoy que sigue esperando firmas está frenado por alguien concreto. Un permiso sin aprobar genera **únicamente** reclamos de aprobación, nunca de ejecución ni de cierre. Los **borradores quedan fuera**: son trabajo privado del autor y todavía no comprometen a nadie.
+
+#### 19.4 Idempotencia — el riesgo más serio
+
+Sin control, un permiso vencido notificaría a 8 personas en cada corrida, indefinidamente. Cada alerta lleva una **clave única** (`firma_apertura:anexoAltura:2026-08-07`, `vencido:2026-08-08`) que se persiste en un campo nuevo y **aditivo** del permiso:
+
+```ts
+alertas?: { [alertKey: string]: Timestamp }
+```
+
+Se escribe con `set(..., { merge: true })`, que fusiona el mapa sin tocar ningún otro campo. Se verificó que las 25 escrituras existentes sobre `permits` usan `.update()` con rutas puntuales, así que nada lo puede borrar. **Ninguna regla de negocio, consulta ni vista lee este campo.**
+
+El registro se marca **después** de escribir las notificaciones in-app (canal confiable y barato) y **antes** de los correos: si el envío de correo se agota por tiempo, el aviso ya quedó entregado en la aplicación y no se repite al día siguiente.
+
+#### 19.5 Escalamiento y topes
+
+El aviso de permiso vencido se repite a diario con escalamiento progresivo y **tope**, para no convertirse en ruido perpetuo:
+
+| Retraso | Destinatarios |
+|---|---|
+| Día 1–2 | Ejecutante + autorizante |
+| Día 3–6 | + Líder SST |
+| Día 7–15 | + Administradores de la planta |
+| Día 16 | **Silencio** |
+
+#### 19.6 Volumen: digest por persona y tope de campanita
+
+Un barrido sobre muchos permisos con el patrón de notificación individual (un correo por permiso) agotaría la cuota de Resend y desbordaría el `maxDuration` del cron. Se agrupa **por destinatario**: cada persona recibe **un solo correo digest** con todos sus permisos pendientes y **un solo push**, en vez de uno por permiso. Reduce el volumen ~10x.
+
+La simulación masiva destapó un caso no previsto: un **Líder SST corporativo sin planta asignada calza con todos los permisos** y en el pico habría recibido 100 notificaciones en la campanita, que además solo muestra 30 sin leer. Se agregó un tope de **15 notificaciones in-app por persona y corrida**, priorizando las críticas; el resto viaja íntegro en el correo. El endpoint reporta `notificacionesOmitidas` para que sea visible si ocurre.
+
+También se evitó el patrón de `getInvolvedUsers()`, que dispara entre 4 y 12 consultas a `users` **por permiso** — aceptable en una acción puntual, un desperdicio de cientos de lecturas en un barrido. El directorio se carga **una sola vez por ejecución** y todo se resuelve en memoria, replicando el mismo criterio de alcance por empresa/planta.
+
+#### 19.7 Fix — el retraso se medía en días calendario, no en tiempo real
+
+Detectado por el cliente al revisar un correo: un permiso vencido a las 17:00 y revisado a las 06:00 del día siguiente reportaba **"1 día(s) de retraso"** cuando en realidad eran **13 horas**. La causa: `differenceInCalendarDays` cuenta **cruces de medianoche**, no tiempo transcurrido.
+
+Se separaron las dos cosas que estaban mezcladas: los **días calendario siguen decidiendo cuándo avisar** (una vez al día, escalamiento, tope), porque esa cadencia es predecible y es la acordada; el **tiempo transcurrido real** solo se usa para redactar. Nuevo helper `formatearRetraso()`: "30 minutos" → "13 horas" → "1 día y 13 horas" → "3 días". De paso se eliminaron todos los `(s)` de los mensajes con un helper de concordancia.
+
+**El disparo no se movió:** verificado que a las 18:00 y a las 23:00 del mismo día sigue sin avisar, y que el primer aviso cae a la mañana siguiente.
+
+#### 19.8 Zona horaria — corrección del cron de hallazgos
+
+`hallazgos-daily-summary` calculaba la ventana del día sobre `America/Los_Angeles`. En Colombia eso arrancaba el resumen a las **02:00–03:00 a.m.**, dejando los hallazgos creados entre medianoche y esa hora **fuera de todo resumen**. Además la etiqueta de fecha del correo se formateaba con la hora del servidor (UTC): ejecutando a las 19:00 del 6 de agosto, el correo decía "7 de agosto".
+
+Alineado a `America/Bogota`. El cambio es seguro porque la ventana nueva es un **superconjunto estricto** de la anterior: medianoche en Bogotá (05:00 UTC) siempre cae antes que medianoche del Pacífico (07:00 u 08:00 UTC), así que ningún hallazgo que antes se reportaba deja de reportarse. Verificado contra la implementación anterior en **los 365 días del año**, incluidos los dos cambios de horario del Pacífico: se recuperan hasta 3 h por ejecución.
+
+El helper de zona horaria quedó centralizado en `permit-alerts.ts` (`toZonedWallClock`, `nowInTimeZone`, `getZonedDayStartUTC`) y ambos crons lo usan, para que no haya dos implementaciones que puedan divergir. También se corrigió la fecha mostrada de cada hallazgo en la tabla del correo, que tenía el mismo defecto.
+
+**Queda un hueco conocido**, que no es de zona horaria sino de horario: el cron corre a las 00:00 UTC = **19:00 Colombia**, así que los hallazgos de 19:00 a medianoche siguen sin entrar en ningún resumen. Se cierra cambiando el cron a `0 5 * * *` (medianoche Colombia, resumiendo el día completo), pero eso mueve la hora de llegada del correo a los admins y es una decisión del cliente.
+
+#### 19.9 Manejo de fechas sin zona
+
+`validFrom` / `validUntil` se guardan como cadenas `datetime-local` (`"yyyy-MM-ddTHH:mm"`) en hora local de Colombia, **sin zona horaria**. Todas las comparaciones se hacen contra un "ahora" expresado también como hora de pared de Bogotá (`nowInTimeZone()`), nunca convirtiendo a UTC. Esto evita que el servidor (UTC en Vercel) desplace los cálculos de día.
+
+#### 19.10 Archivos
+
+**Nuevos:**
+- `src/lib/permit-alerts.ts` — motor de reglas puro + helpers de zona horaria
+- `src/lib/permit-alert-recipients.ts` — resolución de destinatarios desde un directorio cargado una sola vez
+- `src/lib/permit-alert-email.ts` — plantilla del correo digest
+- `src/app/api/cron/permit-alerts/route.ts` — el barrido (protegido con `CRON_SECRET`, soporta `?dryRun=1`)
+
+**Modificados:**
+- `src/app/api/cron/hallazgos-daily-summary/route.ts` — zona horaria a Bogotá (19.8)
+- `src/types/index.ts` — `Notification['type']` suma `'reminder' | 'overdue'`; `Permit` suma `alertas?`
+- `src/components/AlertsBell.tsx` — iconos para los dos tipos nuevos
+- `vercel.json` — nuevo cron `0 11 * * *` (06:00 Colombia)
+
+#### 19.11 Verificación
+
+- **Suite de comportamiento** (25 comprobaciones): ventanas de cortesía, último día vs. vencido, escalamiento, estados no vigilados, datos corruptos, claves válidas para Firestore.
+- **Suite de atribución** (22 comprobaciones): cada reclamo con **un solo destinatario**, no se molesta a quien ya firmó, un coordinador de alturas de otra planta no recibe nada, los bloqueos de cierre no se reclaman mientras el permiso sigue vigente.
+- **Simulación masiva**: 140 permisos × 30 días × 6 corridas = **25.200 evaluaciones**, con 7 perfiles de comportamiento, 4 plantas, 3 empresas y duraciones de 1 a 7 días. Idempotencia confirmada (re-ejecutar produce **0 duplicados**), tope de 15 avisos de vencimiento respetado, tope de campanita respetado.
+- **Redacción del retraso**: 8 casos límite, incluido el salto exacto a las 24 h.
+- **Correos reales**: 7 enviados vía Resend a una cuenta de prueba y **confirmados como `delivered`** consultando la API — 3 escenarios (recordatorio, vencido, digest multi-permiso), 3 por rol desde un mismo permiso, y 1 con la corrección del retraso. Dominio `sistedigital.net` verificado.
+- `tsc --noEmit` sin errores nuevos y build de producción correcto con ambos crons registrados.
+
+**No probado en vivo:** el canal push (requiere una suscripción real de navegador) y la escritura de notificaciones in-app en Firestore. Ambos se validan al desplegar con `?dryRun=1` y luego una corrida real.
+
+#### 19.12 Al desplegar
+
+1. **Confirmar `CRON_SECRET` en las variables de Vercel.** Si la variable no existe, el endpoint queda **sin autenticación** — se mantuvo el mismo patrón del cron de hallazgos por consistencia.
+2. **Lanzar `GET /api/cron/permit-alerts?dryRun=1` primero.** Calcula y reporta sin escribir ni enviar nada. La primera corrida real destapará los permisos que ya arrastran pendientes, incluidos los que llevan tiempo esperando firma de aprobación.
+3. **Frecuencia:** quedó en `0 11 * * *` (06:00 Colombia). En plan Hobby de Vercel ese es el techo (máximo 2 crons, solo frecuencia diaria) y ya van 2. Con plan Pro se puede pasar a `0 * * * *`, con lo que `jornada_por_terminar` empieza a ser realmente útil; con cron diario ese aviso rara vez cae dentro de su ventana y su función la cubre `ultimo_dia`.
 
 ---
 
@@ -3149,7 +3283,12 @@ src/
 │   │   └── settings/      → Configuración del usuario y WhatsApp
 │   ├── public/            → Rutas públicas (sin auth)
 │   │   └── hallazgo/[id]/ → Vista pública de hallazgo
-│   └── api/push/          → API route para suscripciones push
+│   └── api/
+│       ├── push/          → API route para suscripciones push
+│       ├── export/        → Generación de Excel (plantilla y reportes)
+│       └── cron/          → Tareas programadas (ver vercel.json)
+│           ├── hallazgos-daily-summary/  → Resumen diario a admins (00:00 UTC)
+│           └── permit-alerts/            → Alertas tempranas de permisos (11:00 UTC)
 ├── components/
 │   ├── ui/               → shadcn/ui components
 │   ├── logo.tsx
@@ -3173,6 +3312,11 @@ src/
 │   ├── push-notifications.ts → Web Push con VAPID
 │   ├── email.ts           → Templates y envío con Resend
 │   ├── notifications.ts   → Sistema de notificaciones unificado
+│   ├── permit-alerts.ts   → Motor de reglas de alertas tempranas (puro) + zona horaria
+│   ├── permit-alert-recipients.ts → Destinatarios de cada alerta según rol y alcance
+│   ├── permit-alert-email.ts      → Plantilla del correo digest de alertas
+│   ├── permit-closure-rules.ts    → Reglas que bloquean el cierre (trabajo en caliente)
+│   ├── permit-status.ts   → Agrupamiento unificado de estados (dashboard y módulo)
 │   ├── offline-permits.ts → Gestión de permisos offline
 │   └── offline-queue.ts   → Cola de sincronización offline
 ├── types/
@@ -3212,17 +3356,34 @@ FIREBASE_PRIVATE_KEY          # Formato: "-----BEGIN PRIVATE KEY-----\n...\n----
 
 # Resend (email)
 RESEND_API_KEY
-RESEND_FROM_EMAIL
+FROM_EMAIL                    # Remitente. OJO: el código lee FROM_EMAIL, no RESEND_FROM_EMAIL
 
 # Twilio (WhatsApp)
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
 TWILIO_WHATSAPP_FROM
+WHATSAPP_TO                   # Destinatario único de los avisos de WhatsApp
 
 # Web Push (VAPID)
 NEXT_PUBLIC_VAPID_PUBLIC_KEY
 VAPID_PRIVATE_KEY
+VAPID_SUBJECT                 # mailto:... — por defecto mailto:nixus@sistedigital.net
+
+# Aplicación
+NEXT_PUBLIC_BASE_URL          # URL pública; se usa en los enlaces de correos y push
+
+# Tareas programadas (Vercel Cron)
+CRON_SECRET                   # Sin esta variable los endpoints /api/cron/* quedan SIN autenticación
 ```
+
+**Crons registrados en `vercel.json`:**
+
+| Ruta | Horario (UTC) | Hora Colombia | Qué hace |
+|---|---|---|---|
+| `/api/cron/hallazgos-daily-summary` | `0 0 * * *` | 19:00 | Resumen diario de hallazgos a administradores |
+| `/api/cron/permit-alerts` | `0 11 * * *` | 06:00 | Alertas tempranas de permisos (Sesión 19) |
+
+> Plan Hobby de Vercel: máximo 2 crons y solo frecuencia diaria. Ya están los 2.
 
 ---
 
@@ -3281,7 +3442,13 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 17/18 — verificación visual pendiente:** abrir en Excel de escritorio la plantilla de importación y los reportes de Hallazgos y Permisos, para confirmar el render y que los desplegables se comporten como se espera. El aviso de reparación reportado por el cliente se corrigió (ver 17.5); falta confirmar que ya no aparece
 - [ ] **Sesión 17 — regla para futuros .xlsx:** antes de dar por bueno un libro generado con ExcelJS, descomprimirlo y verificar que las partes XML estén bien formadas y sin los patrones que disparan la reparación de Excel. Releer el archivo con ExcelJS **no** detecta estos defectos: ExcelJS relee sin quejarse su propio XML inválido
 - [ ] **Sesión 17 — mejora futura:** ExcelJS no genera gráficos nativos de Excel. El dashboard usa KPIs, tablas, barras de bloques y barras de datos condicionales. Si se requieren gráficos de torta/línea reales habría que insertarlos como imagen generada en servidor o migrar esa hoja a una plantilla `.xlsx` base con gráficos preexistentes
+- [ ] **Sesión 19 — verificar al desplegar:** confirmar que `CRON_SECRET` existe en las variables de Vercel. Sin ella los endpoints `/api/cron/*` quedan sin autenticación
+- [ ] **Sesión 19 — primera corrida:** lanzar `GET /api/cron/permit-alerts?dryRun=1` antes de la corrida real, para medir cuántas alertas acumuladas saldrían. Los permisos que llevan tiempo esperando firma de aprobación se destaparán todos juntos
+- [ ] **Sesión 19 — pendiente de validar en vivo:** el canal Web Push y la escritura de notificaciones in-app en Firestore no se probaron de extremo a extremo (el correo sí, con entrega confirmada por Resend)
+- [ ] **Sesión 19 — decisión del cliente:** pasar el cron de alertas a frecuencia horaria (`0 * * * *`) requiere plan Pro de Vercel, y solo entonces `jornada_por_terminar` cae dentro de su ventana. Con cron diario esa función la cubre `ultimo_dia`
+- [ ] **Sesión 19 — decisión del cliente:** los hallazgos creados entre las 19:00 y la medianoche no entran en ningún resumen diario, porque el cron corre a las 19:00 Colombia. Se cierra moviéndolo a `0 5 * * *` (medianoche local, resumiendo el día completo), pero cambia la hora de llegada del correo a los admins
+- [ ] **Sesión 19 — política a confirmar:** hoy el Líder SST recibe también los reclamos de firmas diarias de toda su planta. Si resulta ruidoso, basta con retirar `'lider_sst'` de las audiencias de `firma_apertura_pendiente` y `firma_cierre_diario_pendiente` en `permit-alerts.ts`; seguiría recibiendo el escalamiento de vencidos a partir del día 3
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-08-04. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-08-06. Mantener actualizado con cada sesión de desarrollo.*
