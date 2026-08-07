@@ -28,9 +28,12 @@ PROJECT="${PROJECT:-studio-7636781267-6dc02}"
 REGION="${REGION:-us-central1}"
 TIMEZONE="America/Bogota"
 
-# URL pública del backend. Debe ser la de PRODUCCIÓN, no la de preview:
-# es la que arma los enlaces de los correos y de las notificaciones push.
-BASE_URL="${BASE_URL:-https://sistedigital.net}"
+# URL pública del backend de App Hosting. Debe coincidir con la variable
+# NEXT_PUBLIC_BASE_URL del entorno, que es la que arma los enlaces de los
+# correos y de las notificaciones push.
+# (El dominio sistedigital.net se usa como remitente de correo, no como host
+#  de la aplicación.)
+BASE_URL="${BASE_URL:-https://studio--studio-7636781267-6dc02.us-central1.hosted.app}"
 
 # Debe coincidir EXACTAMENTE con la variable CRON_SECRET del backend.
 # No la escriba aquí: expórtela antes de ejecutar.
