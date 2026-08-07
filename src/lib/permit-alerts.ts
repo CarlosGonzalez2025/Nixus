@@ -356,6 +356,18 @@ export function evaluatePermitAlerts(permit: Permit, now: Date): PermitAlert[] {
   // Borradores, cerrados, cancelados y rechazados no generan alertas.
   if (!esEstadoActivo(permit.status)) return alerts;
 
+  // ── Ventana de relevancia ───────────────────────────────────────────────────
+  // Un permiso que venció hace mucho ya no es accionable con un recordatorio
+  // diario: reclamar "la firma del día 3" de un trabajo de hace tres meses no
+  // provoca una acción, solo ruido que hace que se ignoren los avisos útiles.
+  //
+  // Medido contra producción antes de poner este tope: de 1.463 permisos
+  // vigilados, 1.301 ya habían vencido —el más antiguo hacía 253 días— y el
+  // motor generaba 4.944 alertas, algunas con fecha de noviembre de 2025.
+  // El represamiento histórico es un problema real, pero se atiende con un
+  // reporte, no goteando recordatorios diarios a 219 personas.
+  if (diasVencido > MAX_DIAS_ALERTA_VENCIDO) return alerts;
+
   // ── Regla 1 · Último día de vigencia ────────────────────────────────────────
   // Se dispara una sola vez el día en que vence el permiso, sin importar la hora,
   // de modo que funciona igual con cron diario o horario.
@@ -512,7 +524,11 @@ export function evaluatePermitAlerts(permit: Permit, now: Date): PermitAlert[] {
               `Permiso ${numero} · Anexo ${anexo.label}: no se ha registrado la firma de ` +
               `apertura del responsable para el día ${dia} (${fechaCorta(inicioDia)}).`,
             severity: 'warning',
-            audiences: ['responsable', 'lider_sst'],
+            // Sin el Líder SST a propósito: es una acción del responsable, y
+            // difundirla a la supervisión de toda la planta genera mucho ruido
+            // sin habilitar ninguna acción. El SST sigue recibiendo el
+            // escalamiento de permisos vencidos a partir del día 3.
+            audiences: ['responsable'],
             dia,
             anexoLabel: anexo.label,
           });
@@ -546,7 +562,7 @@ export function evaluatePermitAlerts(permit: Permit, now: Date): PermitAlert[] {
               `Permiso ${numero} · Anexo ${anexo.label}: el día ${dia} ` +
               `(${fechaCorta(inicioDia)}) quedó abierto sin la firma de cierre del responsable.`,
             severity: 'warning',
-            audiences: ['responsable', 'lider_sst'],
+            audiences: ['responsable'],
             dia,
             anexoLabel: anexo.label,
           });

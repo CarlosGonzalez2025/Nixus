@@ -24,6 +24,10 @@
 //
 // Uso manual / pruebas:
 //   GET /api/cron/permit-alerts?dryRun=1   → calcula y reporta SIN enviar ni escribir.
+//   GET /api/cron/permit-alerts?seed=1     → arranque en limpio: marca todo lo
+//                                            pendiente como ya notificado SIN
+//                                            enviar nada. Se ejecuta UNA vez,
+//                                            antes de registrar el cron.
 
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -128,7 +132,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Firebase Admin no disponible' }, { status: 503 });
   }
 
-  const dryRun = new URL(req.url).searchParams.get('dryRun') === '1';
+  const params = new URL(req.url).searchParams;
+  const dryRun = params.get('dryRun') === '1';
+  /**
+   * Arranque en limpio. Escribe el registro anti-duplicados de todo lo que hoy
+   * está pendiente, pero NO envía nada. Sirve para estrenar el sistema sin
+   * descargar el represamiento histórico sobre los usuarios: a partir de la
+   * siguiente corrida solo se avisa de lo que ocurra de ahí en adelante.
+   */
+  const seed = params.get('seed') === '1';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
   const now = nowInTimeZone();
 
@@ -207,6 +219,29 @@ export async function GET(req: Request) {
 
     if (dryRun) {
       return NextResponse.json({ ok: true, dryRun: true, ...resumenBase, detalle });
+    }
+
+    // ── Arranque en limpio: solo se marca el registro, sin notificar a nadie ──
+    if (seed) {
+      let marcadas = 0;
+      for (const grupo of chunk(ledger, FIRESTORE_BATCH_SIZE)) {
+        const batch = adminDb.batch();
+        for (const { ref, keys } of grupo) {
+          const marcas: Record<string, unknown> = {};
+          for (const key of keys) marcas[key] = FieldValue.serverTimestamp();
+          batch.set(ref, { alertas: marcas }, { merge: true });
+          marcadas += keys.length;
+        }
+        await batch.commit();
+      }
+      console.log(`[CronAlertas] Semilla: ${marcadas} alertas marcadas sin notificar.`);
+      return NextResponse.json({
+        ok: true,
+        seed: true,
+        ...resumenBase,
+        alertasMarcadasSinNotificar: marcadas,
+        nota: 'Registro sembrado. No se envió ninguna notificación. A partir de la próxima corrida solo se avisará de lo nuevo.',
+      });
     }
 
     // ── 3. Notificaciones in-app (una por destinatario y permiso) ────────────
