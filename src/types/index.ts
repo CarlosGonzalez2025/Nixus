@@ -503,6 +503,13 @@ export type Permit = {
   verificacionPeligros?: Partial<VerificacionPeligros>;
   eppEmergencias?: Partial<EppEmergencias>;
   solicitanteFirmaApertura?: string;
+  /**
+   * Registro de alertas tempranas ya notificadas: clave de alerta → momento de envío.
+   * Lo escribe únicamente el cron /api/cron/permit-alerts para no repetir avisos.
+   * Campo aditivo: ninguna regla de negocio, consulta ni vista depende de él.
+   * Ver src/lib/permit-alerts.ts
+   */
+  alertas?: { [alertKey: string]: Timestamp };
 }
 
 export type Notification = {
@@ -511,7 +518,9 @@ export type Notification = {
   permitId: string;
   permitNumber?: string;
   message: string;
-  type: 'creation' | 'signature' | 'status_change' | 'approval' | 'rejection' | 'cancellation';
+  // 'reminder' y 'overdue' los emite el cron de alertas tempranas (ver
+  // src/app/api/cron/permit-alerts/route.ts); el resto son reactivos a acciones de usuario.
+  type: 'creation' | 'signature' | 'status_change' | 'approval' | 'rejection' | 'cancellation' | 'reminder' | 'overdue';
   isRead: boolean;
   createdAt: Timestamp;
   triggeredBy: {

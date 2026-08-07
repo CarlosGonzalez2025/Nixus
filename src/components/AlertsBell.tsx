@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { Bell, FileSignature, Sparkles, FilePlus, CheckCircle, XCircle, Lock } from 'lucide-react';
+import { Bell, FileSignature, Sparkles, FilePlus, CheckCircle, XCircle, Lock, Clock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -34,6 +34,11 @@ const getNotificationIcon = (type: Notification['type']) => {
       return <Lock className="mr-2 h-4 w-4 text-blue-500" />;
     case 'status_change':
       return <Sparkles className="mr-2 h-4 w-4 text-green-500" />;
+    // Alertas tempranas automáticas (cron /api/cron/permit-alerts)
+    case 'reminder':
+      return <Clock className="mr-2 h-4 w-4 text-amber-500" />;
+    case 'overdue':
+      return <AlertTriangle className="mr-2 h-4 w-4 text-red-600" />;
     default:
       return <Bell className="mr-2 h-4 w-4 text-gray-500" />;
   }

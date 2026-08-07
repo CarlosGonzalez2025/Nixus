@@ -4,6 +4,7 @@ import { sendGroupEmail } from '@/lib/email';
 import { Timestamp } from 'firebase-admin/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { TIME_ZONE, getZonedDayStartUTC, nowInTimeZone, toZonedWallClock } from '@/lib/permit-alerts';
 import type { Hallazgo } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -30,36 +31,23 @@ const safeDate = (v: any): Date | null => {
 
 const fmtDate = (v: any) => {
   const d = safeDate(v);
-  return d ? format(d, "dd 'de' MMMM 'de' yyyy", { locale: es }) : '—';
+  // Se formatea en hora de Colombia: el servidor corre en UTC y, sin esta
+  // conversión, un registro de las 8 p.m. locales aparecía con la fecha del día siguiente.
+  return d ? format(toZonedWallClock(d, TIME_ZONE), "dd 'de' MMMM 'de' yyyy", { locale: es }) : '—';
 };
 
-/** Devuelve {start, end} en UTC que delimitan el día actual en zona America/Los_Angeles */
-function getPacificDayBoundsUTC(): { start: Date; end: Date } {
+/**
+ * Devuelve {start, end} en UTC que delimitan el día actual en zona America/Bogota.
+ *
+ * Antes esta ventana se calculaba sobre America/Los_Angeles, lo que en Colombia
+ * arrancaba el resumen a las 02:00 a.m. locales y dejaba fuera de todo resumen
+ * los hallazgos creados entre las 00:00 y las 02:00. Al alinear a Bogotá la
+ * ventana solo se amplía hacia atrás: es un superconjunto de la anterior, así
+ * que ningún hallazgo que antes se reportaba deja de reportarse.
+ */
+function getBogotaDayBoundsUTC(): { start: Date; end: Date } {
   const now = new Date();
-
-  // Obtener la fecha (YYYY-MM-DD) tal como la ve el usuario en Pacific Time
-  const pacificDateStr = now.toLocaleDateString('en-CA', {
-    timeZone: 'America/Los_Angeles',
-  });
-
-  const [year, month, day] = pacificDateStr.split('-').map(Number);
-
-  // PDT = UTC-7 → medianoche Pacific = 07:00 UTC
-  // PST = UTC-8 → medianoche Pacific = 08:00 UTC
-  // Probamos PDT primero y verificamos con Intl
-  let startUTC = new Date(Date.UTC(year, month - 1, day, 7, 0, 0, 0));
-  const hourCheck = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles',
-    hour: '2-digit',
-    hour12: false,
-  }).format(startUTC);
-
-  if (hourCheck !== '00') {
-    // Estamos en PST (UTC-8)
-    startUTC = new Date(Date.UTC(year, month - 1, day, 8, 0, 0, 0));
-  }
-
-  return { start: startUTC, end: now };
+  return { start: getZonedDayStartUTC(now, TIME_ZONE), end: now };
 }
 
 function buildSummaryEmailHtml(
@@ -207,7 +195,7 @@ function buildSummaryEmailHtml(
           <tr>
             <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;">
               <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
-                Este resumen fue generado automáticamente a las 5:00 PM (hora del Pacífico) por el Sistema de Gestión SST.<br/>
+                Este resumen fue generado automáticamente a las 7:00 PM (hora de Colombia) por el Sistema de Gestión SST.<br/>
                 Solo los administradores reciben este correo de resumen. Por favor no responda a este mensaje.
               </p>
             </td>
@@ -241,7 +229,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const { start, end } = getPacificDayBoundsUTC();
+    const { start, end } = getBogotaDayBoundsUTC();
 
     // Obtener hallazgos creados durante el día actual (hora Pacífico)
     const hallazgosSnap = await adminDb
@@ -281,7 +269,8 @@ export async function GET(req: Request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sgtc-movil.web.app';
-    const dateLabel = format(end, "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+    // La etiqueta debe reflejar el día en Colombia, no el del servidor (UTC).
+    const dateLabel = format(nowInTimeZone(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
     const html = buildSummaryEmailHtml(hallazgos, dateLabel, baseUrl);
     const subject = `📋 Resumen de hallazgos del ${dateLabel} — ${hallazgos.length} registrado${hallazgos.length !== 1 ? 's' : ''}`;
 
