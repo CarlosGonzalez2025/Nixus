@@ -44,3 +44,7 @@ dev-server*.log
 dev-server*.err.log
 localhost-*.log
 localhost-*.err.log
+
+# Capturas de scripts/ui-preview.mjs
+.ui-preview/
+.env.preview
