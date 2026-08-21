@@ -30,7 +30,6 @@ const CLASE_STYLES: Record<string, { label: string; badge: string }> = {
 const ESTADO_STYLES: Record<string, string> = {
   Pendiente: 'bg-amber-100 text-amber-800',
   'En Progreso': 'bg-blue-100 text-blue-800',
-  Completado: 'bg-emerald-100 text-emerald-800',
   Cerrado: 'bg-gray-200 text-gray-800',
 };
 
@@ -62,7 +61,7 @@ export default async function PublicHallazgoPage(
   const clase = CLASE_STYLES[claseKey] ?? CLASE_STYLES['C'];
   const estado = h.cumplimientoEstado || h.estado || 'Pendiente';
   const estadoBadge = ESTADO_STYLES[estado] ?? ESTADO_STYLES['Pendiente'];
-  const isClosed = estado === 'Completado' || estado === 'Cerrado';
+  const isClosed = estado === 'Cerrado' || estado === 'Completado'; // 'Completado' = valor heredado
 
   // Seguimientos del plan de acción (varios por hallazgo)
   const seguimientos: any[] = Array.isArray(h.seguimientos)

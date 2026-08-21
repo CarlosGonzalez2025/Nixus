@@ -10,6 +10,7 @@ import type { TareaPlanTrabajo } from '@/types/work-plan';
 import {
   PHVA_OPTIONS, PHVA_CONFIG, RESOURCE_OPTIONS, RESOURCE_CONFIG,
   FREQUENCY_OPTIONS, TASK_STATUS_OPTIONS, TASK_STATUS_CONFIG,
+  HAZARD_OPTIONS, HAZARD_TRANSVERSAL,
 } from './constants';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -28,6 +29,9 @@ import { Loader2 } from 'lucide-react';
 const schema = z.object({
   activity: z.string().min(1, 'La actividad es obligatoria'),
   phva: z.enum(['Planear', 'Hacer', 'Verificar', 'Actuar']),
+  // Texto libre validado contra el catálogo: permite conservar valores heredados de
+  // importaciones antiguas sin romper el formulario en modo edición.
+  hazard: z.string().min(1, 'El peligro es obligatorio'),
   resourceType: z.enum(['Financiero', 'Administrativo', 'Tecnico', 'Humano']),
   responsibleName: z.string().min(1, 'El responsable es obligatorio'),
   responsibleRole: z.string().optional().default(''),
@@ -51,7 +55,7 @@ export function TaskForm({ open, onOpenChange, planId, task }: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      activity: '', phva: 'Planear', resourceType: 'Administrativo',
+      activity: '', phva: 'Planear', hazard: HAZARD_TRANSVERSAL, resourceType: 'Administrativo',
       responsibleName: '', responsibleRole: '', frequency: 'Mensual', status: 'Pendiente',
     },
   });
@@ -62,6 +66,7 @@ export function TaskForm({ open, onOpenChange, planId, task }: Props) {
       form.reset({
         activity: task.activity ?? '',
         phva: task.phva ?? 'Planear',
+        hazard: task.hazard?.trim() || HAZARD_TRANSVERSAL,
         resourceType: task.resourceType ?? 'Administrativo',
         responsibleName: task.responsibleName ?? '',
         responsibleRole: task.responsibleRole ?? '',
@@ -108,6 +113,26 @@ export function TaskForm({ open, onOpenChange, planId, task }: Props) {
               <FormItem>
                 <FormLabel>Actividad</FormLabel>
                 <FormControl><Textarea rows={2} placeholder="Descripción de la actividad…" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="hazard" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Peligro / programa</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Seleccione el peligro" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {/* Un valor heredado fuera del catálogo se conserva como opción
+                        para que editar la actividad no lo borre en silencio. */}
+                    {(HAZARD_OPTIONS.includes(field.value) ? HAZARD_OPTIONS : [field.value, ...HAZARD_OPTIONS])
+                      .map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Permite medir el % de cumplimiento del plan por peligro y compararlo con los hallazgos.
+                  Use «{HAZARD_TRANSVERSAL}» para actividades que no pertenecen a un programa específico.
+                </p>
                 <FormMessage />
               </FormItem>
             )} />

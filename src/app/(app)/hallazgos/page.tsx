@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, onSnapshot, query, orderBy, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUser } from '@/hooks/use-user';
@@ -25,9 +25,14 @@ import {
 import {
     PlusCircle, Search, Loader2, FileX,
     AlertTriangle, Timer, Shield, Hash,
-    Filter, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Download, Upload,
+    Filter, Trash2, ArrowUp, ArrowDown, ArrowUpDown, Download, Upload, ShieldAlert, Users,
 } from 'lucide-react';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import {
+    ESTADO_META, estadoDe, catalogoPeligrosDe, parsePeligros, PELIGRO_SIN_CLASIFICAR,
+    catalogoPersonalDe, parsePersonalExpuesto, personalExpuestoDe,
+    PERSONAL_SIN_ESPECIFICAR, colorDePersonal,
+} from '@/lib/hallazgos-analytics';
 
 // ─── Config visual ─────────────────────────────────────────────────────────────
 const CLASE_CONFIG = {
@@ -36,12 +41,9 @@ const CLASE_CONFIG = {
     C: { label: 'Clase C', color: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500', icon: Shield },
 };
 
-const ESTADO_CONFIG: Record<HallazgoEstado, { label: string; color: string }> = {
-    Pendiente:    { label: 'Pendiente',    color: 'bg-yellow-100 text-yellow-800' },
-    'En Progreso':{ label: 'En Progreso',  color: 'bg-purple-100 text-purple-800' },
-    Completado:   { label: 'Completado',   color: 'bg-green-100 text-green-800'  },
-    Cerrado:      { label: 'Cerrado',      color: 'bg-blue-100 text-blue-800'    },
-};
+// Config de estados centralizada en lib/hallazgos-analytics para que la lista, el
+// dashboard y los reportes usen las mismas etiquetas, colores y definiciones.
+const ESTADO_CONFIG = ESTADO_META;
 
 const INTERVENCION_COLOR: Record<string, string> = {
     Inmediata: 'bg-red-100 text-red-800',
@@ -56,15 +58,61 @@ const parseDate = (v: any): Date | null => {
     return null;
 };
 
-type TabEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado' | 'todos';
+/**
+ * Peligros inspeccionados del hallazgo. Es multi-selección, así que se muestran
+ * los dos primeros y el resto se resume en «+N» (con el detalle en el title).
+ */
+function PeligroBadges({ value, max = 2 }: { value?: string; max?: number }) {
+    const peligros = parsePeligros(value);
+    if (peligros.length === 0) {
+        return <span className="text-xs text-muted-foreground">—</span>;
+    }
+    const visibles = peligros.slice(0, max);
+    const resto = peligros.length - visibles.length;
+    return (
+        <div className="flex flex-wrap gap-1" title={peligros.join(' · ')}>
+            {visibles.map(p => (
+                <Badge key={p} variant="outline"
+                    className="text-[10px] font-medium border-emerald-200 bg-emerald-50 text-emerald-700 whitespace-nowrap">
+                    {p}
+                </Badge>
+            ))}
+            {resto > 0 && (
+                <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground">
+                    +{resto}
+                </Badge>
+            )}
+        </div>
+    );
+}
+
+/** Personal expuesto del hallazgo (Propio / Contratistas). También es multi-selección. */
+function PersonalBadges({ value }: { value?: string }) {
+    const personal = parsePersonalExpuesto(value);
+    if (personal.length === 0) {
+        return <span className="text-xs text-muted-foreground">—</span>;
+    }
+    return (
+        <div className="flex flex-wrap gap-1" title={personal.join(' · ')}>
+            {personal.map(v => (
+                <Badge key={v} variant="outline" className="text-[10px] font-medium whitespace-nowrap"
+                    style={{ borderColor: `${colorDePersonal(v)}55`, color: colorDePersonal(v), backgroundColor: `${colorDePersonal(v)}12` }}>
+                    {v}
+                </Badge>
+            ))}
+        </div>
+    );
+}
+
+type TabEstado = HallazgoEstado | 'todos';
 type SortDir = 'asc' | 'desc';
 
-const tabEstados: { key: TabEstado; label: string }[] = [
-    { key: 'Pendiente',    label: 'Pendientes'   },
-    { key: 'En Progreso',  label: 'En Progreso'  },
-    { key: 'Completado',   label: 'Completados'  },
-    { key: 'Cerrado',      label: 'Cerrados'     },
-    { key: 'todos',        label: 'Todos'        },
+// `help` se expone como tooltip nativo y como leyenda bajo las pestañas.
+const tabEstados: { key: TabEstado; label: string; help: string }[] = [
+    { key: 'Pendiente',    label: 'Pendientes',  help: ESTADO_META['Pendiente'].help   },
+    { key: 'En Progreso',  label: 'En Progreso', help: ESTADO_META['En Progreso'].help },
+    { key: 'Cerrado',      label: 'Cerrados',    help: ESTADO_META['Cerrado'].help     },
+    { key: 'todos',        label: 'Todos',       help: 'Todos los hallazgos, sin filtrar por estado.' },
 ];
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -77,6 +125,8 @@ export default function HallazgosPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filterClase, setFilterClase] = useState<string>('all');
+    const [filterPeligro, setFilterPeligro] = useState<string>('all');
+    const [filterPersonal, setFilterPersonal] = useState<string>('all');
     const [activeTab, setActiveTab] = useState<TabEstado>('Pendiente');
 
     // DataTable state
@@ -89,7 +139,7 @@ export default function HallazgosPage() {
     // Reset page on filter/tab change
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeTab, filterClase, search]);
+    }, [activeTab, filterClase, filterPeligro, filterPersonal, search]);
 
     // ── Firestore ─────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -122,45 +172,84 @@ export default function HallazgosPage() {
         return () => unsub();
     }, [user, toast]);
 
-    // ── Filter ────────────────────────────────────────────────────────────────
-    const filtered = useMemo(() => {
-        return hallazgos.filter(h => {
-            const estado = h.cumplimientoEstado || 'Pendiente';
-            const matchTab = activeTab === 'todos' || estado === activeTab;
-            const matchClase = filterClase === 'all' || h.clase === filterClase;
+    // ── Catálogo de peligros presente en los datos ────────────────────────────
+    // Catálogo oficial + los "Otros" que se hayan escrito a mano, más la opción
+    // «Sin clasificar» solo si existen hallazgos sin peligro registrado.
+    const peligroOptions = useMemo(() => {
+        const base = catalogoPeligrosDe(hallazgos);
+        const haySinClasificar = hallazgos.some(h => parsePeligros(h.peligroInspeccionado).length === 0);
+        return haySinClasificar ? [...base, PELIGRO_SIN_CLASIFICAR] : base;
+    }, [hallazgos]);
 
-            let matchEmpresaPlanta = true;
-            if (user?.role === 'lider_regional') {
-                matchEmpresaPlanta = isInLiderRegionalScope(user, {
-                    empresa: h.empresa,
-                    planta: h.planta,
-                    ciudad: h.ciudad,
-                });
-            } else if (user?.role === 'asesor_arl') {
-                matchEmpresaPlanta = h.createdBy === user.uid;
-            } else if (user?.role === 'lider_sst') {
-                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
-                const matchPlanta  = !user.planta  || h.planta?.toLowerCase() === user.planta.toLowerCase();
-                matchEmpresaPlanta = matchEmpresa && matchPlanta;
-            } else if (user?.role === 'autorizante') {
-                const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
-                const matchPlanta  = !user.planta  || !h.planta   || h.planta.toLowerCase() === user.planta.toLowerCase();
-                matchEmpresaPlanta = matchEmpresa && matchPlanta;
-            }
+    const personalOptions = useMemo(() => catalogoPersonalDe(hallazgos), [hallazgos]);
 
-            const s = search.toLowerCase();
-            const matchSearch = !s ||
-                h.hallazgo?.toLowerCase().includes(s) ||
-                h.empresa?.toLowerCase().includes(s) ||
-                h.planta?.toLowerCase().includes(s) ||
-                h.frenteTrabajo?.toLowerCase().includes(s) ||
-                h.area?.toLowerCase().includes(s) ||
-                h.reportadoPorNombre?.toLowerCase().includes(s) ||
-                String(h.numero).includes(s);
+    // ── Filtros ───────────────────────────────────────────────────────────────
+    //
+    // Todo lo que NO depende de la pestaña de estado vive aquí, para que la vista
+    // y la exportación no puedan divergir: la pestaña filtra por estado, la
+    // exportación se lleva todos los estados, y ambas comparten estos criterios.
+    const matchesFilters = useCallback((h: Hallazgo) => {
+        if (filterClase !== 'all' && h.clase !== filterClase) return false;
 
-            return matchTab && matchClase && matchEmpresaPlanta && matchSearch;
-        });
-    }, [hallazgos, activeTab, filterClase, search, user]);
+        if (filterPeligro !== 'all') {
+            const peligros = parsePeligros(h.peligroInspeccionado);
+            const ok = filterPeligro === PELIGRO_SIN_CLASIFICAR
+                ? peligros.length === 0
+                : peligros.includes(filterPeligro);
+            if (!ok) return false;
+        }
+
+        // personalExpuestoDe() ya devuelve «Sin especificar» cuando está vacío,
+        // así que la opción del selector funciona como cualquier otra.
+        if (filterPersonal !== 'all' && !personalExpuestoDe(h).includes(filterPersonal)) return false;
+
+        if (user?.role === 'lider_regional') {
+            if (!isInLiderRegionalScope(user, { empresa: h.empresa, planta: h.planta, ciudad: h.ciudad })) return false;
+        } else if (user?.role === 'asesor_arl') {
+            if (h.createdBy !== user.uid) return false;
+        } else if (user?.role === 'lider_sst') {
+            const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta  = !user.planta  || h.planta?.toLowerCase() === user.planta.toLowerCase();
+            if (!matchEmpresa || !matchPlanta) return false;
+        } else if (user?.role === 'autorizante') {
+            const matchEmpresa = !user.empresa || !h.empresaId || h.empresaId.toLowerCase() === user.empresa.toLowerCase();
+            const matchPlanta  = !user.planta  || !h.planta   || h.planta.toLowerCase() === user.planta.toLowerCase();
+            if (!matchEmpresa || !matchPlanta) return false;
+        }
+
+        const s = search.toLowerCase();
+        if (!s) return true;
+        return Boolean(
+            h.hallazgo?.toLowerCase().includes(s) ||
+            h.empresa?.toLowerCase().includes(s) ||
+            h.planta?.toLowerCase().includes(s) ||
+            h.frenteTrabajo?.toLowerCase().includes(s) ||
+            h.area?.toLowerCase().includes(s) ||
+            h.reportadoPorNombre?.toLowerCase().includes(s) ||
+            h.peligroInspeccionado?.toLowerCase().includes(s) ||
+            h.personalExpuesto?.toLowerCase().includes(s) ||
+            String(h.numero).includes(s),
+        );
+    }, [user, search, filterClase, filterPeligro, filterPersonal]);
+
+    /** Lo que se ve en pantalla: los filtros de arriba MÁS la pestaña de estado. */
+    const filtered = useMemo(
+        () => hallazgos.filter(h => (activeTab === 'todos' || estadoDe(h) === activeTab) && matchesFilters(h)),
+        [hallazgos, activeTab, matchesFilters],
+    );
+
+    /**
+     * Universo de la exportación: TODOS los estados en un solo archivo.
+     * Se ignora la pestaña activa (es navegación, no un filtro del usuario) pero se
+     * respetan los filtros explícitos de clase, peligro, personal y búsqueda — y,
+     * por venir de `hallazgos`, el alcance por rol.
+     * Se ordena por número descendente para que el archivo sea determinista, sin
+     * depender del ordenamiento de columnas de la pantalla.
+     */
+    const exportHallazgos = useMemo(
+        () => hallazgos.filter(matchesFilters).sort((a, b) => (b.numero ?? 0) - (a.numero ?? 0)),
+        [hallazgos, matchesFilters],
+    );
 
     // ── Sort ──────────────────────────────────────────────────────────────────
     const sorted = useMemo(() => {
@@ -176,6 +265,14 @@ export default function HallazgosPage() {
                     break;
                 case 'clase':
                     result = (a.clase || '').localeCompare(b.clase || '');
+                    break;
+                case 'peligro':
+                    result = parsePeligros(a.peligroInspeccionado).join(', ')
+                        .localeCompare(parsePeligros(b.peligroInspeccionado).join(', '));
+                    break;
+                case 'personal':
+                    result = personalExpuestoDe(a).join(', ')
+                        .localeCompare(personalExpuestoDe(b).join(', '));
                     break;
                 case 'empresa':
                     result = (a.empresa || a.frenteTrabajo || '').localeCompare(b.empresa || b.frenteTrabajo || '');
@@ -233,17 +330,18 @@ export default function HallazgosPage() {
 
     // ── Excel export ──────────────────────────────────────────────────────────
     const handleExportExcel = async () => {
-        if (sorted.length === 0) {
+        // Exporta TODOS los estados, no solo la pestaña visible (ver `exportHallazgos`).
+        if (exportHallazgos.length === 0) {
             toast({ variant: 'destructive', title: 'Sin datos', description: 'No hay hallazgos para exportar.' });
             return;
         }
 
         setExporting(true);
         try {
-            // Se envía lo que el usuario ve (ya filtrado y ordenado). Las firmas se
-            // omiten: son data URLs en base64 que inflarían el payload sin aportar
-            // al reporte, basta con saber si existen.
-            const rows = sorted.map(h => ({
+            // Se envía todo el alcance del usuario, sin importar la pestaña activa.
+            // Las firmas se omiten: son data URLs en base64 que inflarían el payload
+            // sin aportar al reporte, basta con saber si existen.
+            const rows = exportHallazgos.map(h => ({
                 numero: h.numero,
                 empresa: h.empresa || h.frenteTrabajo || '',
                 planta: h.planta || '',
@@ -262,7 +360,9 @@ export default function HallazgosPage() {
                 observacion: h.observacion || '',
                 clase: h.clase,
                 intervencion: h.intervencion,
-                cumplimientoEstado: h.cumplimientoEstado,
+                // Normalizado: el reporte agrupa por los tres estados vigentes, así un
+                // valor heredado no queda fuera de la distribución por estado.
+                cumplimientoEstado: estadoDe(h),
                 porcentajeCumplimiento: h.porcentajeCumplimiento,
                 porcentajeCumplimientoTotal: h.porcentajeCumplimientoTotal,
                 reportadoPorNombre: h.reportadoPorNombre || '',
@@ -283,8 +383,10 @@ export default function HallazgosPage() {
             }));
 
             const filtros: string[] = [
-                `Pestaña: ${activeTab === 'todos' ? 'Todos' : activeTab}`,
+                'Estados: todos (Pendiente, En Progreso y Cerrado)',
                 ...(filterClase !== 'all' ? [`Clase: ${filterClase}`] : []),
+                ...(filterPeligro !== 'all' ? [`Peligro: ${filterPeligro}`] : []),
+                ...(filterPersonal !== 'all' ? [`Personal expuesto: ${filterPersonal}`] : []),
                 ...(search.trim() ? [`Búsqueda: "${search.trim()}"`] : []),
             ];
 
@@ -314,7 +416,7 @@ export default function HallazgosPage() {
 
             toast({
                 title: '✅ Reporte generado',
-                description: `${sorted.length} hallazgos con resumen ejecutivo, seguimientos y análisis por planta.`,
+                description: `${exportHallazgos.length} hallazgo${exportHallazgos.length !== 1 ? 's' : ''} de todos los estados, con resumen ejecutivo, seguimientos y análisis por planta.`,
             });
         } catch (err) {
             console.error('Error exportando hallazgos:', err);
@@ -331,7 +433,7 @@ export default function HallazgosPage() {
     // ── Helpers ───────────────────────────────────────────────────────────────
     const countByTab = (tab: TabEstado) => {
         if (tab === 'todos') return hallazgos.length;
-        return hallazgos.filter(h => (h.cumplimientoEstado || 'Pendiente') === tab).length;
+        return hallazgos.filter(h => estadoDe(h) === tab).length;
     };
 
     const canCreate = user?.role === 'solicitante' || user?.role === 'lider_sst' ||
@@ -374,8 +476,7 @@ export default function HallazgosPage() {
                 <div className="md:hidden space-y-3">
                     {items.map(h => {
                         const claseCfg = CLASE_CONFIG[h.clase] || CLASE_CONFIG.C;
-                        const estado = (h.cumplimientoEstado || 'Pendiente') as HallazgoEstado;
-                        const estadoCfg = ESTADO_CONFIG[estado];
+                        const estadoCfg = ESTADO_CONFIG[estadoDe(h)];
                         const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
                         const pct = h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento;
 
@@ -393,7 +494,7 @@ export default function HallazgosPage() {
                                             </Badge>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge className={cn('text-xs flex-shrink-0', estadoCfg.color)}>
+                                            <Badge className={cn('text-xs flex-shrink-0', estadoCfg.badgeClass)} title={estadoCfg.help}>
                                                 {estadoCfg.label}
                                             </Badge>
                                             {user?.role === 'admin' && (
@@ -408,10 +509,12 @@ export default function HallazgosPage() {
 
                                     <p className="text-sm font-medium line-clamp-2 mb-2">{h.hallazgo}</p>
 
-                                    <div className="flex flex-wrap gap-1 mb-2">
+                                    <div className="flex flex-wrap items-center gap-1 mb-2">
                                         <Badge className={cn('text-xs', INTERVENCION_COLOR[h.intervencion] || '')}>
                                             {h.intervencion}
                                         </Badge>
+                                        <PeligroBadges value={h.peligroInspeccionado} />
+                                        <PersonalBadges value={h.personalExpuesto} />
                                     </div>
 
                                     {pct !== undefined && (
@@ -458,6 +561,18 @@ export default function HallazgosPage() {
                                 </TableHead>
                                 <TableHead
                                     className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('peligro')}
+                                >
+                                    <div className="flex items-center gap-1">Peligro <SortIcon col="peligro" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
+                                    onClick={() => handleSort('personal')}
+                                >
+                                    <div className="flex items-center gap-1 whitespace-nowrap">Personal expuesto <SortIcon col="personal" /></div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer select-none hover:bg-muted/50"
                                     onClick={() => handleSort('clase')}
                                 >
                                     <div className="flex items-center gap-1">Clase / Intervención <SortIcon col="clase" /></div>
@@ -492,8 +607,7 @@ export default function HallazgosPage() {
                         <TableBody>
                             {items.map(h => {
                                 const claseCfg = CLASE_CONFIG[h.clase] || CLASE_CONFIG.C;
-                                const estado = (h.cumplimientoEstado || 'Pendiente') as HallazgoEstado;
-                                const estadoCfg = ESTADO_CONFIG[estado];
+                                const estadoCfg = ESTADO_CONFIG[estadoDe(h)];
                                 const fecha = parseDate(h.fechaVisita || h.fechaIdentificacion);
                                 const pct = h.porcentajeCumplimientoTotal ?? h.porcentajeCumplimiento;
 
@@ -502,9 +616,15 @@ export default function HallazgosPage() {
                                         <TableCell className="font-medium text-primary">{h.numero}</TableCell>
                                         <TableCell>
                                             <p className="font-medium max-w-[260px] truncate">{h.hallazgo}</p>
-                                            <Badge className={cn('text-xs mt-1', estadoCfg.color)}>
+                                            <Badge className={cn('text-xs mt-1', estadoCfg.badgeClass)} title={estadoCfg.help}>
                                                 {estadoCfg.label}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell className="max-w-[180px]">
+                                            <PeligroBadges value={h.peligroInspeccionado} />
+                                        </TableCell>
+                                        <TableCell className="max-w-[140px]">
+                                            <PersonalBadges value={h.personalExpuesto} />
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
@@ -578,10 +698,16 @@ export default function HallazgosPage() {
                     <p className="text-muted-foreground text-sm">Registro y seguimiento de hallazgos de seguridad.</p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportExcel}
+                        disabled={exporting}
+                        title={`Descarga un solo archivo con TODOS los estados (${exportHallazgos.length} hallazgo${exportHallazgos.length !== 1 ? 's' : ''}). Respeta los filtros de clase, peligro, personal expuesto y búsqueda; ignora la pestaña seleccionada.`}
+                    >
                         {exporting
                             ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generando...</>
-                            : <><Download className="mr-2 h-4 w-4" />Exportar Excel</>
+                            : <><Download className="mr-2 h-4 w-4" />Exportar Excel (todos)</>
                         }
                     </Button>
                     {user?.role === 'admin' && (
@@ -608,7 +734,7 @@ export default function HallazgosPage() {
                             <div className="px-4 pt-4 overflow-x-auto">
                                 <TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-6 border-b rounded-none">
                                     {tabEstados.map(t => (
-                                        <TabsTrigger key={t.key} value={t.key}
+                                        <TabsTrigger key={t.key} value={t.key} title={t.help}
                                             className="whitespace-nowrap rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent shadow-none px-1 pb-2 text-xs sm:text-sm">
                                             {t.label}
                                             {countByTab(t.key) > 0 && (
@@ -619,6 +745,12 @@ export default function HallazgosPage() {
                                         </TabsTrigger>
                                     ))}
                                 </TabsList>
+                            </div>
+
+                            {/* Definición del estado activo, para que el criterio de cada
+                                pestaña quede explícito. */}
+                            <div className="px-4 pt-2 text-xs text-muted-foreground">
+                                {tabEstados.find(t => t.key === activeTab)?.help}
                             </div>
 
                             {/* Filtros */}
@@ -633,7 +765,7 @@ export default function HallazgosPage() {
                                         onChange={e => setSearch(e.target.value)}
                                     />
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                     <Select value={filterClase} onValueChange={setFilterClase}>
                                         <SelectTrigger className="w-full md:w-[180px] h-10 bg-background text-sm">
                                             <div className="flex items-center gap-2">
@@ -646,6 +778,36 @@ export default function HallazgosPage() {
                                             <SelectItem value="A">Clase A — Inmediata</SelectItem>
                                             <SelectItem value="B">Clase B — Pronta</SelectItem>
                                             <SelectItem value="C">Clase C — Posterior</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={filterPeligro} onValueChange={setFilterPeligro}>
+                                        <SelectTrigger className="w-full md:w-[210px] h-10 bg-background text-sm">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <ShieldAlert className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                <SelectValue placeholder="Peligro" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todos los peligros</SelectItem>
+                                            {peligroOptions.map(p => (
+                                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={filterPersonal} onValueChange={setFilterPersonal}>
+                                        <SelectTrigger className="w-full md:w-[190px] h-10 bg-background text-sm">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                <SelectValue placeholder="Personal" />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todo el personal</SelectItem>
+                                            {personalOptions.map(v => (
+                                                <SelectItem key={v} value={v}>{v}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

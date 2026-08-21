@@ -14,6 +14,7 @@ import {
 import { WorkPlanForm } from '../components/work-plan-form';
 import { TaskList } from '../components/task-list';
 import { ExcelImport } from '../components/excel-import';
+import { HazardCompliance } from '../components/hazard-compliance';
 import {
   PLAN_STATUS_CONFIG, parseDate, progressColor,
 } from '../components/constants';
@@ -222,6 +223,9 @@ export default function WorkPlanDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Cumplimiento por peligro */}
+      <HazardCompliance tasks={tasks} />
 
       {/* Lista de actividades + matriz */}
       <TaskList planId={plan.id} tasks={tasks} readOnly={readOnly} />

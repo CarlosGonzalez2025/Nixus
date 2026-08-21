@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { TareaPlanTrabajo, ProgresoMensual } from '@/types/work-plan';
@@ -9,10 +9,14 @@ import { TaskForm } from './task-form';
 import { MonthlyMatrix } from './monthly-matrix';
 import {
   PHVA_CONFIG, RESOURCE_CONFIG, TASK_STATUS_CONFIG, progressColor,
+  HAZARD_BADGE_CLASS, HAZARD_SIN_ASIGNAR, hazardLabel,
 } from './constants';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -21,13 +25,22 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Plus, Pencil, Trash2, Lock, ListChecks, CalendarRange,
+  Plus, Pencil, Trash2, Lock, ListChecks, CalendarRange, ShieldAlert,
 } from 'lucide-react';
 
 interface Props {
   planId: string;
   tasks: TareaPlanTrabajo[];
   readOnly: boolean;
+}
+
+function HazardBadge({ hazard }: { hazard?: string }) {
+  const label = hazardLabel(hazard);
+  return (
+    <Badge variant="outline" className={cn('text-[10px] whitespace-nowrap', HAZARD_BADGE_CLASS[label] ?? HAZARD_BADGE_CLASS[HAZARD_SIN_ASIGNAR])}>
+      {label}
+    </Badge>
+  );
 }
 
 function ProgressBar({ pct }: { pct: number }) {
@@ -46,6 +59,18 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TareaPlanTrabajo | null>(null);
   const [deleting, setDeleting] = useState<TareaPlanTrabajo | null>(null);
+  const [hazardFilter, setHazardFilter] = useState('all');
+
+  // Peligros realmente presentes en el plan (incluye valores heredados y 'Sin asignar').
+  const hazardsPresentes = useMemo(() => {
+    const set = new Set(tasks.map(t => hazardLabel(t.hazard)));
+    return Array.from(set).sort();
+  }, [tasks]);
+
+  const visibleTasks = useMemo(
+    () => (hazardFilter === 'all' ? tasks : tasks.filter(t => hazardLabel(t.hazard) === hazardFilter)),
+    [tasks, hazardFilter],
+  );
 
   const openNew = () => { setEditing(null); setFormOpen(true); };
   const openEdit = (t: TareaPlanTrabajo) => { setEditing(t); setFormOpen(true); };
@@ -78,25 +103,52 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <ListChecks className="h-5 w-5 text-nixus" />
-          Actividades <span className="text-muted-foreground font-normal">({tasks.length})</span>
+          Actividades{' '}
+          <span className="text-muted-foreground font-normal">
+            ({hazardFilter === 'all' ? tasks.length : `${visibleTasks.length} de ${tasks.length}`})
+          </span>
         </h2>
-        {readOnly ? (
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-            <Lock className="mr-1 h-3 w-3" /> Plan cerrado — solo lectura
-          </Badge>
-        ) : (
-          <Button size="sm" onClick={openNew} className="bg-nixus hover:bg-nixus/90 text-nixus-foreground">
-            <Plus className="mr-1.5 h-4 w-4" /> Nueva actividad
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {hazardsPresentes.length > 1 && (
+            <Select value={hazardFilter} onValueChange={setHazardFilter}>
+              <SelectTrigger className="h-9 w-[190px] text-sm">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Peligro" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los peligros</SelectItem>
+                {hazardsPresentes.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          {readOnly ? (
+            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+              <Lock className="mr-1 h-3 w-3" /> Plan cerrado — solo lectura
+            </Badge>
+          ) : (
+            <Button size="sm" onClick={openNew} className="bg-nixus hover:bg-nixus/90 text-nixus-foreground">
+              <Plus className="mr-1.5 h-4 w-4" /> Nueva actividad
+            </Button>
+          )}
+        </div>
       </div>
 
-      {tasks.length === 0 ? (
+      {visibleTasks.length === 0 ? (
         <Card>
           <CardContent className="py-10 flex flex-col items-center text-center gap-2 text-muted-foreground">
             <CalendarRange className="h-8 w-8" />
-            <p className="text-sm">No hay actividades en este plan todavía.</p>
-            {!readOnly && (
+            <p className="text-sm">
+              {tasks.length === 0
+                ? 'No hay actividades en este plan todavía.'
+                : `Ninguna actividad del plan corresponde al peligro «${hazardFilter}».`}
+            </p>
+            {tasks.length > 0 ? (
+              <Button variant="outline" size="sm" onClick={() => setHazardFilter('all')}>
+                Ver todos los peligros
+              </Button>
+            ) : !readOnly && (
               <Button variant="outline" size="sm" onClick={openNew}>
                 <Plus className="mr-1.5 h-4 w-4" /> Agregar la primera actividad
               </Button>
@@ -112,6 +164,7 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[200px]">Actividad</TableHead>
+                    <TableHead className="min-w-[130px]">Peligro</TableHead>
                     <TableHead className="min-w-[140px]">Responsable</TableHead>
                     <TableHead>Recurso</TableHead>
                     <TableHead>Estado</TableHead>
@@ -121,7 +174,7 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tasks.map(t => (
+                  {visibleTasks.map(t => (
                     <TableRow key={t.id}>
                       <TableCell>
                         <div className="space-y-1">
@@ -131,6 +184,7 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
                           </Badge>
                         </div>
                       </TableCell>
+                      <TableCell><HazardBadge hazard={t.hazard} /></TableCell>
                       <TableCell>
                         <p className="text-sm font-medium">{t.responsibleName || '—'}</p>
                         {t.responsibleRole && <p className="text-xs text-muted-foreground">{t.responsibleRole}</p>}
@@ -169,13 +223,14 @@ export function TaskList({ planId, tasks, readOnly }: Props) {
 
           {/* Móvil/tablet: tarjetas */}
           <div className="grid gap-3 lg:hidden">
-            {tasks.map(t => (
+            {visibleTasks.map(t => (
               <Card key={t.id}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1 min-w-0">
                       <p className="text-sm font-medium leading-snug">{t.activity}</p>
                       <div className="flex flex-wrap gap-1.5">
+                        <HazardBadge hazard={t.hazard} />
                         <Badge variant="outline" className={cn('text-[10px]', PHVA_CONFIG[t.phva]?.className)}>
                           {PHVA_CONFIG[t.phva]?.label ?? t.phva}
                         </Badge>

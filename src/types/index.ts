@@ -690,7 +690,14 @@ export interface ActionPlan {
 
 export type HallazgoClase = 'A' | 'B' | 'C';
 export type HallazgoIntervencion = 'Inmediata' | 'Pronta' | 'Posterior';
-export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado';
+/**
+ * Estado de cumplimiento del hallazgo.
+ *
+ * «Completado» se retiró (08/2026): era ambiguo frente a «Cerrado» dentro del
+ * proceso y no había registros usándolo. Cualquier valor heredado se normaliza a
+ * 'Cerrado' en `estadoDe()` (src/lib/hallazgos-analytics.ts).
+ */
+export type HallazgoEstado = 'Pendiente' | 'En Progreso' | 'Cerrado';
 export type HallazgoResponsabilidad = 'Directa' | 'Corporativa';
 export type HallazgoTipo = 'Positivo' | 'Seguimiento';
 

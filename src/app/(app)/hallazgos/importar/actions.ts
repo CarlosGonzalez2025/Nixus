@@ -7,6 +7,7 @@ import {
   HALLAZGO_PELIGRO_OPTIONS,
   HALLAZGO_PERSONAL_EXPUESTO_OPTIONS,
 } from '@/types';
+import type { HallazgoEstado } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,14 @@ function normalizeClase(raw: string): string {
   return raw.trim().replace(/^Clase\s*/i, '').toUpperCase();
 }
 
-const VALID_ESTADOS = ['Pendiente', 'En Progreso', 'Completado', 'Cerrado'] as const;
+const VALID_ESTADOS = ['Pendiente', 'En Progreso', 'Cerrado'] as const;
+/** «Completado» se retiró del proceso; se acepta como alias para no romper plantillas antiguas. */
+const ESTADO_ALIAS: Record<string, (typeof VALID_ESTADOS)[number]> = { 'Completado': 'Cerrado' };
+const normalizarEstado = (v?: string) => {
+  const raw = v?.trim();
+  if (!raw) return 'Pendiente' as const;
+  return ESTADO_ALIAS[raw] ?? raw;
+};
 const VALID_RESPONSABILIDAD = ['Directa', 'Corporativa'] as const;
 const VALID_TIPO_HALLAZGO = ['Positivo', 'Seguimiento'] as const;
 
@@ -226,7 +234,7 @@ export async function validateImportRows(rows: RawImportRow[]): Promise<Validati
     const normalized: Record<string, string> = {
       ...raw,
       clase: normalizeClase(raw.clase || ''),
-      cumplimientoEstado: raw.cumplimientoEstado?.trim() || 'Pendiente',
+      cumplimientoEstado: normalizarEstado(raw.cumplimientoEstado),
     };
 
     const errors: string[] = [];
@@ -270,7 +278,7 @@ export async function validateImportRows(rows: RawImportRow[]): Promise<Validati
     // Estado de cumplimiento
     const estado = normalized.cumplimientoEstado;
     if (estado && !(VALID_ESTADOS as readonly string[]).includes(estado)) {
-      errors.push('Estado Cumplimiento debe ser: Pendiente, En Progreso, Completado o Cerrado');
+      errors.push('Estado Cumplimiento debe ser: Pendiente, En Progreso o Cerrado');
     }
 
     // Listas cerradas opcionales
@@ -372,9 +380,7 @@ export async function executeImport(
       const clase = normalizeClase(raw.clase || 'C') as 'A' | 'B' | 'C';
       const intervencion = (raw.intervencion?.trim() || 'Posterior') as 'Inmediata' | 'Pronta' | 'Posterior';
       const tipoActividad = (raw.tipoActividad?.trim() || 'Rutinario') as 'Rutinario' | 'No Rutinario';
-      const cumplimientoEstado = (
-        raw.cumplimientoEstado?.trim() || 'Pendiente'
-      ) as 'Pendiente' | 'En Progreso' | 'Completado' | 'Cerrado';
+      const cumplimientoEstado = normalizarEstado(raw.cumplimientoEstado) as HallazgoEstado;
 
       const fechaVisita = parseDate(raw.fechaVisita);
 
