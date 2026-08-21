@@ -7,12 +7,11 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useWorkPlanCompliance } from '@/hooks/use-work-plans';
-import { calcProgressByHazard, calcPlanProgressByMonths, calcPlanStats } from '@/lib/work-plan-service';
+import { calcProgressByHazard, calcCompliance } from '@/lib/work-plan-service';
 import {
   HAZARD_COLORS, HAZARD_SIN_ASIGNAR,
 } from '@/app/(app)/work-plans/components/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -33,8 +32,7 @@ export function WorkPlanCompliance({ enabled }: { enabled: boolean }) {
   const [year, setYear] = useState<number | undefined>(undefined);
   const { plans, tasks, availableYears, targetYear, loading } = useWorkPlanCompliance(enabled, year);
 
-  const global = useMemo(() => calcPlanProgressByMonths(tasks), [tasks]);
-  const stats = useMemo(() => calcPlanStats(tasks), [tasks]);
+  const global = useMemo(() => calcCompliance(tasks), [tasks]);
   const porPeligro = useMemo(
     () => calcProgressByHazard(tasks, HAZARD_SIN_ASIGNAR),
     [tasks],
@@ -53,7 +51,7 @@ export function WorkPlanCompliance({ enabled }: { enabled: boolean }) {
               <CalendarRange className="h-4 w-4 text-nixus shrink-0" /> Cumplimiento del Plan de Trabajo
             </CardTitle>
             <p className="text-xs text-gray-500 mt-1">
-              Meses ejecutados sobre meses planeados
+              Actividades ejecutadas sobre actividades programadas
               {targetYear ? ` · vigencia ${targetYear}` : ''}
               {plans.length > 0 ? ` · ${plans.length} plan${plans.length !== 1 ? 'es' : ''}` : ''}.
             </p>
@@ -118,17 +116,21 @@ export function WorkPlanCompliance({ enabled }: { enabled: boolean }) {
                 </div>
               </div>
               <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
-                <span className="tabular-nums">
-                  <strong className="text-gray-700">{global.executedMonths}</strong>/{global.plannedMonths} meses
+                <span className="flex items-center gap-1 text-emerald-600 tabular-nums" title="Actividades ejecutadas">
+                  <Check className="h-3 w-3" /> {global.executed}
                 </span>
-                <span className="flex items-center gap-1 text-emerald-600 tabular-nums">
-                  <Check className="h-3 w-3" /> {stats.executed}
+                <span className="flex items-center gap-1 text-amber-600 tabular-nums" title="Actividades pendientes">
+                  <Clock className="h-3 w-3" /> {global.pending}
                 </span>
-                <span className="flex items-center gap-1 text-amber-600 tabular-nums">
-                  <Clock className="h-3 w-3" /> {stats.pending}
-                </span>
+                {global.inProgress > 0 && (
+                  <span className="text-gray-400 tabular-nums" title="Pendientes que ya tienen avance parcial">
+                    {global.inProgress} en curso
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">{stats.total} actividades en el plan</p>
+              <p className="text-[11px] text-gray-400 mt-1">
+                {global.executed} de {global.total} actividades del plan
+              </p>
             </div>
 
             {/* Desglose por peligro */}
@@ -144,13 +146,10 @@ export function WorkPlanCompliance({ enabled }: { enabled: boolean }) {
                         <span className="h-2.5 w-2.5 rounded-full shrink-0"
                           style={{ backgroundColor: HAZARD_COLORS[h.hazard] ?? HAZARD_COLORS[HAZARD_SIN_ASIGNAR] }} />
                         <span className="font-medium text-gray-700 truncate">{h.hazard}</span>
-                        <Badge variant="outline" className="text-[10px] text-gray-500 shrink-0 font-normal">
-                          {h.total} act.
-                        </Badge>
                       </span>
                       <span className="shrink-0 tabular-nums text-gray-400">
                         <span className="font-bold text-gray-800 text-sm">{h.progress}%</span>
-                        <span className="ml-1.5">{h.executedMonths}/{h.plannedMonths} meses</span>
+                        <span className="ml-1.5">{h.executed}/{h.total} act.</span>
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100 overflow-hidden">

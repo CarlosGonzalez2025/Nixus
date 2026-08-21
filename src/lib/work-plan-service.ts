@@ -88,23 +88,53 @@ export function calcPlanStats(
   return { total, executed, pending: total - executed };
 }
 
-export interface HazardProgress {
-  hazard: string;
-  /** Actividades del plan asociadas al peligro. */
+/**
+ * Cumplimiento medido en ACTIVIDADES, no en meses.
+ *
+ * Un plan de trabajo SST es anual y se reporta como «actividades programadas vs.
+ * ejecutadas»; expresarlo en meses se malinterpreta como avance de calendario.
+ * Además, la cabecera del plan ya cuenta actividades (`executedCount` /
+ * `pendingCount` vienen de `calcPlanStats`), así que esta es la única base que
+ * mantiene coherente toda la pantalla.
+ */
+export interface ComplianceStats {
+  /** Actividades programadas. */
   total: number;
   /** Actividades con cumplimiento 100%. */
   executed: number;
+  /** Actividades que aún no llegan al 100%. */
   pending: number;
-  /** Meses planeados y meses efectivamente ejecutados (base real del %). */
-  plannedMonths: number;
-  executedMonths: number;
-  /**
-   * % de cumplimiento del peligro = meses ejecutados / meses planeados.
-   * Se calcula sobre meses y no sobre el promedio de actividades para que una
-   * actividad mensual (12 celdas) pese más que una puntual (1 celda), que es como
-   * se mide el cumplimiento del plan anual en SST.
-   */
+  /** Subconjunto de `pending` que ya arrancó (avance > 0 y < 100). */
+  inProgress: number;
+  /** % de cumplimiento = ejecutadas / programadas. */
   progress: number;
+}
+
+export interface HazardProgress extends ComplianceStats {
+  hazard: string;
+}
+
+type TareaCumplimiento = Pick<TareaPlanTrabajo, 'totalProgress'>;
+
+/** Cumplimiento de un conjunto de actividades. Base compartida de todos los indicadores. */
+export function calcCompliance(tasks: TareaCumplimiento[]): ComplianceStats {
+  const total = tasks.length;
+  let executed = 0;
+  let inProgress = 0;
+
+  for (const t of tasks) {
+    const avance = t.totalProgress || 0;
+    if (avance >= 100) executed += 1;
+    else if (avance > 0) inProgress += 1;
+  }
+
+  return {
+    total,
+    executed,
+    pending: total - executed,
+    inProgress,
+    progress: total === 0 ? 0 : Math.round((executed / total) * 100),
+  };
 }
 
 /**
@@ -112,54 +142,21 @@ export interface HazardProgress {
  * el grupo que indique `fallbackLabel` para no perderlas del indicador.
  */
 export function calcProgressByHazard(
-  tasks: Array<Pick<TareaPlanTrabajo, 'hazard' | 'monthlyProgress' | 'totalProgress'>>,
+  tasks: Array<Pick<TareaPlanTrabajo, 'hazard' | 'totalProgress'>>,
   fallbackLabel = 'Sin asignar',
 ): HazardProgress[] {
-  const groups = new Map<string, HazardProgress>();
+  const groups = new Map<string, TareaCumplimiento[]>();
 
   for (const t of tasks) {
     const hazard = t.hazard?.trim() || fallbackLabel;
-    let g = groups.get(hazard);
-    if (!g) {
-      g = { hazard, total: 0, executed: 0, pending: 0, plannedMonths: 0, executedMonths: 0, progress: 0 };
-      groups.set(hazard, g);
-    }
-    const mp = t.monthlyProgress ?? [];
-    const planned = mp.filter(c => c.planned);
-    g.total += 1;
-    g.plannedMonths += planned.length;
-    g.executedMonths += planned.filter(c => c.executed).length;
-    if ((t.totalProgress || 0) >= 100) g.executed += 1;
+    const arr = groups.get(hazard);
+    if (arr) arr.push(t);
+    else groups.set(hazard, [t]);
   }
 
-  return Array.from(groups.values())
-    .map(g => ({
-      ...g,
-      pending: g.total - g.executed,
-      progress: g.plannedMonths === 0 ? 0 : Math.round((g.executedMonths / g.plannedMonths) * 100),
-    }))
+  return Array.from(groups.entries())
+    .map(([hazard, items]) => ({ hazard, ...calcCompliance(items) }))
     .sort((a, b) => b.total - a.total);
-}
-
-/**
- * Cumplimiento global del plan medido en meses (misma base que `calcProgressByHazard`,
- * para que el total y el desglose por peligro sean consistentes entre sí).
- */
-export function calcPlanProgressByMonths(
-  tasks: Array<Pick<TareaPlanTrabajo, 'monthlyProgress'>>,
-): { plannedMonths: number; executedMonths: number; progress: number } {
-  let plannedMonths = 0;
-  let executedMonths = 0;
-  for (const t of tasks) {
-    const planned = (t.monthlyProgress ?? []).filter(c => c.planned);
-    plannedMonths += planned.length;
-    executedMonths += planned.filter(c => c.executed).length;
-  }
-  return {
-    plannedMonths,
-    executedMonths,
-    progress: plannedMonths === 0 ? 0 : Math.round((executedMonths / plannedMonths) * 100),
-  };
 }
 
 /** Un plan en estado 'Cerrado' es de solo lectura. */
