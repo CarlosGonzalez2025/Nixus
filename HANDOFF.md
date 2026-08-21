@@ -184,9 +184,37 @@ El botón pasó a «Exportar Excel (todos)» con tooltip del conteo real, y el e
 
 **Modificados:** `src/app/(app)/layout.tsx` · `src/components/ui/{dialog,alert-dialog,sidebar}.tsx` · `src/app/(app)/dashboard/page.tsx` · `src/app/(app)/hallazgos/**` · `src/app/public/hallazgo/[id]/page.tsx` · `src/app/(app)/work-plans/**` · `src/hooks/use-work-plans.ts` · `src/lib/{work-plan-service,excel-hallazgos-report,excel-hallazgos-template}.ts` · `src/types/{index,work-plan}.ts`
 
+#### 20.11 Herramienta nueva — validación visual con `scripts/ui-preview.mjs`
+
+Los cambios de esta sesión son casi todos visuales, y `tsc` + `next build` **no pueden verlos**: compilan perfecto y la pantalla igual puede salir rota. Se agregó Playwright (`devDependency`) y un script que levanta Chromium, inicia sesión y captura las vistas clave en tres anchos — móvil 390, tablet 820 y escritorio 1440.
+
+Además de las capturas, **mide desbordamiento horizontal** comparando `scrollWidth` contra `clientWidth` del documento: es exactamente el síntoma que se corrigió en 20.1, así que queda como prueba de regresión. Si alguna vista desborda, el script termina con código 1.
+
+```
+npm run dev                       # el servidor debe estar arriba
+cp .env.preview.example .env.preview   # y completar con una cuenta admin
+node scripts/ui-preview.mjs       # capturas en .ui-preview/
+```
+
+`.env.preview` y `.ui-preview/` están en `.gitignore`. La plantilla `.env.preview.example` sí se versiona, **sin valores**.
+
+**Tres trampas que costaron encontrar, ya resueltas en el script:**
+
+1. **El login se enviaba vacío.** `page.fill()` corría antes de que React hidratara y el re-render borraba lo escrito; el formulario respondía «Dirección de correo inválida» con los campos en blanco. Se usa `pressSequentially` y se verifica que el valor persista, con reintentos.
+2. **`waitForURL` no sirve tras el login.** El redirect lo hace el router de Next del lado del cliente y no dispara evento de navegación, así que la espera se agotaba siempre. Se consulta `window.location` dentro de la página.
+3. **Capturar con espera fija sale lleno de spinners.** En un perfil de navegador nuevo no hay caché de IndexedDB y la primera sincronización con Firestore tarda bastante más que en un navegador ya usado. Se espera a que desaparezcan los elementos `.animate-spin`.
+
 #### Verificación
 
-`npx tsc --noEmit` sin errores y `npx next build` exitoso. **No se validó visualmente en navegador**: el proyecto no tiene Playwright ni Puppeteer instalados y no se agregaron dependencias sin autorización.
+`npx tsc --noEmit` sin errores y `npx next build` exitoso.
+
+**Validado visualmente** con `scripts/ui-preview.mjs` contra datos reales (324 hallazgos, 2758 permisos):
+
+- **Ninguna de las 5 vistas desborda horizontalmente** en 390, 820 ni 1440 px — se confirma la corrección de 20.1.
+- Lista de hallazgos: tres pestañas (236 / 13 / 75), columnas de Peligro y Personal expuesto (verificado un registro con `Contratistas` y `Propio` a la vez), los tres filtros y el botón «Exportar Excel (todos)».
+- Radar con los seis ejes correctos, sin contaminación de textos libres; matriz de cobertura con encabezado fijo y la nota «Mostrando 10 de 24 plantas».
+- Gráficos de barras con el % de resolución junto a cada barra y el tooltip con el desglose.
+- Plan de trabajo: medidor en 90 % (60/67 meses). El desglose muestra las 67 actividades como **«Sin asignar»**, porque el campo `hazard` es nuevo y ninguna actividad existente lo tiene todavía — es el comportamiento esperado y la tarjeta lo explica.
 
 > **Nota de entorno:** con el servidor de desarrollo corriendo, `next build` falla de forma intermitente con `Failed to collect page data` en páginas al azar. Es una colisión por el directorio `.next` compartido, no un error del código: al reintentar pasa. Además, `next build` regenera `public/sw.js` (artefacto de next-pwa versionado) — conviene revertirlo si no se quiere en el commit.
 
