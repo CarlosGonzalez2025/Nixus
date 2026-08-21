@@ -59,7 +59,7 @@ export interface ReportMeta {
 }
 
 // ─── Helpers de dominio ──────────────────────────────────────────────────────
-const ESTADOS = ['Pendiente', 'En Progreso', 'Completado', 'Cerrado'] as const;
+const ESTADOS = ['Pendiente', 'En Progreso', 'Cerrado'] as const;
 const ABIERTOS: string[] = ['Pendiente', 'En Progreso'];
 
 const estadoDe = (h: HallazgoExportRow) => h.cumplimientoEstado || 'Pendiente';
@@ -161,7 +161,7 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
   row = drawKpiRow(ws, row, [
     { label: 'TOTAL HALLAZGOS', value: total, color: XL.navy },
     { label: 'ABIERTOS', value: abiertos, color: XL.amber, hint: 'Pendiente + En Progreso' },
-    { label: 'CERRADOS', value: cerrados, color: XL.green, hint: 'Completado + Cerrado' },
+    { label: 'CERRADOS', value: cerrados, color: XL.green, hint: 'Acción implementada y verificada' },
     { label: 'TASA DE CIERRE', value: total > 0 ? `${Math.round((cerrados / total) * 100)}%` : '—', color: XL.blue },
     { label: 'CLASE A ABIERTOS', value: criticosAbiertos, color: XL.red, hint: 'Requieren intervención inmediata' },
   ], 3);
@@ -299,7 +299,7 @@ function buildResumen(wb: ExcelJS.Workbook, rows: HallazgoExportRow[], meta: Rep
   row = Math.max(r7, r8);
 
   drawNote(ws, row,
-    'Abiertos = Pendiente + En Progreso. Cerrados = Completado + Cerrado. El cumplimiento promedio usa el % total cuando existe y, en su defecto, el último % reportado en los seguimientos. Las barras son proporcionales al valor máximo de cada tabla.',
+    'Abiertos = Pendiente + En Progreso. El cumplimiento promedio usa el % total cuando existe y, en su defecto, el último % reportado en los seguimientos. Las barras son proporcionales al valor máximo de cada tabla.',
     LAST);
 
   return ws;

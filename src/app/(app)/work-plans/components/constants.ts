@@ -1,6 +1,8 @@
 import type {
   EstadoPlanTrabajo, EtapaPHVA, TipoRecurso, EstadoTarea, FrecuenciaActividad,
 } from '@/types/work-plan';
+import { HALLAZGO_PELIGRO_OPTIONS } from '@/types';
+import { colorDePeligro } from '@/lib/hallazgos-analytics';
 
 // ── Meses ────────────────────────────────────────────────────────────────────────
 
@@ -67,6 +69,36 @@ export const TASK_STATUS_CONFIG: Record<EstadoTarea, { label: string; className:
 export const TASK_STATUS_OPTIONS: EstadoTarea[] = [
   'Pendiente', 'En Progreso', 'Completado', 'Cancelado', 'Reprogramado',
 ];
+
+// ── Peligro / programa SST ─────────────────────────────────────────────────────
+// Mismo catálogo que los hallazgos + 'Transversal' para actividades que no
+// pertenecen a un programa concreto (inducciones, comité paritario, etc.). Así el
+// % de cumplimiento del plan es comparable con la cobertura de hallazgos.
+
+export const HAZARD_TRANSVERSAL = 'Transversal';
+/** Etiqueta para actividades anteriores al campo `hazard`. */
+export const HAZARD_SIN_ASIGNAR = 'Sin asignar';
+
+export const HAZARD_OPTIONS: string[] = [...HALLAZGO_PELIGRO_OPTIONS, HAZARD_TRANSVERSAL];
+
+export const HAZARD_COLORS: Record<string, string> = {
+  ...Object.fromEntries(HALLAZGO_PELIGRO_OPTIONS.map((p, i) => [p, colorDePeligro(p, i)])),
+  [HAZARD_TRANSVERSAL]: '#64748b',
+  [HAZARD_SIN_ASIGNAR]: '#cbd5e1',
+};
+
+/** Clases Tailwind del badge de peligro en tablas y tarjetas. */
+export const HAZARD_BADGE_CLASS: Record<string, string> = {
+  'Alturas':             'bg-blue-100 text-blue-700 border-blue-200',
+  'Espacios Confinados': 'bg-violet-100 text-violet-700 border-violet-200',
+  'Energías Peligrosas': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Izaje de Cargas':     'bg-cyan-100 text-cyan-700 border-cyan-200',
+  'Excavaciones':        'bg-orange-100 text-orange-700 border-orange-200',
+  [HAZARD_TRANSVERSAL]:  'bg-slate-100 text-slate-700 border-slate-200',
+  [HAZARD_SIN_ASIGNAR]:  'bg-muted text-muted-foreground border-border',
+};
+
+export const hazardLabel = (h?: string) => h?.trim() || HAZARD_SIN_ASIGNAR;
 
 // ── Frecuencia ─────────────────────────────────────────────────────────────────
 

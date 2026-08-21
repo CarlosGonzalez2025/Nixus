@@ -552,7 +552,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
 
-        <main className="flex-1 flex flex-col min-h-screen">
+        {/* `min-w-0` es imprescindible: como flex item, sin él el ancho mínimo de
+            <main> lo fija su contenido más ancho (min-width:auto), el shell se
+            desborda del viewport y aparece scroll horizontal en toda la página.
+            Además rompe el bucle de medición de los ResponsiveContainer de recharts,
+            que crecían indefinidamente al no tener un ancho de referencia acotado.
+            NO usar `overflow-x-hidden` aquí: con overflow-y en `visible`, fijar un
+            eje hace que el otro compute a `auto`, main pasaría a ser contenedor de
+            scroll vertical y se romperían el scroll de página y los `sticky`. */}
+        <main className="flex-1 flex flex-col min-h-screen min-w-0">
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm md:hidden">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-foreground hover:bg-accent/20 rounded-md transition-colors" />

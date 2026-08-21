@@ -20,7 +20,7 @@ const CATALOGOS: { titulo: string; valores: readonly string[] }[] = [
   { titulo: 'Responsabilidad', valores: ['Directa', 'Corporativa'] },
   { titulo: 'Clase', valores: ['A', 'B', 'C'] },
   { titulo: 'Intervencion', valores: ['Inmediata', 'Pronta', 'Posterior'] },
-  { titulo: 'Estado', valores: ['Pendiente', 'En Progreso', 'Completado', 'Cerrado'] },
+  { titulo: 'Estado', valores: ['Pendiente', 'En Progreso', 'Cerrado'] },
   { titulo: 'Peligros', valores: HALLAZGO_PELIGRO_OPTIONS },
   {
     titulo: 'PersonalExpuesto',
@@ -73,7 +73,7 @@ const COLS: TemplateCol[] = [
   { header: 'Evidencias Plan de Acción (URLs)', required: false, width: 34, example: '', help: 'URLs ya publicadas en el almacenamiento, separadas por coma. Las fotos nuevas se suben desde la app.' },
   { header: 'Fecha de Cierre', required: false, width: 16, example: '10/06/2026', help: 'Fecha dd/mm/aaaa en que se cierra el hallazgo.', validacion: { kind: 'date' } },
   { header: '% de Cumplimiento Total', required: false, width: 18, example: '100', help: 'Número entre 0 y 100. Porcentaje total al cierre.', validacion: { kind: 'percent' } },
-  { header: 'Estado del Cumplimiento', required: false, width: 20, example: 'Pendiente', help: 'Lista desplegable: Pendiente, En Progreso, Completado o Cerrado.', validacion: { kind: 'list', catalogo: 'Estado', estricta: true } },
+  { header: 'Estado del Cumplimiento', required: false, width: 20, example: 'Pendiente', help: 'Lista desplegable: Pendiente, En Progreso o Cerrado.', validacion: { kind: 'list', catalogo: 'Estado', estricta: true } },
   { header: 'Observación', required: false, width: 34, example: 'Se instaló línea de vida horizontal en el área.', help: 'Texto libre con notas sobre la implementación del plan.' },
 ];
 

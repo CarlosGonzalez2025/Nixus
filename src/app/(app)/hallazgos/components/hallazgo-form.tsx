@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import {
     CalendarIcon, Loader2, Send,
     ClipboardList, User, CalendarCheck,
-    CheckCircle2, Clock, TrendingUp, XCircle,
+    CheckCircle2, Clock, TrendingUp,
     AlertTriangle, Timer, Shield, Hash, Camera, CheckSquare,
     Plus, X, MapPin, Building2, Factory, Layers,
     Navigation, WifiOff, PenLine, CheckCircle, Check,
@@ -101,7 +101,7 @@ const hallazgoSchema = z.object({
     evidenciasPlanAccion: z.array(z.string()).optional().default([]),
     fechaCierre: dateField({ invalid_type_error: 'Fecha inválida' }).optional(),
     porcentajeCumplimientoTotal: z.number().min(0).max(100).optional(),
-    cumplimientoEstado: z.enum(['Pendiente', 'En Progreso', 'Completado', 'Cerrado']).optional(),
+    cumplimientoEstado: z.enum(['Pendiente', 'En Progreso', 'Cerrado']).optional(),
     observacion: z.string().optional(),
 });
 
@@ -117,8 +117,7 @@ interface HallazgoFormProps {
 const STATUS_CONFIG = {
     Pendiente: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' },
     'En Progreso': { icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' },
-    Completado: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-    Cerrado: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-500/10 border-slate-500/20' },
+    Cerrado: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
 };
 
 const CLASE_CONFIG = {
@@ -1569,7 +1568,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                 <FormItem>
                                     <FormLabel className={labelClass}>Estado del Cumplimiento</FormLabel>
                                     <FormControl>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                                             {(Object.keys(STATUS_CONFIG) as Array<keyof typeof STATUS_CONFIG>).map((status) => {
                                                 const cfg = STATUS_CONFIG[status];
                                                 const SIcon = cfg.icon;
@@ -1594,7 +1593,6 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     <select {...field} className="sr-only" tabIndex={-1} aria-hidden>
                                         <option value="Pendiente">Pendiente</option>
                                         <option value="En Progreso">En Progreso</option>
-                                        <option value="Completado">Completado</option>
                                         <option value="Cerrado">Cerrado</option>
                                     </select>
                                     <FormMessage />

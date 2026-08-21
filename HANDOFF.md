@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-06 (Sesión 19)
+> **Última actualización de este documento:** 2026-08-21 (Sesión 20)
 
 ---
 
@@ -64,6 +64,143 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-21 (Sesión 20) — Analítica de Hallazgos: estados, peligro y personal expuesto, cobertura por planta, cumplimiento del plan por peligro + fix global de responsive
+
+**Solicitud (correo de Ana María Baquero, Italcol — fecha límite 26/08):** ocho puntos sobre el dashboard y el módulo de Hallazgos. Se cubrieron los puntos 1, 2, 4a y 8; los puntos 5, 6 y 7 quedaron fuera de alcance por requerir desarrollo nuevo (pendientes de aprobación de horas) y el 4b (nivel de madurez) quedó en pausa por decisión interna.
+
+#### 20.1 El bug de fondo: la app no era responsive por un `min-width` heredado
+
+El cliente reportó scroll horizontal en toda la página y tarjetas que se salían de la pantalla. La causa no estaba en el dashboard sino en el shell: `<main>` en `src/app/(app)/layout.tsx` es un flex item con `flex-1` pero **sin `min-w-0`**, así que su ancho mínimo lo resolvía el navegador como `min-width: auto` — es decir, el ancho del contenido más ancho que tuviera dentro. Cualquier tabla o gráfico empujaba el shell completo más allá del viewport.
+
+El efecto secundario era peor: los `ResponsiveContainer` de recharts miden su contenedor para fijarse un ancho; sin un ancho de referencia acotado entraban en un bucle de medición y crecían indefinidamente. Eso explica por qué el histórico de permisos se dibujaba más ancho que su propia tarjeta y la leyenda salía cortada.
+
+**Corrección:** `min-w-0` en `<main>` y en `SidebarInset`. Es un arreglo de **una línea que aplica a todas las páginas**, no solo al dashboard.
+
+**Trampa evitada, documentada en el código:** la tentación es agregar `overflow-x-hidden` como refuerzo. No se debe. Cuando un eje de `overflow` se fija y el otro está en `visible`, el especificado obliga a que el otro compute a `auto`: `<main>` se convertiría en contenedor de scroll vertical y se romperían el scroll de página y todos los `position: sticky` de la aplicación.
+
+#### 20.2 Modales sin techo
+
+`DialogContent` no tenía **ningún** `max-height`: 17 modales crecían hasta desbordar el viewport. Se corrigió en el primitivo (`dialog.tsx` y `alert-dialog.tsx`) en vez de en cada llamado:
+
+- `max-h-[calc(100dvh-2rem)]` + `overflow-y-auto` → el contenido largo scrollea dentro del modal.
+- `w-[calc(100%-2rem)]` → margen lateral en móvil; antes iban borde a borde.
+- `overscroll-contain` → el scroll no se propaga al fondo.
+
+Los 4 modales de permisos que ya definían su propio `max-h` con header y footer fijos **conservan su comportamiento**: sus clases llegan después y tailwind-merge resuelve el conflicto a favor del llamado.
+
+**Limitación conocida:** en los modales que ahora scrollean, la «X» de cerrar es `absolute` dentro del contenedor scrolleable, así que se va con el contenido. Se cierra con Esc, clic fuera o el botón de cancelar. Dejarla fija exigía reestructurar el primitivo y habría degradado esos 4 modales.
+
+#### 20.3 «Completado» vs «Cerrado» — el campo era ambiguo y no aportaba
+
+El cliente preguntó cuál era la diferencia. Revisando el código: **ninguna**. Ambos se agrupaban igual en todos los indicadores y no existía regla de negocio que los distinguiera. El cliente confirmó que no había registros usándolo y autorizó eliminarlo.
+
+`HallazgoEstado` pasó de 4 a 3 valores: `'Pendiente' | 'En Progreso' | 'Cerrado'`. Se actualizaron formulario, pestañas, dashboard, plantilla Excel, reporte Excel y vista pública. «Cerrado» tomó el verde, que antes ocupaba «Completado», por ser ahora el único estado terminal.
+
+**Red de seguridad (dos capas, por si aparece un dato rezagado):**
+
+- `estadoDe()` normaliza: `'Completado'` → `'Cerrado'`, y cualquier cadena desconocida → `'Pendiente'`. Ningún registro puede quedar fuera de todas las pestañas.
+- La importación Excel acepta `Completado` como **alias** en vez de rechazar la fila, para que una plantilla antigua guardada por el cliente siga funcionando.
+
+De paso se corrigió un riesgo latente: el filtro de pestañas y los contadores comparaban `h.cumplimientoEstado` en crudo, así que un valor inesperado no habría aparecido en **ninguna** pestaña. Ahora todo pasa por `estadoDe()`.
+
+#### 20.4 Nueva capa de dominio — `src/lib/hallazgos-analytics.ts`
+
+Módulo **puro** con la definición única de estados, peligros, personal expuesto y todos los agregados. Existe para que la lista, el dashboard y los reportes no puedan divergir en etiquetas, colores ni criterios de conteo — que era exactamente lo que pasaba antes (el dashboard agrupaba en «Abiertos/Cerrados» mientras la lista mostraba 4 pestañas).
+
+**Hallazgo en el parseo de multi-selección.** `peligroInspeccionado` y `personalExpuesto` se guardan como texto con una opción por línea. El parser original solo partía por salto de línea, así que un registro heredado guardado como `"Alturas, Espacios Confinados"` en una sola línea **se contaba como una categoría propia concatenada** en vez de sumar a cada peligro.
+
+`splitMultiOpcion()` ahora, cuando una línea no coincide con el catálogo, intenta partirla por coma, punto y coma o barra vertical, y **solo divide si todos los trozos son del catálogo**. Así se desarma el caso heredado sin fragmentar un texto libre que legítimamente lleve comas. Lo comparten `parsePeligros()` y `parsePersonalExpuesto()`.
+
+#### 20.5 Peligro y personal expuesto en la tabla y en las gráficas
+
+Ambos campos se capturaban en el formulario pero **no eran visibles en ninguna parte** fuera del detalle: no se podía saber a qué peligro correspondía un hallazgo ni si exponía a personal propio o contratista.
+
+| Dónde | Qué se agregó |
+|---|---|
+| Tabla de hallazgos | Columnas **Peligro** y **Personal expuesto**, ordenables, con badges y «+N» cuando hay varios |
+| Filtros | Selector de peligro (catálogo + «Otros» escritos a mano + «Sin clasificar») y selector de personal |
+| Búsqueda | Ambos campos entran en la búsqueda por texto |
+| Tarjeta móvil | Badges junto a la clase de intervención |
+| Dashboard | Tercer anillo «Personal expuesto» con el **% que involucra contratistas** al centro y el % de cierre por categoría en la leyenda |
+
+**Advertencia de dominio, visible en la UI:** un hallazgo puede tener varios peligros y exponer a personal propio **y** contratista a la vez, así que la suma por categoría puede superar el total de hallazgos. Es intencional.
+
+#### 20.6 Los gráficos se contaminaban solos
+
+La primera versión del radar y de la matriz abría **un eje por cada texto libre** escrito en el campo «Otros». En producción hay decenas de variantes a mano — `Trabajo en alturas: Uso de sistemas de acceso.`, `Sustancia quimica`, `Condcicion Insegura: ...` — y el radar quedó ilegible.
+
+Se fijaron los ejes en `EJES_PELIGRO`: los cinco peligros del catálogo **más un único «Otros»** que agrupa todo el texto libre (con `Set`, para que un hallazgo con tres textos libres cuente una sola vez). El detalle no se pierde: `detalleOtrosPeligros()` lo expone en la tarjeta de Desempeño por programa.
+
+**Criterio:** la columna *Cobertura* de la matriz se mide **solo contra los 5 estándar**. «Otros» no es un programa formal y contarlo inflaría el porcentaje.
+
+#### 20.7 Analítica reconstruida
+
+| Bloque | Qué muestra |
+|---|---|
+| KPIs | Total · Pendientes · En Progreso · Cerrados · % Resolución |
+| Distribución | Tres anillos: estado (los 3), clase de riesgo (con Clase A sin resolver al centro), personal expuesto |
+| **Radar de peligros** | Un eje por peligro, con **selector de planta** que redibuja la serie. Conmutador Nº hallazgos ↔ % resolución. Si un filtro global deja fuera la planta elegida, vuelve solo al consolidado |
+| **Desempeño por programa** | Alto fijo de 420 px con scroll interno; los 5 estándar, «Otros» agregado y debajo el detalle de cada texto libre |
+| **Matriz de cobertura por planta** | Heatmap Planta × Peligro, altura de **10 filas** con scroll interno, **encabezado fijo** y **columna de planta fija** al scrollear en horizontal. Columnas de % Cobertura, % Resolución y Clase A sin resolver |
+
+**Detalle técnico del radar:** las series usan un `dataKey` fijo (`valor`) y no el nombre de la planta, porque recharts resuelve el `dataKey` como ruta de objeto — una planta con un punto en el nombre habría roto la lectura silenciosamente.
+
+**Detalle técnico de la matriz:** el encabezado `sticky` obliga a `border-separate`, y con eso los bordes en `<tr>` dejan de pintarse; van en las celdas. El `z-index` del `thead` debe superar al de la columna fija del cuerpo, o al scrollear en vertical el cuerpo se pinta encima del encabezado.
+
+#### 20.8 Gráficos geográficos: dead code y una gráfica que no aportaba
+
+`locationStats` calculaba `byPlanta` en cada render y **nunca se pintaba** — el dashboard solo mostraba empresa y ciudad. Se eliminó la duplicación de los dos bloques de ~60 líneas casi idénticos en `LocationBreakdown`, un componente reutilizable que ahora sirve a Planta y Ciudad, y que además muestra el **% de resolución junto a cada barra** (el volumen por sí solo no dice si la operación va bien).
+
+Por pedido del cliente se **eliminó «Operaciones por Empresa»** junto con su agregado, para no dejar cálculo muerto.
+
+#### 20.9 Plan de Trabajo: dimensión de peligro y cumplimiento
+
+Campo nuevo `hazard` en `TareaPlanTrabajo`, con el mismo catálogo de los hallazgos más `'Transversal'` para lo que no pertenece a un programa concreto. Selector en el formulario, columna y filtro en la tabla, y columna opcional `Hazard` en la plantilla Excel — **los archivos de la plantilla anterior siguen importando** y sus filas caen en `Transversal`.
+
+Con eso, dos indicadores nuevos: la tarjeta «Cumplimiento por peligro» en el detalle del plan, y la sección **Planeación SST** en el dashboard con medidor global y desglose por peligro.
+
+**Decisión de cálculo:** el % se mide sobre **meses ejecutados / meses planeados**, no como promedio de actividades. Así una actividad mensual pesa 12 veces más que una puntual, que es como se reporta el cumplimiento anual en SST. `calcProgressByHazard()` y `calcPlanProgressByMonths()` comparten la misma base para que el total y el desglose no puedan discrepar.
+
+La tarjeta del dashboard **solo se monta para `admin`**, porque `firestore.rules` restringe `workPlans` a ese rol; el hook además no abre ninguna suscripción cuando `enabled` es `false`, para no provocar un `permission-denied` en el dashboard de los demás roles.
+
+#### 20.10 Exportación de hallazgos: todos los estados
+
+La exportación partía de la lista ya filtrada por la pestaña activa: estando en «Pendientes» el Excel salía solo con pendientes. Se replicó el patrón que ya usaba Permisos de Trabajo (Sesión 18):
+
+- `matchesFilters()` — todos los criterios que **no** dependen de la pestaña (clase, peligro, personal, búsqueda, alcance por rol).
+- `filtered` = pestaña + `matchesFilters` → la vista.
+- `exportHallazgos` = solo `matchesFilters`, ordenado por número descendente → **el archivo**.
+
+Lo relevante del refactor es que **la vista y la exportación ya no pueden divergir**: comparten predicado, así que un filtro nuevo aplica a ambas sin tocar nada más. La pestaña se ignora por ser navegación, no un filtro que el usuario haya pedido.
+
+El botón pasó a «Exportar Excel (todos)» con tooltip del conteo real, y el encabezado del reporte dice `Estados: todos` en vez de `Pestaña: X`.
+
+#### Archivos tocados
+
+**Nuevos:** `src/lib/hallazgos-analytics.ts` · `src/app/(app)/dashboard/components/{hallazgos-analytics,work-plan-compliance,location-breakdown}.tsx` · `src/app/(app)/work-plans/components/hazard-compliance.tsx`
+
+**Modificados:** `src/app/(app)/layout.tsx` · `src/components/ui/{dialog,alert-dialog,sidebar}.tsx` · `src/app/(app)/dashboard/page.tsx` · `src/app/(app)/hallazgos/**` · `src/app/public/hallazgo/[id]/page.tsx` · `src/app/(app)/work-plans/**` · `src/hooks/use-work-plans.ts` · `src/lib/{work-plan-service,excel-hallazgos-report,excel-hallazgos-template}.ts` · `src/types/{index,work-plan}.ts`
+
+#### Verificación
+
+`npx tsc --noEmit` sin errores y `npx next build` exitoso. **No se validó visualmente en navegador**: el proyecto no tiene Playwright ni Puppeteer instalados y no se agregaron dependencias sin autorización.
+
+> **Nota de entorno:** con el servidor de desarrollo corriendo, `next build` falla de forma intermitente con `Failed to collect page data` en páginas al azar. Es una colisión por el directorio `.next` compartido, no un error del código: al reintentar pasa. Además, `next build` regenera `public/sw.js` (artefacto de next-pwa versionado) — conviene revertirlo si no se quiere en el commit.
+
+#### Pendiente de esta solicitud
+
+| Punto | Estado |
+|---|---|
+| 3 | No recibido — el correo salta del 2 al 4 |
+| 4b · Nivel de madurez de programas por planta | En pausa por decisión interna. **«Actividad por Ciudad» sigue en el dashboard** a la espera de esa definición |
+| 5 · Informes de calderas / madurez URG | Desarrollo nuevo — pendiente de aprobación de horas |
+| 6 · Lista de verificación de energías peligrosas | Desarrollo nuevo — pendiente de aprobación de horas |
+| 7 · Informe gerencial por grupos empresariales | Desarrollo nuevo — pendiente de aprobación de horas |
+
+**Dato para el alcance de 4b, 5 y 6:** el ejemplo del cliente para el gráfico de madurez es *«Barranquilla hemos realizado alturas, confinados, calderas y LOTO»*. Solo **Alturas y Confinados** tienen módulo real con diagnóstico y puntaje (`resultados.sumaTotal`, colecciones `diagnosticosAlturas` y `diagnosticosConfinados`, con hooks ya disponibles). **Calderas y Energías Peligrosas (LOTO) son páginas `ComingSoonPage` de 18 líneas**: no existen como módulos ni tienen datos. El gráfico completo que describe el cliente **depende de que se desarrollen los puntos 5 y 6**; hoy solo podría cubrir 2 de los 4 programas.
 
 ---
 

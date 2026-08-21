@@ -4,7 +4,9 @@ import { useRef, useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { importTasks } from '@/lib/work-plan-service';
-import { PHVA_OPTIONS, RESOURCE_OPTIONS, FREQUENCY_OPTIONS } from './constants';
+import {
+  PHVA_OPTIONS, RESOURCE_OPTIONS, FREQUENCY_OPTIONS, HAZARD_OPTIONS, HAZARD_TRANSVERSAL,
+} from './constants';
 import type { EtapaPHVA, TipoRecurso, FrecuenciaActividad, TareaPlanTrabajo } from '@/types/work-plan';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -20,7 +22,9 @@ import {
 import { cn } from '@/lib/utils';
 
 // ── Columnas EXACTAS de la plantilla ────────────────────────────────────────────
-const COLUMNS = ['Activity', 'PHVA', 'ResourceType', 'ResponsibleName', 'ResponsibleRole', 'Frequency'] as const;
+// `Hazard` es opcional: los archivos generados con la plantilla anterior siguen
+// importando y sus actividades quedan como 'Transversal'.
+const COLUMNS = ['Activity', 'Hazard', 'PHVA', 'ResourceType', 'ResponsibleName', 'ResponsibleRole', 'Frequency'] as const;
 
 interface ParsedRow {
   rowIndex: number;
@@ -34,7 +38,8 @@ interface ParsedRow {
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
   const example = [{
-    Activity: 'Inspección de extintores',
+    Activity: 'Inspección de puntos de anclaje',
+    Hazard: 'Alturas',
     PHVA: 'Verificar',
     ResourceType: 'Tecnico',
     ResponsibleName: 'Juan Pérez',
@@ -47,6 +52,7 @@ function downloadTemplate() {
 
   // Hoja de valores permitidos como referencia
   const ref: any[] = [
+    { Campo: 'Hazard', 'Valores permitidos': `${HAZARD_OPTIONS.join(' | ')}  (opcional — vacío = ${HAZARD_TRANSVERSAL})` },
     { Campo: 'PHVA', 'Valores permitidos': PHVA_OPTIONS.join(' | ') },
     { Campo: 'ResourceType', 'Valores permitidos': `${RESOURCE_OPTIONS.join(' | ')}  (Tecnico = Técnico)` },
     { Campo: 'Frequency', 'Valores permitidos': FREQUENCY_OPTIONS.join(' | ') },
@@ -72,9 +78,12 @@ function validateRow(raw: Record<string, string>, rowIndex: number): ParsedRow {
   const responsibleName = get('ResponsibleName');
   const responsibleRole = get('ResponsibleRole');
   const frequency = get('Frequency');
+  // Vacío ⇒ 'Transversal', para no invalidar plantillas anteriores al campo.
+  const hazard = get('Hazard') || HAZARD_TRANSVERSAL;
 
   if (!activity) errors.push('Activity es obligatorio');
   if (!responsibleName) errors.push('ResponsibleName es obligatorio');
+  if (!HAZARD_OPTIONS.includes(hazard)) errors.push(`Hazard inválido (use: ${HAZARD_OPTIONS.join(', ')})`);
   if (!PHVA_OPTIONS.includes(phva as EtapaPHVA)) errors.push(`PHVA inválido (use: ${PHVA_OPTIONS.join(', ')})`);
   if (!RESOURCE_OPTIONS.includes(resourceType as TipoRecurso)) errors.push(`ResourceType inválido (use: ${RESOURCE_OPTIONS.join(', ')})`);
   if (!FREQUENCY_OPTIONS.includes(frequency as FrecuenciaActividad)) errors.push(`Frequency inválido (use: ${FREQUENCY_OPTIONS.join(', ')})`);
@@ -84,6 +93,7 @@ function validateRow(raw: Record<string, string>, rowIndex: number): ParsedRow {
     rowIndex, raw, valid, errors,
     data: valid ? {
       activity,
+      hazard,
       phva: phva as EtapaPHVA,
       resourceType: resourceType as TipoRecurso,
       responsibleName,
@@ -197,8 +207,9 @@ export function ExcelImport({ open, onOpenChange, planId }: Props) {
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
               onChange={e => handleFiles(e.target.files)} />
             <div className="rounded-lg bg-muted/40 border p-3 text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold text-foreground">Columnas requeridas (exactas)</p>
+              <p className="font-semibold text-foreground">Columnas de la plantilla (nombres exactos)</p>
               <p>{COLUMNS.join(' · ')}</p>
+              <p><span className="font-medium text-foreground">Hazard</span> es opcional: si se deja vacío la actividad se registra como «{HAZARD_TRANSVERSAL}».</p>
             </div>
           </div>
         )}
@@ -229,6 +240,7 @@ export function ExcelImport({ open, onOpenChange, planId }: Props) {
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Actividad</TableHead>
+                    <TableHead>Peligro</TableHead>
                     <TableHead>PHVA</TableHead>
                     <TableHead>Responsable</TableHead>
                     <TableHead>Estado</TableHead>
@@ -246,6 +258,7 @@ export function ExcelImport({ open, onOpenChange, planId }: Props) {
                           </ul>
                         )}
                       </TableCell>
+                      <TableCell className="text-sm">{r.raw.Hazard || HAZARD_TRANSVERSAL}</TableCell>
                       <TableCell className="text-sm">{r.raw.PHVA || '—'}</TableCell>
                       <TableCell className="text-sm">{r.raw.ResponsibleName || '—'}</TableCell>
                       <TableCell>

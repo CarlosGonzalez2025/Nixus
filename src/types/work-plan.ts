@@ -23,6 +23,16 @@ export interface TareaPlanTrabajo {
   id: string;
   activity: string;
   phva: EtapaPHVA;
+  /**
+   * Peligro / programa SST al que pertenece la actividad. Usa el mismo catálogo que
+   * los hallazgos (`HALLAZGO_PELIGRO_OPTIONS`) más 'Transversal' para lo que no
+   * pertenece a un programa concreto, de modo que el % de cumplimiento del plan sea
+   * comparable con la cobertura de hallazgos por peligro.
+   *
+   * Opcional: las actividades creadas antes de agregar el campo no lo tienen y se
+   * agrupan bajo 'Sin asignar' en los indicadores.
+   */
+  hazard?: string;
   resourceType: TipoRecurso;
   responsibleName: string;
   responsibleRole: string;
