@@ -162,7 +162,13 @@ Campo nuevo `hazard` en `TareaPlanTrabajo`, con el mismo catálogo de los hallaz
 
 Con eso, dos indicadores nuevos: la tarjeta «Cumplimiento por peligro» en el detalle del plan, y la sección **Planeación SST** en el dashboard con medidor global y desglose por peligro.
 
-**Decisión de cálculo:** el % se mide sobre **meses ejecutados / meses planeados**, no como promedio de actividades. Así una actividad mensual pesa 12 veces más que una puntual, que es como se reporta el cumplimiento anual en SST. `calcProgressByHazard()` y `calcPlanProgressByMonths()` comparten la misma base para que el total y el desglose no puedan discrepar.
+**Decisión de cálculo — corregida durante la sesión.** La primera versión medía el % sobre **meses** (ejecutados / planeados), razonando que así una actividad mensual pesaría más que una puntual. El cliente lo rechazó por una razón de fondo: un plan de trabajo SST es anual y se reporta como **actividades programadas vs. ejecutadas**; hablar de meses se lee como avance de calendario y se malinterpreta.
+
+Además la unidad chocaba dentro de la misma pantalla: la cabecera del plan ya cuenta actividades (`executedCount` / `pendingCount`, derivados de `calcPlanStats`), así que la tarjeta decía «60 de 67 meses» al lado de «67 actividades · 60 ejecutadas». En los datos actuales ambos daban 90 % de casualidad, porque casi toda actividad tiene un solo mes planeado — la contradicción habría aparecido en cuanto se cargara un plan con actividades mensuales.
+
+`calcCompliance()` es ahora la base única: `progress = ejecutadas / programadas`, donde ejecutada es `totalProgress >= 100` (mismo criterio que `calcPlanStats`). `calcProgressByHazard()` la reutiliza por grupo, de modo que el global y el desglose no pueden discrepar. Se expone además `inProgress` (avance > 0 y < 100) para no perder de vista lo que ya arrancó pero no cerró.
+
+Los meses siguen siendo la unidad **dentro** de una actividad: `calcTaskProgress()` calcula el `totalProgress` de cada tarea a partir de su matriz mensual. Esa parte no cambió.
 
 La tarjeta del dashboard **solo se monta para `admin`**, porque `firestore.rules` restringe `workPlans` a ese rol; el hook además no abre ninguna suscripción cuando `enabled` es `false`, para no provocar un `permission-denied` en el dashboard de los demás roles.
 
@@ -214,7 +220,7 @@ node scripts/ui-preview.mjs       # capturas en .ui-preview/
 - Lista de hallazgos: tres pestañas (236 / 13 / 75), columnas de Peligro y Personal expuesto (verificado un registro con `Contratistas` y `Propio` a la vez), los tres filtros y el botón «Exportar Excel (todos)».
 - Radar con los seis ejes correctos, sin contaminación de textos libres; matriz de cobertura con encabezado fijo y la nota «Mostrando 10 de 24 plantas».
 - Gráficos de barras con el % de resolución junto a cada barra y el tooltip con el desglose.
-- Plan de trabajo: medidor en 90 % (60/67 meses). El desglose muestra las 67 actividades como **«Sin asignar»**, porque el campo `hazard` es nuevo y ninguna actividad existente lo tiene todavía — es el comportamiento esperado y la tarjeta lo explica.
+- Plan de trabajo: medidor en 90 % (60 de 67 actividades ejecutadas). El desglose muestra las 67 actividades como **«Sin asignar»**, porque el campo `hazard` es nuevo y ninguna actividad existente lo tiene todavía — es el comportamiento esperado y la tarjeta lo explica.
 
 > **Nota de entorno:** con el servidor de desarrollo corriendo, `next build` falla de forma intermitente con `Failed to collect page data` en páginas al azar. Es una colisión por el directorio `.next` compartido, no un error del código: al reintentar pasa. Además, `next build` regenera `public/sw.js` (artefacto de next-pwa versionado) — conviene revertirlo si no se quiere en el commit.
 
