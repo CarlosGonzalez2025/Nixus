@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { AnexoATS } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { SectionWrapper } from './SectionWrapper';
 
 // Props del componente
 interface AtsStepProps {
@@ -467,38 +468,6 @@ const OtrosPeligrosSection = React.memo(({
 
 OtrosPeligrosSection.displayName = 'OtrosPeligrosSection';
 
-// SectionWrapper fuera del componente principal
-const SectionWrapper = React.memo(({ 
-  title, 
-  children, 
-  sectionId,
-  isOpen,
-  onToggle
-}: { 
-  title: string; 
-  children: React.ReactNode; 
-  sectionId: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}) => (
-  <Collapsible open={isOpen} onOpenChange={onToggle}>
-    <CollapsibleTrigger asChild>
-      <Button 
-        variant="ghost" 
-        className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border"
-      >
-        <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-        <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-      </Button>
-    </CollapsibleTrigger>
-    <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-      {children}
-    </CollapsibleContent>
-  </Collapsible>
-));
-
-SectionWrapper.displayName = "SectionWrapper";
-
 export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({});
 
@@ -575,34 +544,36 @@ export function AtsStep({ anexoATS, onUpdateATS }: AtsStepProps) {
               onOpenChange={() => toggleSection(category)}
             >
               <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-between p-4 border rounded-lg"
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between gap-3 h-auto min-h-[52px] whitespace-normal text-left p-3 sm:p-4 border rounded-lg"
                 >
-                  <span className="font-semibold">{category}</span>
-                  <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+                  <span className="font-semibold min-w-0 text-left">{category}</span>
+                  <ChevronDown className="h-5 w-5 shrink-0 transition-transform data-[state=open]:rotate-180" />
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-4">
+              <CollapsibleContent className="p-3 sm:p-4 border border-t-0 rounded-b-lg space-y-4">
                 {hazards.map((hazard) => (
                   <div key={hazard.id} className="space-y-3 p-3 bg-gray-50/50 rounded-md">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={hazard.id} className="font-medium flex-1">
+                    {/* En móvil la etiqueta ocupa el ancho completo y las opciones bajan a su
+                        propia fila; en línea, un peligro largo empujaba los radios fuera. */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <Label htmlFor={hazard.id} className="font-medium flex-1 min-w-0">
                         {hazard.label}
                       </Label>
                       <RadioGroup
                         value={anexoATS.peligros?.[hazard.id] ?? ''}
                         onValueChange={(value: string) => handlePeligroChange(hazard.id, value as 'si' | 'no')}
-                        className="flex gap-4"
+                        className="flex gap-2 shrink-0"
                       >
-                        <div className="flex items-center space-x-2">
+                        <Label htmlFor={`${hazard.id}-si`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-4 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary">
                           <RadioGroupItem value="si" id={`${hazard.id}-si`} />
-                          <Label htmlFor={`${hazard.id}-si`}>SI</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
+                          SI
+                        </Label>
+                        <Label htmlFor={`${hazard.id}-no`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-4 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary">
                           <RadioGroupItem value="no" id={`${hazard.id}-no`} />
-                          <Label htmlFor={`${hazard.id}-no`}>NO</Label>
-                        </div>
+                          NO
+                        </Label>
                       </RadioGroup>
                     </div>
                     {anexoATS.peligros?.[hazard.id] === 'si' && (

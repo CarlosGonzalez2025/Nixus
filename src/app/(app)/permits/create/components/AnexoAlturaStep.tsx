@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { AnexoAltura } from '@/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SectionWrapper } from './SectionWrapper';
 
 const anexoAlturaEstructuras = [
   { id: 'escaleraCuerpo', label: 'Escalera de un cuerpo' },
@@ -301,28 +302,14 @@ const anexoAlturaPrecauciones = [
 ];
 
 const RadioGroupField = ({ id, label, value, onChange }: { id: string; label: string; value: 'si' | 'no' | 'na'; onChange: (value: 'si' | 'no' | 'na') => void; }) => (
-  <div className="flex justify-between items-center p-3 border rounded-md bg-white">
-    <Label htmlFor={id} className="text-sm font-medium flex-1">{label}</Label>
-    <RadioGroup id={id} value={value || 'na'} onValueChange={onChange} className="flex gap-4">
-      <div className="flex items-center space-x-2"><RadioGroupItem value="si" id={`${id}-si`} /><Label htmlFor={`${id}-si`}>SI</Label></div>
-      <div className="flex items-center space-x-2"><RadioGroupItem value="no" id={`${id}-no`} /><Label htmlFor={`${id}-no`}>NO</Label></div>
-      <div className="flex items-center space-x-2"><RadioGroupItem value="na" id={`${id}-na`} /><Label htmlFor={`${id}-na`}>N/A</Label></div>
+  <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3 p-3 border rounded-md bg-white">
+    <Label htmlFor={id} className="text-sm font-medium flex-1 min-w-0">{label}</Label>
+    <RadioGroup id={id} value={value || 'na'} onValueChange={onChange} className="flex gap-2 shrink-0">
+      <Label htmlFor={`${id}-si`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary"><RadioGroupItem value="si" id={`${id}-si`} />SI</Label>
+      <Label htmlFor={`${id}-no`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary"><RadioGroupItem value="no" id={`${id}-no`} />NO</Label>
+      <Label htmlFor={`${id}-na`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary"><RadioGroupItem value="na" id={`${id}-na`} />N/A</Label>
     </RadioGroup>
   </div>
-);
-
-const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => (
-  <Collapsible defaultOpen={defaultOpen}>
-    <CollapsibleTrigger asChild>
-      <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
-        <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-        <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-      </Button>
-    </CollapsibleTrigger>
-    <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-      {children}
-    </CollapsibleContent>
-  </Collapsible>
 );
 
 export function AnexoAlturaStep() {

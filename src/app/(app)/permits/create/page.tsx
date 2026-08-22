@@ -924,24 +924,28 @@ function CreatePermitWizard() {
   return (
     <>
     <div className="flex flex-1 flex-col bg-gray-50 min-h-screen">
-      <header className="text-white shadow-lg sticky top-0 z-20" style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)` }}>
-        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="flex items-center gap-3">
-                <Image 
-                    src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05_at_10_19_08.jpg"
-                    alt="Crear Permiso Icon"
-                    width={48}
-                    height={48}
-                    className="rounded-full"
-                />
-                <div className="hidden md:block border-l border-white border-opacity-30 pl-3">
-                  <h1 className="text-xl font-bold">Nuevo Permiso de Trabajo</h1>
-                  <p className="text-sm text-white text-opacity-80">
-                    Paso {step} de {steps.length}: {currentStepInfo?.label}
-                  </p>
-                </div>
+      {/*
+        En móvil la cabecera NO es sticky: el shell ya aporta una barra fija de 56px
+        (`(app)/layout.tsx`) y el indicador de paso de abajo también lo es. Con las tres
+        pegadas se perdían ~250px de los ~780px de pantalla antes del primer campo.
+      */}
+      <header className="text-white shadow-lg md:sticky md:top-0 z-20" style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.dark} 100%)` }}>
+        <div className="max-w-7xl mx-auto px-3 py-2 md:px-4 md:py-4">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <Image
+                  src="https://i.postimg.cc/RZ16KqFY/Whats-App-Image-2026-02-05_at_10_19_08.jpg"
+                  alt="Crear Permiso Icon"
+                  width={48}
+                  height={48}
+                  className="rounded-full h-9 w-9 md:h-12 md:w-12 shrink-0"
+              />
+              <div className="min-w-0 md:border-l md:border-white md:border-opacity-30 md:pl-3">
+                <h1 className="text-base md:text-xl font-bold truncate">Nuevo Permiso de Trabajo</h1>
+                {/* El "Paso N de M" vive en el indicador de abajo; en escritorio se repite aquí. */}
+                <p className="hidden md:block text-sm text-white text-opacity-80">
+                  Paso {step} de {steps.length}: {currentStepInfo?.label}
+                </p>
               </div>
             </div>
             <Button
@@ -951,71 +955,112 @@ function CreatePermitWizard() {
                 }
               }}
               variant="ghost"
-              className="bg-white bg-opacity-20 hover:bg-opacity-30"
+              aria-label="Cancelar y salir"
+              className="bg-white bg-opacity-20 hover:bg-opacity-30 h-11 w-11 p-0 shrink-0 sm:h-10 sm:w-auto sm:px-4"
             >
-              <X size={18} className="mr-2" />
+              <X size={18} />
               <span className="hidden sm:inline">Cancelar</span>
             </Button>
           </div>
         </div>
       </header>
       
-      <div className="bg-white border-b shadow-sm sticky top-[68px] md:top-[80px] z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
-          <div className="flex items-center justify-between mb-4">
-            {steps.map((s_info, s_idx) => {
-              const s = s_idx + 1;
-              return(
-              <div key={s} className="flex items-center flex-1">
-                <div className={`relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full font-bold text-sm transition-all ${
-                  s === step ? 'ring-4 scale-110 shadow-lg text-white' :
-                  s < step ? 'text-white' :
-                  'bg-gray-200 text-gray-600'
-                }`}
-                style={s <= step ? { backgroundColor: s === step ? colors.primary : colors.success } : {}}>
-                  {s < step ? <CheckCircle size={20}/> : s_idx + 1}
+      {/* `top-14` = los 56px reales de la barra del shell en móvil (antes había un `top-[68px]`
+          codificado a mano que no coincidía con ninguna altura y dejaba 4px de solape). */}
+      <div className="bg-white border-b shadow-sm sticky top-14 md:top-[80px] z-10">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 md:py-6">
+
+          {/*
+            Móvil: barra de progreso de alto fijo. Los círculos numerados no caben — con
+            todos los anexos activos son 11 pasos, que a 32px cada uno ya suman 432px.
+          */}
+          <div className="md:hidden">
+            <div className="flex items-baseline justify-between gap-3 mb-2">
+              <span className="text-sm font-bold truncate min-w-0" style={{ color: colors.primary }}>
+                {currentStepInfo?.label}
+              </span>
+              <span className="text-[11px] font-semibold text-gray-500 shrink-0">
+                Paso {step} de {steps.length}
+              </span>
+            </div>
+            <div
+              className="h-1.5 rounded-full bg-gray-200 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={step}
+              aria-valuemin={1}
+              aria-valuemax={steps.length}
+              aria-label={`Paso ${step} de ${steps.length}: ${currentStepInfo?.label ?? ''}`}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${(step / steps.length) * 100}%`, backgroundColor: colors.primary }}
+              />
+            </div>
+          </div>
+
+          {/* Escritorio: se conserva el recorrido de círculos. */}
+          <div className="hidden md:block">
+            <div className="flex items-center justify-between mb-4">
+              {steps.map((s_info, s_idx) => {
+                const s = s_idx + 1;
+                return(
+                <div key={s} className="flex items-center flex-1 min-w-0">
+                  <div className={`relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full font-bold text-sm transition-all ${
+                    s === step ? 'ring-4 scale-110 shadow-lg text-white' :
+                    s < step ? 'text-white' :
+                    'bg-gray-200 text-gray-600'
+                  }`}
+                  style={s <= step ? { backgroundColor: s === step ? colors.primary : colors.success } : {}}>
+                    {s < step ? <CheckCircle size={20}/> : s_idx + 1}
+                  </div>
+                  {s < steps.length && (
+                    <div className="flex-1 h-1 mx-1 md:mx-2 rounded" style={{
+                      backgroundColor: s < step ? colors.success : '#E5E7EB'
+                    }} />
+                  )}
                 </div>
-                {s < steps.length && (
-                  <div className="flex-1 h-1 mx-1 md:mx-2 rounded" style={{ 
-                    backgroundColor: s < step ? colors.success : '#E5E7EB' 
-                  }} />
-                )}
-              </div>
-            )})}
+              )})}
+            </div>
+            <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
+              {steps.map((s_info, s_idx) => (
+                <span key={s_idx} lang="es" className="text-[10px] md:text-xs text-center font-medium break-words hyphens-auto px-1" style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{s_info.label}</span>
+              ))}
+            </div>
           </div>
-          <div className="grid" style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`}}>
-            {steps.map((s_info, s_idx) => (
-              <span key={s_idx} className="text-[10px] md:text-xs text-center font-medium" style={{ color: step === s_idx + 1 ? colors.primary : '#6B7280' }}>{s_info.label}</span>
-            ))}
-          </div>
+
         </div>
       </div>
       
-      <div className="max-w-5xl mx-auto p-4 pb-24 md:pb-24 w-full">
-        <div key={step} className="bg-white rounded-xl shadow-xl p-6 md:p-8">
+      {/* La reserva inferior cubre el pie fijo: 44px de botón + relleno + `pb-safe`
+          (el gesto de inicio puede añadir hasta ~34px en Android/iOS). */}
+      <div className="max-w-5xl mx-auto p-3 sm:p-4 pb-28 sm:pb-24 w-full">
+        <div key={step} className="bg-white rounded-xl shadow-xl p-4 sm:p-6 md:p-8">
           {renderStepContent()}
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex gap-2 sm:gap-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t shadow-lg z-20 pb-safe">
+          <div className="max-w-5xl mx-auto px-3 py-2 sm:px-4 sm:py-3 flex gap-2 sm:gap-4">
+            {/* En móvil solo el icono (44px): los tres botones con texto suman ~530px y no caben. */}
             <Button
               onClick={() => setStep(step - 1)}
               disabled={isSubmitting || step === 1}
               variant="outline"
-              className="px-4 py-3 h-auto md:px-6"
+              aria-label="Paso anterior"
+              className="h-11 w-11 p-0 shrink-0 sm:h-auto sm:w-auto sm:px-4 sm:py-3 md:px-6"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Anterior
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Anterior</span>
             </Button>
-            
+
             <Button
                 onClick={handleSaveDraft}
                 variant="outline"
                 disabled={isSavingDraft || isSubmitting}
-                className="px-4 py-3 h-auto md:px-6"
+                aria-label="Guardar borrador"
+                className="h-11 w-11 p-0 shrink-0 sm:h-auto sm:w-auto sm:px-4 sm:py-3 md:px-6"
             >
-                {isSavingDraft ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
-                Borrador
+                {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4"/>}
+                <span className="hidden sm:inline">Borrador</span>
             </Button>
 
             {step === steps.length ? (
@@ -1024,14 +1069,18 @@ function CreatePermitWizard() {
                          <Button
                             disabled={isSubmitting || (!formData.workers?.[0]?.firmaApertura && !formData.solicitanteFirmaApertura)}
                             /* firmaApertura del solicitante viene de workers[0] (WorkersStep) o como fallback de solicitanteFirmaApertura (ReviewStep) */
-                            className="flex-1 py-3 h-auto bg-green-600 hover:bg-green-700 text-lg"
+                            /* green-700 y no green-600: blanco sobre #16A34A da 3.3:1 y este
+                               texto es de tamaño normal, que exige 4.5:1 (WCAG 1.4.3).
+                               #15803D lo sube a 5.0:1 sin cambiar el color de la acción. */
+                            className="flex-1 min-w-0 h-11 sm:h-auto sm:py-3 bg-green-700 hover:bg-green-800 sm:text-lg"
                         >
                             {isSubmitting ? (
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
-                            <Save size={22} className="mr-2" />
+                            <Save className="h-5 w-5" />
                             )}
-                            <span>Enviar Permiso para Autorización</span>
+                            <span className="sm:hidden">Enviar permiso</span>
+                            <span className="hidden sm:inline">Enviar Permiso para Autorización</span>
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -1057,10 +1106,10 @@ function CreatePermitWizard() {
                   }
                 }}
                 disabled={isSubmitting}
-                className="flex-1 py-3 h-auto"
+                className="flex-1 min-w-0 h-11 sm:h-auto sm:py-3"
               >
                 Siguiente
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -1388,7 +1437,7 @@ function CreatePermitWizard() {
         </Dialog>
 
        <Dialog open={isSignaturePadOpen} onOpenChange={setIsSignaturePadOpen}>
-        <DialogContent className="w-[90vw] max-w-lg">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Registrar Firma</DialogTitle>
           </DialogHeader>

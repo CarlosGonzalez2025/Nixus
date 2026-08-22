@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import type { EppEmergencias } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { SectionWrapper } from './SectionWrapper';
 
 
 interface EppEmergenciasStepProps {
@@ -17,30 +18,6 @@ interface EppEmergenciasStepProps {
     onUpdate: (updates: Partial<EppEmergencias>) => void;
 }
 
-
-const SectionWrapper: React.FC<{ 
-    title: string; 
-    children: React.ReactNode; 
-    defaultOpen?: boolean 
-}> = ({ title, children, defaultOpen = false }) => {
-    const [isOpen, setIsOpen] = React.useState(defaultOpen);
-    return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-            <CollapsibleTrigger asChild>
-                <Button 
-                    variant="ghost" 
-                    className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border"
-                >
-                    <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-                    <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-                </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-                {children}
-            </CollapsibleContent>
-        </Collapsible>
-    );
-};
 
 
 const RadioGroupField: React.FC<{ 
@@ -71,36 +48,38 @@ const RadioGroupField: React.FC<{
     <div className={`flex flex-col space-y-2 p-3 border rounded-md bg-white transition-all ${
         hasError ? 'border-red-500 border-2 bg-red-50' : ''
     }`}>
-        <div className="flex justify-between items-center">
-            <Label 
-                htmlFor={id} 
-                className={`text-sm font-medium flex-1 ${hasError ? 'text-red-700' : ''}`}
+        {/* En móvil la pregunta ocupa el ancho completo y las tres opciones bajan a su propia
+            fila: en línea, un enunciado largo dejaba los radios sin espacio. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <Label
+                htmlFor={id}
+                className={`text-sm font-medium flex-1 min-w-0 ${hasError ? 'text-red-700' : ''}`}
             >
                 {label}
                 {hasError && (
-                    <span className="ml-2 text-red-600 font-bold">
+                    <span className="block mt-1 text-red-600 font-bold">
                         ⚠️ Debe seleccionar "SI"
                     </span>
                 )}
             </Label>
-            <RadioGroup 
-                id={id} 
-                value={value || ''} 
-                onValueChange={onChange} 
-                className="flex gap-4"
+            <RadioGroup
+                id={id}
+                value={value || ''}
+                onValueChange={onChange}
+                className="flex gap-2 shrink-0"
             >
-                <div className="flex items-center space-x-2">
+                <Label htmlFor={`${id}-si`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary">
                     <RadioGroupItem value="si" id={`${id}-si`} />
-                    <Label htmlFor={`${id}-si`}>SI</Label>
-                </div>
-                <div className="flex items-center space-x-2">
+                    SI
+                </Label>
+                <Label htmlFor={`${id}-no`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary">
                     <RadioGroupItem value="no" id={`${id}-no`} />
-                    <Label htmlFor={`${id}-no`}>NO</Label>
-                </div>
-                <div className="flex items-center space-x-2">
+                    NO
+                </Label>
+                <Label htmlFor={`${id}-na`} className="flex min-h-[44px] items-center gap-2 rounded-md border bg-white px-3 font-semibold cursor-pointer transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5 has-[[data-state=checked]]:text-primary">
                     <RadioGroupItem value="na" id={`${id}-na`} />
-                    <Label htmlFor={`${id}-na`}>N/A</Label>
-                </div>
+                    N/A
+                </Label>
             </RadioGroup>
         </div>
         {value === 'si' && onInputChange && (
