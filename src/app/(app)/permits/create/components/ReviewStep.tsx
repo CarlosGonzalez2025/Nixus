@@ -98,15 +98,15 @@ const SectionHeader = ({
     };
 
     return (
-        <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-                <span className={colorClasses[color]}>{icon}</span>
-                <span className="font-semibold">{title}</span>
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-3">
+                <span className={cn('shrink-0', colorClasses[color])}>{icon}</span>
+                <span className="font-semibold min-w-0">{title}</span>
             </div>
             {count !== undefined && (
-                <Badge 
-                    variant="secondary" 
-                    className="ml-2 tabular-nums font-semibold bg-white/80 shadow-sm"
+                <Badge
+                    variant="secondary"
+                    className="shrink-0 tabular-nums font-semibold bg-white/80 shadow-sm"
                 >
                     {count}
                 </Badge>
@@ -162,13 +162,13 @@ const ReviewChecklist = ({
                     key={item.id} 
                     className="flex justify-between items-center text-sm py-2 px-3 rounded-md bg-muted/20 hover:bg-muted/40 transition-colors"
                 >
-                    <span className="flex-1 pr-4 text-muted-foreground text-[13px]">
+                    <span className="flex-1 min-w-0 pr-4 text-muted-foreground text-[13px]">
                         {item.label}
                     </span>
-                    <Badge 
+                    <Badge
                         variant={getStatusVariant(data?.[item.id])}
                         className={cn(
-                            "text-[10px] font-semibold min-w-[40px] justify-center",
+                            "text-[10px] font-semibold min-w-[40px] shrink-0 justify-center",
                             (data?.[item.id] === 'si' || data?.[item.id] === true) && 
                                 "bg-green-100 text-green-700 hover:bg-green-100",
                             data?.[item.id] === 'no' && 
@@ -196,16 +196,16 @@ const StatCard = ({
     label: string;
     colorClass: string;
 }) => (
-    <div className="group flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200">
+    <div className="group flex min-w-0 items-center gap-3 bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200">
         <div className={cn(
-            "p-2.5 rounded-xl transition-transform group-hover:scale-105",
+            "p-2 sm:p-2.5 rounded-xl shrink-0 transition-transform group-hover:scale-105",
             colorClass
         )}>
             <Icon className="h-5 w-5" />
         </div>
-        <div>
-            <p className="text-2xl font-bold tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground font-medium">{label}</p>
+        <div className="min-w-0">
+            <p className="text-xl sm:text-2xl font-bold tabular-nums">{value}</p>
+            <p className="text-xs text-muted-foreground font-medium leading-tight">{label}</p>
         </div>
     </div>
 );
@@ -223,16 +223,16 @@ const CollapsibleSection = ({
 }) => (
     <Collapsible defaultOpen={defaultOpen}>
         <CollapsibleTrigger className={cn(
-            "flex w-full items-center justify-between rounded-xl border-2 bg-white px-5 py-4 text-left font-semibold transition-all duration-200",
+            "flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border-2 bg-white px-4 py-3 sm:px-5 sm:py-4 text-left font-semibold transition-all duration-200",
             "hover:bg-gray-50/80 hover:shadow-sm",
             "data-[state=open]:rounded-b-none",
             borderColor
         )}>
             {trigger}
-            <ChevronDown className="h-5 w-5 text-gray-400 transition-transform duration-200 data-[state=open]:rotate-180" />
+            <ChevronDown className="h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 data-[state=open]:rotate-180" />
         </CollapsibleTrigger>
         <CollapsibleContent className={cn(
-            "border-2 border-t-0 rounded-b-xl bg-white p-6 space-y-5",
+            "border-2 border-t-0 rounded-b-xl bg-white p-4 sm:p-6 space-y-5",
             "animate-in slide-in-from-top-2 duration-200",
             borderColor
         )}>
@@ -719,7 +719,10 @@ export function ReviewStep() {
                                         <Activity className="h-4 w-4" />
                                         Pruebas de Gases Periódicas
                                     </h4>
-                                    <div className="rounded-lg border overflow-hidden">
+                                    {/* Sin `overflow-hidden`: Table ya envuelve en `overflow-auto`,
+                                        y anidarlos recortaba las 5 columnas en móvil en vez de
+                                        dejarlas desplazar. */}
+                                    <div className="rounded-lg border">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow className="bg-muted/50">

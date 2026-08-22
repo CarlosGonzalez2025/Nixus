@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SectionWrapper } from './SectionWrapper';
 import {
   Collapsible,
   CollapsibleContent,
@@ -113,31 +114,6 @@ const RadioGroupField = ({ id, label, value, onChange }: { id: string; label: st
         </RadioGroup>
     </div>
 );
-
-// Componente SectionWrapper FUERA del componente principal
-interface SectionWrapperProps {
-  title: string;
-  children: React.ReactNode;
-  sectionId: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-const SectionWrapper = React.memo<SectionWrapperProps>(({ title, children, sectionId, isOpen, onToggle }) => (
-  <Collapsible open={isOpen} onOpenChange={onToggle}>
-    <CollapsibleTrigger asChild>
-      <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
-        <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-        <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-      </Button>
-    </CollapsibleTrigger>
-    <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-      {children}
-    </CollapsibleContent>
-  </Collapsible>
-));
-
-SectionWrapper.displayName = 'SectionWrapper';
 
 // Normaliza entrada decimal: acepta coma o punto como separador (ej: "0,1" → "0.1")
 const normalizeDecimal = (val: string): string => {
@@ -385,9 +361,9 @@ export function AnexoConfinadoStep() {
             {peligroSections.map((section) => (
                 <Collapsible key={section.title} open={openSections[section.title]} onOpenChange={() => toggleSection(section.title)}>
                     <CollapsibleTrigger asChild>
-                        <Button variant="ghost" className="w-full justify-between p-4 border rounded-lg">
-                            <span className="font-semibold text-gray-700">{section.title}</span>
-                            <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+                        <Button variant="ghost" className="w-full justify-between gap-3 h-auto min-h-[52px] whitespace-normal text-left p-3 sm:p-4 border rounded-lg">
+                            <span className="font-semibold text-gray-700 min-w-0 text-left">{section.title}</span>
+                            <ChevronDown className="h-5 w-5 shrink-0 transition-transform data-[state=open]:rotate-180" />
                         </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="p-4 border border-t-0 rounded-b-lg space-y-3">

@@ -15,24 +15,8 @@ import { SignaturePad } from '@/components/ui/signature-pad';
 import type { AutorizacionPersona, ValidacionDiaria } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { SectionWrapper } from './SectionWrapper';
 
-
-const SectionWrapper: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, children, defaultOpen = false }) => {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between p-3 bg-gray-100 rounded-lg cursor-pointer border">
-          <h3 className="text-lg font-bold text-gray-700">{title}</h3>
-          <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="p-4 border-l border-r border-b rounded-b-lg">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
 
 const RadioGroupField: React.FC<{ id: string; label: string; value: string; onChange: (value: string) => void; }> = ({ id, label, value, onChange }) => (
     <div className="flex justify-between items-center p-3 border rounded-md bg-white">

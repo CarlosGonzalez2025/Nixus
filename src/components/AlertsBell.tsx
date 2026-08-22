@@ -114,8 +114,11 @@ export function AlertsBell() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative text-sidebar-foreground hover:bg-sidebar-accent">
           <Bell className="h-5 w-5" />
+          {/* red-600 en vez de bg-destructive: blanco sobre #EF4444 da 3.8:1, insuficiente
+              para un contador de 9px. #DC2626 lo deja en 4.8:1. No se toca el token
+              --destructive, que se usa en toda la app. */}
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
+            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-white">
               {unreadCount}
             </span>
           )}

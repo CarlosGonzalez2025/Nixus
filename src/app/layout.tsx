@@ -29,12 +29,14 @@ export const metadata: Metadata = {
   },
 };
 
-// 🔥 VIEWPORT (NUEVO - Para PWA)
+// VIEWPORT (PWA)
+//
+// Sin `maximumScale`/`userScalable`: bloquear el zoom incumple WCAG 2.1 SC 1.4.4 y en campo
+// es justo donde más se necesita (guantes, sol, letra pequeña de un permiso). No afecta al
+// modo standalone de la PWA.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#1DB5C1', // Color NIXUS
 };
 

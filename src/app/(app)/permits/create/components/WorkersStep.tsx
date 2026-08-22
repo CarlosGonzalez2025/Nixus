@@ -143,8 +143,8 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
 
       {/* ── Sección: Equipo de Trabajo ── */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div className="space-y-1">
+        <CardHeader className="flex flex-col gap-3 space-y-0 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1 min-w-0">
             <CardTitle>Equipo de Trabajo</CardTitle>
             <p className="text-sm text-muted-foreground">
               Se requieren <span className="font-semibold text-primary">{additionalWorkersCount}</span> trabajador(es) adicional(es) al ejecutante.
@@ -155,8 +155,9 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
             size="sm"
             disabled={!canAddWorker}
             title={!solicitante?.firmaApertura ? 'El solicitante debe firmar primero' : undefined}
+            className="h-11 w-full shrink-0 sm:h-9 sm:w-auto"
           >
-            <UserPlus className="mr-2 h-4 w-4" /> Agregar Trabajador
+            <UserPlus className="h-4 w-4" /> Agregar Trabajador
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -236,8 +237,9 @@ export function WorkersStep({ workers, onAddWorker, onEditWorker, onRemoveWorker
             )}
           </div>
 
-          {/* Tabla responsive */}
-          <div className="rounded-md border overflow-hidden">
+          {/* Tabla responsive. Sin `overflow-hidden`: Table ya envuelve en `overflow-auto`,
+              y anidarlos recortaba las columnas en móvil en vez de dejarlas desplazar. */}
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>

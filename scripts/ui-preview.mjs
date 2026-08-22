@@ -58,6 +58,9 @@ const RUTAS_PRIVADAS = [
   { slug: 'dashboard',  url: '/dashboard',  espera: 6000 },
   { slug: 'hallazgos',  url: '/hallazgos',  espera: 4000 },
   { slug: 'work-plans', url: '/work-plans', espera: 3000 },
+  // El asistente de creación de permisos: es la vista con más riesgo de desbordamiento
+  // horizontal (stepper, acordeones de título largo y pie de tres botones).
+  { slug: 'permits-create', url: '/permits/create', espera: 4000 },
 ];
 
 const log = (...a) => console.log('[ui-preview]', ...a);

@@ -108,7 +108,7 @@ const FormSection = ({
   className?: string;
 }) => (
   <div className={cn(
-    "p-5 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow duration-200",
+    "p-3.5 sm:p-5 rounded-xl border bg-white shadow-sm hover:shadow-md transition-shadow duration-200",
     className
   )}>
     {children}
@@ -735,7 +735,7 @@ export function GeneralInfoStep() {
                 key={key}
                 htmlFor={key}
                 className={cn(
-                  "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                  "flex min-h-[56px] items-center gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
                   isSelected 
                     ? "border-primary bg-primary/5 shadow-sm" 
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -747,7 +747,7 @@ export function GeneralInfoStep() {
                   onCheckedChange={(checked) => handleWorkTypeChange(key, !!checked)}
                   className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className={cn(
                     "transition-colors",
                     isSelected ? "text-primary" : "text-muted-foreground"
@@ -899,7 +899,7 @@ export function GeneralInfoStep() {
             {showSearchResults && searchTerm && (
               <div
                 ref={resultsContainerRef}
-                className="absolute z-50 w-[calc(100%-2rem)] md:w-auto md:min-w-[400px] max-w-[600px] mt-1 bg-white border rounded-xl shadow-xl overflow-hidden"
+                className="absolute z-50 w-full md:w-auto md:min-w-[400px] max-w-full md:max-w-[600px] mt-1 bg-white border rounded-xl shadow-xl overflow-hidden"
               >
                 <div 
                   className="max-h-[50vh] overflow-y-auto overscroll-contain"
