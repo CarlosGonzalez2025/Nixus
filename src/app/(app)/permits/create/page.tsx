@@ -192,8 +192,9 @@ function CreatePermitWizard() {
     };
   }, [isFormDirty, showSuccessDialog]);
 
+  const editId = searchParams.get('edit');
+
   useEffect(() => {
-    const editId = searchParams.get('edit');
     if (editId) {
       setIsLoadingForm(true);
       const fetchDraft = async () => {
@@ -219,9 +220,14 @@ function CreatePermitWizard() {
       };
       fetchDraft();
     } else {
+      // "Nuevo Permiso" comparte la ruta /permits/create con "?edit=", así que el
+      // componente no se desmonta al navegar entre ambos y `draftId` sobrevivía,
+      // apuntando al permiso anterior. Limpiarlo evita que un guardado posterior
+      // reescriba ese permiso.
+      setDraftId(undefined);
       setIsLoadingForm(false);
     }
-  }, [searchParams, dispatch, router, toast]);
+  }, [editId, dispatch, router, toast]);
 
   useEffect(() => {
     if (user && !isLoadingForm && !draftId) {
@@ -380,9 +386,26 @@ function CreatePermitWizard() {
         }
         toast({ title: "Borrador Guardado", description: "Tu progreso ha sido guardado." });
         return true;
-      } else {
-        throw new Error(result.error || 'No se pudo guardar el borrador.');
       }
+
+      // El permiso ya avanzó en el flujo (lo firmaron desde otro dispositivo).
+      // Se suelta la referencia para no reintentar contra ese documento y se
+      // lleva al usuario al detalle, que es donde ya debe continuar el proceso.
+      if ((result as { code?: string }).code === 'PERMIT_NOT_EDITABLE' && draftId) {
+        const permitId = draftId;
+        setDraftId(undefined);
+        toast({
+          variant: 'destructive',
+          title: 'El permiso ya no es un borrador',
+          description: result.error,
+          duration: 9000,
+        });
+        dispatch({ type: 'RESET_FORM' });
+        router.push(`/permits/${permitId}`);
+        return false;
+      }
+
+      throw new Error(result.error || 'No se pudo guardar el borrador.');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message });
       return false;

@@ -372,6 +372,13 @@ const getStatusText = (status: string) => {
 
 const signatureRoles: { [key: string]: string } = SIGNATURE_ROLE_LABELS;
 
+/**
+ * Únicos estados en los que el asistente de creación puede reescribir un permiso.
+ * Cualquier otro (aprobado, en_ejecucion, suspendido, cerrado, cancelado, rechazado)
+ * ya pasó por el flujo de firmas y no admite ediciones desde el formulario.
+ */
+const DRAFT_EDITABLE_STATUSES: PermitStatus[] = ['borrador', 'pendiente_revision'];
+
 type PermitCreateData = Omit<Permit, 'id' | 'createdAt' | 'status' | 'createdBy' | 'number' | 'user' | 'approvals' | 'closure'> & {
     userId: string;
     userDisplayName: string | null;
@@ -498,14 +505,72 @@ export async function savePermitDraft(data: PermitCreateData & { draftId?: strin
   try {
     if (draftId) {
       const docRef = adminDb.collection('permits').doc(draftId);
-      const existing = await docRef.get();
-      if (!existing.exists) {
-        return { success: false, error: 'El borrador no existe.' };
+
+      // Nunca se sobrescriben el estado ni las aprobaciones desde el formulario:
+      // son propiedad del flujo de firmas, no del asistente. Un borrador puede llevar
+      // firmas de apertura ya registradas (ver addSignatureAndNotify) y reescribirlas
+      // aquí las destruiría.
+      const { status: _ignoredStatus, approvals: _ignoredApprovals, ...editableFields } = permitPayload;
+
+      // Excepción acotada: si el usuario quita un tipo de trabajo, la firma específica de
+      // ese tipo deja de tener sentido y hay que soltarla. La vista de detalle ya la oculta
+      // por tipo de trabajo, pero drawSignatures() del PDF la imprime sin filtrar, así que
+      // sin esto quedaría una firma huérfana en un documento legal.
+      const obsoleteApprovals: Record<string, { status: 'pendiente' }> = {};
+      if (!editableFields.selectedWorkTypes?.alturas && !editableFields.trabajoAlturas) {
+        obsoleteApprovals['approvals.coordinador_alturas'] = { status: 'pendiente' };
       }
-      if (existing.data()?.createdBy !== userId) {
-        return { success: false, error: 'No tienes permiso para modificar este borrador.' };
+      if (!editableFields.selectedWorkTypes?.confinado && !editableFields.espaciosConfinados) {
+        obsoleteApprovals['approvals.supervisor_confinado'] = { status: 'pendiente' };
       }
-      await docRef.update({ ...permitPayload, updatedAt: FieldValue.serverTimestamp() });
+      if (!editableFields.selectedWorkTypes?.energia && !editableFields.controlEnergia) {
+        obsoleteApprovals['approvals.mantenimiento'] = { status: 'pendiente' };
+      }
+      if (!editableFields.isSSTSignatureRequired) {
+        obsoleteApprovals['approvals.lider_sst'] = { status: 'pendiente' };
+      }
+
+      // Lectura y escritura en una transacción: la guarda de estado tiene que evaluarse
+      // contra el mismo instante en que se escribe. Con un get() suelto, una firma
+      // concurrente (el autorizante desde otro dispositivo) podía colarse entre la
+      // comprobación y el update.
+      const guard = await adminDb.runTransaction(async (tx) => {
+        const existing = await tx.get(docRef);
+        if (!existing.exists) {
+          return { ok: false as const, error: 'El borrador no existe.' };
+        }
+
+        const existingData = existing.data() as Permit;
+        if (existingData.createdBy !== userId) {
+          return { ok: false as const, error: 'No tienes permiso para modificar este borrador.' };
+        }
+
+        // GUARDA DE ESTADO: el asistente de creación conserva `draftId` en memoria.
+        // Si esa pestaña sigue abierta mientras el permiso avanza en otro dispositivo,
+        // un "Guardar borrador" posterior llegaba aquí y devolvía a 'borrador' un permiso
+        // ya aprobado o en ejecución, borrando todas las firmas. Como esta acción corre
+        // con el Admin SDK, se salta la regla de Firestore que sí bloquea ese caso en el
+        // cliente, así que la única barrera posible es esta.
+        if (!DRAFT_EDITABLE_STATUSES.includes(existingData.status)) {
+          return {
+            ok: false as const,
+            code: 'PERMIT_NOT_EDITABLE' as const,
+            error: `Este permiso ya está en estado "${getStatusText(existingData.status)}" y no puede volver a Borrador. Los cambios no se guardaron.`,
+          };
+        }
+
+        tx.update(docRef, {
+          ...editableFields,
+          ...obsoleteApprovals,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return { ok: true as const };
+      });
+
+      if (!guard.ok) {
+        return { success: false, code: guard.code, error: guard.error };
+      }
+
       revalidatePath(`/permits/${draftId}`);
       revalidatePath('/permits');
       return { success: true, permitId: draftId, isUpdate: true };

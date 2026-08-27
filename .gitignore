@@ -37,6 +37,9 @@ next-env.d.ts
 
 # firebase / credenciales (NUNCA versionar)
 scripts/serviceAccountKey.json
+# copias de seguridad de documentos de Firestore: llevan firmas en base64 de
+# personas reales, no pueden salir del equipo
+scripts/backups/
 .firebase/
 
 # logs de servidor de desarrollo
