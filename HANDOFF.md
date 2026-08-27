@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-21 (Sesión 20)
+> **Última actualización de este documento:** 2026-08-27 (Sesión 21)
 
 ---
 
@@ -64,6 +64,86 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-08-27 (Sesión 21) — Permisos EN EJECUCIÓN que retrocedían a Borrador borrando todas las firmas
+
+**Reporte del cliente:** dos permisos de la planta BARRANQUILLA aparecían en la pestaña **Borrador** pese a que los usuarios habían completado todo el proceso y estaban en ejecución. Se diagnosticó, se restauró la información perdida y se cerró la causa raíz.
+
+#### 21.1 Confirmación de que sí llegaron a EN EJECUCIÓN
+
+No hay historial de estados en el documento del permiso, así que la línea de tiempo se reconstruyó desde la colección `notifications` (que sí guarda `permitId`, `type`, `createdAt` y `triggeredBy`). Horas en Colombia:
+
+| | `PT-1787834609456-N1OOWF` (Alturas) | `PT-1787844430129-SZQAMB` (Confinado + Caliente) |
+|---|---|---|
+| Borrador creado | 07:27 | 08:52 |
+| Firma coordinador / supervisor | 07:43 Dianis Legarda | 10:26 Dianis Legarda |
+| Enviado a revisión | 07:43 LUIS ANGULO | 10:27 VICTOR QUINTERO |
+| **EN EJECUCIÓN** | **07:44 PEDRO POLO** | **12:03 PEDRO POLO** |
+| Validación diaria DÍA 1 | 07:44 | 12:04 |
+| **Retroceso a Borrador** | **entre 08:45 y 09:00** (+ 2ª sobreescritura 15:50) | **13:41** |
+
+#### 21.2 Causa raíz: `savePermitDraft` era la única acción sin guarda de estado
+
+`savePermitDraft()` en `permits/actions.ts` solo verificaba que el documento existiera y que `createdBy === userId`. **No miraba el estado actual.** Acto seguido escribía `status: 'borrador'` y reemplazaba el mapa completo de `approvals` por todo `pendiente`.
+
+Se auditaron las 13 server actions de permisos: `addSignatureAndNotify` (vía `validateSignaturePermission`), `updatePermitStatus`, `addDailyValidationSignature`, `addDailyValidationClosureSignature`, `closePermitByAnyUser`, `addWorkerSignature`, `updatePermitClosureChecklist`, `updatePermitAnexoATS`, `addPruebaGasesPeriodica` y `deletePermit` **ya validaban el estado**. `savePermitDraft` era la excepción, y además es **el único punto de todo el código que escribe `status: 'borrador'`** — lo que descarta cualquier otra explicación.
+
+Tres agravantes que convirtieron un descuido en pérdida de datos silenciosa:
+
+1. Corre con el **Admin SDK**, así que se salta `firestore.rules`, donde la regla `isCreator(resource.data) && resource.data.status == 'borrador'` sí bloquea exactamente este caso desde el cliente. La única barrera posible estaba en la propia acción.
+2. **No emite ninguna notificación.** Por eso nadie se enteró hasta que el permiso reapareció en la pestaña equivocada.
+3. Una vez en Borrador, la lista vuelve a ofrecer **«Continuar»** → `/permits/create?edit=<id>`, que reabre el asistente sobre el mismo permiso. El fallo se retroalimentaba: de ahí la segunda sobreescritura de las 15:50.
+
+#### 21.3 El disparador: `draftId` sobrevivía a la navegación
+
+`draftId` vive en un `useState` de `CreatePermitWizard` y **nunca se limpiaba**. Como «Nuevo Permiso» (`/permits/create`) y «Continuar» (`/permits/create?edit=X`) son **la misma ruta**, React no desmonta el componente al navegar entre ellas y el `draftId` del permiso anterior seguía en memoria. Desde ahí, dos controles lo usaban:
+
+- el botón **«Borrador»** de la barra inferior → `handleSaveDraft()`
+- **«Guardar borrador y salir»** del diálogo de navegación → `handleSaveDraftAndLeave()`
+
+Con la cuenta compartida `ofvariositalcol@gmail.com` (LUIS ANGULO, VICTOR QUINTERO y otros usan la misma sesión en varios dispositivos), basta con que una pestaña quede abierta mientras el permiso avanza en otro equipo.
+
+#### 21.4 Prueba forense: el número delata el retroceso
+
+Un borrador legítimo **nunca tiene `number`** — lo asigna `addSignatureAndNotify` al pasar a `pendiente_revision`. Como `savePermitDraft` no toca ese campo, todo documento con `status === 'borrador'` **y** `number != null` es necesariamente un permiso revertido. Ese detector, en `scripts/diag-permisos-revertidos.ts`, dio **3 casos sobre 2.998 permisos**: los dos reportados y `PT-1776714432270-O1P6JM` (20-abr-2026, EDINSON SANCHEZ, PLANTA 1), que retrocedió desde `pendiente_revision`.
+
+#### 21.5 Restauración con Point-in-Time Recovery
+
+Firestore tenía **PITR habilitado** (`pointInTimeRecoveryEnablement: ENABLED`, retención 7 días, `earliestVersionTime: 2026-08-20`). Se leyó cada documento tal como estaba antes del daño mediante transacciones de solo lectura con `readTime`, y se localizó el instante exacto del retroceso por bisección.
+
+`scripts/restaurar-permisos-revertidos.ts` (dry-run por defecto, `--apply` para escribir) hace copia del estado dañado en `scripts/backups/` y reescribe el documento completo desde el snapshot. Ejecutado el 2026-08-27. Recuperado en ambos: `status`, las tres `approvals` con sus imágenes de firma, la validación diaria del DÍA 1 de los anexos y las firmas de apertura de los trabajadores.
+
+`scripts/verificar-permisos-restaurados.ts` reproduce `checkAllRequiredSignaturesComplete()` para confirmar que `en_ejecucion` es un estado **legítimo** en cada permiso y no un valor forzado. Ambos coherentes: N1OOWF con solicitante + autorizante + coordinador_alturas; SZQAMB con solicitante + autorizante + supervisor_confinado.
+
+El permiso de abril queda fuera de la ventana de PITR y **no es recuperable**.
+
+#### 21.6 Correcciones aplicadas
+
+**`permits/actions.ts` — `savePermitDraft()`**
+
+- **Guarda de estado en transacción.** Solo se admite reescribir un permiso en `borrador` o `pendiente_revision` (constante `DRAFT_EDITABLE_STATUSES`). Cualquier otro devuelve `code: 'PERMIT_NOT_EDITABLE'` sin escribir. Va dentro de `runTransaction` a propósito: con un `get()` suelto, una firma concurrente desde otro dispositivo podía colarse entre la comprobación y el `update`.
+- **Deja de sobrescribir `status` y `approvals`** en actualizaciones. Son propiedad del flujo de firmas, no del formulario; un borrador puede llevar firmas de apertura ya registradas.
+- **Excepción acotada:** si el usuario quita un tipo de trabajo, la firma específica de ese tipo se libera (`coordinador_alturas`, `supervisor_confinado`, `mantenimiento`, `lider_sst`). Sin esto quedaría una firma huérfana: la vista de detalle la oculta por tipo de trabajo, pero `drawSignatures()` de `pdf-generators.ts` la imprime **sin filtrar** — es decir, aparecería en un documento legal.
+
+**`permits/create/page.tsx`**
+
+- Se limpia `draftId` cuando la URL no trae `?edit=`, cerrando el arrastre entre «Continuar» y «Nuevo Permiso».
+- El efecto depende de `editId` (string) en lugar del objeto `searchParams`, para que no se dispare por identidad.
+- Ante `PERMIT_NOT_EDITABLE` el asistente suelta la referencia, resetea el formulario, avisa al usuario y lo lleva al detalle del permiso, que es donde debe continuar el proceso.
+
+#### 21.7 Por qué el flujo de negocio no cambia
+
+El camino normal es idéntico. Permiso nuevo: `savePermitDraft` crea el documento en `borrador` con `approvals` iniciales (rama de creación, intacta) → firma del coordinador/supervisor si aplica → firma del solicitante, que asigna número y pasa a `pendiente_revision`. Borrador existente: ahora se actualizan solo los campos del formulario y las firmas ya registradas sobreviven, en vez de borrarse y volver a escribirse.
+
+El único comportamiento que cambia es el de un permiso ya en `pendiente_revision` reabierto con `?edit=`: antes se le regeneraba el número, se le borraban las aprobaciones y se reenviaban las notificaciones de creación; ahora conserva número y firmas. En la práctica ese camino no es alcanzable desde la interfaz — «Continuar» y el botón de editar del detalle solo aparecen en `borrador` — pero se dejó permitido para no romper enlaces guardados.
+
+Verificado: `tsc --noEmit` en 0 errores y build de producción correcto (38 páginas).
+
+#### 21.8 Riesgo colateral que el bug abría
+
+`deletePermit()` solo permite borrar permisos en `borrador`. Mientras un permiso en ejecución estuviera revertido, **era eliminable desde la interfaz** con el botón de papelera de la lista. Ninguno de los tres casos llegó a borrarse, pero conviene tenerlo presente al valorar la severidad.
 
 ---
 
@@ -3750,7 +3830,14 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 - [ ] **Sesión 19 — limpieza opcional:** `vercel.json` quedó en el repositorio pero es inerte en App Hosting. Si se confirma que nunca se desplegará en Vercel, conviene eliminarlo para que nadie vuelva a asumir que sus crons están activos
 - [ ] **Sesión 19 — anterior a esta sesión:** Twilio está en placeholders (`YOUR_TWILIO_ACCOUNT_SID`), así que las notificaciones de WhatsApp fallan en silencio
 - [ ] **Sesión 19 — política a confirmar:** hoy el Líder SST recibe también los reclamos de firmas diarias de toda su planta. Si resulta ruidoso, basta con retirar `'lider_sst'` de las audiencias de `firma_apertura_pendiente` y `firma_cierre_diario_pendiente` en `permit-alerts.ts`; seguiría recibiendo el escalamiento de vencidos a partir del día 3
+- [ ] **Sesión 21 — deuda estructural, la más importante de esta lista:** el permiso **no guarda historial de estados**. La investigación del retroceso a Borrador obligó a reconstruir la línea de tiempo desde `notifications` y a bisecar con PITR. Un `statusHistory[]` (estado anterior, nuevo, actor, momento, acción que lo provocó) haría trivial cualquier auditoría futura; en un sistema de permisos de trabajo de alto riesgo es requisito, no lujo
+- [ ] **Sesión 21 — riesgo operativo para el cliente:** `ofvariositalcol@gmail.com` es una **cuenta compartida** entre LUIS ANGULO, VICTOR QUINTERO y otros. Eso fue lo que permitió que un dispositivo pisara el trabajo de otro, y hace que `createdBy` no identifique a una persona real. Conviene abrir una cuenta por persona antes de que vuelva a morder
+- [ ] **Sesión 21 — hueco de autorización a revisar:** las server actions de permisos reciben `userId` / `user` **como parámetro del cliente**, sin verificar la sesión contra el ID token de Firebase Auth. `savePermitDraft` compara contra `createdBy`, lo que exige conocer el uid del creador, pero el patrón general permitiría suplantar a otro usuario. Corregirlo implica pasar el ID token y verificarlo con el Admin SDK en cada acción: es un refactor amplio, no un parche
+- [ ] **Sesión 21 — no recuperable:** `PT-1776714432270-O1P6JM` (20-abr-2026, EDINSON SANCHEZ, PLANTA 1) retrocedió desde `pendiente_revision` y quedó fuera de la ventana de PITR de 7 días. Sigue en Borrador con su número asignado; hay que decidir con el cliente si se rehace o se cancela
+- [ ] **Sesión 21 — detector periódico:** `scripts/diag-permisos-revertidos.ts` es de solo lectura y detecta el patrón (`status === 'borrador'` **y** `number != null`). Vale la pena correrlo tras cada despliegue que toque el asistente de creación
+- [ ] **Sesión 21 — mejora de robustez:** `drawSignatures()` en `pdf-generators.ts` imprime `approvals.coordinador_alturas` sin comprobar que el permiso sea de alturas, a diferencia de la vista de detalle. Se cubrió liberando la firma en `savePermitDraft`, pero lo correcto sería que el PDF también filtre por tipo de trabajo
+- [ ] **Sesión 21 — código muerto:** `createPermit()` en `permits/actions.ts` no lo llama nadie (el asistente usa `savePermitDraft` + `addSignatureAndNotify`). Crea permisos directamente en `pendiente_revision` saltándose el flujo de firmas. Se dejó intacto para no romper bundles cacheados, pero conviene eliminarlo en una limpieza posterior
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-08-06. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-08-27. Mantener actualizado con cada sesión de desarrollo.*
