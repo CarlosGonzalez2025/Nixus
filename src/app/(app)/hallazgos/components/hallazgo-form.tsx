@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useForm, useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -14,7 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUpload } from '@/components/ui/file-upload';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,7 @@ import {
     AlertTriangle, Timer, Shield, Hash, Camera, CheckSquare,
     Plus, X, MapPin, Building2, Factory, Layers,
     Navigation, WifiOff, PenLine, CheckCircle, Check,
-    ThumbsUp, Repeat, Network, UserCog, Trash2,
+    ThumbsUp, Repeat, Network, UserCog, Trash2, ArrowLeft,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/use-user';
@@ -111,6 +111,19 @@ type SeguimientoValues = z.infer<typeof seguimientoSchema>;
 interface HallazgoFormProps {
     hallazgo?: Hallazgo;
     isViewMode?: boolean;
+    /**
+     * Encabezado propio del formulario (volver + título + Cancelar/Registrar).
+     * Solo lo usa la pantalla de creación; el detalle de un hallazgo ya trae su
+     * propio encabezado con volver, PDF y editar, y duplicarlo sería ruido.
+     */
+    header?: { title: string; description?: string };
+    /** Destino de "Volver" y de "Cancelar" cuando no se pasa `onCancel`. */
+    backHref?: string;
+    /**
+     * Qué hacer al cancelar. El detalle lo usa para volver al modo lectura sin
+     * salir de la página. Si no se pasa, se navega a `backHref`.
+     */
+    onCancel?: () => void;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -164,41 +177,304 @@ function seguimientosFromHallazgo(h: Hallazgo): SeguimientoValues[] {
     }];
 }
 
+/**
+ * Hallazgo guardado -> valores del formulario. Vive fuera del componente porque
+ * se usa tanto al abrir la edición como al descartar cambios: así "descartar"
+ * devuelve exactamente lo que hay en Firestore y no deja ediciones colgando.
+ */
+function valoresDesdeHallazgo(hallazgo: Hallazgo) {
+    // Compatibilidad hacia atrás: si tiene los campos legacy los usamos
+    const empresaVal = hallazgo.empresa || hallazgo.frenteTrabajo || '';
+    const plantaVal = hallazgo.planta || hallazgo.centroCosto || '';
+    const fechaVal = hallazgo.fechaVisita
+        ? hallazgo.fechaVisita.toDate()
+        : hallazgo.fechaIdentificacion?.toDate() || new Date();
+
+    return {
+        empresa: empresaVal,
+        planta: plantaVal,
+        area: hallazgo.area,
+        tipoActividad: hallazgo.tipoActividad,
+        responsabilidad: hallazgo.responsabilidad,
+        tipoHallazgo: hallazgo.tipoHallazgo,
+        fechaVisita: fechaVal,
+        geolocalizacion: hallazgo.geolocalizacion as any,
+        peligroInspeccionado: hallazgo.peligroInspeccionado,
+        personalExpuesto: hallazgo.personalExpuesto || '',
+        hallazgo: hallazgo.hallazgo,
+        evidenciasFotograficas: hallazgo.evidenciasFotograficas || [],
+        clase: hallazgo.clase,
+        intervencion: hallazgo.intervencion,
+        descripcion: hallazgo.descripcion,
+        accionInmediata: hallazgo.accionInmediata || '',
+        reportadoPorNombre: hallazgo.reportadoPorNombre,
+        reportadoPorCargo: hallazgo.reportadoPorCargo,
+        firmaReportador: hallazgo.firmaReportador || '',
+        firmaResponsable: hallazgo.firmaResponsable || '',
+        fechaMedidaImplementada: hallazgo.fechaMedidaImplementada?.toDate(),
+        responsable: hallazgo.responsable,
+        seguimientos: seguimientosFromHallazgo(hallazgo),
+        evidenciasPlanAccion: hallazgo.evidenciasPlanAccion || [],
+        fechaCierre: hallazgo.fechaCierre?.toDate(),
+        porcentajeCumplimientoTotal: hallazgo.porcentajeCumplimientoTotal,
+        cumplimientoEstado: hallazgo.cumplimientoEstado,
+        observacion: hallazgo.observacion,
+    };
+}
+
 const labelClass = 'text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block';
 
+/**
+ * Selector de fecha. Neutraliza dos trampas que se combinaban para producir
+ * "La fecha … es requerida" con la fecha visible en pantalla:
+ *
+ * 1. react-day-picker en `mode="single"` SIN `required` DESELECCIONA el día al
+ *    volver a pulsarlo (dispara `onSelect(undefined)`). Como el formulario abre
+ *    con la fecha de hoy ya seleccionada, tocar "hoy" —el gesto natural para
+ *    confirmarla— borraba el valor; por eso sólo se lograba guardar eligiendo
+ *    otro día. `required` hace que un segundo toque reconfirme en vez de borrar.
+ * 2. `field.value` de react-hook-form NO es el valor real: `useController`
+ *    memoiza el defaultValue en el primer render y lo devuelve cuando el valor
+ *    pasa a `undefined`. El botón seguía mostrando la fecha borrada mientras
+ *    zod la validaba como ausente. `useWatch` sin defaultValue lee el valor
+ *    real, así la UI y la validación no pueden desincronizarse.
+ *
+ * Las fechas opcionales se limpian con un botón explícito, nunca por un toque
+ * accidental.
+ */
 function DateField({
-    label, field, loading, disabled,
+    label, field, loading, disabled, optional = false,
 }: {
-    label: string; field: any; loading: boolean; disabled?: boolean;
+    label: string; field: any; loading: boolean; disabled?: boolean; optional?: boolean;
 }) {
+    const [open, setOpen] = useState(false);
+    const { control } = useFormContext();
+    const value = toDate(useWatch({ control, name: field.name }));
+
     return (
         <FormItem className="flex flex-col">
             <FormLabel className={labelClass}>{label}</FormLabel>
-            <Popover>
+            <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <FormControl>
                         <Button
+                            type="button"
                             variant="outline"
                             disabled={loading || disabled}
                             className={cn(
-                                'w-full pl-3 text-left font-normal h-10 border-border/60 hover:border-border transition-colors',
-                                !field.value && 'text-muted-foreground'
+                                'w-full justify-start pl-3 text-left font-normal h-11 sm:h-10 border-border/60 hover:border-border transition-colors',
+                                !value && 'text-muted-foreground'
                             )}
                         >
                             <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0" />
-                            {field.value
-                                ? format(field.value, 'PPP', { locale: es })
+                            {value
+                                ? format(value, 'PPP', { locale: es })
                                 : <span className="text-sm">Seleccionar fecha</span>
                             }
                         </Button>
                     </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    <Calendar
+                        mode="single"
+                        required
+                        selected={value}
+                        onSelect={(d) => {
+                            if (!d) return; // nunca borrar la fecha por un toque repetido
+                            field.onChange(d);
+                            setOpen(false);
+                        }}
+                        locale={es}
+                        initialFocus
+                    />
+                    {optional && value && !disabled && (
+                        <div className="border-t border-border/60 p-2">
+                            <Button
+                                type="button" variant="ghost" size="sm"
+                                className="w-full h-8 text-xs text-muted-foreground"
+                                onClick={() => { field.onChange(undefined); setOpen(false); }}
+                            >
+                                <X className="mr-1.5 h-3 w-3" /> Quitar fecha
+                            </Button>
+                        </div>
+                    )}
                 </PopoverContent>
             </Popover>
             <FormMessage />
         </FormItem>
+    );
+}
+
+// ─── Completitud por sección ───────────────────────────────────────────────────
+// Espejo de los campos obligatorios del esquema zod, agrupados por acordeón. Si
+// se agrega o quita un obligatorio arriba, hay que reflejarlo aquí: es lo único
+// que alimenta las píldoras de estado y el contador de avance.
+const SECCION_REQUERIDOS = {
+    general: [
+        'empresa', 'planta', 'area', 'tipoActividad', 'responsabilidad', 'tipoHallazgo',
+        'fechaVisita', 'geolocalizacion', 'peligroInspeccionado', 'personalExpuesto',
+    ],
+    evidencia: ['hallazgo'],
+    clasificacion: ['clase', 'intervencion', 'descripcion'],
+    reportado: ['reportadoPorNombre', 'reportadoPorCargo'],
+} satisfies Record<string, readonly (keyof FormValues)[]>;
+
+type SeccionId = keyof typeof SECCION_REQUERIDOS;
+const SECCIONES = Object.keys(SECCION_REQUERIDOS) as SeccionId[];
+
+// Listas planas creadas una sola vez: `useWatch` compara los nombres en cada
+// render y una referencia nueva por render lo haría resuscribirse sin necesidad.
+const CAMPOS_POR_SECCION = Object.fromEntries(
+    SECCIONES.map(s => [s, [...SECCION_REQUERIDOS[s]] as string[]]),
+) as Record<SeccionId, string[]>;
+const CAMPOS_TODOS: string[] = SECCIONES.flatMap(s => CAMPOS_POR_SECCION[s]);
+
+/**
+ * Campos que representan trabajo real del usuario al crear. Excluye lo que el
+ * formulario rellena solo al abrir (fecha de hoy, geolocalización, nombre y cargo
+ * del reportador) y los que traen valor por defecto (tipo de actividad, clase,
+ * intervención): si nada de esto tiene contenido, cancelar no pierde nada y no
+ * hace falta confirmar.
+ */
+const CAMPOS_CON_TRABAJO: string[] = [
+    'empresa', 'planta', 'area', 'responsabilidad', 'tipoHallazgo',
+    'peligroInspeccionado', 'personalExpuesto', 'hallazgo', 'descripcion',
+    'accionInmediata', 'evidenciasFotograficas',
+];
+
+/** Un obligatorio cuenta como diligenciado cuando tiene un valor real. */
+const tieneValor = (v: unknown): boolean => {
+    if (v === undefined || v === null) return false;
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (v instanceof Date) return !isNaN(v.getTime());
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return Object.keys(v as object).length > 0;
+    return true;
+};
+
+/**
+ * Valores actuales de una lista de campos. Cada consumidor se suscribe solo a los
+ * suyos, así que al escribir se vuelve a renderizar la píldora o el encabezado
+ * —nunca el formulario completo—.
+ */
+function useValoresDe(campos: string[]): unknown[] {
+    const { control } = useFormContext<FormValues>();
+    return (useWatch({ control, name: campos as any }) as unknown[]) ?? [];
+}
+
+/** Obligatorios sin diligenciar, sección por sección. */
+function contarPendientes(valores: unknown[], secciones: readonly SeccionId[]) {
+    const out = {} as Record<SeccionId, number>;
+    let i = 0;
+    secciones.forEach(s => {
+        const n = CAMPOS_POR_SECCION[s].length;
+        out[s] = valores.slice(i, i + n).filter(v => !tieneValor(v)).length;
+        i += n;
+    });
+    return out;
+}
+
+const PILL_BASE = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide whitespace-nowrap';
+
+/** Píldora de estado en la cabecera de un acordeón. */
+function SectionStatus({ seccion, className }: { seccion: SeccionId; className?: string }) {
+    const valores = useValoresDe(CAMPOS_POR_SECCION[seccion]);
+    const pendientes = valores.filter(v => !tieneValor(v)).length;
+    return pendientes === 0 ? (
+        <span className={cn(PILL_BASE, 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400', className)}>
+            <Check className="h-2.5 w-2.5" />
+            <span className="hidden sm:inline">COMPLETA</span>
+            <span className="sm:hidden">OK</span>
+        </span>
+    ) : (
+        <span className={cn(PILL_BASE, 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400', className)}>
+            {pendientes}
+            <span className="hidden sm:inline">{pendientes === 1 ? 'PENDIENTE' : 'PENDIENTES'}</span>
+            <span className="sm:hidden">PEND.</span>
+        </span>
+    );
+}
+
+// ─── Encabezado del formulario (volver + acciones + avance) ────────────────────
+function FormHeaderBar({
+    title, description, submitLabel, loading, draftLabel, readOnly, onBack, onCancel,
+}: {
+    title: string;
+    description?: string;
+    submitLabel: string;
+    loading: boolean;
+    draftLabel: string | null;
+    readOnly?: boolean;
+    onBack: () => void;
+    onCancel: () => void;
+}) {
+    const valores = useValoresDe(CAMPOS_TODOS);
+    const pendientes = contarPendientes(valores, SECCIONES);
+    const completas = SECCIONES.filter(s => pendientes[s] === 0).length;
+
+    return (
+        <section className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-4 space-y-3">
+            {/* `flex-wrap`: las acciones caen solas a una segunda fila cuando el
+                ancho no alcanza, sin necesidad de un breakpoint fijo. */}
+            <div className="flex flex-wrap items-start gap-x-3 gap-y-2.5">
+                <Button
+                    type="button" variant="outline" size="icon"
+                    onClick={onBack} aria-label="Volver a Hallazgos" title="Volver a Hallazgos"
+                    className="h-11 w-11 sm:h-10 sm:w-10 flex-shrink-0 rounded-lg border-border/60"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex-1 min-w-[9rem]">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">{title}</h1>
+                    {description && (
+                        <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">{description}</p>
+                    )}
+                </div>
+
+                {/* Bajo 640px las acciones viven en la barra fija inferior. */}
+                {!readOnly && (
+                    <div className="hidden sm:flex items-center gap-2 ml-auto flex-shrink-0">
+                        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+                            <X className="mr-2 h-4 w-4" />
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={loading} className="min-w-[160px]">
+                            {loading
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</>
+                                : <><Send className="mr-2 h-4 w-4" />{submitLabel}</>
+                            }
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2.5 border-t border-border/50 pt-3">
+                <div className="flex gap-1 flex-1 sm:flex-none">
+                    {SECCIONES.map(s => (
+                        <span key={s}
+                            className={cn(
+                                'h-1 rounded-full flex-1 sm:w-7 sm:flex-none transition-colors',
+                                pendientes[s] === 0 ? 'bg-primary' : 'bg-border'
+                            )}
+                        />
+                    ))}
+                </div>
+                <span className="text-[11px] sm:text-xs font-medium text-muted-foreground tabular-nums flex-shrink-0">
+                    <span className="sm:hidden">{completas}/{SECCIONES.length} secciones</span>
+                    <span className="hidden sm:inline">
+                        {completas} de {SECCIONES.length} secciones completas
+                    </span>
+                </span>
+                {draftLabel && (
+                    <span className="ml-auto flex items-center gap-1.5 text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Borrador guardado {draftLabel}</span>
+                        <span className="sm:hidden">Borrador</span>
+                    </span>
+                )}
+            </div>
+        </section>
     );
 }
 
@@ -231,7 +507,7 @@ function OptionToggle<T extends string>({
                         disabled={disabled}
                         onClick={() => onChange(opt.value)}
                         className={cn(
-                            'h-10 rounded-lg border text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5',
+                            'h-11 sm:h-10 rounded-lg border text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5',
                             isSelected
                                 ? opt.activeClass || 'border-primary/40 bg-primary/10 text-primary'
                                 : 'border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/50'
@@ -301,7 +577,7 @@ function ComboListField({
         <div className="space-y-1.5">
             <div className="flex items-center gap-2">
                 <Select value={value} onValueChange={onChange} disabled={disabled}>
-                    <SelectTrigger className="h-10 border-border/60 flex-1">
+                    <SelectTrigger className="h-11 sm:h-10 border-border/60 flex-1">
                         <SelectValue placeholder={placeholder || 'Seleccionar...'} />
                     </SelectTrigger>
                     <SelectContent>
@@ -315,7 +591,7 @@ function ComboListField({
                 </Select>
                 {!disabled && (
                     <Button type="button" variant="outline" size="icon"
-                        className="h-10 w-10 flex-shrink-0 border-border/60"
+                        className="h-11 w-11 sm:h-10 sm:w-10 flex-shrink-0 border-border/60"
                         title="Agregar nuevo registro"
                         onClick={() => setShowAdd(v => !v)}>
                         <Plus className="h-4 w-4" />
@@ -410,7 +686,7 @@ function PeligroSelector({
                             disabled={disabled}
                             onClick={() => toggle(label)}
                             className={cn(
-                                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                                'inline-flex items-center gap-1.5 px-3 py-1.5 min-h-11 sm:min-h-0 rounded-full text-xs font-medium border transition-colors',
                                 active
                                     ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
                                     : 'bg-muted/40 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -428,7 +704,7 @@ function PeligroSelector({
                     <button
                         type="button"
                         onClick={() => setShowCustomManual(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-11 sm:min-h-0 rounded-full text-xs font-medium border border-dashed border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                     >
                         <Plus className="h-3 w-3 shrink-0" />
                         Otros
@@ -510,7 +786,7 @@ function PersonalExpuestoSelector({
                         disabled={disabled}
                         onClick={() => toggle(label)}
                         className={cn(
-                            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 min-h-11 sm:min-h-0 rounded-full text-xs font-medium border transition-colors',
                             active
                                 ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
                                 : 'bg-muted/40 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -527,12 +803,20 @@ function PersonalExpuestoSelector({
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps) {
+export function HallazgoForm({
+    hallazgo, isViewMode = false, header, backHref = '/hallazgos', onCancel,
+}: HallazgoFormProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [sigDialog, setSigDialog] = useState<'reportador' | 'responsable' | null>(null);
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [draftLabel, setDraftLabel] = useState<string | null>(null);
+    const draftAtRef = useRef<number | null>(null);
+
+    /** Solo hay borrador en creación: al editar se trabaja sobre el documento. */
+    const esCreacion = !hallazgo && !isViewMode;
 
     // Dynamic lists
     const [empresas, setEmpresas] = useState<string[]>([]);
@@ -649,43 +933,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
     // Cargar datos al editar
     useEffect(() => {
         if (hallazgo) {
-            // Compatibilidad hacia atrás: si tiene los campos legacy los usamos
-            const empresaVal = hallazgo.empresa || hallazgo.frenteTrabajo || '';
-            const plantaVal = hallazgo.planta || hallazgo.centroCosto || '';
-            const fechaVal = hallazgo.fechaVisita
-                ? hallazgo.fechaVisita.toDate()
-                : hallazgo.fechaIdentificacion?.toDate() || new Date();
-
-            form.reset({
-                empresa: empresaVal,
-                planta: plantaVal,
-                area: hallazgo.area,
-                tipoActividad: hallazgo.tipoActividad,
-                responsabilidad: hallazgo.responsabilidad,
-                tipoHallazgo: hallazgo.tipoHallazgo,
-                fechaVisita: fechaVal,
-                geolocalizacion: hallazgo.geolocalizacion as any,
-                peligroInspeccionado: hallazgo.peligroInspeccionado,
-                personalExpuesto: hallazgo.personalExpuesto || '',
-                hallazgo: hallazgo.hallazgo,
-                evidenciasFotograficas: hallazgo.evidenciasFotograficas || [],
-                clase: hallazgo.clase,
-                intervencion: hallazgo.intervencion,
-                descripcion: hallazgo.descripcion,
-                accionInmediata: hallazgo.accionInmediata || '',
-                reportadoPorNombre: hallazgo.reportadoPorNombre,
-                reportadoPorCargo: hallazgo.reportadoPorCargo,
-                firmaReportador: hallazgo.firmaReportador || '',
-                firmaResponsable: hallazgo.firmaResponsable || '',
-                fechaMedidaImplementada: hallazgo.fechaMedidaImplementada?.toDate(),
-                responsable: hallazgo.responsable,
-                seguimientos: seguimientosFromHallazgo(hallazgo),
-                evidenciasPlanAccion: hallazgo.evidenciasPlanAccion || [],
-                fechaCierre: hallazgo.fechaCierre?.toDate(),
-                porcentajeCumplimientoTotal: hallazgo.porcentajeCumplimientoTotal,
-                cumplimientoEstado: hallazgo.cumplimientoEstado,
-                observacion: hallazgo.observacion,
-            });
+            form.reset(valoresDesdeHallazgo(hallazgo));
             if (hallazgo.geolocalizacion) setGeoStatus('success');
         }
     }, [hallazgo, form]);
@@ -713,6 +961,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                 if (!Array.isArray(parsed.evidenciasPlanAccion)) parsed.evidenciasPlanAccion = [];
                 form.reset(parsed);
                 if (parsed.geolocalizacion?.lat) setGeoStatus('success');
+                draftAtRef.current = Date.now();
                 toast({ title: 'Borrador recuperado', description: 'Se restauraron los datos guardados.', duration: 4000 });
             } catch { /* ignorar */ }
         }
@@ -722,9 +971,25 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
         if (hallazgo || isViewMode) return;
         const sub = form.watch((value) => {
             localStorage.setItem('draft_hallazgo', JSON.stringify(value));
+            // Solo una marca en un ref: hacer setState aquí volvería a renderizar
+            // el formulario completo en cada tecla.
+            draftAtRef.current = Date.now();
         });
         return () => sub.unsubscribe();
     }, [hallazgo, isViewMode, form]);
+
+    // La etiqueta del borrador se refresca por intervalo, no por tecla. Como solo
+    // cambia al cambiar el minuto, React descarta el resto de actualizaciones.
+    useEffect(() => {
+        if (!esCreacion) return;
+        const id = setInterval(() => {
+            const t = draftAtRef.current;
+            if (!t) return;
+            const next = format(new Date(t), 'HH:mm');
+            setDraftLabel(prev => (prev === next ? prev : next));
+        }, 5000);
+        return () => clearInterval(id);
+    }, [esCreacion]);
 
     const watchedClase = form.watch('clase');
     const watchedPctTotal = form.watch('porcentajeCumplimientoTotal') ?? 0;
@@ -772,6 +1037,12 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
         const pctVeniaDeSeguimiento =
             (hallazgo?.seguimientos?.length ?? 0) > 0 || !!hallazgo?.fechaSeguimiento1;
 
+        // Fechas opcionales que el usuario puede vaciar con "Quitar fecha". El filtro
+        // de undefined de cleanData las omitiría del update y el valor anterior
+        // seguiría en Firestore, contradiciendo lo que muestra el formulario.
+        const limpiarFecha = (campo: 'fechaMedidaImplementada' | 'fechaCierre') =>
+            data[campo] === undefined && hallazgo?.[campo] ? { [campo]: deleteField() } : {};
+
         try {
             if (hallazgo) {
                 await updateDoc(doc(db, 'hallazgos', hallazgo.id), {
@@ -781,6 +1052,8 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     ...(ultimoPct === undefined && pctVeniaDeSeguimiento
                         ? { porcentajeCumplimiento: deleteField() }
                         : {}),
+                    ...limpiarFecha('fechaMedidaImplementada'),
+                    ...limpiarFecha('fechaCierre'),
                     updatedAt: serverTimestamp(),
                 });
                 toast({ title: 'Hallazgo actualizado', description: 'Los cambios se guardaron correctamente.' });
@@ -817,20 +1090,57 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
 
     const submitLabel = hallazgo ? 'Actualizar Hallazgo' : 'Registrar Hallazgo';
 
+    // ── Salir del formulario ───────────────────────────────────────────────────
+    // El borrador se conserva salvo que el usuario pida descartarlo: cancelar
+    // nunca debe costarle lo que ya escribió.
+    const salir = useCallback(() => {
+        setCancelOpen(false);
+        // Al editar, salir descarta de verdad: se recarga lo que hay en Firestore
+        // para que volver a "Editar" no muestre cambios que el usuario ya desechó.
+        if (hallazgo) form.reset(valoresDesdeHallazgo(hallazgo));
+        if (onCancel) onCancel();
+        else router.push(backHref);
+    }, [hallazgo, form, onCancel, router, backHref]);
+
+    const descartarBorrador = useCallback(() => {
+        localStorage.removeItem('draft_hallazgo');
+        toast({ title: 'Borrador descartado', description: 'Se eliminaron los datos sin guardar.' });
+        salir();
+    }, [salir, toast]);
+
+    /**
+     * Sin trabajo que perder se sale directo; si lo hay, se confirma.
+     * Se lee con `getValues` / `formState` en el clic, no con `useWatch`: nada de
+     * esto debe re-renderizar el formulario mientras se escribe.
+     */
+    const pedirSalida = useCallback(() => {
+        if (loading) return;
+        const hayTrabajo = esCreacion
+            // Nombre, cargo y geolocalización se autocompletan solos al abrir, así
+            // que no cuentan como trabajo del usuario.
+            ? CAMPOS_CON_TRABAJO.some(c => tieneValor((form.getValues() as any)[c]))
+            : form.formState.isDirty;
+        if (!hayTrabajo) salir();
+        else setCancelOpen(true);
+    }, [loading, esCreacion, form, salir]);
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
-                {/* Botón guardar superior (solo en crear) */}
-                {!isViewMode && !hallazgo && (
-                    <div className="flex justify-end">
-                        <Button type="submit" disabled={loading} className="min-w-[160px] h-9">
-                            {loading
-                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</>
-                                : <><Send className="mr-2 h-4 w-4" />{submitLabel}</>
-                            }
-                        </Button>
-                    </div>
+                {/* Encabezado con volver + acciones (lo aporta la pantalla que usa el
+                    formulario; el detalle trae el suyo y no lo pasa). */}
+                {header && (
+                    <FormHeaderBar
+                        title={header.title}
+                        description={header.description}
+                        submitLabel={submitLabel}
+                        loading={loading}
+                        draftLabel={isViewMode ? null : draftLabel}
+                        readOnly={isViewMode}
+                        onBack={isViewMode ? salir : pedirSalida}
+                        onCancel={pedirSalida}
+                    />
                 )}
 
                 {/* Número de hallazgo cuando se edita */}
@@ -852,12 +1162,13 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     {/* 1. INFORMACIÓN GENERAL */}
                     <AccordionItem value="general" className="border-0">
                         <AccordionTrigger className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-blue-500/10">
-                                    <ClipboardList className="w-3.5 h-3.5 text-blue-500" />
-                                </span>
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground">Información General</span>
-                            </div>
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-blue-500/10 flex-shrink-0">
+                                        <ClipboardList className="w-3.5 h-3.5 text-blue-500" />
+                                    </span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">Información General</span>
+                                    {!isViewMode && <SectionStatus seccion="general" className="ml-auto flex-shrink-0" />}
+                                </div>
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -957,7 +1268,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                                         disabled={loading || isViewMode}
                                                         onClick={() => field.onChange(opt)}
                                                         className={cn(
-                                                            'h-10 rounded-lg border text-xs font-semibold transition-all duration-150',
+                                                            'h-11 sm:h-10 rounded-lg border text-xs font-semibold transition-all duration-150',
                                                             field.value === opt
                                                                 ? 'border-primary/40 bg-primary/10 text-primary'
                                                                 : 'border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/50'
@@ -1034,7 +1345,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                         <FormControl>
                                             <div className="space-y-2">
                                                 {geoStatus === 'success' && watchedGeo?.lat ? (
-                                                    <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                                                    <div className="flex items-center gap-2 h-11 sm:h-10 px-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
                                                         <Navigation className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
                                                         <span className="text-xs text-emerald-700 dark:text-emerald-400 tabular-nums flex-1 truncate">
                                                             {watchedGeo.lat.toFixed(6)}, {watchedGeo.lng.toFixed(6)}
@@ -1050,21 +1361,21 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                                         )}
                                                     </div>
                                                 ) : geoStatus === 'loading' ? (
-                                                    <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-border/60 bg-muted/20">
+                                                    <div className="flex items-center gap-2 h-11 sm:h-10 px-3 rounded-lg border border-border/60 bg-muted/20">
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
                                                         <span className="text-xs text-muted-foreground">Obteniendo ubicación...</span>
                                                     </div>
                                                 ) : (
                                                     <div className="space-y-1.5">
                                                         {geoStatus === 'error' && (
-                                                            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-red-500/30 bg-red-500/5">
+                                                            <div className="flex items-center gap-2 h-11 sm:h-10 px-3 rounded-lg border border-red-500/30 bg-red-500/5">
                                                                 <WifiOff className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                                                                 <span className="text-xs text-red-600 flex-1 truncate">{geoError}</span>
                                                             </div>
                                                         )}
                                                         {!isViewMode && (
                                                             <Button type="button" variant="outline" size="sm"
-                                                                className="h-9 w-full border-border/60"
+                                                                className="h-11 sm:h-9 w-full border-border/60"
                                                                 onClick={captureGeo} disabled={false}>
                                                                 <MapPin className="mr-2 h-3.5 w-3.5" />
                                                                 Capturar ubicación
@@ -1114,13 +1425,14 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     {/* 2. EVIDENCIA DEL HALLAZGO */}
                     <AccordionItem value="evidencia" className="border-0">
                         <AccordionTrigger className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-violet-500/10">
-                                    <Camera className="w-3.5 h-3.5 text-violet-500" />
-                                </span>
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground">Evidencia del Hallazgo</span>
-                                <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">ANTES</span>
-                            </div>
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-violet-500/10 flex-shrink-0">
+                                        <Camera className="w-3.5 h-3.5 text-violet-500" />
+                                    </span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">Evidencia del Hallazgo</span>
+                                    <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full flex-shrink-0">ANTES</span>
+                                    {!isViewMode && <SectionStatus seccion="evidencia" className="ml-auto flex-shrink-0" />}
+                                </div>
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4 space-y-4">
                             {/* Fotos de evidencia */}
@@ -1159,12 +1471,13 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     {/* 3. CLASIFICACIÓN */}
                     <AccordionItem value="clasificacion" className="border-0">
                         <AccordionTrigger className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-amber-500/10">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                                </span>
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground">Clasificación del Hallazgo</span>
-                            </div>
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-amber-500/10 flex-shrink-0">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                                    </span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">Clasificación del Hallazgo</span>
+                                    {!isViewMode && <SectionStatus seccion="clasificacion" className="ml-auto flex-shrink-0" />}
+                                </div>
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4 space-y-4">
                             <FormItem>
@@ -1238,12 +1551,13 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     {/* 4. REPORTADO POR */}
                     <AccordionItem value="reportado" className="border-0">
                         <AccordionTrigger className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-500/10">
-                                    <User className="w-3.5 h-3.5 text-slate-500" />
-                                </span>
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground">Reportado Por</span>
-                            </div>
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-500/10 flex-shrink-0">
+                                        <User className="w-3.5 h-3.5 text-slate-500" />
+                                    </span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">Reportado Por</span>
+                                    {!isViewMode && <SectionStatus seccion="reportado" className="ml-auto flex-shrink-0" />}
+                                </div>
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1251,7 +1565,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     <FormItem>
                                         <FormLabel className={labelClass}><Req>Nombre Completo</Req></FormLabel>
                                         <FormControl>
-                                            <Input {...field} disabled={loading || isViewMode} placeholder="Nombre del reportador" className="h-10 border-border/60" />
+                                            <Input {...field} disabled={loading || isViewMode} placeholder="Nombre del reportador" className="h-11 sm:h-10 border-border/60" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -1260,7 +1574,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                                     <FormItem>
                                         <FormLabel className={labelClass}><Req>Cargo</Req></FormLabel>
                                         <FormControl>
-                                            <Input {...field} disabled={loading || isViewMode} placeholder="Cargo del reportador" className="h-10 border-border/60" />
+                                            <Input {...field} disabled={loading || isViewMode} placeholder="Cargo del reportador" className="h-11 sm:h-10 border-border/60" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -1351,18 +1665,18 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                     {/* 5. PLAN DE ACCIÓN */}
                     <AccordionItem value="accion" className="border-0">
                         <AccordionTrigger className="rounded-xl border border-border/50 bg-card px-4 sm:px-5 py-3.5 hover:no-underline hover:bg-muted/30 transition-colors [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0">
-                            <div className="flex items-center gap-2.5">
-                                <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10">
-                                    <CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
-                                </span>
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground">Plan de Acción</span>
-                                <span className="text-[10px] font-semibold text-muted-foreground border border-border/60 rounded-full px-2 py-0.5 bg-muted/40">Opcional</span>
-                            </div>
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10 flex-shrink-0">
+                                        <CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
+                                    </span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground truncate">Plan de Acción</span>
+                                    <span className="text-[10px] font-semibold text-muted-foreground border border-border/60 rounded-full px-2 py-0.5 bg-muted/40 ml-auto flex-shrink-0">Opcional</span>
+                                </div>
                         </AccordionTrigger>
                         <AccordionContent className="border border-t-0 border-border/50 rounded-b-xl bg-card px-4 sm:px-5 pb-5 pt-4 space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="fechaMedidaImplementada" render={({ field }) => (
-                                    <DateField label="Fecha Medida Implementada" field={field} loading={loading} disabled={isViewMode} />
+                                    <DateField label="Fecha Medida Implementada" field={field} loading={loading} disabled={isViewMode} optional />
                                 )} />
 
                                 <FormField control={form.control} name="responsable" render={({ field }) => (
@@ -1534,7 +1848,7 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                             {/* Fila cierre */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="fechaCierre" render={({ field }) => (
-                                    <DateField label="Fecha de Cierre" field={field} loading={loading} disabled={isViewMode} />
+                                    <DateField label="Fecha de Cierre" field={field} loading={loading} disabled={isViewMode} optional />
                                 )} />
 
                                 <FormField control={form.control} name="porcentajeCumplimientoTotal" render={({ field }) => (
@@ -1615,9 +1929,19 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
 
                 </Accordion>
 
-                {/* Footer submit */}
+                {/* Acciones al pie — desde 640px. En móvil las asume la barra fija. */}
                 {!isViewMode && (
-                    <div className="flex justify-end pt-2">
+                    <div className="hidden sm:flex items-center gap-2.5 pt-2">
+                        {esCreacion && draftLabel && (
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground mr-auto">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                El borrador se guarda solo mientras editas.
+                            </span>
+                        )}
+                        <Button type="button" variant="outline" className="ml-auto" onClick={pedirSalida} disabled={loading}>
+                            <X className="mr-2 h-4 w-4" />
+                            Cancelar
+                        </Button>
                         <Button type="submit" disabled={loading} className="min-w-[180px]">
                             {loading
                                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</>
@@ -1626,7 +1950,72 @@ export function HallazgoForm({ hallazgo, isViewMode = false }: HallazgoFormProps
                         </Button>
                     </div>
                 )}
+
+                {/* Barra de acciones fija en móvil: guardar y cancelar quedan al
+                    alcance del pulgar sin recorrer las cinco secciones.
+                    `sticky` (no `fixed`) para no depender del shell: el scroll es el
+                    del documento y la barra recupera su sitio al final del formulario. */}
+                {!isViewMode && (
+                    <div className="sm:hidden sticky bottom-0 z-20 -mx-4 border-t border-border bg-background/95 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-8px_24px_-14px_rgba(2,8,23,0.45)] flex gap-2.5">
+                        <Button
+                            type="button" variant="outline" onClick={pedirSalida} disabled={loading}
+                            className="h-12 flex-1 rounded-lg font-semibold"
+                        >
+                            <X className="mr-1.5 h-4 w-4" />
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={loading} className="h-12 flex-[2] rounded-lg font-semibold">
+                            {loading
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</>
+                                : <><Send className="mr-2 h-4 w-4" />{submitLabel}</>
+                            }
+                        </Button>
+                    </div>
+                )}
             </form>
+
+            {/* ── Confirmación al salir ────────────────────────────────── */}
+            <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+                <DialogContent className="sm:max-w-[420px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2.5">
+                            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10 flex-shrink-0">
+                                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            </span>
+                            {esCreacion ? '¿Salir del registro?' : '¿Descartar los cambios?'}
+                        </DialogTitle>
+                        <DialogDescription className="pt-1 text-left">
+                            {esCreacion
+                                ? <>Tu borrador quedó guardado en este dispositivo. Podrás retomarlo la próxima vez que abras <strong className="font-semibold text-foreground">Nuevo Hallazgo</strong>.</>
+                                : <>Los cambios que hiciste en este hallazgo no se guardarán.</>
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-2 pt-1">
+                        <Button
+                            type="button"
+                            variant={esCreacion ? 'default' : 'destructive'}
+                            className="h-11 w-full"
+                            onClick={salir}
+                        >
+                            {esCreacion ? 'Salir y conservar el borrador' : 'Descartar cambios y salir'}
+                        </Button>
+                        <Button type="button" variant="outline" className="h-11 w-full"
+                            onClick={() => setCancelOpen(false)}>
+                            Seguir editando
+                        </Button>
+                        {esCreacion && (
+                            <Button type="button" variant="ghost"
+                                className="h-10 w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={descartarBorrador}>
+                                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                Descartar el borrador
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Diálogo de firma ─────────────────────────────────────── */}
             <Dialog open={sigDialog !== null} onOpenChange={open => { if (!open) setSigDialog(null); }}>

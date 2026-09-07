@@ -126,7 +126,15 @@ export default function HallazgoDetailPage() {
                 </div>
             </div>
 
-            <HallazgoForm hallazgo={hallazgo} isViewMode={!isEditing} />
+            {/* `onCancel` devuelve al modo lectura sin salir del detalle: la barra
+                de acciones del formulario queda al alcance en móvil sin obligar a
+                subir hasta el botón "Ver". */}
+            <HallazgoForm
+                hallazgo={hallazgo}
+                isViewMode={!isEditing}
+                backHref="/hallazgos"
+                onCancel={() => setIsEditing(false)}
+            />
         </div>
     );
 }
