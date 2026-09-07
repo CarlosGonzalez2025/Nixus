@@ -3,7 +3,7 @@
 
 > **Repositorio:** https://github.com/CarlosGonzalez2025/Nixus  
 > **Rama principal:** `main`  
-> **Última actualización de este documento:** 2026-08-27 (Sesión 21)
+> **Última actualización de este documento:** 2026-09-07 (Sesión 22)
 
 ---
 
@@ -64,6 +64,137 @@ Next.js 15 (App Router)
 ---
 
 ## 4. Changelog — Registro de Cambios por Fecha
+
+---
+
+### 2026-09-07 (Sesión 22) — La fecha de visita se borraba al confirmar el día de hoy + Cancelar/Volver y formulario de Hallazgos responsive
+
+**Reporte del cliente:** al registrar un hallazgo con la fecha del día actual, al guardar aparecía **"La fecha de visita es requerida"** con la fecha visible en el campo. El usuario solo logró guardar poniendo la fecha **del día siguiente**. Los registros afectados ya se corrigieron manualmente. En la misma sesión se atendió que el registro **no ofrecía forma de cancelar ni de volver** y que el formulario no estaba resuelto en móvil.
+
+---
+
+#### 22.1 Por qué el fix de junio no cerró el problema
+
+> **Corrección a la Sesión 11 (2026-06-19), «Fix 4 — Hallazgos: error "La fecha de visita es requerida"».** Aquel diagnóstico era correcto pero describía **otra** causa: un borrador serializado con `JSON.stringify` dejaba la fecha como string ISO, que `date-fns` formatea pero `z.date()` rechaza. El helper `dateField()` con `z.preprocess` sigue siendo válido y se conserva. Lo que no explicaba es el caso reportado ahora, que no depende del borrador y se reproduce en un formulario recién abierto.
+
+Con el `z.preprocess` en su sitio, se comprobó con el zod real del proyecto que el mensaje **"La fecha de visita es requerida" solo puede salir cuando el valor es `undefined`**: un `Date`, un string ISO y un número epoch pasan todos la validación. Es decir, el campo estaba realmente vacío mientras la pantalla mostraba una fecha.
+
+---
+
+#### 22.2 Causa raíz: dos comportamientos de librería que se refuerzan
+
+**1. `react-day-picker` deselecciona el día al volver a tocarlo.** El calendario se usaba en `mode="single"` **sin** `required`. Su código (`useSingle.onDayClick`, en `node_modules/react-day-picker/dist/index.js`) hace:
+
+```js
+if (activeModifiers.selected && !initialProps.required) {
+    initialProps.onSelect?.(undefined, day, activeModifiers, e);   // ← BORRA
+    return;
+}
+```
+
+El formulario abre con `fechaVisita: new Date()`, o sea **hoy ya viene seleccionado**. Cuando el usuario abre el calendario y toca "hoy" —el gesto natural para confirmar la fecha— la librería no la confirma: **la borra**. Cualquier otro día (mañana) sí se selecciona. Eso explica exactamente el workaround que encontró el usuario.
+
+**2. `react-hook-form` muestra una fecha fantasma.** `field.value` de un `Controller` no es el valor real del formulario. En `useController`:
+
+```js
+const defaultValueMemo = React.useMemo(
+  () => get(control._formValues, name, get(control._defaultValues, name, defaultValue)), …);
+const value = useWatch({ control, name, defaultValue: defaultValueMemo, exact });
+```
+
+`get(obj, path, defaultValue)` **devuelve el defaultValue cuando el valor real es `undefined`**, y ese defaultValue quedó memoizado en el primer render: la fecha de hoy. Resultado: al borrarse el valor, `_formValues.fechaVisita` queda en `undefined` (y zod falla), pero el botón sigue mostrando *7 de septiembre de 2026*. Peor aún, `selected={field.value}` hacía que hoy siguiera pintado como seleccionado, así que **volver a tocarlo lo borraba otra vez**: el usuario quedaba atrapado sin salida salvo elegir otro día.
+
+Repro con las librerías reales del proyecto:
+
+```
+[ANTES]   valor real: undefined | boton muestra: 7/9/2026 | ERROR -> La fecha de visita es requerida
+[DESPUES] valor real: 7/9/2026  | boton muestra: 7/9/2026 | GUARDA OK
+[ANTES]   eligiendo MANANA: GUARDA OK  <- por eso el workaround funcionaba
+```
+
+---
+
+#### 22.3 Corrección de fechas
+
+**`src/app/(app)/hallazgos/components/hallazgo-form.tsx` — `DateField`:**
+
+- `required` en el `Calendar`: un segundo toque **reconfirma** en vez de borrar.
+- Guarda en `onSelect`: un `undefined` se ignora.
+- El valor mostrado se lee con `useWatch` **sin** `defaultValue`, que sí devuelve el valor real. La UI y la validación ya no pueden desincronizarse.
+- El popover se cierra al elegir (mejora clara en móvil) y el calendario usa `locale={es}`.
+- Las fechas **opcionales** (`fechaMedidaImplementada`, `fechaCierre`) se limpian con un botón explícito **"Quitar fecha"**, nunca por un toque accidental.
+
+**Efecto colateral que había que cerrar:** al vaciar una fecha opcional, el filtro `Object.entries(data).filter(([, v]) => v !== undefined && v !== '')` de `cleanData` la omitía del `updateDoc` y **el valor anterior seguía en Firestore**. Se agregó `deleteField()` para esos dos campos, de modo que "Quitar fecha" persista de verdad.
+
+**El mismo defecto estaba en Verificaciones de Contratistas** y se corrigió igual:
+
+- `src/app/(app)/contractor-verifications/create/page.tsx` — `verificationDate` tenía el patrón idéntico (`defaultValues: new Date()` + calendario sin `required`).
+- `src/app/(app)/contractor-verifications/[id]/checklist/page.tsx` — además de la deselección, `disabled={date => date < new Date()}` dejaba **HOY deshabilitado** como fecha límite del plan de acción: el calendario entrega el día a medianoche local y se comparaba contra la hora actual. Ahora compara contra `startOfDay(new Date())`.
+
+**Los tres selectores de fecha de la aplicación quedan cubiertos** (`grep 'mode="single"'` no devuelve otros).
+
+---
+
+#### 22.4 Cancelar y volver en el registro
+
+El registro no tenía salida: el único botón era "Registrar Hallazgo", suelto sobre el formulario.
+
+- **Encabezado propio del formulario** (`FormHeaderBar`) con flecha de volver, título y las acciones. Se activa con la prop `header` — solo lo usa `hallazgos/crear`; el detalle (`hallazgos/[id]`) ya trae su propio encabezado con volver, PDF y editar, y duplicarlo sería ruido.
+- Las acciones caen solas a una segunda fila cuando el ancho no alcanza (`flex-wrap`, sin breakpoint fijo) y bajo 640px pasan a la barra fija inferior.
+- **Confirmación al salir**, distinta según el caso:
+  - *Creando:* «Salir y conservar el borrador» / «Seguir editando» / «Descartar el borrador». El borrador ya se autoguardaba en `localStorage`; ahora eso es visible y solo se borra si lo piden.
+  - *Editando:* «Descartar cambios y salir», que ahora **descarta de verdad**.
+- Si no hay trabajo que perder, se sale directo sin preguntar. Se evalúa con `getValues()` en el clic —no con `useWatch`— para no re-renderizar el formulario mientras se escribe, y excluye lo que el formulario rellena solo al abrir (fecha de hoy, geolocalización, nombre y cargo del reportador).
+
+**Defecto latente que esto destapó:** en el detalle, `setIsEditing(false)` volvía a modo lectura **sin resetear el formulario**, así que las ediciones sin guardar quedaban colgando en el estado y reaparecían al pulsar "Editar" de nuevo. Etiquetar un botón como "Descartar" habría sido mentira. Se extrajo el mapeo `valoresDesdeHallazgo(hallazgo)` a nivel de módulo —lo usan tanto el efecto de carga como la salida— y ahora salir hace `form.reset()` con lo que hay en Firestore.
+
+`hallazgos/[id]/page.tsx` pasa `onCancel={() => setIsEditing(false)}`: la barra de acciones queda al alcance en móvil sin obligar a subir hasta el botón "Ver".
+
+---
+
+#### 22.5 Responsive del formulario de registro
+
+- **Barra de acciones fija en móvil** con Cancelar + Registrar. Se usa `sticky bottom-0`, **no `fixed`**: el scroll es el del documento y ni `<main>` ni `SidebarInset` fijan `overflow` o `transform` (ver la advertencia de la Sesión 20 sobre `overflow-x-hidden`, que rompería todos los `sticky`). Alto de 48px y `env(safe-area-inset-bottom)`. El pie deja de duplicar el botón en móvil (`hidden sm:flex`).
+- **Objetivos táctiles de 44px bajo 640px** (`h-11 sm:h-10`) en selects, botón de agregar de las listas dinámicas, toggles de dos opciones, selector de clase A/B/C, chips de peligro y personal expuesto (`min-h-11 sm:min-h-0`), selector de fecha, campos de "Reportado Por" y los tres estados de geolocalización.
+- **La fecha se alinea a la izquierda** como el resto de controles: el `justify-center` de `buttonVariants` la dejaba centrada y descuadrada respecto a los inputs vecinos.
+- Títulos de sección con elipsis y píldoras que no se parten.
+
+---
+
+#### 22.6 Estado del registro por sección
+
+Un formulario de cinco acordeones no dejaba ver qué faltaba sin abrirlos todos.
+
+- Cada cabecera indica **"Completa"** o **cuántos obligatorios faltan**; "Plan de Acción" conserva su etiqueta *Opcional*.
+- El encabezado resume el avance (`N de 4 secciones completas`) y si el borrador está guardado.
+- Se calculan desde `SECCION_REQUERIDOS`, **un espejo explícito de los obligatorios del esquema zod**. Si se agrega o quita un obligatorio en el esquema hay que reflejarlo ahí: es lo único que alimenta las píldoras y el contador.
+- **Rendimiento:** cada píldora se suscribe con `useWatch` solo a sus campos, así que al escribir se vuelve a renderizar la píldora o el encabezado, nunca el formulario completo. Las listas de nombres son constantes de módulo (`CAMPOS_POR_SECCION`, `CAMPOS_TODOS`) porque `useWatch` compara los nombres en cada render y una referencia nueva por render lo haría resuscribirse. La marca de tiempo del borrador vive en un `ref` y se refresca por intervalo, no por tecla.
+
+---
+
+#### 22.7 Lo que no cambia
+
+`onSubmit` y el payload a Firestore, la numeración correlativa, los campos legacy (`fechaSeguimiento1`, `porcentajeCumplimiento`), el `deleteField()` de seguimientos y las notificaciones a Líderes SST quedan intactos. El autoguardado y la restauración de borrador conservan su comportamiento. El modo lectura sigue sin acciones ni píldoras.
+
+---
+
+#### 22.8 Verificación
+
+`tsc --noEmit` en 0 errores y build de producción correcto (45/45 páginas); `/hallazgos/crear` sigue prerenderizándose como estática, lo que confirma que el árbol nuevo renderiza sin lanzar.
+
+**Pendiente de validar:** la interacción en navegador —los clics del diálogo de salida y la barra fija en un teléfono real— no se probó. La aplicación es PWA con Service Worker, así que los usuarios reciben el JS nuevo cuando el SW se actualice (`PWAUpdater`); si alguien reporta que el problema persiste, forzar recarga.
+
+**Diseño de referencia del rediseño:** https://claude.ai/code/artifact/f6089a9b-50ee-44f0-9db5-39b48a667929
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/(app)/hallazgos/components/hallazgo-form.tsx` | `DateField` con `required` + `useWatch`; encabezado, diálogo de salida, barra fija, píldoras de sección, objetivos táctiles, `deleteField` de fechas opcionales, `valoresDesdeHallazgo()` |
+| `src/app/(app)/hallazgos/crear/page.tsx` | Delega el encabezado al formulario |
+| `src/app/(app)/hallazgos/[id]/page.tsx` | `onCancel` devuelve a modo lectura |
+| `src/app/(app)/contractor-verifications/create/page.tsx` | Mismo fix de fecha en `verificationDate` |
+| `src/app/(app)/contractor-verifications/[id]/checklist/page.tsx` | Fix de fecha + `startOfDay` para poder elegir hoy |
 
 ---
 
@@ -1001,6 +1132,11 @@ Es decir, la UI mostraba la fecha mientras la validación la consideraba inváli
 2. **Restauración de borrador robusta** — `fechaVisita` siempre queda como `Date` válido (un borrador antiguo sin el campo, o serializado como string, ya no pierde el default ni deja la fecha vacía).
 
 Build de producción limpio verificado (38/38 páginas).
+
+> **Nota (Sesión 22, 2026-09-07):** este fix es correcto y se conserva, pero cubría **otra** causa del mismo
+> mensaje. El síntoma volvió a reportarse en septiembre sin borrador de por medio: `react-day-picker` sin
+> `required` borraba la fecha al volver a tocar el día ya seleccionado —y como el formulario abre con hoy
+> seleccionado, tocar "hoy" la vaciaba—. Ver **Sesión 22 → 22.2**.
 
 ---
 
@@ -3840,4 +3976,4 @@ npm run genkit:dev   # Servidor de desarrollo de Genkit AI
 
 ---
 
-*Documento generado el 2026-04-28. Última actualización: 2026-08-27. Mantener actualizado con cada sesión de desarrollo.*
+*Documento generado el 2026-04-28. Última actualización: 2026-09-07. Mantener actualizado con cada sesión de desarrollo.*
