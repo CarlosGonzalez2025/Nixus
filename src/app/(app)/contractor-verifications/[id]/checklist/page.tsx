@@ -35,7 +35,7 @@ import {
   Loader2, CheckCircle2, XCircle, AlertTriangle, MinusCircle,
   ChevronLeft, Lock, AlertCircle, CalendarIcon, Save,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 // ── Configuración de calificaciones ──────────────────────────────────────────
@@ -186,9 +186,13 @@ function ActionPlanModal({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
+                  required
                   selected={form.dueDate || undefined}
-                  onSelect={d => setForm(p => ({ ...p, dueDate: d || null }))}
-                  disabled={date => date < new Date()}
+                  onSelect={d => { if (d) setForm(p => ({ ...p, dueDate: d })); }}
+                  // El calendario entrega el día a medianoche local: compararlo contra
+                  // `new Date()` (con hora) dejaba HOY deshabilitado. Se compara contra
+                  // el inicio del día actual para poder elegir hoy como fecha límite.
+                  disabled={date => date < startOfDay(new Date())}
                   initialFocus
                   locale={es}
                 />

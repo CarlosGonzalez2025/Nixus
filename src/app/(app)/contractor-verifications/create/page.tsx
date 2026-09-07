@@ -90,6 +90,8 @@ export default function CreateVerificationPage() {
     loadList('empresas', setCompanies);
   }, []);
 
+  const [dateOpen, setDateOpen] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -407,10 +409,13 @@ export default function CreateVerificationPage() {
               <FormField control={form.control} name="verificationDate" render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha de verificación *</FormLabel>
-                  <Popover>
+                  {/* `required` es obligatorio aquí: sin él react-day-picker deselecciona
+                      el día al volver a pulsarlo y, como el formulario abre con hoy ya
+                      seleccionado, tocar "hoy" dejaba el campo vacío mostrando la fecha. */}
+                  <Popover open={dateOpen} onOpenChange={setDateOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <Button variant="outline"
+                        <Button type="button" variant="outline"
                           className={cn('pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
                           {field.value
                             ? format(field.value, 'PPP', { locale: es })
@@ -420,8 +425,9 @@ export default function CreateVerificationPage() {
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value}
-                        onSelect={field.onChange} initialFocus locale={es} />
+                      <Calendar mode="single" required selected={field.value}
+                        onSelect={(d) => { if (!d) return; field.onChange(d); setDateOpen(false); }}
+                        initialFocus locale={es} />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
